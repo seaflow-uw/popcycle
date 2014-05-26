@@ -24,6 +24,7 @@ for line in sys.stdin:
     if line[0] == 'FILE':
         sys.stdout.write("%s" % '\t'.join(line))
     # Any line that starts with 'sds', terminate the previous line and print it
+    # starts with 'sds' because all filenames start with 'sds' and are in the first column
     elif line[0].startswith('sds'):
         sys.stdout.write("%s%s" % (os.linesep, '\t'.join(line)))
     # Any other line, just print it
