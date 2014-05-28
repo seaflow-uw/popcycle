@@ -3,7 +3,9 @@ CREATE TABLE evt (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
   particle INTEGER NOT NULL,
-  -- Next we have the measurements
+  -- Next we have the measurements. For these, see
+  -- https://github.com/fribalet/flowPhyto/blob/master/R/Globals.R and look
+  -- at version 3 of the evt header
   time INTEGER NOT NULL,
   pulse_width INTEGER NOT NULL,
   D1 INTEGER NOT NULL,
@@ -22,7 +24,9 @@ CREATE TABLE opp (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
   particle INTEGER NOT NULL,
-  -- Next we have the measurements
+  -- Next we have the measurements. For these, see
+  -- https://github.com/fribalet/flowPhyto/blob/master/R/Globals.R and look
+  -- at version 3 of the evt header
   time INTEGER NOT NULL,
   pulse_width INTEGER NOT NULL,
   D1 INTEGER NOT NULL,
@@ -41,7 +45,7 @@ CREATE TABLE vct (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
   particle INTEGER NOT NULL,
-  -- Next we have the measurements
+  -- Next we have the classification
   pop TEXT NOT NULL,
   method TEXT NOT NULL,
   PRIMARY KEY (cruise, file, particle)
@@ -52,6 +56,7 @@ CREATE TABLE sds (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
   -- Next we have the measurements
+  -- TODO(@cobbc12) fill in these. note that I made then NULL-able.
   lat REAL,
   lon REAL,
   PRIMARY KEY (cruise, file)
