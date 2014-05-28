@@ -56,7 +56,7 @@ CREATE TABLE sds (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
   -- Next we have the measurements
-  -- TODO(@cobbc12) fill in these. note that I made then NULL-able.
+  -- TODO(@cobbc12) fill in these. note that I made them NULL-able.
   lat REAL,
   lon REAL,
   PRIMARY KEY (cruise, file)
