@@ -43,7 +43,7 @@ def load_evt(filename, cruise=None, file=None):
                     .format(i, record[0], EOL_MAGIC))
             particle = {field: value
                          for (field, value)
-                         in zip(EVT_V3_SCHEMA, record)}
+                         in zip(EVT_V3_SCHEMA, record[1:])}
             particle.update(cruise=cruise, file=file, particle=i)
             ret.append(particle)
 
