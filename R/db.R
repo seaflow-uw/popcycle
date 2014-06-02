@@ -14,13 +14,13 @@ vct_to_db_vct <- function(vct, cruise.name, file.name, method.name) {
   n <- dim(opp)[1]
   cruise = rep(cruise.name, n)
   file = rep(file.name, n)
-  particle = 1:n)
+  particle = 1:n
   pop <- vct$pop
   method <- rep(method.name, n)
   
   return (cbind(cruise, file, particle, pop, method))
 }
 
-upload_opp <- function(db.vct, con, table.name = 'vct') {
+upload_vct <- function(db.vct, con, table.name = 'vct') {
   dbWriteTable(conn = con, name = table.name, value = db.vct, row.names=FALSE, append=TRUE)
 }
