@@ -1,6 +1,10 @@
 # set width and notch, log old parameters if they exist
-setFilterParams <- function(...) {
-  # TODO(hyrkas): implement
+setFilterParams <- function(width, notch) {
+  params <- data.frame(width = width, notch = notch)
+  
+  # TODO(hyrkas): log old params
+  
+  write.table(params, file = filter.param.location, sep = ",", row.names=F)
 }
 
 # set gates, log old parameters if they exist
@@ -8,9 +12,16 @@ setManualGates <- function(...) {
   # TODO(hyrkas): implement
 }
 
-evaluate_evt <- function(evt_file) {
+#main function
+evaluate_last_evt <- function() {
+  evt_file <- get_latest_file()
+  
   #filter evt
   evt <- readSeaflow(evt_file)
+  
+  #get rid of path if necessary
+  file_name <- strsplit(evt_file, '/')[[1]]
+  file_name <- file_name[length(file_name)]
   
   #if we don't have filter parameters yet
   if (!file.exists(filter.param.location)) {
@@ -27,7 +38,7 @@ evaluate_evt <- function(evt_file) {
   opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
   
   #store opp
-  upload_opp(opp_to_db_opp(opp, cruise.id, evt_file))
+  upload_opp(opp_to_db_opp(opp, cruise.id, file_name))
   
   #classify opp
   

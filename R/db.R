@@ -18,6 +18,14 @@ upload_opp <- function(db.opp) {
   dbWriteTable(conn = con, name = opp.table.name, value = db.opp, row.names=FALSE, append=TRUE)
 }
 
+# should only be called when re-running filtering step
+.delete_opp_by_file <- function(file_name) {
+  sql <- paste0("DELETE FROM ", opp.table.name, " WHERE file == '", 
+                file_name, "'")
+  con <- dbConnect(SQLite(), dbname = db.name)
+  dbGetQuery(con, sql)
+}
+
 vct_to_db_vct <- function(vct, cruise.name, file.name, method.name) {
   n <- dim(opp)[1]
   cruise = rep(cruise.name, n)
