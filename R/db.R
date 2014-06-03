@@ -33,3 +33,21 @@ upload_vct <- function(db.vct) {
   con <- dbConnect(SQLite(), dbname = db.name)
   dbWriteTable(conn = con, name = vct.table.name, value = db.vct, row.names=FALSE, append=TRUE)
 }
+
+get_opp_by_file <- function(file_name) {
+  sql <- paste0("SELECT * FROM ", opp.table.name, " WHERE file == '", 
+                file_name, "' ORDER BY particle")
+  con <- dbConnect(SQLite(), dbname = db.name)
+  opp <- dbGetQuery(con, sql)
+  # drop cruise, file, particle columns
+  return (opp[,-c(1,2,3)])
+}
+
+get_vct_by_file <- function(file_name) {
+  sql <- paste0("SELECT * FROM ", vct.table.name, " WHERE file == '", 
+                file_name, "' ORDER BY particle")
+  con <- dbConnect(SQLite(), dbname = db.name)
+  vct <- dbGetQuery(con, sql)
+  # drop cruise, file, particle, method columns
+  return (vct[,-c(1,2,3,5)])
+}

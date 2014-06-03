@@ -4,12 +4,12 @@ filter_evt <- function(evt, filter_func, ...) {
   # SANITY CHECKS
   # need same columns for opp
   if (!all(names(evt) == names(opp))) {
-    #something
+    stop('Filtering function produced OPP with different columns')
   }
   
   # filtered all particles out?
   if (dim(opp)[1] < 1) {
-    #something
+    stop('Filtering dropped all particles.')
   }
 
   return (opp)
@@ -21,7 +21,7 @@ classify_opp <- function(opp, classify_func, ...) {
   # SANITY CHECKS
   # dropped particles
   if (!(dim(opp)[1] == length(vct))) {
-    #something
+    stop('Filtering function returned incorrect number of labels.')
   }
   
   # in case classify_func didn't return text
