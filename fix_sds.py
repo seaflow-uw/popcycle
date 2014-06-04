@@ -37,8 +37,8 @@ COLUMNS = [FILE, computerUTC, DMY, HMS, LAT, LON, CONDUCTIVITY, SALINITY, OCEAN_
 def set_columns(header_line):
     COLUMNS = header_line.strip().split(DELIM)
 
-# assumes that items in line are in the column same order as header
-def insert_sds_line_to_db(line, db, header_line=None):
+# assumes that items in line are in the column same order as header or current COLUMNS
+def insert_sds_line_to_db(line, dbpath, header_line=None):
     if header_line:
         set_columns(header_line)
 
@@ -69,6 +69,12 @@ def insert_sds_line_to_db(line, db, header_line=None):
             # may want to separately check format of DMY/HMS, but not yet
 
     # TODO: insert items_fixed into db
+    conn = sqlite3.connect(dbpath)
+    c = conn.cursor()
+
+    # assumes tablename is sds --> might want to make this easier to change
+    # also not sure how to deal with all the ?s
+    c.execute('insert into sds values (?,? ...)', items_fixed)
 
 def fix_lat_or_lon(l):
     # try to fix -- put in Decimal Degrees (DDD) Format
@@ -78,8 +84,8 @@ def fix_lat_or_lon(l):
     
     # check if NMEA (GGA) format:
     # example: 
-    # 4807.038,N  --> Latitude 48 deg 07.038' N --> 
-    # 01131.000,E -->  Longitude 11 deg 31.000' E --> 
+    # 4807.038,N  --> Latitude 48 deg 07.038' N --> ?
+    # 01131.000,E -->  Longitude 11 deg 31.000' E --> ?
 
 
     # if possible, return new lat/lon
