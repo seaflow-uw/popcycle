@@ -27,7 +27,7 @@ upload_opp <- function(db.opp) {
 }
 
 vct_to_db_vct <- function(vct, cruise.name, file.name, method.name) {
-  n <- dim(opp)[1]
+  n <- length(vct)
   cruise = rep(cruise.name, n)
   file = rep(file.name, n)
   particle = 1:n

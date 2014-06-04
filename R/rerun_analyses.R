@@ -39,10 +39,10 @@ rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
   
   for (i in 1:length(files)) {
     evt_file = files[i]
-    evt <- readSeaflow(evt_file)
+    evt <- readSeaflow(paste0(evt.location, evt_file))
     
     opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
     .delete_opp_by_file(evt_file)
-    upload_opp(opp_to_db_opp(opp, cruise.id, file_name))
+    upload_opp(opp_to_db_opp(opp, cruise.id, evt_file))
   }
 }

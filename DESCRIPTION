@@ -1,0 +1,9 @@
+Package: popcycle
+Title: PopCycle: Real time Seaflow Analysis Package
+Version: 0.1
+Date: 2014-06-04
+Author: Camille Cobb, Daniel Halperin, Jeremy Hyrkas, Francois Ribalet
+Maintainer: Jeremy Hyrkas <hyrkas@cs.washington.edu>
+Description: Real-time Seaflow analysis using R/SQLite.
+Depends: RSQLite, splancs
+License: GPL-2
