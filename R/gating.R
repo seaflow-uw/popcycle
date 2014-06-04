@@ -64,7 +64,7 @@ list.params <- list.files(path=gating.param.location, pattern= ".csv", full.name
 
 ### testing
 
-opp.path <- system.file("extdata","seaflow_cruise","2011_001", "2.evt.opp", package="flowPhyto")
+opp.path <- system.file("extdata","seaflow_cruise","2011_001", "2.evt", package="flowPhyto")
 opp <- readSeaflow(opp.path, transform=T)
 
 pop1 <- setGateParams(opp, popname="beads",dim.x="chl_small", dim.y="pe")

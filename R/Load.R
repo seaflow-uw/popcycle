@@ -1,7 +1,7 @@
 readSeaflow <- function(file.path, column.names = EVT.HEADER, column.size = 2, count.only=FALSE, transform=TRUE, add.yearday.file=FALSE){ 
 
-  if(!(substr(file.path, nchar(file.path)-2, nchar(file.path)) %in% c('opp','evt')))
-    warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
+  #if(!(substr(file.path, nchar(file.path)-2, nchar(file.path)) %in% c('opp','evt')))
+  #  warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
   # reads a binary seaflow event file into memory as a dataframe
   if(!file.exists(file.path)){
     

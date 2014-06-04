@@ -1,4 +1,4 @@
-plotCytogram <- function(opp, para.x, para.y, classification = TRUE){		
+plotCytogram <- function(opp, para.x, para.y, vct = TRUE){		
 	
 
 	breaks <- 10^((0:24)*3.5/24)	# log - spaced grid
@@ -12,9 +12,9 @@ plotCytogram <- function(opp, para.x, para.y, classification = TRUE){
 	nf <- layout(matrix(c(2,0,1,3),2,2,byrow=TRUE), c(3,1,3,1,3), c(1,3,1,3,1,3), TRUE)
 
 	par(mar=c(6,6,1,1),pty='s')
-	if(classification==FALSE) plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy') #plot 2D cytogram
+	if(vct==FALSE) plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy') #plot 2D cytogram
 	
-	if(classification==TRUE){
+	if(vct==TRUE){
 		plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = as.numeric(as.factor(opp$pop)), log='xy') #plot 2D cytogram
 		legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.4,bty='n')
 	}

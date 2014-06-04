@@ -31,10 +31,10 @@ vct_to_db_vct <- function(vct, cruise.name, file.name, method.name) {
   cruise = rep(cruise.name, n)
   file = rep(file.name, n)
   particle = 1:n
-  pop <- vct$pop
+  pop <- vct
   method <- rep(method.name, n)
   
-  return (cbind(cruise, file, particle, pop, method))
+  return (data.frame(cruise = cruise, file = file, particle = particle, pop = pop, method = method))
 }
 
 upload_vct <- function(db.vct) {
@@ -59,3 +59,4 @@ get_vct_by_file <- function(file_name) {
   # drop cruise, file, particle, method columns
   return (vct[,-c(1,2,3,5)])
 }
+
