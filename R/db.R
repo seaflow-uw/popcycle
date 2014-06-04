@@ -31,7 +31,7 @@ vct_to_db_vct <- function(vct, cruise.name, file.name, method.name) {
   cruise = rep(cruise.name, n)
   file = rep(file.name, n)
   particle = 1:n
-  pop <- vct$pop
+  pop <- vct
   method <- rep(method.name, n)
   
   return (cbind(cruise, file, particle, pop, method))

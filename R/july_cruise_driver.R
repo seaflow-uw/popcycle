@@ -7,21 +7,9 @@ setFilterParams <- function(width, notch) {
   write.table(params, file = filter.param.location, sep = ",", row.names=F)
 }
 
-# set gates, log old parameters if they exist
-setManualGates <- function(...) {
-  # TODO(hyrkas): implement
-}
-
 #main function
 evaluate_last_evt <- function() {
   evt_file <- get_latest_file()
-  
-  #filter evt
-  evt <- readSeaflow(evt_file)
-  
-  #get rid of path if necessary
-  file_name <- strsplit(evt_file, '/')[[1]]
-  file_name <- file_name[length(file_name)]
   
   #if we don't have filter parameters yet
   if (!file.exists(filter.param.location)) {
@@ -35,20 +23,23 @@ evaluate_last_evt <- function() {
     return()
   }
   
+  #filter evt
+  evt <- readSeaflow(paste0(evt.location, evt_file))
+  
   opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
   
   #store opp
-  upload_opp(opp_to_db_opp(opp, cruise.id, file_name))
+  upload_opp(opp_to_db_opp(opp, cruise.id, evt_file))
   
   #classify opp
   
   #if we don't have gating parameters yet
-  if (!file.exists(gating.param.location)) {
+  if (length(list.files(path=gating.param.location, pattern= ".csv", full.names=TRUE)) == 0) {
     return()
   }
   
   # TODO(hyrkas): implement manual_gate function
-  vct <- classify_opp(opp, manual_gate, gating.param.location)
+  vct <- classify_opp(opp, gating, gating.param.location)
   
   #store vct
   upload_vct(vct_to_db_vct(vct, cruise.id, evt_file, 'Manual Gating'))

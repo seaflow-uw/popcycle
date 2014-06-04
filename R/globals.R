@@ -2,7 +2,7 @@
 EVT.HEADER <- c("time","pulse_width","D1","D2",
                 "fsc_small","fsc_perp","fsc_big","pe","chl_small","chl_big")
 
-evt.location <- 'SeaFlow/datafiles/evt/'
+evt.location <- '~/SeaFlow/datafiles/evt/'
 
 # name of SQLite database containing OPP and VCT tables
 db.name <- '~/popcycle/sqlite/popcycle.db'
@@ -15,4 +15,4 @@ log.location <- '~/popcycle/logs/'
 
 # location of parameters for filter and gating params
 filter.param.location <- '~/popcycle/params/filter.csv'
-gating.param.location <- NULL # TODO(hyrkas): define
+gating.param.location <- '~/popcycle/params/gates/'

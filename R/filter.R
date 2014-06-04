@@ -1,4 +1,4 @@
-notch.filter <- function(events, width, notch) {
+filter.notch <- function(events, width, notch) {
 
   # TODO(hyrkas): if data is not log transformed, leave it be?
   if(any(max(events[,-c(1,2)]) > 10^3.5)){
