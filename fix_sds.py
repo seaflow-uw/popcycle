@@ -1,90 +1,87 @@
-from collections import defaultdict
-import os
-import sys
-import string
+DELIM = '\t'
 
-## questions: 
-## 1. if one row is correct, can we assume all rows are correct? 
-## 2. should the final sds have a certain set of columnns (left blank if no data in original)? or just the columns from the original?
-## 3. do we want to do one line at a time as they come in or all at once at the end? If one line at a time, what will the deal with the newlines be?
-## 4. should i calculate date based on utc? 
-## 5. are column names always the same and/or in the same order? 
+FILE = 'FILE'                              # str
+computerUTC = 'computerUTC'                # int (or long?)
+DMY = 'DMY'                                # str  DD-MM-YYYY
+HMS = 'HMS'                                # str  HH:MM:SS
+LAT = 'LAT'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
+LON = 'LON'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
+CONDUCTIVITY = 'CONDUCTIVITY'              # ?  -- str for now
+SALINITY = 'SALINITY'                      # float
+OCEAN_TEMP = 'OCEAN TEMP'                  # float
+BULK_RED  = 'BULK RED'                     # float
+STREAM_PRESSURE  = 'STEAM PRESSURE'        # float
+FILTER_PRESSURE  = 'FILTER PRESSURE'       # float
+MACHINE_TEMP  = 'MACHINE TEMP'             # float
+Xaccel  = 'Xaccel'                         # float
+Yaccel  = 'Yaccel'                         # float
+Zaccel  = 'Zaccel'                         # float
+MILLISECOND_TIMER  = 'MILLISECOND TIMER'   # int (or long?)
+LASER_POWER  = 'LASER POWER'               # float
+EVENT_RATE  = 'EVENT RATE'                 # int
+FLOW_METER  = 'FLOW METER'                 # float
+POSITION  = 'POSITION'                     # ? -- str for now 
+CHL  = 'CHL'                               # float
+TRANS  = 'TRANS'                           # float
+PAR = 'PAR'                                # ? -- str for now
 
-# copied from Dan's earlier code
-# not completely adapted/fixed
-def fix_file_newlines(bad_sds, good_output):
-    orig_file = open(bad_sds)
-    out_file = open(good_output, 'w')
+FLOATS = [SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, FILTER_PRESSURE, MACHINE_TEMP, 
+          Xaccel, Yaccel, Zaccel, LASER_POWER, FLOW_METER, CHL, TRANS]
+INTS = [computerUTC, MILLISECOND_TIMER]
+STRS = [FILE, DMY, HMS, POSITION, PAR]
 
-    DEBUG = False
-    if DEBUG:
-        counts = defaultdict(int)
+COLUMNS = [FILE, computerUTC, DMY, HMS, LAT, LON, CONDUCTIVITY, SALINITY, OCEAN_TEMP, 
+           BULK_RED, STEAM_PRESSURE, FILTER_PRESSURE, MACHINE_TEMP, Xaccel, Yaccel, Zaccel, MILLISECOND_TIMER, 
+           LASER_POWER, EVENT_RATE, POSITION, CHL, TRANS, PAR]
 
-    for line in orig_file:
-        # Remove any trailing newline characters
-        while len(line) > 0 and (line[-1] == '\r' or line[-1] == '\n'):
-            line = line[:-1]
-        # Split the line into fields based on tabs
-        line = line.split('\t')
+def set_columns(header_line):
+    COLUMNS = header_line.strip().split(DELIM)
 
-        # debugging: keep track of how many of each line length we saw
-        if DEBUG:
-            counts[len(line)] += 1
+# assumes that items in line are in the column same order as header
+def insert_sds_line_to_db(line, db, header_line=None):
+    if header_line:
+        set_columns(header_line)
 
-        # First line of the file, just print it
-        if line[0] == 'FILE':
-            out_file.write("%s" % '\t'.join(line))
-        # Any line that starts with 'sds', terminate the previous line and print it
-        # starts with 'sds' because all filenames start with 'sds' and are in the first column
-        elif line[0].startswith('sds'):
-            out_file.write("%s%s" % (os.linesep, '\t'.join(line)))
-        # Any other line, just print it
-        else:
-            out_file.write("%s" % '\t'.join(line))
-
-        # Terminate the lsat line
-        out_file.write(os.linesep)
-
-        # For debugging, print the line length counts to stderr
-        if DEBUG:
-            print >> sys.stderr, counts
-
-def fix_sds_file(bad_sds, good_output):
-    bad_sds_file = open(bad_sds)
-    header = bad_sds_file.readline()
-    columns = header.split('\t')
-
+    items = line.split(DELIM) # might want a check that len(items) = len(columns)
     
-    good_output_file = open(good_output, "w")
-    good_output_file.write(header + '\n')
-
-    # iterate through the remaining lines
-    for line in bad_sds_file:
-        good_output_file.write(fix_sds_line(line, columns) + '\n')
-
-def fix_sds_line(sds_line, columns):
-    line_contents = sds_line.split('\t')
-    if len(line_contents) != len(columns):
-        print "there's a problem."
-    for i, item in enumerate(line_contents):
-        column = columns[i]
-        fix_item(item, column)
-    return sds_line
-
-def fix_item(item, column):
-    print column, item
-    if column == "LAT":
-        return fix_lat(item)
-    ## etc. --> figure out what the column is and fix the data as expected
-    return item
-
-def fix_lat(bad_lat):
-    # actually return good_latlong
-    return bad_lat
-
-if __name__ == '__main__' : 
-    bad_sds_name = 'SDS/Bad_sds_2013_241.txt'
-    good_output_name = 'better_sds.txt'
-    fix_sds_file(bad_sds_name, good_output_name)
-
+    items_fixed = items + [None]*len(COLUMNS) # last len(COLUMNS) items will represent bad data
     
+    for i, item in enumerate(items):
+        if COLUMNS[i] in FLOATS:
+            try: 
+                items[i] = float(item)
+            except:
+                items[len(COLUMNS)+i-1] = item
+                items[i] = None
+        elif COLUMNS[i] in INTS:
+            try:
+                items[i] = int(item)
+            except:
+                items[len(COLUMNS)+i-1] = item
+                items[i] = None
+        else: # should be in STRS
+            if COLUMNS[i] == 'LAT' or COLUMNS[i] == 'LON':
+                # question: do they need to be fixed together or is independently ok?
+                # can we assume one is always after the other in the order?
+                items[len(COLUMNS)+i-1] = item
+                items[i] = fix_lat_or_lon(item)
+            # else, for now, assume everything else is already a string and in an ok format
+            # may want to separately check format of DMY/HMS, but not yet
+
+    # TODO: insert items_fixed into db
+
+def fix_lat_or_lon(l):
+    # try to fix -- put in Decimal Degrees (DDD) Format
+    
+    # check if WICOR format:
+    # can't find info on converting this -- help! 
+    
+    # check if NMEA (GGA) format:
+    # example: 
+    # 4807.038,N  --> Latitude 48 deg 07.038' N --> 
+    # 01131.000,E -->  Longitude 11 deg 31.000' E --> 
+
+
+    # if possible, return new lat/lon
+    # if not possible, return None
+    return None
