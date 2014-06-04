@@ -64,7 +64,6 @@ gating <- function(opp,gate_path=gating.param.location){
 
 
 ### testing
-
 #opp.path <- system.file("extdata","seaflow_cruise","2011_001", "2.evt.opp", package="flowPhyto")
 #opp <- readSeaflow(opp.path, transform=T)
 
