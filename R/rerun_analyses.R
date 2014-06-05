@@ -7,6 +7,7 @@ rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
   
   for (i in 1:length(files)) {
     evt_file = files[i]
+    print(evt_file)
     evt <- readSeaflow(paste0(evt.location, evt_file))
     
     opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
@@ -29,7 +30,7 @@ rerun_gating <- function(start_day, start_timestamp, end_day, end_timestamp) {
   files <- files_in_range(start_day, start_timestamp, end_day, end_timestamp)
   params <- read.csv(filter.param.location)
   if (length(list.files(path=gating.param.location, pattern= ".csv", full.names=TRUE)) == 0) {
-    stop('No gates are defined; stopping gating.')
+    stop('No gate paramters yet; stopping gating.')
   }
   
   for (i in 1:length(files)) {

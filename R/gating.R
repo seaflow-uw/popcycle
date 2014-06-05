@@ -1,28 +1,24 @@
-setGateParams <- function(opp, popname, dim.x, dim.y, override=TRUE){
+## merge vct to opp if vct already exist 
+setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 
   require(splancs)
   
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
-  
-  
+    
   popname <- as.character(popname)
-  dim.x <- as.character(dim.x)
-  dim.y <- as.character(dim.y)
+  para.x <- as.character(para.x)
+  para.y <- as.character(para.y)
   
-  
-  para <- c(dim.x, dim.y)
-  
-  par(mfrow=c(1,1), pty="s", cex=1)
-  plot(opp[,para], pch=16, cex=0.4, col = densCols(log10(opp[,para]), colramp = cols), main=paste("Set Gate for:",popname), log='xy') #plot 2D cytogram
+  par(mfrow=c(1,1))
+  plot.vct.cytogram(opp, para.x, para.y)
+  mtext(paste("Set Gate for:",popname))
   poly <- getpoly(quiet=TRUE) # Draw Gate
-  colnames(poly) <- para
+  colnames(poly) <- c(para.x, para.y)
   
-  write.csv(poly, paste(gating.param.location, "/",popname,".csv",sep=""), quote=FALSE, row.names=FALSE)
-  
-  
-  time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
+  time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
   gating.log.location <- paste0(log.location, "/'", time, "_", popname, ".csv")
   write.csv(poly, gating.log.location, quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(gating.param.location, popname,".csv"), quote=FALSE, row.names=FALSE)
   
   return(poly)
 
@@ -32,7 +28,7 @@ gating <- function(opp,gate_path=gating.param.location){
 
   opp$pop <- "unknown"
   
-  list.params <- list.files(path=gate_path, pattern= ".csv", full.names=TRUE)
+  list.params <- list.files(gating.param.location, pattern= ".csv", full.names=TRUE)
 
 	for(p in list.params){
 

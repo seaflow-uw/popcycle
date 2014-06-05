@@ -8,14 +8,13 @@ evaluate_last_evt <- function() {
   }
   
   print(paste('Analyzing', evt_file)
-  
   #if we don't have filter parameters yet
   if (!file.exists(filter.param.location)) {
     print('No filtering parameters have been set; skipping filtering.')
     return()
   }
   
-  params <- read.csv(filter.param.location)
+  params <- read.csv(paste0(filter.param.location,"filter.csv"))
   
   if (is.null(params$notch) || is.null(params$width)) {
     print('Notch or Width is not defined; skipping filtering.')
