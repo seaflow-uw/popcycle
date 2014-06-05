@@ -11,15 +11,23 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
   
   par(mfrow=c(1,1))
   plot.vct.cytogram(opp, para.x, para.y)
-  mtext(paste("Set Gate for:",popname))
+  mtext(paste("Set Gate for:",popname), font=2)
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
   
-  write.csv(poly, paste0(gating.param.location, popname,".csv"), quote=FALSE, row.names=FALSE)
-   
+# if gating parameters already exist for hte population, remove them
+    list.params <- list.files(gating.param.location, pattern= ".csv", full.names=TRUE)
+	id <- grep(popname, list.params)
+	if(length(id) == 1) system(paste("rm", list.params[id]))
+
+# Save gating
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  write.csv(poly, paste0(gating.param.location_archived, popname,".",time,".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(gating.param.location, time, "_",popname,".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(gating.param.location_archived, time, "_",popname,".csv"), quote=FALSE, row.names=FALSE)
   
+
+
+
   return(poly)
 
 }
@@ -38,7 +46,7 @@ gating <- function(opp,gating.param.location){
 
 	for(p in list.params){
 
-		pop <- basename(sub(".csv","",p)) # name of the population
+		pop <- sub(".csv","",strsplit(basename(p),"_")[2]) # name of the population
 		poly <- read.csv(p) # Get parameters of the gate for this population
 		para <- colnames(poly)
 		df <- subset(opp, pop=="unknown")[,para]

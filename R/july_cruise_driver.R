@@ -7,7 +7,7 @@ setFilterParams <- function(width, notch) {
   write.table(params, file = paste0(filter.param.location,"filter.csv"), sep = ",", row.names=F)
 
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  write.table(params, file = paste0(filter.param.location_archived,"filter.",time,".csv"), sep = ",", row.names=F)
+  write.table(params, file = paste0(filter.param.location_archived,time, "_filter.csv"), sep = ",", row.names=F)
 
 }
 
