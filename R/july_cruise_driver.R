@@ -7,7 +7,7 @@ evaluate_last_evt <- function() {
     return()
   }
   
-  print(paste('Analyzing', evt_file)
+  print(paste('Analyzing', evt_file))
   #if we don't have filter parameters yet
   if (!file.exists(filter.param.location)) {
     print('No filtering parameters have been set; skipping filtering.')
@@ -23,7 +23,7 @@ evaluate_last_evt <- function() {
   
   #filter evt
 
-  print(paste('Filtering', evt_file)
+  print(paste('Filtering', evt_file))
   
   evt <- readSeaflow(paste0(evt.location, evt_file))
   
@@ -43,7 +43,7 @@ evaluate_last_evt <- function() {
     return()
   }
   
-  print(paste('Classifying'), evt_file)
+  print(paste('Classifying', evt_file))
   
   vct <- classify_opp(opp, gating, gating.param.location)
   
