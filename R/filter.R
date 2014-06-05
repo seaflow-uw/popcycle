@@ -1,6 +1,25 @@
+# set width and notch, log old parameters if they exist
+setFilterParams <- function(width, notch) {
+  params <- data.frame(width = width, notch = notch)
+  
+  #log
+  time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
+  log.file <- paste(log.location, 'filter.csv', sep='/')
+  
+  if (file.exists(log.file)) {  
+    write.table(cbind(time, width, notch), log.file, 
+                row.names = F, col.names = F, append = T)  
+  } else {
+    write.table(data.frame(time=time, width=width, notch=notch), log.file,
+                row.names = F, col.names = T, append = T)
+  }
+  
+  #write params
+  write.table(params, file = filter.param.location, sep = ",", row.names=F)
+}
+
 filter.notch <- function(evt, width, notch) {
 
-  # TODO(hyrkas): if data is not log transformed, leave it be?
   if(any(max(evt[,-c(1,2)]) > 10^3.5)){
     stop(paste("ERROR, data are not LOG-transform"))
   }

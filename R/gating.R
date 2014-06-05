@@ -20,19 +20,13 @@ setGateParams <- function(opp, popname, dim.x, dim.y, override=TRUE){
   write.csv(poly, paste(gating.param.location, "/",popname,".csv",sep=""), quote=FALSE, row.names=FALSE)
   
   
-  #time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  # TODO(hyrkas): add archive_folder for Params in Globals
-  #write.csv(poly, paste(gating.param.location_archived, "/",popname,".",time,".csv",sep=""), quote=FALSE, row.names=FALSE)
+  time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
+  gating.log.location <- paste0(log.location, "/'", time, "_", popname, ".csv")
+  write.csv(poly, gating.log.location, quote=FALSE, row.names=FALSE)
   
   return(poly)
 
 }
-
-
-
-
-
-
 
 gating <- function(opp,gate_path=gating.param.location){
 

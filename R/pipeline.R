@@ -29,5 +29,3 @@ classify_opp <- function(opp, classify_func, ...) {
   
   return (vct)
 }
-
-# TODO(hyrkas): add summarization wrapper
