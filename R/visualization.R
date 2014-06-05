@@ -1,20 +1,27 @@
-plot.cytogram <- function(opp, para.x, para.y, vct = FALSE){		
+plot.cytogram <- function(opp, para.x, para.y){		
 	
-
 	cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
-
 	par(pty='s')
-
-	if(vct==FALSE) plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy') #plot 2D cytogram
+	plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy') #plot 2D cytogram
 	
-	if(vct==TRUE){
-
-		plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = as.numeric(as.factor(opp$pop)), log='xy') #plot 2D cytogram
-		legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.4,bty='n')
-	}	  
-
 }
 
+## OPP merged with VCT
+plot.vct.cytogram <- function(opp,para.x, para.y){		
+		
+	par(pty='s')
+		
+		if(!is.null(opp$pop)){
+		plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = as.numeric(as.factor(opp$pop)), log='xy') #plot 2D cytogram
+		legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.4,bty='n')
+		}else{
+			print("No Gating parameters found !")
+			plot(opp[,c(para.x, para.y)], pch=16, cex=0.4, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy')
+			mtext(paste("No Gating parameters found !"),3,line=1,font=2)
+		}	  
+
+	}
+}
 
 
 plot.filter.cytogram <- function(evt, width=0.5, notch=1){

@@ -14,5 +14,9 @@ cruise.id <- 'july2014'
 log.location <- '~/popcycle/logs/'
 
 # location of parameters for filter and gating params
-filter.param.location <- '~/popcycle/params/filter.csv'
+filter.param.location <- '~/popcycle/params/filter/'
 gating.param.location <- '~/popcycle/params/gates/'
+
+# location of parameters for filter and gating params
+filter.param.location_archived <- '~/popcycle/params/filter_archived/'
+gating.param.location_archived <- '~/popcycle/params/gates_archived/'
