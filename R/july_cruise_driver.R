@@ -8,6 +8,7 @@ setFilterParams <- function(width, notch) {
 }
 
 #main function
+# TODO(hyrkas): print output for this function
 evaluate_last_evt <- function() {
   evt_file <- get_latest_file()
   
@@ -38,7 +39,6 @@ evaluate_last_evt <- function() {
     return()
   }
   
-  # TODO(hyrkas): implement manual_gate function
   vct <- classify_opp(opp, gating, gating.param.location)
   
   #store vct

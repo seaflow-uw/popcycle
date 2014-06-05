@@ -18,9 +18,16 @@ upload_opp <- function(db.opp) {
   dbWriteTable(conn = con, name = opp.table.name, value = db.opp, row.names=FALSE, append=TRUE)
 }
 
-# should only be called when re-running filtering step
+# these delete functions should only be called when re-running analyses
 .delete_opp_by_file <- function(file_name) {
   sql <- paste0("DELETE FROM ", opp.table.name, " WHERE file == '", 
+                file_name, "'")
+  con <- dbConnect(SQLite(), dbname = db.name)
+  dbGetQuery(con, sql)
+}
+
+.delete_vct_by_file <- function(file_name) {
+  sql <- paste0("DELETE FROM ", vct.table.name, " WHERE file == '", 
                 file_name, "'")
   con <- dbConnect(SQLite(), dbname = db.name)
   dbGetQuery(con, sql)
@@ -60,3 +67,10 @@ get_vct_by_file <- function(file_name) {
   return (vct[,-c(1,2,3,5)])
 }
 
+get_opp_by_files <- function(...) {
+  #TODO(hyrkas): implement
+}
+
+get_vct_by_files <- function(...) {
+  #TODO(hyrkas): implement
+}
