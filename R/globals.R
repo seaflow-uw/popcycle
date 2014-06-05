@@ -10,9 +10,6 @@ opp.table.name <- 'opp'
 vct.table.name <- 'vct'
 cruise.id <- 'july2014'
 
-# location to log filtering and gating parameters
-log.location <- '~/popcycle/logs/'
-
 # location of parameters for filter and gating params
 filter.param.location <- '~/popcycle/params/filter/'
 gating.param.location <- '~/popcycle/params/gates/'

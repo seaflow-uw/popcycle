@@ -9,5 +9,6 @@ mkdir ~/popcycle/params/gates_archived
 mkdir ~/popcycle/params/filter_archived
 
 mkdir ~/popcycle/logs
+mkdir ~/popcycle/logs/gates
 
 sqlite3 ~/popcycle/sqlite/popcycle.db < sql/popcycle.sql

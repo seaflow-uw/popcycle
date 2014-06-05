@@ -22,23 +22,18 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 
 # Save gating
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  write.csv(poly, paste0(gating.param.location, time, "_",popname,".csv"), quote=FALSE, row.names=FALSE)
-  write.csv(poly, paste0(gating.param.location_archived, time, "_",popname,".csv"), quote=FALSE, row.names=FALSE)
+  gating.log.location_archived <- paste0(gating.param.location_archived, "/'", time, "_", popname, ".csv")
+  write.csv(poly, gating.log.location_archived, quote=FALSE, row.names=FALSE)
   
-
+  gating.log.location <- paste0(gating.param.location, "/'", time, "_", popname, ".csv")
+  write.csv(poly, gating.log.location, quote=FALSE, row.names=FALSE)
 
 
   return(poly)
 
 }
 
-
-
-
-
-
-
-gating <- function(opp,gating.param.location){
+gating <- function(opp,gate_path=gating.param.location){
 
   opp$pop <- "unknown"
   

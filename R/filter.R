@@ -1,3 +1,23 @@
+# set width and notch, log old parameters if they exist
+setFilterParams <- function(width, notch) {
+  params <- data.frame(width = width, notch = notch)
+  
+  #log
+  time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
+  log.file <- paste(filter.param.location_archived, 'filter.csv', sep='/')
+  
+  if (file.exists(log.file)) {  
+    write.table(data.frame(time=time, width=width, notch=notch), log.file, 
+                row.names = F, col.names = F, append = T, quote=F)  
+  } else {
+    write.table(data.frame(time=time, width=width, notch=notch), log.file,
+                row.names = F, col.names = T, quote=F)
+  }
+  
+  #write params
+  write.table(params, file = paste(filter.param.location, 'filter.csv', sep='/'), sep = ",", row.names=F)
+}
+
 filter.notch <- function(evt, width, notch) {
 
   notch <- as.numeric(notch)
