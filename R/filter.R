@@ -40,8 +40,9 @@ filter.notch <- function(evt, width, notch) {
   if(origin < 1) aligned <- subset(evt, D2 < ((D1/origin) * width) & D2 > ((D1/origin)/ width))
     
   # filtering focused particles (D/fsc_small < notch)
-  opp <- subset(aligned, D1/fsc_small < notch | D2/fsc_small < notch) 
-     
+  if(origin > 1) opp <- subset(aligned, D1/fsc_small < notch | D2*origin/fsc_small < notch) 
+  if(origin < 1) opp <- subset(aligned, (D1/origin)/fsc_small < notch | D2/fsc_small < notch) 
+      
   return(opp)
 }
 
@@ -63,7 +64,7 @@ best.filter.notch <- function(evt, notch=seq(0.4, 1.4, by=0.1),width =1, do.plot
   if(do.plot){
   par(mfrow=c(2,1),cex=1)
   par(pty='m')
-  plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch)); points(best.notch, DF$fsc.max[best.notch.id], col=2, pch=16)
+  plot(DF[,c('notch', 'fsc.max')],ylim=c(1,10^3.5), main=paste("Best notch=",best.notch)); points(best.notch, DF$fsc.max[best.notch.id], col=2, pch=16)
   opp <- filter.notch(evt, notch=best.notch, width=width)
   plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
   }

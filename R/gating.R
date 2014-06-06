@@ -15,10 +15,15 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
 
+# Remove old param gates
+  list.params <- list.files(param.gate.location, pattern= ".csv", full.names=TRUE)
+  id <- grep(popname,list.params)
+  system(paste("rm",list.params[id]))
+  
 # Save gating
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  write.csv(poly, paste0(log.gate.location, "/", time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
-  write.csv(poly, paste0(param.gate.location, "/", time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(log.gate.location, time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(param.gate.location, time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
 
 
   return(poly)
