@@ -24,11 +24,11 @@ evaluate_last_evt <- function() {
   #filter evt
   
   # file_name for db should get rid of directory structure
-  file_name = remove_path(evt_file)
+  file_name = basename(evt_file)
 
   print(paste('Filtering', evt_file))
   
-  evt <- readSeaflow(paste0(evt.location, evt_file))
+  evt <- readSeaflow(paste(evt.location, evt_file, sep='/'))
   
   opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
   

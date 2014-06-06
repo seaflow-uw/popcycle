@@ -8,14 +8,15 @@ setFilterParams <- function(width, notch) {
   
   if (file.exists(log.file)) {  
     write.table(data.frame(time=time, widht=width, notch=notch), log.file, 
-                row.names = F, col.names = F, append = T, quote = F)  
+                row.names = F, col.names = F, append = T, quote = F, sep=',')  
   } else {
     write.table(data.frame(time=time, width=width, notch=notch), log.file,
-                row.names = F, col.names = T, append = T, quote=F)
+                row.names = F, col.names = T, quote=F, sep=',')
   }
   
   #write params
-  write.table(params, file = paste(param.filter.location, 'filter.csv', sep='/'), sep = ",", row.names=F)
+  write.table(params, file = paste(param.filter.location, 'filter.csv', sep='/'), sep = ",",
+              quote=F, row.names=F)
 }
 
 filter.notch <- function(evt, width, notch) {

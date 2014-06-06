@@ -68,4 +68,4 @@ CREATE TABLE sfl (
   steam_pressure REAL,
   event_rate INTEGER,
   PRIMARY KEY (cruise, file)
---);
+);
