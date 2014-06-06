@@ -16,8 +16,8 @@ rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
     # store opp
     upload_opp(opp_to_db_opp(opp, cruise.id, evt_file))
     
-    if (length(list.files(path=gating.param.location, pattern= ".csv", full.names=TRUE)) > 0) {
-      vct <- classify_opp(opp, gating, gating.param.location)
+    if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) > 0) {
+      vct <- classify_opp(opp, gating, param.gate.location)
       # delete old vct entries if they exist so we keep cruise/file/particle distinct
       .delete_vct_by_file(evt_file)
       # store vct
@@ -28,15 +28,15 @@ rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
 
 rerun_gating <- function(start_day, start_timestamp, end_day, end_timestamp) {
   files <- files_in_range(start_day, start_timestamp, end_day, end_timestamp)
-  params <- read.csv(filter.param.location)
-  if (length(list.files(path=gating.param.location, pattern= ".csv", full.names=TRUE)) == 0) {
-    stop('No gate paramters yet; stopping gating.')
+  params <- read.csv(param.filter.locationn)
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
+    stop('No gate paramters yet; no gating.')
   }
   
   for (i in 1:length(files)) {
     evt_file = files[i]    
     opp <- get_opp_by_file(evt_file)
-    vct <- classify_opp(opp, gating, gating.param.location)
+    vct <- classify_opp(opp, gating, param.gate.location)
     # delete old vct entries if they exist so we keep cruise/file/particle distinct
     .delete_vct_by_file(evt_file)
     # store vct

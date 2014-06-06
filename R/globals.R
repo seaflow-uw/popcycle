@@ -15,6 +15,7 @@ log.location <- '~/popcycle/logs/'
 log.gate.location <- paste(log.location, 'gates/', sep='/')
 log.filter.location <- paste(log.location, 'filter/', sep='/')
 
-# location of parameters for filter and gating params
-filter.param.location <- '~/popcycle/params/filter/'
-gating.param.location <- '~/popcycle/params/gates/'
+# location of parameters for filter and gating 
+param.location <- '~/popcycle/params/'
+param.gate.location <- paste(param.location, 'gates/', sep='/')
+param.filter.location <- paste(param.location, 'filter/', sep='/')

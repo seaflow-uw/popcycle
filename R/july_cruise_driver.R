@@ -9,12 +9,12 @@ evaluate_last_evt <- function() {
   
   print(paste('Analyzing', evt_file))
   #if we don't have filter parameters yet
-  if (!file.exists(paste(filter.param.location, 'filter.csv', sep='/'))) {
+  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {
     print('No filtering parameters have been set; skipping filtering.')
     return()
   }
   
-  params <- read.csv(paste(filter.param.location,"filter.csv", sep='/'))
+  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))
   
   if (is.null(params$notch) || is.null(params$width)) {
     print('Notch or Width is not defined; skipping filtering.')
@@ -38,14 +38,14 @@ evaluate_last_evt <- function() {
   #classify opp
   
   #if we don't have gating parameters yet
-  if (length(list.files(path=gating.param.location, pattern= ".csv", full.names=TRUE)) == 0) {
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
     print('No gating parameters have been set; skipping gating.')
     return()
   }
   
   print(paste('Classifying', evt_file))
   
-  vct <- classify_opp(opp, gating, gating.param.location)
+  vct <- classify_opp(opp, gating, param.gate.location)
   
   #store vct
   print('Uploading labels to the database')

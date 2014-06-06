@@ -15,7 +15,7 @@ setFilterParams <- function(width, notch) {
   }
   
   #write params
-  write.table(params, file = paste(filter.param.location, 'filter.csv', sep='/'), sep = ",", row.names=F)
+  write.table(params, file = paste(param.filter.location, 'filter.csv', sep='/'), sep = ",", row.names=F)
 }
 
 filter.notch <- function(evt, width, notch) {

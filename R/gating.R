@@ -17,22 +17,19 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 
 # Save gating
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  gating.log.location_archived <- paste0(log.gate.location, "/", time, "_", popname, ".csv")
-  write.csv(poly, gating.log.location_archived, quote=FALSE, row.names=FALSE)
-  
-  gating.log.location <- paste0(gating.param.location, "/", time, "_", popname, ".csv")
-  write.csv(poly, gating.log.location, quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(log.gate.location, "/", time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(param.gate.location, "/", time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
 
 
   return(poly)
 
 }
 
-gating <- function(opp,gate_path=gating.param.location){
+gating <- function(opp,gate_path=param.gate.location){
 
   opp$pop <- "unknown"
   
-  list.params <- list.files(gating.param.location, pattern= ".csv", full.names=TRUE)
+  list.params <- list.files(param.gate.location, pattern= ".csv", full.names=TRUE)
 
 	for(p in list.params){
 
