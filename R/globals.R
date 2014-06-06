@@ -12,6 +12,8 @@ cruise.id <- 'july2014'
 
 # location to log filtering and gating parameters
 log.location <- '~/popcycle/logs/'
+log.gate.location <- paste(log.location, 'gates/', sep='/')
+log.filter.location <- paste(log.location, 'filter/', sep='/')
 
 # location of parameters for filter and gating params
 filter.param.location <- '~/popcycle/params/filter/'

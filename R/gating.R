@@ -14,15 +14,10 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
-  
-# if gating parameters already exist for hte population, remove them
-    list.params <- list.files(gating.param.location, pattern= ".csv", full.names=TRUE)
-	id <- grep(popname, list.params)
-	if(length(id) == 1) system(paste("rm", list.params[id]))
 
 # Save gating
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  gating.log.location_archived <- paste0(gating.param.location_archived, "/'", time, "_", popname, ".csv")
+  gating.log.location_archived <- paste0(log.gate.location, "/", time, "_", popname, ".csv")
   write.csv(poly, gating.log.location_archived, quote=FALSE, row.names=FALSE)
   
   gating.log.location <- paste0(gating.param.location, "/'", time, "_", popname, ".csv")

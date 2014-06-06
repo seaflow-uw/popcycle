@@ -4,18 +4,18 @@ setFilterParams <- function(width, notch) {
   
   #log
   time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
-  log.file <- paste(log.location, 'filter.csv', sep='/')
+  log.file <- paste(log.filter.location, 'filter.csv', sep='/')
   
   if (file.exists(log.file)) {  
-    write.table(cbind(time, width, notch), log.file, 
-                row.names = F, col.names = F, append = T)  
+    write.table(data.frame(time=time, widht=width, notch=notch), log.file, 
+                row.names = F, col.names = F, append = T, quote = F)  
   } else {
     write.table(data.frame(time=time, width=width, notch=notch), log.file,
-                row.names = F, col.names = T, append = T)
+                row.names = F, col.names = T, append = T, quote=F)
   }
   
   #write params
-  write.table(params, file = filter.param.location, sep = ",", row.names=F)
+  write.table(params, file = paste(filter.param.location, 'filter.csv', sep='/'), sep = ",", row.names=F)
 }
 
 filter.notch <- function(evt, width, notch) {

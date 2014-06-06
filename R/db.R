@@ -1,17 +1,3 @@
-# TODO(hyrkas): decide if con should be invoked every upload operation or if there
-# should be one connection parameter. right now we'll stick with invoking
-# every time
-
-# TODO(hyrkas): maybe add checks to make sure that db.name, opp.table.name and 
-# vct.table.name are defined in the constants file?
-
-# TODO(hyrkas): decide if con should be invoked every upload operation or if there
-# should be one connection parameter. right now we'll stick with invoking
-# every time
-
-# TODO(hyrkas): maybe add checks to make sure that db.name, opp.table.name and 
-# vct.table.name are defined in the constants file?
-
 library(RSQLite)
 
 opp_to_db_opp <- function(opp, cruise.name, file.name) {

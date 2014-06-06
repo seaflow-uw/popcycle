@@ -1,17 +1,3 @@
-# set width and notch, log old parameters if they exist
-setFilterParams <- function(width, notch) {
-  params <- data.frame(width = width, notch = notch)
-  
-  # TODO(hyrkas): log old params
-  
-  write.table(params, file = paste0(filter.param.location,"filter.csv"), sep = ",", row.names=F)
-
-  time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  write.table(params, file = paste0(filter.param.location_archived,time, "_filter.csv"), sep = ",", row.names=F)
-
-}
-
-
 #main function
 evaluate_last_evt <- function() {
   evt_file <- get_latest_file()
@@ -23,12 +9,12 @@ evaluate_last_evt <- function() {
   
   print(paste('Analyzing', evt_file))
   #if we don't have filter parameters yet
-  if (!file.exists(filter.param.location)) {
+  if (!file.exists(paste(filter.param.location, 'filter.csv', sep='/'))) {
     print('No filtering parameters have been set; skipping filtering.')
     return()
   }
   
-  params <- read.csv(paste0(filter.param.location,"filter.csv"))
+  params <- read.csv(paste(filter.param.location,"filter.csv", sep='/'))
   
   if (is.null(params$notch) || is.null(params$width)) {
     print('Notch or Width is not defined; skipping filtering.')
