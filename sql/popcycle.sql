@@ -52,13 +52,20 @@ CREATE TABLE vct (
   PRIMARY KEY (cruise, file, particle)
 );
 
---CREATE TABLE sds (
-  -- First two columns are the SDS composite key
---  cruise TEXT NOT NULL,
---  file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
-  -- Next we have the measurements
-  -- TODO(@cobbc12) fill in these. note that I made them NULL-able.
---  lat REAL,
---  lon REAL,
---  PRIMARY KEY (cruise, file)
+CREATE TABLE sfl (
+  --First two columns are the SDS composite key
+  cruise TEXT NOT NULL,
+  file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
+  date TEXT,
+  file_duration REAL,
+  lat REAL,
+  lon REAL,
+  conductivity REAL,
+  salinity REAL,
+  ocean_tmp REAL,
+  par REAL,
+  bulk_red REAL,
+  steam_pressure REAL,
+  event_rate INTEGER,
+  PRIMARY KEY (cruise, file)
 --);
