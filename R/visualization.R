@@ -14,7 +14,7 @@ plot.vct.cytogram <- function(opp,para.x, para.y){
 			plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), log='xy') #plot 2D cytogram
 			legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
 		}else{
-			print("No Gating parameters yet !")
+			print("No Gating parameters yet!")
 			plot.cytogram(opp, para.x, para.y)
 			mtext(paste("No Gating parameters yet!"),3,line=-1,font=2)
 		}
