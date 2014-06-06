@@ -1,13 +1,15 @@
 DELIM = '\t'
 
+CRUISE = 'CRUISE'                          # str
 FILE = 'FILE'                              # str
+date = 'DATE'                              # str
 FILE_DURATION = 'FILE DURATION'            # float
 LAT = 'LAT'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
 LON = 'LON'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
-CONDUCTIVITY = 'CONDUCTIVITY'              # ?  -- str for now
+CONDUCTIVITY = 'CONDUCTIVITY'              # float
 SALINITY = 'SALINITY'                      # float
 OCEAN_TEMP = 'OCEAN TEMP'                  # float
-PAR = 'PAR'                                # ? -- str for now
+PAR = 'PAR'                                # float
 BULK_RED  = 'BULK RED'                     # float
 STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
 EVENT_RATE  = 'EVENT RATE'                 # int
@@ -16,11 +18,16 @@ FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUC
 INTS = [EVENT_RATE]
 STRS = [FILE, LAT, LON, PAR]
 
-DB_COLUMNS = ['FILE', 'FILE_DURATION', 'LAT', 'LON', 'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED', 'STREAM_PRESSURE', 'EVENT_RATE'] 
+DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
+              'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
+              'STREAM_PRESSURE', 'EVENT_RATE']
+
+# default for july 2014 cruise, change later
+cruise_id = 'july2014'
 
 
 # takes data and header as lists, dbpath as a string
-def fix_and_insert_sfl(data, header, dbpath):
+def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     if len(data) != len(header):
         raise IndexError("Different number of items in data and header: h - " + str(len(header)) + ", d - " + str(len(data)))
 
@@ -42,14 +49,22 @@ def fix_and_insert_sfl(data, header, dbpath):
                 dbcolumn_to_fixed_data[h] = None
         elif h in STRS:
             h = h.strip().replace(' ', '_')
-            if h == LAT or h == LON: 
-                dbcolumn_to_fixed_data[h] = fix_lat_or_lon(d)
+            if h == LAT or h == LON:
+                # do this at some point
+                # dbcolumn_to_fixed_data[h] = fix_lat_or_lon(d)
+                # delete this later
+                try:
+                  dbcolumn_to_fixed_data[h] = d
+                except:
+                  dbcolumn_to_fixed_data[h] = None
             else:
                 try:
                     dbcolumn_to_fixed_data[h] = d
                 except:
                     dbcolumn_to_fixed_data[h] = None
         # else, do nothing
+        
+    dbcolumn_to_fixed_data[CRUISE] = cruise
             
     # any fields that weren't passed in should be None
     for c in DB_COLUMNS:

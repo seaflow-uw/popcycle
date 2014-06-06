@@ -32,3 +32,8 @@ files_in_range <- function(start_day, start_timestamp, end_day, end_timestamp) {
   
   return(file_list[start_index:end_index])
 }
+
+remove_path <- function(evt_file) {
+  tmp <- strsplit(evt_file, '/')
+  return (tmp[[1]][length(tmp)])
+}

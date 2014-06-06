@@ -22,6 +22,9 @@ evaluate_last_evt <- function() {
   }
   
   #filter evt
+  
+  # file_name for db should get rid of directory structure
+  file_name = remove_path(evt_file)
 
   print(paste('Filtering', evt_file))
   
@@ -33,7 +36,7 @@ evaluate_last_evt <- function() {
   
   print('Uploading filtered particles to database')
   
-  upload_opp(opp_to_db_opp(opp, cruise.id, evt_file))
+  upload_opp(opp_to_db_opp(opp, cruise.id, file_name))
   
   #classify opp
   
@@ -50,5 +53,5 @@ evaluate_last_evt <- function() {
   #store vct
   print('Uploading labels to the database')
   
-  upload_vct(vct_to_db_vct(vct, cruise.id, evt_file, 'Manual Gating'))
+  upload_vct(vct_to_db_vct(vct, cruise.id, file_name, 'Manual Gating'))
 }
