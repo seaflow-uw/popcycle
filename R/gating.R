@@ -15,31 +15,47 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
 
-# Remove old param gates
-  list.params <- list.files(param.gate.location, pattern= ".csv", full.names=TRUE)
-  id <- grep(popname,list.params)
-  system(paste("rm",list.params[id]))
-  
+  poly.l <- list(poly)
+  names(poly.l) <- popname
+
 # Save gating
   time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
-  write.csv(poly, paste0(log.gate.location, time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
-  write.csv(poly, paste0(param.gate.location, time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(log.gate.location, "/",time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
+  write.csv(poly, paste0(param.gate.location, "/",popname, ".csv"), quote=FALSE, row.names=FALSE)
 
+# load the list of gate parameters
+  params <- try(load(paste0(param.gate.location,"/params.RData")),silent=T)
+# if list already exists, modify the list, if not, save the list
+  if(class(params)==("try-error")){
+     poly.log <- poly.l
+     save(poly.log, file=paste0(param.gate.location,"/params.RData"))
+   }else{
+    id <- which(names(poly.log) == popname)
+          if(length(id)>0){ # if gate paramters for the same population already exist, overwrite. 
+          poly.log[[id]] <- poly
+        }else{poly.log <- c(poly.log, poly.l)} # otherwise, add the new gate parameters to the end of the array.
+   save(poly.log, file=paste0(param.gate.location,"/params.RData"))
+  }
 
   return(poly)
 
 }
 
-gating <- function(opp,gate_path=param.gate.location){
+
+Gating <- function(opp,gate_path=param.gate.location){
 
   opp$pop <- "unknown"
   
-  list.params <- list.files(param.gate.location, pattern= ".csv", full.names=TRUE)
+  params <- try(load(paste0(param.gate.location,"/params.RData")),silent=T)
+  if(class(params)==("try-error")){
+    print("No gate parameters found!")
+    stop
+   }
 
-	for(p in list.params){
-
-		pop <- sub(".csv","",strsplit(basename(p),"_")[2]) # name of the population
-		poly <- read.csv(p) # Get parameters of the gate for this population
+	for(i in 1:length(poly.log)){
+		pop <- names(poly.log[i]) # name of the population
+    print(paste('Gating',pop))
+		poly <- poly.log[i][[1]] # Get parameters of the gate for this population
 		para <- colnames(poly)
 		df <- subset(opp, pop=="unknown")[,para]
 
@@ -54,25 +70,9 @@ gating <- function(opp,gate_path=param.gate.location){
 }
 
 
+resetGateParams <- function(){
 
+  system(paste0("rm ", param.gate.location,"/*.csv"))
+  system(paste0("rm ", param.gate.location,"/*.RData"))
 
-
-
-
-### testing
-#opp.path <- system.file("extdata","seaflow_cruise","2011_001", "2.evt.opp", package="flowPhyto")
-#opp <- readSeaflow(opp.path, transform=T)
-
-#pop1 <- setGateParams(opp, popname="beads",dim.x="chl_small", dim.y="pe")
-#pop2 <- setGateParams(opp, popname="synecho",dim.x="fsc_small", dim.y="chl_small")
-
-#vct <- gating(opp)
-
-
-
-
-
-
-
-
-
+}
