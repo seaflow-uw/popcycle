@@ -1,95 +1,80 @@
-# For new seaflow log file (replace SDS file)
-
 DELIM = '\t'
 
 FILE = 'FILE'                              # str
+FILE_DURATION = 'FILE DURATION'            # float
 LAT = 'LAT'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
 LON = 'LON'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
-CONDUCTIVITY = 'CONDUCTIVITY'              # float
+CONDUCTIVITY = 'CONDUCTIVITY'              # ?  -- str for now
 SALINITY = 'SALINITY'                      # float
 OCEAN_TEMP = 'OCEAN TEMP'                  # float
+PAR = 'PAR'                                # ? -- str for now
 BULK_RED  = 'BULK RED'                     # float
-STREAM_PRESSURE  = 'STEAM PRESSURE'        # float
-FILTER_PRESSURE  = 'FILTER PRESSURE'       # float
-MACHINE_TEMP  = 'MACHINE TEMP'             # float
-Xaccel  = 'Xaccel'                         # float
-Yaccel  = 'Yaccel'                         # float
-Zaccel  = 'Zaccel'                         # float
-LASER_POWER  = 'LASER POWER'               # float
+STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
 EVENT_RATE  = 'EVENT RATE'                 # int
-POSITION  = 'POSITION'                     # str
-CHL  = 'CHL'                               # float
-TRANS  = 'TRANS'                           # float
-PAR = 'PAR'                                # float
 
-FLOATS = [SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, FILTER_PRESSURE, MACHINE_TEMP, 
-          Xaccel, Yaccel, Zaccel, LASER_POWER, CHL, TRANS, PAR]
+FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUCTIVITY]
 INTS = [EVENT_RATE]
-STRS = [FILE, LAT, LON, POSITION]
+STRS = [FILE, LAT, LON, PAR]
 
-COLUMNS = [FILE, LAT, LON, CONDUCTIVITY, SALINITY, OCEAN_TEMP, 
-           BULK_RED, STEAM_PRESSURE, FILTER_PRESSURE, MACHINE_TEMP, Xaccel, Yaccel, Zaccel, 
-           LASER_POWER, EVENT_RATE, POSITION, CHL, TRANS, PAR]
+DB_COLUMNS = ['FILE', 'FILE_DURATION', 'LAT', 'LON', 'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED', 'STREAM_PRESSURE', 'EVENT_RATE'] 
 
-def set_columns(header_line):
-    COLUMNS = header_line.strip().split(DELIM)
 
-# assumes that items in line are in the column same order as header or current COLUMNS
-def insert_sds_line_to_db(line, dbpath, header_line=None):
-    if header_line:
-        set_columns(header_line)
+# takes data and header as lists, dbpath as a string
+def fix_and_insert_sfl(data, header, dbpath):
+    if len(data) != len(header):
+        raise IndexError("Different number of items in data and header: h - " + str(len(header)) + ", d - " + str(len(data)))
 
-    items = line.split(DELIM) # might want a check that len(items) = len(columns)
+    dbcolumn_to_fixed_data = {}
     
-    items_fixed = items + [None]*len(COLUMNS) # last len(COLUMNS) items will represent bad data
-    
-    for i, item in enumerate(items):
-        if COLUMNS[i] in FLOATS:
-            try: 
-                items[i] = float(item)
-            except:
-                items[len(COLUMNS)+i-1] = item
-                items[i] = None
-        elif COLUMNS[i] in INTS:
+    for d, h in zip(data, header):
+        h = h.upper()
+        if h in FLOATS:
+            h = h.strip().replace(' ', '_')
             try:
-                items[i] = int(item)
+                dbcolumn_to_fixed_data[h] = float(d)
             except:
-                items[len(COLUMNS)+i-1] = item
-                items[i] = None
-        else: # should be in STRS
-            if COLUMNS[i] == 'LAT' or COLUMNS[i] == 'LON':
-                # question: do they need to be fixed together or is independently ok?
-                # can we assume one is always after the other in the order?
-                items[len(COLUMNS)+i-1] = item
-                items[i] = fix_lat_or_lon(item)
-            # else, for now, assume everything else is already a string and in an ok format
-            # may want to separately check format of DMY/HMS, but not yet
+                dbcolumn_to_fixed_data[h] = None
+        elif h in INTS:
+            h = h.strip().replace(' ', '_')
+            try:
+                dbcolumn_to_fixed_data[h] = int(d)
+            except:
+                dbcolumn_to_fixed_data[h] = None
+        elif h in STRS:
+            h = h.strip().replace(' ', '_')
+            if h == LAT or h == LON: 
+                dbcolumn_to_fixed_data[h] = fix_lat_or_lon(d)
+            else:
+                try:
+                    dbcolumn_to_fixed_data[h] = d
+                except:
+                    dbcolumn_to_fixed_data[h] = None
+        # else, do nothing
+            
+    # any fields that weren't passed in should be None
+    for c in DB_COLUMNS:
+        if not c in dbcolumn_to_fixed_data:
+            dbcolumn_to_fixed_data[c] = None
 
-    # TODO: insert items_fixed into db
-    conn = sqlite3.connect(dbpath)
-    c = conn.cursor()
-
-    # assumes tablename is sds --> might want to make this easier to change
-    # also not sure how to deal with all the ?s
-    c.execute('insert into sds values (?,? ...)', items_fixed)
-
-    ## TODO: insert TIME COLUMN
-    # filename example: 2014-05-15T17-16-09+00:00 should be transformed to 2014-05-15T17:16:09+00:00
-
-    
+    # TODO: insert dbcolumn_to_fixed_data to db. 
+    return dbcolumn_to_fixed_data
 
 def fix_lat_or_lon(l):
-    # try to fix -- put in Decimal Degrees (DDD) Format
-    
-    # check if WICOR format:
-    # can't find info on converting this -- help! 
-    
-    # check if NMEA (GGA) format:
-    # example: 
-    # 4807.038,N  --> Latitude 48 deg 07.038' N --> ?
-    # 01131.000,E -->  Longitude 11 deg 31.000' E --> ?
-
-
-    # if possible, return new lat/lon
-    # if not possible, return None
     return None
+
+if __name__ == "__main__":
+    sfl_header = 'SALINITY\tBLAHHH\tOCEAN TEMP'
+    sfl_sample_line = '10.2\tNOOOOO\tnot a float'
+    dbpath = ''
+    print
+    print fix_and_insert_sfl(sfl_sample_line.split('\t'), sfl_header.split('\t'), dbpath)
+
+    print 
+    print 
+
+    real_sfl_header = 'FILE\tFILE DURATION\tLAT\tLON\tCONDUCTIVITY\tSALINITY\tOCEAN TEMP\tBULK RED\tSTREAM PRESSURE\tFILTER PRESSURE\tMACHINE TEMP\tXaccel\tYaccel\tZaccel\tMILLISECOND TIMER\tLASER POWER\tEVENT RATE\tFLOW METER\tposition\tNULL\tNULL\tNULL'
+    real_sfl_line = '2014-05-15T17-07-08+0000\t180.141\t18.7178\t3.53\t-829.34\t2.95\t0.0026\t0.0052\t0.0029\t146767125\t0.0\t0.00\tnometer\tC\t\t\t\t\t\t\t\t' 
+    dbpath = ''
+
+    print fix_and_insert_sfl(real_sfl_line.split('\t'), real_sfl_header.split('\t'), dbpath)
+    print 
