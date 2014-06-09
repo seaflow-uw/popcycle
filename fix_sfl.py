@@ -118,11 +118,6 @@ def insert_last_entry() :
     sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
     lines = open(sfl_file).readlines()
 
-    print lines[-1]
-    print
-    print lines[0]
-    print
-
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
 
 def fix_lat_or_lon(l):
