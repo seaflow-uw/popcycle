@@ -1,4 +1,6 @@
 import sqlite3
+import os
+import glob
 
 DELIM = '\t'
 
@@ -30,8 +32,8 @@ cruise_id = 'july2014'
 
 # takes data and header as lists, dbpath as a string
 def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
-    if len(data) != len(header):
-        raise IndexError("Different number of items in data and header: h - " + str(len(header)) + ", d - " + str(len(data)))
+    #if len(data) != len(header):
+    #    raise IndexError("Different number of items in data and header: h - " + str(len(header)) + ", d - " + str(len(data)))
 
     dbcolumn_to_fixed_data = {}
     
@@ -70,7 +72,6 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     dbcolumn_to_fixed_data[CRUISE] = cruise
     try :
       iso_split = dbcolumn_to_fixed_data[FILE].split('T')
-      print iso_split
       iso_split[1] = iso_split[1].replace('-', ':')
       iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
       dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
@@ -96,22 +97,36 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
 
     #return db_tuple
 
+def insert_file_bulk(sfl_file) :
+    lines = open(sfl_file).readlines()
+    header = lines[0].split('\t')
+    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+    for line in lines[1:] :
+        data = line.split('\t')
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        c.execute("delete from sfl where file == '" + data[0] + "'")
+        conn.commit()
+        conn.close()
+
+        fix_and_insert_sfl(data, header, dbpath)
+
+def insert_last_entry() :
+    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+    evt_path = os.path.expanduser('~/SeaFlow/datafiles/evt/')
+    latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
+    sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
+    lines = open(sfl_file).readlines()
+
+    print lines[-1]
+    print
+    print lines[0]
+    print
+
+    fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
+
 def fix_lat_or_lon(l):
     return None
 
 if __name__ == "__main__":
-    sfl_header = 'SALINITY\tBLAHHH\tOCEAN TEMP'
-    sfl_sample_line = '10.2\tNOOOOO\tnot a float'
-    dbpath = ''
-    print
-    print fix_and_insert_sfl(sfl_sample_line.split('\t'), sfl_header.split('\t'), dbpath)
-
-    print 
-    print 
-
-    real_sfl_header = 'FILE\tFILE DURATION\tLAT\tLON\tCONDUCTIVITY\tSALINITY\tOCEAN TEMP\tBULK RED\tSTREAM PRESSURE\tFILTER PRESSURE\tMACHINE TEMP\tXaccel\tYaccel\tZaccel\tMILLISECOND TIMER\tLASER POWER\tEVENT RATE\tFLOW METER\tposition\tNULL\tNULL\tNULL'
-    real_sfl_line = '2014-05-15T17-07-08+0000\t180.141\t18.7178\t3.53\t-829.34\t2.95\t0.0026\t0.0052\t0.0029\t146767125\t0.0\t0.00\tnometer\tC\t\t\t\t\t\t\t\t' 
-    dbpath = ''
-
-    print fix_and_insert_sfl(real_sfl_line.split('\t'), real_sfl_header.split('\t'), dbpath)
-    print 
+    insert_last_entry()
