@@ -1,6 +1,6 @@
 #main function
 evaluate_last_evt <- function() {
-  evt_file <- get_latest_file()
+  evt_file <- get_latest_file_with_day()
   
   if (length(evt_file) == 0) {
     print('No data collected yet.')
