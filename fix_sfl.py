@@ -2,6 +2,7 @@ import sqlite3
 import os
 import glob
 import re
+import sys
 
 DELIM = '\t'
 
@@ -112,5 +113,14 @@ def insert_last_entry() :
 
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
 
+def insert_from_command_line() :
+    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+    lines = []
+    for line in sys.stdin :
+        print line
+        lines.append(line)
+
+    fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
+
 if __name__ == "__main__":
-    insert_last_entry()
+    insert_from_command_line()
