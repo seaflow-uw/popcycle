@@ -19,7 +19,7 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
   names(poly.l) <- popname
 
 # Save gating
-  time <- format(Sys.time(),format="%FT%H-%M-%S+0000", tz="GMT")
+  time <- format(Sys.time(),format="%FT%H-%M-%S-00", tz="GMT")
   write.csv(poly, paste0(log.gate.location, "/",time, "_", popname, ".csv"), quote=FALSE, row.names=FALSE)
   write.csv(poly, paste0(param.gate.location, "/",popname, ".csv"), quote=FALSE, row.names=FALSE)
 
