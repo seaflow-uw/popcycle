@@ -26,6 +26,7 @@ rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
       # store vct
       print('Uploading labels to the database')
       upload_vct(vct_to_db_vct(vct, cruise.id, file_name, 'Manual Gating'))
+      # TODO: insert statistics 
     }
   }
 }
@@ -47,5 +48,6 @@ rerun_gating <- function(start_day, start_timestamp, end_day, end_timestamp) {
     # store vct
     print('Uploading labels to the database')
     upload_vct(vct_to_db_vct(vct, cruise.id, file_name, 'Manual Gating'))
+    # TODO: insert statistics
   }
 }

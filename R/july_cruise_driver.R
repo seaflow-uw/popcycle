@@ -35,7 +35,8 @@ evaluate_last_evt <- function() {
   #store opp
   
   print('Uploading filtered particles to database')
-  
+
+  .delete_opp_by_file(file_name) 
   upload_opp(opp_to_db_opp(opp, cruise.id, file_name))
   
   #classify opp
@@ -52,6 +53,9 @@ evaluate_last_evt <- function() {
   
   #store vct
   print('Uploading labels to the database')
-  
+
+  .delete_vct_by_file(file_name)
   upload_vct(vct_to_db_vct(vct, cruise.id, file_name, 'Manual Gating'))
+
+  # TODO: insert statistics
 }
