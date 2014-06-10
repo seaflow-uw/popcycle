@@ -38,7 +38,8 @@ file.transfer <- function(){
 
   last.evt <- get_latest_file()
   file_list <- list.files(instrument.location, recursive=T)
-  file_list <- file_list[!grepl('.sfl', file_list)]
+  sfl_list <- file_list[grepl('.sfl', file_list)]
+  file_list <- sort(file_list[!grepl('.sfl', file_list)])
 
   id <- match(last.evt, file_list)
 
@@ -46,14 +47,15 @@ file.transfer <- function(){
     day <- unique(dirname(file_list))
       for(d in day) system(paste0("mkdir ",evt.location,"/",d))
     print(paste0("scp ",instrument.location,"/",file_list," ", evt.location,"/",file_list))
-    system(paste0("scp ",instrument.location,"/",file_list," ", evt.location,"/",file_list))
+    system(paste0("scp ",instrument.location,"/",file_list," ", evt.location,"/",file_list, collapse=";"))
+    system(paste0("scp ",instrument.location,"/",sfl_list," ", evt.location,"/",sfl_list, collapse=";"))
   }
   else{
     file_list <- file_list[id:length(file_list)]
     day <- unique(dirname(file_list))
       for(d in day) system(paste0("mkdir ",evt.location,d))
     print(paste0("scp ",instrument.location,"/",file_list," ", evt.location,"/",file_list))
-    system(paste0("scp ",instrument.location,"/",file_list," ", evt.location,"/",file_list))
-
+    system(paste0("scp ",instrument.location,"/",file_list," ", evt.location,"/",file_list, collapse=";"))
+    system(paste0("scp ",instrument.location,"/",sfl_list," ", evt.location,"/",sfl_list, collapse=";"))
   }
 }
