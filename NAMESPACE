@@ -2,3 +2,4 @@ import(RSQLite)
 import(splancs)
 
 exportPattern("^[^\\.]")
+export(plot.vct.cytogram)
