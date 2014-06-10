@@ -123,4 +123,4 @@ def insert_from_command_line() :
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
 
 if __name__ == "__main__":
-    insert_from_command_line()
+    insert_last_entry()
