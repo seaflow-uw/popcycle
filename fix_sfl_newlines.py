@@ -4,6 +4,7 @@ from collections import defaultdict
 import os
 import sys
 import string
+import re
 
 DEBUG = False
 if DEBUG:
@@ -25,7 +26,7 @@ for line in sys.stdin:
         sys.stdout.write("%s" % '\t'.join(line))
     # Any line that starts with 'sds', terminate the previous line and print it
     # starts with 'sds' because all filenames start with 'sds' and are in the first column
-    elif line[0].startswith('sds'):
+    elif re.search('[0-9]{4}-[0-9]{2}-[0-9]{2}T', line[0]) is not None:
         sys.stdout.write("%s%s" % (os.linesep, '\t'.join(line)))
     # Any other line, just print it
     else:
