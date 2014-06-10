@@ -101,3 +101,49 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
      	mtext("OPP", side=3, line=1, font=2)
  
 }
+
+
+plot.map <- function(lat, long, track=NULL, margin=2, col='red', legend=NULL, pch=20, cex=1.5, lwd=1, lty=2, xlim=NULL, ylim=NULL, xlab="Longitude (deg W)",ylab="Latitude (deg N)",zlab=NA, ...){
+  ## plot longitude and latitude on a map
+  require(maps, quietly=T)
+  require(mapdata, quietly=T)
+  require(plotrix, quietly=T)
+  
+  map.type <- 'worldHires'
+  
+    if(is.null(track) | class(track)=='try-error')
+  track <- data.frame(lat=lat, long=long)
+    
+    if(is.null(xlim))
+          xlim <- c(min(track$long, na.rm=TRUE)-margin, max(track$long, na.rm=TRUE)+margin)         
+    if(is.null(ylim))
+          ylim <- c(min(track$lat , na.rm=TRUE)-margin, max(track$lat , na.rm=TRUE)+margin)
+    
+    if(xlim[1] < 0 & xlim[2] > 0){
+      neg.long <- subset(track, long < 0)
+      track[row.names(neg.long), "long"] <- neg.long$long + 360
+      xlim <- c(min(track$long, na.rm=TRUE)-margin, max(track$long, na.rm=TRUE)+margin)
+      long <- na.exclude(long); lat <- na.exclude(lat)
+      long[long < 0] <- long[long < 0] + 360
+      map.type <- 'world2Hires'
+        }
+  
+  # plot the cruise track as gray line back-ground
+  plot(track$long, track$lat, xlim=xlim, ylim=ylim, lwd=lwd,lty=lty,
+       xlab=xlab,ylab=ylab,
+       pch=20, col='gray', type='o', asp=1, ...)
+  try(maps::map(map.type, fill=FALSE, col='black',add=TRUE))
+  points(long, lat, xlim=xlim, ylim=ylim, pch=pch, cex=cex, col=col)
+  
+  if(!is.null(legend)){
+    ylim <- par('usr')[c(3,4)]
+    xlim <- par('usr')[c(1,2)]
+
+    color.legend(xlim[2], ylim[1], xlim[2] + diff(xlim)/40, ylim[2], 
+      legend=legend, rect.col=.rainbow.cols(100), gradient='y',align='rb',cex=cex,...)
+  mtext(zlab, side=4, line=3,cex=cex)  
+
+  }
+  if(length(long) == 1)
+    mtext(paste("Long/Lat: ",round(mean(long),3),'/', round(max(lat),3)),col='red', line=-2, )
+}

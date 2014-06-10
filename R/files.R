@@ -32,3 +32,25 @@ files_in_range <- function(start_day, start_timestamp, end_day, end_timestamp) {
   
   return(file_list[start_index:end_index])
 }
+
+
+file.transfer <- function(){
+
+  last.evt <- get_latest_file()
+  file_list <- list.files(instrument.location, recursive=T)
+  file_list <- file_list[!grepl('.sfl', file_list)]
+
+  id <- match(last.evt, file_list)
+  if(length(id) == 0){
+    day <- unique(dirname(file_list))
+      for(d in day) system(paste0("mkdir ",evt.location,d))
+    system(paste0("scp ",instrument.location,"/",file_list," ", evt.location,file_list))
+  }
+  else{
+    file_list <- file_list[id:length(file_list)]
+    day <- unique(dirname(file_list))
+      for(d in day) system(paste0("mkdir ",evt.location,d))
+    system(paste0("scp ",instrument.location,"/",file_list," ", evt.location,file_list))
+
+  }
+}
