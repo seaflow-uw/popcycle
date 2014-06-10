@@ -3,6 +3,7 @@ EVT.HEADER <- c("time","pulse_width","D1","D2",
                 "fsc_small","fsc_perp","fsc_big","pe","chl_small","chl_big")
 
 evt.location <- '~/SeaFlow/datafiles/evt'
+instrument.location <- '/Volumes/evt'
 
 # name of SQLite database containing OPP and VCT tables
 db.name <- '~/popcycle/sqlite/popcycle.db'
