@@ -38,6 +38,7 @@ file.transfer <- function(){
 
   last.evt <- get_latest_file()
   file_list <- list.files(instrument.location, recursive=T)
+  file.list <- file.list[-length(file_list)] # remove the last file (opened file)
   sfl_list <- file_list[grepl('.sfl', file_list)]
   file_list <- sort(file_list[!grepl('.sfl', file_list)])
 
