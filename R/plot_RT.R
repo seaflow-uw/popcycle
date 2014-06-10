@@ -5,7 +5,7 @@
 # load latest file
 last.file <- get_latest_file()
 opp <- get_opp_by_file(last.file)
-vct <- get_opp_by_file(vct.file)
+vct <- get_opp_by_file(last.file)
 opp$pop <- vct
 
 
