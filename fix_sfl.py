@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import glob
+import re
 
 DELIM = '\t'
 
@@ -8,8 +9,8 @@ CRUISE = 'CRUISE'                          # str
 FILE = 'FILE'                              # str
 DATE = 'DATE'                              # str
 FILE_DURATION = 'FILE DURATION'            # float
-LAT = 'LAT'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
-LON = 'LON'                                # str because it needs the '+'/'-'? Format: Decimal Degrees (DDD)
+LAT = 'LAT'                                # float --> Format: Decimal Degrees (DDD)
+LON = 'LON'                                # float --> Format: Decimal Degrees (DDD)
 CONDUCTIVITY = 'CONDUCTIVITY'              # float
 SALINITY = 'SALINITY'                      # float
 OCEAN_TEMP = 'OCEAN TEMP'                  # float
@@ -18,9 +19,9 @@ BULK_RED  = 'BULK RED'                     # float
 STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
 EVENT_RATE  = 'EVENT RATE'                 # int
 
-FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUCTIVITY]
+FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUCTIVITY, PAR, LAT, LON]
 INTS = [EVENT_RATE]
-STRS = [FILE, LAT, LON, PAR, DATE]
+STRS = [FILE, DATE]
 
 DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
@@ -53,19 +54,10 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
                 dbcolumn_to_fixed_data[h] = None
         elif h in STRS:
             h = h.strip().replace(' ', '_')
-            if h == LAT or h == LON:
-                # do this at some point
-                # dbcolumn_to_fixed_data[h] = fix_lat_or_lon(d)
-                # delete this later
-                try:
-                  dbcolumn_to_fixed_data[h] = d
-                except:
-                  dbcolumn_to_fixed_data[h] = None
-            else:
-                try:
-                    dbcolumn_to_fixed_data[h] = d
-                except:
-                    dbcolumn_to_fixed_data[h] = None
+            try:
+                dbcolumn_to_fixed_data[h] = d
+            except:
+                dbcolumn_to_fixed_data[h] = None
         # else, do nothing
 
     # add cruise and data 
@@ -119,9 +111,6 @@ def insert_last_entry() :
     lines = open(sfl_file).readlines()
 
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
-
-def fix_lat_or_lon(l):
-    return None
 
 if __name__ == "__main__":
     insert_last_entry()
