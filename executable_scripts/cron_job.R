@@ -22,7 +22,7 @@ opp$pop <- vct
 ######################
 ### PLOT CYTOGRAMS ###
 ######################
-png("cytogram.png",width=15,height=9,unit='in',res=300)
+png("~/cytogram.png",width=15,height=9,unit='in',res=300)
 par(mfrow=c(2,1))
 plot.vct.cytogram(opp, "fsc_small","chl_small")
 plot.vct.cytogram(opp, "fsc_small","pe")
