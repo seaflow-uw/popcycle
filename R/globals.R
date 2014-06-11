@@ -3,7 +3,7 @@ EVT.HEADER <- c("time","pulse_width","D1","D2",
                 "fsc_small","fsc_perp","fsc_big","pe","chl_small","chl_big")
 
 #evt.location <- '~/SeaFlow/datafiles/evt' # during cruise
-evt.location <- '/Volumes/seaflow/KiloMoana_1' # in the lab
+evt.location <- '~/SeaFlow/datafiles/evt' # in the lab
 
 instrument.location <- '/Volumes/evt'
 
