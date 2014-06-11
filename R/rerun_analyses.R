@@ -12,8 +12,12 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
     tryCatch({
     	evt.file = files[i]
 	    file.name = basename(evt.file)
+    	evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
+      print(paste('Uploading evt count for', file.name))
+    	.delete.evt.count.by.file(file.name)
+    	upload.evt.count(evt, cruise.id, file.name)
+      
    		print(paste('Filtering', evt.file))
-	    evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
 	    opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
 	    # delete old opp entries if they exist so we keep cruise/file/particle distinct
 	    .delete.opp.by.file(file.name)

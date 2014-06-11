@@ -6,8 +6,17 @@ evaluate.last.evt <- function() {
     print('No data collected yet.')
     return()
   }
-  
+
   print(paste('Analyzing', evt.file))
+  
+  #upload evt count
+  file.name = basename(evt.file)
+  evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
+  
+  print('Uploading evt particle count')
+  .delete.evt.count.by.file(file.name)
+  upload.evt.count(evt, cruise.id, file.name)
+  
   #if we don't have filter parameters yet
   if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {
     print('No filtering parameters have been set; skipping filtering.')
@@ -24,12 +33,9 @@ evaluate.last.evt <- function() {
   #filter evt
   
   # file.name for db should get rid of directory structure
-  file.name = basename(evt.file)
 
   print(paste('Filtering', evt.file))
-  
-  evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
-  
+    
   opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
   
   #store opp
