@@ -45,9 +45,10 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
     stop(paste("ERROR, data are not LOG-transform"))
    }
   
-  m.D1 <- max(evt[,"D1"])
-  m.D2 <- max(evt[,"D2"])
-  origin <- median(evt[which(evt$D1 < m.D1 & evt$D1 < m.D2),"D1"]/evt[which(evt$D1 < m.D1 & evt$D1 < m.D2),"D2"]) 	# Difference of sensitivity between D2 and D1.	 
+  evt <- subset(evt, D1 > 1 & D2 > 1) # filtering particles not detected by D1 or D2
+    m.D1 <- max(evt[,"D1"])
+    m.D2 <- max(evt[,"D2"])
+  evt <- subset(evt, D1 < m.D1 & D2 < m.D2) # filtering particles with saturated signals on D1 or D2
 
  
   #####################

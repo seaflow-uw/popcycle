@@ -1,5 +1,9 @@
 #!/bin/bash
 
+mkdir ~/SeaFlow
+mkdir ~/SeaFlow/datafiles
+mkdir ~/SeaFlow/datafiles/evt
+
 mkdir ~/popcycle
 mkdir ~/popcycle/sqlite
 mkdir ~/popcycle/params

@@ -1,13 +1,13 @@
 #main function
-evaluate_last_evt <- function() {
-  evt_file <- get_latest_file_with_day()
+evaluate.last.evt <- function() {
+  evt.file <- get.latest.file.with.day()
   
-  if (length(evt_file) == 0) {
+  if (length(evt.file) == 0) {
     print('No data collected yet.')
     return()
   }
   
-  print(paste('Analyzing', evt_file))
+  print(paste('Analyzing', evt.file))
   #if we don't have filter parameters yet
   if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {
     print('No filtering parameters have been set; skipping filtering.')
@@ -23,20 +23,21 @@ evaluate_last_evt <- function() {
   
   #filter evt
   
-  # file_name for db should get rid of directory structure
-  file_name = basename(evt_file)
+  # file.name for db should get rid of directory structure
+  file.name = basename(evt.file)
 
-  print(paste('Filtering', evt_file))
+  print(paste('Filtering', evt.file))
   
-  evt <- readSeaflow(paste(evt.location, evt_file, sep='/'))
+  evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
   
-  opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
+  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
   
   #store opp
   
   print('Uploading filtered particles to database')
-  
-  upload_opp(opp_to_db_opp(opp, cruise.id, file_name))
+
+  .delete.opp.by.file(file.name) 
+  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))
   
   #classify opp
   
@@ -46,12 +47,15 @@ evaluate_last_evt <- function() {
     return()
   }
   
-  print(paste('Classifying', evt_file))
+  print(paste('Classifying', evt.file))
   
-  vct <- classify_opp(opp, Gating, param.gate.location)
+  vct <- classify.opp(opp, Gating, param.gate.location)
   
   #store vct
   print('Uploading labels to the database')
-  
-  upload_vct(vct_to_db_vct(vct, cruise.id, file_name, 'Manual Gating'))
+
+  .delete.vct.by.file(file.name)
+  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
+
+  # TODO: insert statistics
 }
