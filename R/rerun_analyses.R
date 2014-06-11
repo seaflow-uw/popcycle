@@ -8,12 +8,12 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
   }
   
   for (i in 1:length(files)) {
+  	evt.file = files[i]
+  	file.name = basename(evt.file)
   	#if we get an error, move to next file
     tryCatch({
-    	evt.file = files[i]
-	    file.name = basename(evt.file)
     	evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
-      print(paste('Uploading evt count for', file.name))
+      	print(paste('Uploading evt count for', file.name))
     	.delete.evt.count.by.file(file.name)
     	upload.evt.count(evt, cruise.id, file.name)
       
@@ -35,7 +35,8 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
 	      upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
 	      # TODO: insert statistics 
 	    }
-	}, error = print(paste("Encountered error with file", evt.file))
+	}, error = function(e) {print(paste("Encountered error with file", file.name))},
+	finally = {print(paste("Finished with file", file.name))}
 	)
   }
 }
@@ -47,9 +48,9 @@ rerun.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
   }
   
   for (i in 1:length(files)) {
+  	evt.file = files[i]
+  	file.name = basename(evt.file)
   	tryCatch({
-    	evt.file = files[i]
-    	file.name = basename(evt.file)
     	opp <- get.opp.by.file(file.name)
     	print(paste('Classifying', evt.file))
     	vct <- classify.opp(opp, Gating, param.gate.location)
@@ -59,7 +60,8 @@ rerun.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
     	print('Uploading labels to the database')
     	upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
     	# TODO: insert statistics
-    }, error = print(paste("Encountered error with file", evt.file))
+    }, error = function(e) {print(paste("Encountered error with file", file.name))},
+    finally = {print(paste("Finished with file", file.name))}
     )
   }
 }
