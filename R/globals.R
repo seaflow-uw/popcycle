@@ -4,7 +4,7 @@ EVT.HEADER <- c("time","pulse_width","D1","D2",
 
 #evt.location <- '~/SeaFlow/datafiles/evt' # during cruise
 evt.location <- '~/SeaFlow/datafiles/evt' # in the lab
-instrument.location <- '/Volumes/SEAFLOW1/evt'
+instrument.location <- '/Volumes/evt'
 
 # name of SQLite database containing OPP and VCT tables
 db.name <- '~/popcycle/sqlite/popcycle.db'
