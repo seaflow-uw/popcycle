@@ -1,4 +1,5 @@
-rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
+rerun_filter <- function(start_day, start_timestamp, end_day,
+						 end_timestamp, evt.path = evt.location) {
   files <- files_in_range(start_day, start_timestamp, end_day, end_timestamp)
   params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))
   if (is.null(params$notch) || is.null(params$width)) {
@@ -11,7 +12,7 @@ rerun_filter <- function(start_day, start_timestamp, end_day, end_timestamp) {
     	evt_file = files[i]
 	    file_name = basename(evt_file)
    		print(paste('Filtering', evt_file))
-	    evt <- readSeaflow(paste(evt.location, evt_file, sep='/'))
+	    evt <- readSeaflow(paste(evt.path, evt_file, sep='/'))
     
 	    opp <- filter_evt(evt, filter.notch, width = params$width, notch = params$notch)
 	    # delete old opp entries if they exist so we keep cruise/file/particle distinct
