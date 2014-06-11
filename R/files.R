@@ -3,10 +3,14 @@ get_evt_list <- function() {
   if (length(file_list) == 0) {
     return (file_list)
   }
+  id <- grep(paste('^[0-9]{1,9}.*','\\.evt','$',sep=''),file_list)
+  if(length(id)>0) file_list <- file_list[id]
+ 
   #drop .sfl files
   file_list <- file_list[!grepl('.sfl', file_list)]
   return (sort(file_list))
 }
+
 
 get_latest_file_with_day <- function() {
   file_list <- get_evt_list()
