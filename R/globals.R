@@ -2,7 +2,9 @@
 EVT.HEADER <- c("time","pulse_width","D1","D2",
                 "fsc_small","fsc_perp","fsc_big","pe","chl_small","chl_big")
 
-evt.location <- '~/SeaFlow/datafiles/evt'
+#evt.location <- '~/SeaFlow/datafiles/evt' # during cruise
+evt.location <- '/Volumes/seaflow/KiloMoana_1' # in the lab
+
 instrument.location <- '/Volumes/evt'
 
 # name of SQLite database containing OPP and VCT tables
