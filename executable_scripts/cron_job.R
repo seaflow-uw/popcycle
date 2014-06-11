@@ -4,7 +4,7 @@ library(popcycle)
 ############################
 ### ANALYZE LAST FILE(s) ###
 ############################
-evaluate_last_evt()
+evaluate.last.evt()
 
 
 
@@ -12,9 +12,9 @@ evaluate_last_evt()
 ### load latest file ###
 ########################
 
-last.file <- get_latest_file()
-opp <- get_opp_by_file(last.file)
-vct <- get_vct_by_file(last.file)
+last.file <- get.latest.file()
+opp <- get.opp.by.file(last.file)
+vct <- get.vct.by.file(last.file)
 opp$pop <- vct
 
 
