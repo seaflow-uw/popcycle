@@ -9,6 +9,7 @@ instrument.location <- '/Volumes/evt'
 db.name <- '~/popcycle/sqlite/popcycle.db'
 opp.table.name <- 'opp'
 vct.table.name <- 'vct'
+evt.count.table.name <- 'evt_count'
 cruise.id <- 'july2014'
 
 # location to log filtering and gating parameters
