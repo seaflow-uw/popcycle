@@ -29,6 +29,14 @@ upload.opp <- function(db.opp) {
   dbDisconnect(con)
 }
 
+.delete.evt.count.by.file <- function(file.name) {
+  sql <- paste0("DELETE FROM ", evt.count.table.name, " WHERE file == '", 
+                file.name, "'")
+  con <- dbConnect(SQLite(), dbname = db.name)
+  dbGetQuery(con, sql)
+  dbDisconnect(con)
+}
+
 vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {
   n <- length(vct)
   cruise = rep(cruise.name, n)
@@ -64,6 +72,14 @@ get.vct.by.file <- function(file.name) {
   dbDisconnect(con)
   # drop cruise, file, particle, method columns
   return (vct[,-c(1,2,3,5)])
+}
+
+upload.evt.count <- function(evt, cruise.name, file.name) {
+  con <- dbConnect(SQLite(), dbname = db.name)
+  dbWriteTable(conn = con, name = evt.count.table.name, 
+               value = data.frame(cruise = cruise.name, file = file.name, count = dim(evt)[1]),
+               row.names=FALSE, append=TRUE)
+  dbDisconnect(con)
 }
 
 get.opp.by.files <- function(...) {

@@ -69,3 +69,10 @@ CREATE TABLE sfl (
   event_rate INTEGER,
   PRIMARY KEY (cruise, file)
 );
+
+CREATE TABLE evt_count (
+  cruise TEXT NOT NULL,
+  file TEST NOT NULL,
+  count INTEGER,
+  PRIMARY KEY (cruise, file)
+);
