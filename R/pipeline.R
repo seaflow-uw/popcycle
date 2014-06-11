@@ -1,5 +1,5 @@
-filter_evt <- function(evt, filter_func, ...) {
-  opp <- filter_func(evt, ...)
+filter.evt <- function(evt, filter.func, ...) {
+  opp <- filter.func(evt, ...)
   
   # SANITY CHECKS
   # need same columns for opp
@@ -15,8 +15,8 @@ filter_evt <- function(evt, filter_func, ...) {
   return (opp)
 }
 
-classify_opp <- function(opp, classify_func, ...) {
-  vct <- classify_func(opp, ...)
+classify.opp <- function(opp, classify.func, ...) {
+  vct <- classify.func(opp, ...)
   
   # SANITY CHECKS
   # dropped particles
@@ -24,7 +24,7 @@ classify_opp <- function(opp, classify_func, ...) {
     stop('Filtering function returned incorrect number of labels.')
   }
   
-  # in case classify_func didn't return text
+  # in case classify.func didn't return text
   vct <- as.character(vct)
   
   return (vct)
