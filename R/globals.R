@@ -24,6 +24,6 @@ param.gate.location <- paste(param.location, 'gates', sep='/')
 param.filter.location <- paste(param.location, 'filter', sep='/')
 
 # flow calibration for SEAFLOW1
-ratio.evt.stream = 0.14756
-x <- 12 #psi
-flow_rate <- (-9*10^-5 * x^4 + 0.0066 * x^3 - 0.173 * x^2 + 2.5013 * x + 2.1059)  *  ratio.evt.stream # where x is STREAM_PRESSURE (psi)
+#ratio.evt.stream = 0.14756
+#x <- 12 #psi
+#flow_rate <- (-9*10^-5 * x^4 + 0.0066 * x^3 - 0.173 * x^2 + 2.5013 * x + 2.1059)  *  ratio.evt.stream # where x is STREAM_PRESSURE (psi)
