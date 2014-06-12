@@ -123,6 +123,13 @@ def insert_last_entry() :
 
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
 
+def insert_last_file() :
+    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+    evt_path = os.path.expanduser('~/SeaFlow/datafiles/evt/')
+    latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
+    sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
+    insert_file_bulk(sfl_file)
+
 def insert_from_command_line() :
     dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
     lines = []
@@ -133,4 +140,4 @@ def insert_from_command_line() :
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
 
 if __name__ == "__main__":
-    insert_last_entry()
+    insert_last_file()

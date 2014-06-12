@@ -132,9 +132,9 @@ GROUP BY
   #in case there's stats in there already
   sql.delete <- gsub('FILE_NAME', file.name, paste('DELETE FROM', stats.table.name, 'WHERE file == "FILE_NAME"'))
   con <- dbConnect(SQLite(), dbname = db.name)
-  response <- dbSendQuery(con, sql.delete)
+  response <- dbGetQuery(con, sql.delete)
 
   sql <- gsub('FILE_NAME', file.name, sql)
-  response <- dbSendQuery(con, sql)
+  response <- dbGetQuery(con, sql)
   dbDisconnect(con)
 }
