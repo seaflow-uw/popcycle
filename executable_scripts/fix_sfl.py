@@ -18,6 +18,7 @@ OCEAN_TEMP = 'OCEAN TEMP'                  # float
 PAR = 'PAR'                                # float
 BULK_RED  = 'BULK RED'                     # float
 STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
+FLOW_RATE = 'FLOW RATE'                    # float
 EVENT_RATE  = 'EVENT RATE'                 # int
 
 FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUCTIVITY, PAR, LAT, LON]
@@ -26,7 +27,7 @@ STRS = [FILE, DATE]
 
 DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
-              'STREAM_PRESSURE', 'EVENT_RATE']
+              'STREAM_PRESSURE', 'FLOW_RATE','EVENT_RATE']
 
 # default for july 2014 cruise, change later
 cruise_id = 'july2014'
@@ -70,6 +71,15 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
       dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
     except:
       dbcolumn_to_fixed_data[DATE] = None
+
+    # try to add flow rate
+    try :
+      stream_pressure = dbcolumn_to_fixed_data[STREAM_PRESSURE]
+      ratio_evt_stream = 0.14756
+      flow_rate = (-9*10**-5 * stream_pressure**4 + 0.0066 * stream_pressure**3 - 0.173 * stream_pressure**2 + 2.5013 * stream_pressure + 2.1059) * ratio.evt.stream
+      dbcolumn_to_fixed_data[FLOW_RATE] = flow_rate
+    except :
+      dbcolumn_to_fixed_data[FLOW_RATE] = None
             
     # any fields that weren't passed in should be None
     for c in DB_COLUMNS:
@@ -84,7 +94,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     # insert into sqlite
     conn = sqlite3.connect(dbpath)
     c = conn.cursor()
-    c.execute("insert into sfl values (?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(db_tuple))
+    c.execute("insert into sfl values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(db_tuple))
     conn.commit()
     conn.close()
 
