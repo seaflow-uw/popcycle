@@ -66,7 +66,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     try :
       iso_split = dbcolumn_to_fixed_data[FILE].split('T')
       iso_split[1] = iso_split[1].replace('-', ':')
-      iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
+      #iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
       dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
     except:
       dbcolumn_to_fixed_data[DATE] = None

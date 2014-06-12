@@ -62,7 +62,7 @@ file.transfer <- function(){
   else{
     file.list <- file.list[id:length(file.list)]
     day <- unique(dirname(file.list))
-      for(d in day) system(paste0("mkdir ",evt.location,d))
+      for(d in day) system(paste0("mkdir ",evt.location,"/",d))
     print(paste0("scp ",instrument.location,"/",file.list," ", evt.location,"/",file.list))
     system(paste0("scp ",instrument.location,"/",file.list," ", evt.location,"/",file.list, collapse=";"))
     system(paste0("scp ",instrument.location,"/",sfl.list," ", evt.location,"/",sfl.list, collapse=";"))
