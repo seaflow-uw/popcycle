@@ -63,5 +63,5 @@ evaluate.last.evt <- function() {
   .delete.vct.by.file(file.name)
   upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
 
-  # TODO: insert statistics
+  insert.stats.for.file(file.name)
 }
