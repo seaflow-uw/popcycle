@@ -83,7 +83,7 @@ upload.evt.count <- function(evt, cruise.name, file.name) {
 }
 
 get.stat.table <- function() {
-  sql <- paste('SELECT * FROM ', stat.table.name)
+  sql <- paste('SELECT * FROM ', stats.table.name)
   con <- dbConnect(SQLite(), dbname = db.name)
   stats <- dbGetQuery(con, sql)
   dbDisconnect(con)
