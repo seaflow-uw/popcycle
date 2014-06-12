@@ -82,10 +82,54 @@ upload.evt.count <- function(evt, cruise.name, file.name) {
   dbDisconnect(con)
 }
 
-get.opp.by.files <- function(...) {
-  #TODO(hyrkas): implement
+get.stat.table <- function() {
+  sql <- paste('SELECT * FROM ', stat.table.name)
+  con <- dbConnect(SQLite(), dbname = db.name)
+  stats <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return (stats)
 }
 
-get.vct.by.files <- function(...) {
-  #TODO(hyrkas): implement
+insert.stats.for.file <- function(file.name) {
+  sql <- "INSERT INTO stats
+SELECT
+  opp.cruise as cruise,
+  opp.file as file,
+  vct.pop as pop,
+  avg(opp.fsc_small) as fsc_small,
+  avg(opp.chl_small) as chl_small,
+  avg(pe) as pe,
+  sfl.lat as lat,
+  sfl.lon as lon,
+  sfl.date as time,
+  evt_count.count as evt_particles,
+  count(vct.pop) as pop_count,
+  sfl.flow_rate as flow_rate,
+  sfl.file_duration as file_duration,
+  count(vct.pop) / (sfl.flow_rate * sfl.file_duration * (count(vct.pop) / evt_count.count)) as abundance
+FROM
+  opp, vct, sfl, evt_count
+WHERE
+  opp.cruise == vct.cruise
+  AND
+  opp.file == vct.file
+  AND
+  opp.particle == vct.particle
+  AND
+  opp.cruise == sfl.cruise
+  AND
+  opp.file == sfl.file
+  AND
+  opp.cruise == evt_count.cruise
+  AND
+  opp.file == evt_count.file
+  AND
+  opp.file == 'FILE_NAME'
+GROUP BY
+  opp.cruise, opp.file, vct.pop;"
+
+  sql <- gsub('FILE_NAME', file.name, sql)
+  con <- dbConnect(SQLite(), dbname = db.name)
+  response <- dbSendQuery(con, sql)
+  dbDisconnect(con)
 }
