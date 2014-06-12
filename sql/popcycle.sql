@@ -76,3 +76,9 @@ CREATE TABLE evt_count (
   count INTEGER,
   PRIMARY KEY (cruise, file)
 );
+
+CREATE INDEX oppFileIndex
+ON opp (file);
+
+CREATE INDEX vctFileIndex
+ON vct (file);
