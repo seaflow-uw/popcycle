@@ -33,7 +33,8 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
 	      # store vct
 	      print('Uploading labels to the database')
 	      upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
-	      # TODO: insert statistics 
+        print('Updating stat')
+        insert.stats.for.file(file.name)
 	    }
 	}, error = function(e) {print(paste("Encountered error with file", file.name))},
 	finally = {print(paste("Finished with file", file.name))}
@@ -59,7 +60,8 @@ rerun.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
     	# store vct
     	print('Uploading labels to the database')
     	upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
-    	# TODO: insert statistics
+      print('Updating stat')
+      insert.stats.for.file(file.name)
     }, error = function(e) {print(paste("Encountered error with file", file.name))},
     finally = {print(paste("Finished with file", file.name))}
     )
