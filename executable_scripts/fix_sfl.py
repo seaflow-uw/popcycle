@@ -18,6 +18,7 @@ OCEAN_TEMP = 'OCEAN TEMP'                  # float
 PAR = 'PAR'                                # float
 BULK_RED  = 'BULK RED'                     # float
 STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
+FLOW_RATE = 'FLOW RATE'                    # float
 EVENT_RATE  = 'EVENT RATE'                 # int
 
 FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUCTIVITY, PAR, LAT, LON]
@@ -26,7 +27,7 @@ STRS = [FILE, DATE]
 
 DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
-              'STREAM_PRESSURE', 'EVENT_RATE']
+              'STREAM_PRESSURE', 'FLOW_RATE','EVENT_RATE']
 
 # default for july 2014 cruise, change later
 cruise_id = 'july2014'
