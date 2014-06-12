@@ -12,7 +12,7 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
 		if(!is.null(opp$pop)){
 			par(pty='s')
       ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
-      plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), log='xy') #plot 2D cytogram
+      plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5)) #plot 2D cytogram
 			legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
 		}else{
 			print("No Gating parameters yet!")
@@ -104,47 +104,48 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
 }
 
 
-plot.map <- function(lat, long, track=NULL, margin=2, col='red', legend=NULL, pch=20, cex=1.5, lwd=1, lty=2, xlim=NULL, ylim=NULL, xlab="Longitude (deg W)",ylab="Latitude (deg N)",zlab=NA, ...){
-  ## plot longitude and latitude on a map
-  require(maps, quietly=T)
-  require(mapdata, quietly=T)
-  require(plotrix, quietly=T)
-  
-  map.type <- 'worldHires'
-  
-    if(is.null(track) | class(track)=='try-error')
-  track <- data.frame(lat=lat, long=long)
-    
-    if(is.null(xlim))
-          xlim <- c(min(track$long, na.rm=TRUE)-margin, max(track$long, na.rm=TRUE)+margin)         
-    if(is.null(ylim))
-          ylim <- c(min(track$lat , na.rm=TRUE)-margin, max(track$lat , na.rm=TRUE)+margin)
-    
-    if(xlim[1] < 0 & xlim[2] > 0){
-      neg.long <- subset(track, long < 0)
-      track[row.names(neg.long), "long"] <- neg.long$long + 360
-      xlim <- c(min(track$long, na.rm=TRUE)-margin, max(track$long, na.rm=TRUE)+margin)
-      long <- na.exclude(long); lat <- na.exclude(lat)
-      long[long < 0] <- long[long < 0] + 360
-      map.type <- 'world2Hires'
-        }
-  
-  # plot the cruise track as gray line back-ground
-  plot(track$long, track$lat, xlim=xlim, ylim=ylim, lwd=lwd,lty=lty,
-       xlab=xlab,ylab=ylab,
-       pch=20, col='gray', type='o', asp=1, ...)
-  try(maps::map(map.type, fill=FALSE, col='black',add=TRUE))
-  points(long, lat, xlim=xlim, ylim=ylim, pch=pch, cex=cex, col=col)
-  
-  if(!is.null(legend)){
-    ylim <- par('usr')[c(3,4)]
-    xlim <- par('usr')[c(1,2)]
+# plot.map <- function(stat,popname,...){
+#   ## plot cell abundances of a population on a map
+#   require(maps, quietly=T)
+#   require(mapdata, quietly=T)
+#   require(plotrix, quietly=T)
 
-    color.legend(xlim[2], ylim[1], xlim[2] + diff(xlim)/40, ylim[2], 
-      legend=legend, rect.col=.rainbow.cols(100), gradient='y',align='rb',cex=cex,...)
-  mtext(zlab, side=4, line=3,cex=cex)  
+#   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
-  }
-  if(length(long) == 1)
-    mtext(paste("Long/Lat: ",round(mean(long),3),'/', round(max(lat),3)),col='red', line=-2, )
-}
+#   map.type <- 'worldHires'
+  
+#     xlim <- range(stat$long, na.rm=T)        
+#     ylim <- range(stat$lat, na.rm=T)   
+    
+#     if(xlim[1] < 0 & xlim[2] > 0){
+#         neg.long <- subset(stat, long < 0)
+#       stat[row.names(neg.long), "long"] <- neg.long$long + 360
+#       xlim <- c(min(stat$long, na.rm=TRUE), max(stat$long, na.rm=TRUE))
+#       stat <- stat[-which(is.na(stat$long)),]
+#       stat$long[stat$long < 0] <- stat$long[stat$long < 0] + 360
+#       map.type <- 'world2Hires'
+#         }
+  
+#   # plot the cruise track as gray line back-ground
+#   pop <- subset(stat, pop == popname)
+#   par(oma=c(1,2,1,3))
+#   plot(pop$long, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
+#             xlab="Longitude (deg W)",ylab="Latitude (deg N)",type='l',lwd=3,col='lightgrey',...)
+#   try(maps::map(map.type, fill=TRUE, col='lightgrey',add=TRUE))
+#   points(pop$long, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop$conc,100)],...)
+
+#     ylim <- par('usr')[c(3,4)]
+#     xlim <- par('usr')[c(1,2)]
+
+
+
+#     color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
+#       legend=pretty(pop$conc), rect.col=cols(100), gradient='y',align='rb',...)
+#   mtext(substitute(paste("Abundances (10"^{6},"cells L"^{-1},")")), side=4, line=3)  
+  
+
+# }
+
+
+
+# stat <- read.delim("/Volumes/seaflow/Tokyo_2/stats.tab")
