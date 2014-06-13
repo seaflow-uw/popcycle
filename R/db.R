@@ -96,18 +96,18 @@ insert.stats.for.file <- function(file.name) {
 SELECT
   opp.cruise as cruise,
   opp.file as file,
-  vct.pop as pop,
-  avg(opp.fsc_small) as fsc_small,
-  avg(opp.chl_small) as chl_small,
-  avg(pe) as pe,
+  sfl.date as time,
   sfl.lat as lat,
   sfl.lon as lon,
-  sfl.date as time,
   opp_evt_ratio.ratio as opp_evt_ratio,
-  count(vct.pop) as n_count,
   sfl.flow_rate as flow_rate,
   sfl.file_duration as file_duration,
-  count(vct.pop) / (sfl.flow_rate * sfl.file_duration * opp_evt_ratio.ratio) as abundance
+  vct.pop as pop,
+  count(vct.pop) as n_count,
+  count(vct.pop) / (sfl.flow_rate * (sfl.file_duration/60) * opp_evt_ratio.ratio) as abundance,
+  avg(opp.fsc_small) as fsc_small,
+  avg(opp.chl_small) as chl_small,
+  avg(pe) as pe
 FROM
   opp, vct, sfl, opp_evt_ratio
 WHERE
