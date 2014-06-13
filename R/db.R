@@ -104,7 +104,7 @@ SELECT
   sfl.lon as lon,
   sfl.date as time,
   opp_evt_ratio.ratio as opp_evt_ratio,
-  count(vct.pop) as n_counts,
+  count(vct.pop) as n_count,
   sfl.flow_rate as flow_rate,
   sfl.file_duration as file_duration,
   count(vct.pop) / (sfl.flow_rate * sfl.file_duration * opp_evt_ratio.ratio) as abundance
