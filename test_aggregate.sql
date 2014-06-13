@@ -1,8 +1,8 @@
-#SQL for aggregate on just one file
+--SQL for aggregate on just one file
 SELECT
   opp.cruise as cruise,
   opp.file as file,
-  vct.pop as pop
+  vct.pop as pop,
   avg(opp.fsc_small) as fsc_small,
   avg(opp.chl_small) as chl_small,
   avg(pe) as pe,
@@ -13,7 +13,7 @@ SELECT
   count(vct.pop) as pop_count,
   sfl.flow_rate as flow_rate,
   sfl.file_duration as file_duration,
-  pop_count / (flow_rate * file_duration * (pop_count / evt_particles)) as abundance
+  count(vct.pop) / (sfl.flow_rate * sfl.file_duration * (count(vct.pop) / evt_count.count)) as abundance
 FROM
   opp, vct, sfl, evt_count
 WHERE
@@ -30,7 +30,7 @@ WHERE
   opp.cruise == evt_count.cruise
   AND
   opp.file == evt_count.file
-  AND
-  opp.file == %s
+  --AND
+  --opp.file == '2014-06-12T15-31-51+00-00'
 GROUP BY
   opp.cruise, opp.file, vct.pop;

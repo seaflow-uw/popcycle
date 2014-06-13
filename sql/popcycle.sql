@@ -65,7 +65,7 @@ CREATE TABLE sfl (
   ocean_tmp REAL,
   par REAL,
   bulk_red REAL,
-  steam_pressure REAL,
+  stream_pressure REAL,
   flow_rate REAL,
   event_rate INTEGER,
   PRIMARY KEY (cruise, file)
