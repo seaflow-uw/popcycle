@@ -1,5 +1,4 @@
-import(RSQLite)
-import(splancs)
+import(RSQLite);
+import(splancs);
 
-exportPattern("^[^\\.]")
-export(plot.vct.cytogram)
+exportPattern("^[^\\.]");

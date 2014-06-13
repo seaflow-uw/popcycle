@@ -12,11 +12,7 @@ evaluate.last.evt <- function() {
   #upload evt count
   file.name = basename(evt.file)
   evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
-  
-  print('Uploading evt particle count')
-  .delete.evt.count.by.file(file.name)
-  upload.evt.count(evt, cruise.id, file.name)
-  
+ 
   #if we don't have filter parameters yet
   if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {
     print('No filtering parameters have been set; skipping filtering.')
@@ -44,6 +40,10 @@ evaluate.last.evt <- function() {
 
   .delete.opp.by.file(file.name) 
   upload.opp(opp.to.db.opp(opp, cruise.id, file.name))
+  
+  print('Uploading opp/evt ratio')
+  .delete.opp.evt.ratio.by.file(file.name)
+  upload.opp.evt.ratio(opp,evt, cruise.id, file.name)
   
   #classify opp
   

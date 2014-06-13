@@ -73,8 +73,8 @@ CREATE TABLE sfl (
 
 CREATE TABLE evt_count (
   cruise TEXT NOT NULL,
-  file TEST NOT NULL,
-  count INTEGER,
+  file TEXT NOT NULL,
+  ratio INTEGER,
   PRIMARY KEY (cruise, file)
 );
 

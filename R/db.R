@@ -29,8 +29,8 @@ upload.opp <- function(db.opp) {
   dbDisconnect(con)
 }
 
-.delete.evt.count.by.file <- function(file.name) {
-  sql <- paste0("DELETE FROM ", evt.count.table.name, " WHERE file == '", 
+.delete.opp.evt.ratio.by.file <- function(file.name) {
+  sql <- paste0("DELETE FROM ", opp.evt.ratio.table.name, " WHERE file == '", 
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db.name)
   dbGetQuery(con, sql)
@@ -74,10 +74,10 @@ get.vct.by.file <- function(file.name) {
   return (vct[,-c(1,2,3,5)])
 }
 
-upload.evt.count <- function(evt, cruise.name, file.name) {
+upload.opp.evt.ratio <- function(opp,evt, cruise.name, file.name) {
   con <- dbConnect(SQLite(), dbname = db.name)
   dbWriteTable(conn = con, name = evt.count.table.name, 
-               value = data.frame(cruise = cruise.name, file = file.name, count = dim(evt)[1]),
+               value = data.frame(cruise = cruise.name, file = file.name, ratio = nrow(opp)/nrow(evt)),
                row.names=FALSE, append=TRUE)
   dbDisconnect(con)
 }
@@ -103,13 +103,13 @@ SELECT
   sfl.lat as lat,
   sfl.lon as lon,
   sfl.date as time,
-  evt_count.count as evt_particles,
-  count(vct.pop) as pop_count,
+  opp_evt_ratio.ratio as opp_evt_ratio,
+  count(vct.pop) as n_counts,
   sfl.flow_rate as flow_rate,
   sfl.file_duration as file_duration,
-  count(vct.pop) / (sfl.flow_rate * sfl.file_duration * (count(vct.pop) / evt_count.count)) as abundance
+  count(vct.pop) / (sfl.flow_rate * sfl.file_duration * opp_evt_ratio.ratio) as abundance
 FROM
-  opp, vct, sfl, evt_count
+  opp, vct, sfl, opp_evt_ratio
 WHERE
   opp.cruise == vct.cruise
   AND
