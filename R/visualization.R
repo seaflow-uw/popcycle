@@ -23,10 +23,10 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
 
 
 
-plot.vct.cytogram.by.file <- function(file_name, para.x = 'fsc_small', para.y = 'chl_small'){
+plot.vct.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small'){
   
-  vct <- get_vct_by_file(file_name)
-  opp <- get_opp_by_file(file_name)
+  vct <- get.vct.by.file(file.name)
+  opp <- get.opp.by.file(file.name)
   opp$pop <- vct
   plot.vct.cytogram(opp, para.x = para.x, para.y = para.y)
 
