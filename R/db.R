@@ -130,7 +130,7 @@ GROUP BY
   opp.cruise, opp.file, vct.pop;"
 
   #in case there's stats in there already
-  sql.delete <- paste('DELETE FROM', stats.table.name, 'WHERE file ==',file.name)
+  sql.delete <- gsub('FILE_NAME', file.name, paste('DELETE FROM', stats.table.name, 'WHERE file == "FILE_NAME"'))
   con <- dbConnect(SQLite(), dbname = db)
   response <- dbGetQuery(con, sql.delete)
 
