@@ -71,7 +71,7 @@ CREATE TABLE sfl (
   PRIMARY KEY (cruise, file)
 );
 
-CREATE TABLE evt_count (
+CREATE TABLE opp_evt_ratio (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
   ratio INTEGER,
