@@ -1,4 +1,5 @@
 --SQL for aggregate on just one file
+INSERT INTO stats
 SELECT
   opp.cruise as cruise,
   opp.file as file,
@@ -30,7 +31,7 @@ WHERE
   opp.cruise == evt_count.cruise
   AND
   opp.file == evt_count.file
-  --AND
-  --opp.file == '2014-06-12T15-31-51+00-00'
+  AND
+  opp.file == '2014-06-12T22-52-43+00-00'
 GROUP BY
   opp.cruise, opp.file, vct.pop;

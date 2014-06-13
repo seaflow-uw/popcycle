@@ -78,6 +78,24 @@ CREATE TABLE evt_count (
   PRIMARY KEY (cruise, file)
 );
 
+CREATE TABLE stats (
+  cruise TEXT NOT NULL,
+  file TEXT NOT NULL,
+  pop TEXT NOT NULL,
+  fsc_small REAL,
+  chl_small REAL,
+  pe REAL,
+  lat REAL,
+  lon REAL,
+  time TEXT,
+  evt_particles INTEGER,
+  pop_count INTEGER,
+  flow_rate REAL,
+  file_duration REAL,
+  abundance REAL,
+  PRIMARY KEY (cruise, file, pop)
+);
+
 CREATE INDEX oppFileIndex
 ON opp (file);
 
