@@ -114,25 +114,25 @@ plot.map <- function(stat,popname,param,...){
 
   map.type <- 'worldHires'
   
-    xlim <- range(stat$long, na.rm=T)        
+    xlim <- range(stat$lon, na.rm=T)        
     ylim <- range(stat$lat, na.rm=T)   
     
     if(xlim[1] < 0 & xlim[2] > 0){
-        neg.long <- subset(stat, long < 0)
-      stat[row.names(neg.long), "long"] <- neg.long$long + 360
-      xlim <- c(min(stat$long, na.rm=TRUE), max(stat$long, na.rm=TRUE))
-      stat <- stat[-which(is.na(stat$long)),]
-      stat$long[stat$long < 0] <- stat$long[stat$long < 0] + 360
+        neg.lon <- subset(stat, lon < 0)
+      stat[row.names(neg.lon), "long"] <- neg.lon$lon + 360
+      xlim <- c(min(stat$lon, na.rm=TRUE), max(stat$lon, na.rm=TRUE))
+      stat <- stat[-which(is.na(stat$lon)),]
+      stat$lon[stat$lon < 0] <- stat$lon[stat$lon < 0] + 360
       map.type <- 'world2Hires'
         }
   
   # plot the cruise track as gray line back-ground
   pop <- subset(stat, pop == popname)
   par(oma=c(1,1,1,2), mar=c(4,4,3,4))
-  plot(pop$long, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
+  plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
             xlab="Longitude (deg W)",ylab="Latitude (deg N)",type='l',lwd=3,col='lightgrey',...)
   try(maps::map(map.type, fill=F, col='black',add=TRUE))
-  points(pop$long, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop[,param],100)],...)
+  points(pop$lon, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop[,param],100)],...)
 
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
