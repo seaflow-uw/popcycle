@@ -121,9 +121,9 @@ WHERE
   AND
   opp.file == sfl.file
   AND
-  opp.cruise == evt_count.cruise
+  opp.cruise == opp_evt_ratio.cruise
   AND
-  opp.file == evt_count.file
+  opp.file == opp_evt_ratio.file
   AND
   opp.file == 'FILE_NAME'
 GROUP BY
