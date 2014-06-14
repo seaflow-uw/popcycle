@@ -23,10 +23,10 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
 
 
 
-plot.vct.cytogram.by.file <- function(file_name, para.x = 'fsc_small', para.y = 'chl_small'){
+plot.vct.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small'){
   
-  vct <- get_vct_by_file(file_name)
-  opp <- get_opp_by_file(file_name)
+  vct <- get.vct.by.file(file.name)
+  opp <- get.opp.by.file(file.name)
   opp$pop <- vct
   plot.vct.cytogram(opp, para.x = para.x, para.y = para.y)
 
@@ -104,48 +104,51 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
 }
 
 
-# plot.map <- function(stat,popname,...){
-#   ## plot cell abundances of a population on a map
-#   require(maps, quietly=T)
-#   require(mapdata, quietly=T)
-#   require(plotrix, quietly=T)
+plot.map <- function(stat,popname,param,...){
+  ## plot cell abundances of a population on a map
+  require(maps, quietly=T)
+  require(mapdata, quietly=T)
+  require(plotrix, quietly=T)
 
-#   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
-#   map.type <- 'worldHires'
+  map.type <- 'worldHires'
   
-#     xlim <- range(stat$long, na.rm=T)        
-#     ylim <- range(stat$lat, na.rm=T)   
+    xlim <- range(stat$lon, na.rm=T)        
+    ylim <- range(stat$lat, na.rm=T)   
     
-#     if(xlim[1] < 0 & xlim[2] > 0){
-#         neg.long <- subset(stat, long < 0)
-#       stat[row.names(neg.long), "long"] <- neg.long$long + 360
-#       xlim <- c(min(stat$long, na.rm=TRUE), max(stat$long, na.rm=TRUE))
-#       stat <- stat[-which(is.na(stat$long)),]
-#       stat$long[stat$long < 0] <- stat$long[stat$long < 0] + 360
-#       map.type <- 'world2Hires'
-#         }
+    if(xlim[1] < 0 & xlim[2] > 0){
+        neg.lon <- subset(stat, lon < 0)
+      stat[row.names(neg.lon), "long"] <- neg.lon$lon + 360
+      xlim <- c(min(stat$lon, na.rm=TRUE), max(stat$lon, na.rm=TRUE))
+      stat <- stat[-which(is.na(stat$lon)),]
+      stat$lon[stat$lon < 0] <- stat$lon[stat$lon < 0] + 360
+      map.type <- 'world2Hires'
+        }
   
-#   # plot the cruise track as gray line back-ground
-#   pop <- subset(stat, pop == popname)
-#   par(oma=c(1,2,1,3))
-#   plot(pop$long, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
-#             xlab="Longitude (deg W)",ylab="Latitude (deg N)",type='l',lwd=3,col='lightgrey',...)
-#   try(maps::map(map.type, fill=TRUE, col='lightgrey',add=TRUE))
-#   points(pop$long, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop$conc,100)],...)
+  # plot the cruise track as gray line back-ground
+  pop <- subset(stat, pop == popname)
+  plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
+            xlab="Longitude (deg W)",ylab="Latitude (deg N)",type='l',lwd=3,col='lightgrey',...)
+  try(maps::map(map.type, fill=F, col='black',add=TRUE))
+  points(pop$lon, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop[,param],100)],...)
 
-#     ylim <- par('usr')[c(3,4)]
-#     xlim <- par('usr')[c(1,2)]
-
+    ylim <- par('usr')[c(3,4)]
+    xlim <- par('usr')[c(1,2)]
 
 
-#     color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
-#       legend=pretty(pop$conc), rect.col=cols(100), gradient='y',align='rb',...)
-#   mtext(substitute(paste("Abundances (10"^{6},"cells L"^{-1},")")), side=4, line=3)  
+
+    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
+      legend=pretty(pop[,param]), rect.col=cols(100), gradient='y',align='rb',...)
+  mtext(paste(param), side=4, line=3)  
   
 
-# }
+}
 
+plot.time <- function(stat, popname,param, ...){
 
+stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
+pop <- subset(stat, pop == popname)
+plot(pop$time, pop[,param], xlab="time", ylab=paste(param),main=paste(popname),...)
 
-# stat <- read.delim("/Volumes/seaflow/Tokyo_2/stats.tab")
+}

@@ -13,9 +13,6 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
   	#if we get an error, move to next file
     tryCatch({
     	evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
-      	print(paste('Uploading evt count for', file.name))
-    	.delete.evt.count.by.file(file.name)
-    	upload.evt.count(evt, cruise.id, file.name)
       
    		print(paste('Filtering', evt.file))
 	    opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
@@ -25,6 +22,12 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
 	    print('Uploading filtered particles to database')
 	    upload.opp(opp.to.db.opp(opp, cruise.id, file.name))
     
+      print(paste('Uploading opp/evt ratio for', file.name))
+      .delete.opp.evt.ratio.by.file(file.name)
+      upload.opp.evt.ratio(opp,evt, cruise.id, file.name)
+   
+
+
 	    if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) > 0) {
 	      print(paste('Classifying', evt.file))
 	      vct <- classify.opp(opp, Gating, param.gate.location)
@@ -33,7 +36,8 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
 	      # store vct
 	      print('Uploading labels to the database')
 	      upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
-	      # TODO: insert statistics 
+        print('Updating stat')
+        insert.stats.for.file(file.name)
 	    }
 	}, error = function(e) {print(paste("Encountered error with file", file.name))},
 	finally = {print(paste("Finished with file", file.name))}
@@ -59,7 +63,8 @@ rerun.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
     	# store vct
     	print('Uploading labels to the database')
     	upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
-    	# TODO: insert statistics
+      print('Updating stat')
+      insert.stats.for.file(file.name)
     }, error = function(e) {print(paste("Encountered error with file", file.name))},
     finally = {print(paste("Finished with file", file.name))}
     )

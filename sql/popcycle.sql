@@ -41,6 +41,9 @@ CREATE TABLE opp (
   PRIMARY KEY (cruise, file, particle)
 );
 
+CREATE INDEX oppFileIndex
+ON opp (file);
+
 CREATE TABLE vct (
   -- First three columns are the EVT, OPP, VCT, SDS composite key
   cruise TEXT NOT NULL,
@@ -51,6 +54,9 @@ CREATE TABLE vct (
   method TEXT NOT NULL,
   PRIMARY KEY (cruise, file, particle)
 );
+
+CREATE INDEX vctFileIndex
+ON vct (file);
 
 CREATE TABLE sfl (
   --First two columns are the SDS composite key
@@ -71,33 +77,31 @@ CREATE TABLE sfl (
   PRIMARY KEY (cruise, file)
 );
 
-CREATE TABLE evt_count (
+CREATE TABLE opp_evt_ratio (
   cruise TEXT NOT NULL,
-  file TEST NOT NULL,
-  count INTEGER,
+  file TEXT NOT NULL,
+  ratio INTEGER,
   PRIMARY KEY (cruise, file)
 );
 
 CREATE TABLE stats (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
+  time TEXT,
+  lat REAL,
+  lon REAL,
+  opp_evt_ratio INTEGER,
+  flow_rate REAL,
+  file_duration REAL,
   pop TEXT NOT NULL,
+  n_count INTEGER,
+  abundance REAL,
   fsc_small REAL,
   chl_small REAL,
   pe REAL,
-  lat REAL,
-  lon REAL,
-  time TEXT,
-  evt_particles INTEGER,
-  pop_count INTEGER,
-  flow_rate REAL,
-  file_duration REAL,
-  abundance REAL,
   PRIMARY KEY (cruise, file, pop)
 );
 
-CREATE INDEX oppFileIndex
-ON opp (file);
 
-CREATE INDEX vctFileIndex
-ON vct (file);
+
+
