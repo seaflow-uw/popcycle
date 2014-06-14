@@ -148,11 +148,11 @@ plot.map <- function(stat,popname,param,...){
 
 plot.time <- function(stat, popname,param, ...){
 
-stat$time <- as.POSIXct(stat$time)
+stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
 pop <- subset(stat, pop == popname)
 
 par(oma=c(1,1,1,1), mar=c(4,4,3,4))
-plot(pop$time, pop[,param], xlim="time", ylim=paste(param),...)
+plot(pop$time, pop[,param], xlab="time", ylab=paste(param),main=paste(popname),...)
 
 
 }
