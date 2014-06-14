@@ -32,25 +32,28 @@ dev.off()
 stat <- get.stat.table()  
 phyto <- unique(stat$pop)
 
+print("creating cell_conc_map.png")
 png("cell_conc_map.png",width=15, height=9, unit='in', res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,2))
 for(i in phyto)	try(plot.map (stat, popname=i, param='abundance'))
 dev.off()
 
-
+print("creating cell_conc_time.png")
 png("cell_conc_time.png",width=15, height=9, unit='in', res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
 for(i in phyto)	try(plot.time(stat, popname=i, param='abundance'))
 dev.off()
 
-par(oma=c(1,1,1,1), mar=c(4,4,3,4))
-
+print("creating light_scatter.png")
 png("~/light_scatter.png",width=15,height=9,unit='in',res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
 for(i in phyto) try(plot.time(stat, popname=i, param='fsc_small'))
 dev.off()
 
+print("creating chl_small.png")
 png("~/chl_small.png",width=15,height=9,unit='in',res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
 for(i in phyto)	try(plot.time(stat, popname=i, param='chl_small'))
 dev.off()
+
+print("DONE")
