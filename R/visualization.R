@@ -128,7 +128,6 @@ plot.map <- function(stat,popname,param,...){
   
   # plot the cruise track as gray line back-ground
   pop <- subset(stat, pop == popname)
-  par(oma=c(1,1,1,2), mar=c(4,4,3,4))
   plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
             xlab="Longitude (deg W)",ylab="Latitude (deg N)",type='l',lwd=3,col='lightgrey',...)
   try(maps::map(map.type, fill=F, col='black',add=TRUE))
@@ -150,9 +149,6 @@ plot.time <- function(stat, popname,param, ...){
 
 stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
 pop <- subset(stat, pop == popname)
-
-par(oma=c(1,1,1,1), mar=c(4,4,3,4))
 plot(pop$time, pop[,param], xlab="time", ylab=paste(param),main=paste(popname),...)
-
 
 }
