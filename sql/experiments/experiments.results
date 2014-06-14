@@ -1,0 +1,22 @@
+SELECT * 
+  FROM opp 
+ WHERE file = '2015-06-11T22-54-07+00-00';
+SELECT opp.cruise, opp.file as file, vct.pop as pop, avg(fsc_small) as fsc_small
+FROM opp, vct
+WHERE opp.cruise == vct.cruise
+  AND opp.file == vct.file
+  AND opp.particle == vct.particle
+GROUP BY opp.cruise, opp.file, vct.pop
+LIMIT 1;
+july2014|2014-06-10T14-38-35-07-00|beads|46.9562251837395
+SELECT *
+  FROM opp
+ WHERE file = '2015-06-11T22-54-07+00-00';
+SELECT opp.cruise, opp.file as file, vct.pop as pop, avg(fsc_small) as fsc_small
+FROM opp, vct
+WHERE opp.cruise == vct.cruise
+  AND opp.file == vct.file
+  AND opp.particle == vct.particle
+GROUP BY opp.cruise, opp.file, vct.pop
+LIMIT 1;
+july2014|2014-06-10T14-38-35-07-00|beads|46.9562251837395
