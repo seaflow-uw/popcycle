@@ -29,6 +29,6 @@ for (i in 1:length(vct.list)) {
   file = strsplit(file, '.opp')[[1]][1]
   file.name = paste(day, file, sep='/')
   file.name = gsub('.opp', '', file.name) 
-  upload.opp(opp.to.db.opp(opp, cruise.name, file.name), db)
+  upload.vct(vct.to.db.vct(vct, cruise.name, file.name, 'Manual Gating'))
 }
 
