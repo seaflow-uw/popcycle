@@ -42,6 +42,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     
     for d, h in zip(data, header):
         h = h.upper()
+        h = h.strip('\n')
         if h in FLOATS:
             h = h.strip().replace(' ', '_')
             try:
@@ -100,10 +101,10 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
 
     #return db_tuple
 
-def insert_file_bulk(sfl_file) :
+def insert_file_bulk(sfl_file, db = '~/popcycle/sqlite/popcycle.db') :
     lines = open(sfl_file).readlines()
     header = lines[0].split('\t')
-    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+    dbpath = os.path.expanduser(db)
     for line in lines[1:] :
         data = line.split('\t')
         conn = sqlite3.connect(dbpath)
@@ -114,8 +115,8 @@ def insert_file_bulk(sfl_file) :
 
         fix_and_insert_sfl(data, header, dbpath)
 
-def insert_last_entry() :
-    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+def insert_last_entry(db = '~/popcycle/sqlite/popcycle.db') :
+    dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser('~/SeaFlow/datafiles/evt/')
     latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
     sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
@@ -123,8 +124,8 @@ def insert_last_entry() :
 
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
 
-def insert_last_file() :
-    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+def insert_last_file(db = '~/popcycle/sqlite/popcycle.db') :
+    dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser('~/SeaFlow/datafiles/evt/')
     latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
     sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
