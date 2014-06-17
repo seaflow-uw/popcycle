@@ -7,7 +7,7 @@ Setup instructions:
 > bash setup.sh
 
 This should create all the necessary directories, the popcycle database, and install popcycle as an R package. The setup.R
-script should also install RSQLite and splancs if they are not already installed.
+script should also install RSQLite and splancs packages if they are not already installed.
 
 Uploading old files:
 
