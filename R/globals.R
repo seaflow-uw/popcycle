@@ -1,10 +1,23 @@
-# standard header for EVT files, needed for readSeaflow
-EVT.HEADER <- c("time","pulse_width","D1","D2",
-                "fsc_small","fsc_perp","fsc_big","pe","chl_small","chl_big")
+
+
+##########################
+### MODIFY ACCORDINGLY ###
+##########################
 
 #evt.location <- '~/SeaFlow/datafiles/evt' # during cruise
 evt.location <- '~/SeaFlow/datafiles/evt' # in the lab
 instrument.location <- '/Volumes/evt'
+cruise.id <- 'july2014'
+
+
+
+###################
+### DON'T TOUCH ###
+###################
+
+# standard header for EVT files, needed for readSeaflow
+EVT.HEADER <- c("time","pulse_width","D1","D2",
+                "fsc_small","fsc_perp","fsc_big","pe","chl_small","chl_big")
 
 # name of SQLite database containing OPP and VCT tables
 db.name <- '~/popcycle/sqlite/popcycle.db'
@@ -12,7 +25,6 @@ opp.table.name <- 'opp'
 vct.table.name <- 'vct'
 opp.evt.ratio.table.name <- 'opp_evt_ratio'
 stats.table.name <- 'stats'
-cruise.id <- 'july2014'
 
 # location to log filtering and gating parameters
 log.location <- '~/popcycle/logs'
@@ -23,6 +35,8 @@ log.filter.location <- paste(log.location, 'filter', sep='/')
 param.location <- '~/popcycle/params'
 param.gate.location <- paste(param.location, 'gates', sep='/')
 param.filter.location <- paste(param.location, 'filter', sep='/')
+
+
 
 # flow calibration for SEAFLOW1
 #ratio.evt.stream = 0.14756
