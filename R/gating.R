@@ -44,7 +44,7 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 }
 
 
-Gating <- function(opp,gate_path=param.gate.location){
+ManualGating <- function(opp,gate_path=param.gate.location){
 
   opp$pop <- "unknown"
   
