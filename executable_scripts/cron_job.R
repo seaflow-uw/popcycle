@@ -18,13 +18,21 @@ opp <- get.opp.by.file(last.file)
 vct <- get.vct.by.file(last.file)
 opp$pop <- vct
 
+print("creating cytogram.png")
 png("~/cytogram.png",width=15,height=9,unit='in',res=300)
+par(mfrow=c(1,2),cex=cex)
+plot.cytogram(opp, "fsc_small","chl_small")
+plot.cytogram(opp, "fsc_small","pe")
+mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
+dev.off()
+
+print("creating vct.cytogram.png")
+png("~/vct.cytogram.png",width=15,height=9,unit='in',res=300)
 par(mfrow=c(1,2),cex=cex)
 plot.vct.cytogram(opp, "fsc_small","chl_small")
 plot.vct.cytogram(opp, "fsc_small","pe")
 mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
 dev.off()
-
 
 ##################
 ### PLOT STATS ###
