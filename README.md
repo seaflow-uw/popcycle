@@ -4,7 +4,7 @@ PopCycle
 PopCycle is a R/python package that process in real-time continuous flow cytometry data from SeaFlow.
 
 Setup instructions: 
-> bash setup.sh
+<code> bash setup.sh </code>
 
 This should create all the necessary directories, the popcycle database, and install popcycle as an R package. The setup.R
 script should also install RSQLite and splancs packages if they are not already installed.
