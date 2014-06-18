@@ -55,7 +55,7 @@ evaluate.last.evt <- function() {
   
   print(paste('Classifying', evt.file))
   
-  vct <- classify.opp(opp, Gating, param.gate.location)
+  vct <- classify.opp(opp, ManualGating, param.gate.location)
   
   #store vct
   print('Uploading labels to the database')
