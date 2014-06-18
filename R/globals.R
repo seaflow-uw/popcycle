@@ -4,10 +4,9 @@
 ### MODIFY ACCORDINGLY ###
 ##########################
 
-#evt.location <- '~/SeaFlow/datafiles/evt' # during cruise
-evt.location <- '~/SeaFlow/datafiles/evt' # in the lab
-instrument.location <- '/Volumes/evt'
-cruise.id <- 'july2014'
+evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the rel-time analysis
+instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
+cruise.id <- 'july2014' # Cruise name
 
 
 
