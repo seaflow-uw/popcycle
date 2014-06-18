@@ -10,7 +10,7 @@ PopCycle is a R/python package that process in real-time continuous flow cytomet
 This should create all the necessary directories, the popcycle database, and install popcycle as an R package. The setup.R
 script should also install RSQLite and splancs packages if they are not already installed.
 
-for more information about how to run PopCycle, go to the [wiki](https://github.com/uwescience/popcycle/wiki/PopCycle-Tutorials)
+A quick PopCycle tutorial is now available on the [wiki](https://github.com/uwescience/popcycle/wiki/PopCycle-Tutorials)
 
 
 #### Uploading old files:
