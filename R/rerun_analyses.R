@@ -30,7 +30,7 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
 
 	    if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) > 0) {
 	      print(paste('Classifying', evt.file))
-	      vct <- classify.opp(opp, Gating, param.gate.location)
+	      vct <- classify.opp(opp, ManualGating, param.gate.location)
 	      # delete old vct entries if they exist so we keep cruise/file/particle distinct
 	      .delete.vct.by.file(file.name)
 	      # store vct
@@ -57,7 +57,7 @@ rerun.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
   	tryCatch({
     	opp <- get.opp.by.file(file.name)
     	print(paste('Classifying', evt.file))
-    	vct <- classify.opp(opp, Gating, param.gate.location)
+    	vct <- classify.opp(opp, ManualGating, param.gate.location)
     	# delete old vct entries if they exist so we keep cruise/file/particle distinct
     	.delete.vct.by.file(file.name)
     	# store vct
