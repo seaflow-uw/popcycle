@@ -14,3 +14,8 @@ for line in f :
   elements[-2] = elements[-2] + '/' + elements[-1].strip() + '.evt'
   f2.write('\t'.join(elements[:-1]))
   f2.write('\n')
+
+# TODO : 
+# 1) REPLACE "." by " " in column names of the SDS.TAB
+# 2) ADD Column FILE DURATION and filled it with value 180
+# 3) REMOVE duplicate filename, if present.
