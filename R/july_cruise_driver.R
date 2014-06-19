@@ -44,7 +44,8 @@ evaluate.last.evt <- function() {
   
   print('Uploading opp/evt ratio')
   .delete.opp.evt.ratio.by.file(file.name)
-  upload.opp.evt.ratio(opp,evt, cruise.id, file.name)
+  opp.evt.ratio <- nrow(opp)/nrow(evt)
+  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)
   
   #classify opp
   

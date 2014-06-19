@@ -74,10 +74,10 @@ get.vct.by.file <- function(file.name, db = db.name) {
   return (vct[,-c(1,2,3,5)])
 }
 
-upload.opp.evt.ratio <- function(opp,evt, cruise.name, file.name, db = db.name) {
+upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.name) {
   con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = opp.evt.ratio.table.name, 
-               value = data.frame(cruise = cruise.name, file = file.name, ratio = nrow(opp)/nrow(evt)),
+               value = data.frame(cruise = cruise.name, file = file.name, ratio = opp.evt.ratio),
                row.names=FALSE, append=TRUE)
   dbDisconnect(con)
 }
