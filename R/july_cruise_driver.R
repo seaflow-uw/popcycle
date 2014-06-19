@@ -11,6 +11,7 @@ evaluate.last.evt <- function() {
   
   #upload evt count
   file.name = basename(evt.file)
+  print(paste('Loading', evt.file))
   evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
  
   #if we don't have filter parameters yet
