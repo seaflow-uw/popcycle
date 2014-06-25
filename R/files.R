@@ -1,4 +1,4 @@
-get.evt.list <- function() {
+get.evt.list <- function(...) {
   file.list <- list.files(evt.location, recursive=T)
   if (length(file.list) == 0) {
     return (file.list)
@@ -12,14 +12,14 @@ get.evt.list <- function() {
 }
 
 
-get.latest.file.with.day <- function() {
-  file.list <- get.evt.list()
+get.latest.evt.with.day <- function(...) {
+  file.list <- get.evt.list(...)
   n <- length(file.list)
   return (file.list[n])
 }
 
-get.latest.file <- function() {
-  return (basename(get.latest.file.with.day()))
+get.latest.evt <- function(...) {
+  return (basename(get.latest.evt.with.day(...)))
 }
 
 files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp) {
@@ -42,9 +42,9 @@ files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp) {
 }
 
 
-file.transfer <- function(){
+file.transfer <- function(...){
 
-  last.evt <- get.latest.file.with.day()
+  last.evt <- get.latest.evt.with.day(...)
   file.list <- list.files(instrument.location, recursive=T)
   file.list <- file.list[-length(file.list)] # remove the last file (opened file)
   sfl.list <- file.list[grepl('.sfl', file.list)]

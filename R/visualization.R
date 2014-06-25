@@ -1,18 +1,28 @@
-plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small'){		
+plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){		
 
 	cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 	par(pty='s')
-	plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy', xlim=c(1,10^3.5), ylim=c(1,10^3.5)) #plot 2D cytogram
+	plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy', xlim=c(1,10^3.5), ylim=c(1,10^3.5),...) #plot 2D cytogram
 	
 }
 
+
+plot.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
+  
+  opp <- get.opp.by.file(file.name)
+  opp$pop <- vct
+  plot.cytogram(opp, para.x = para.x, para.y = para.y,...)
+
+}
+
+
 ## OPP merged with VCT
-plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){		
+plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small',...){		
 		
 		if(!is.null(opp$pop)){
 			par(pty='s')
       ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
-      plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5)) #plot 2D cytogram
+      plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5),...) #plot 2D cytogram
 			legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
 		}else{
 			print("No Gating parameters yet!")
@@ -22,33 +32,17 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
 }
 
 
-
-plot.vct.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small'){
+plot.vct.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
   
   vct <- get.vct.by.file(file.name)
   opp <- get.opp.by.file(file.name)
   opp$pop <- vct
-  plot.vct.cytogram(opp, para.x = para.x, para.y = para.y)
+  plot.vct.cytogram(opp, para.x = para.x, para.y = para.y,...)
 
 }
 
 
 
-
-plot.filter.cytogram <- function(evt, width=1, notch=1){
-
-
-  notch <- as.numeric(notch)
-  width <- 1 + as.numeric(width)
-   
-   if(any(max(evt[,-c(1,2)]) > 10^3.5)){
-    stop(paste("ERROR, data are not LOG-transform"))
-   }
-  
-  evt <- subset(evt, D1 > 1 & D2 > 1) # filtering particles not detected by D1 or D2
-    m.D1 <- max(evt[,"D1"])
-    m.D2 <- max(evt[,"D2"])
-  evt <- subset(evt, D1 < m.D1 & D2 < m.D2) # filtering particles with saturated signals on D1 or D2
 
 plot.filter.cytogram <- function(evt, width=1, notch=1){
 
@@ -119,6 +113,16 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
  
 }
 
+plot.filter.cytogram.by.file <- function(file.name,notch=1, width=0.5,...){
+
+    evt.list <- get.evt.list(...)
+    id <- which(file.name == evt.list)
+    evt.file <- evt.list[id]
+    evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
+
+  plot.filter.cytogram(evt, notch=notch, width=width)
+
+}
 
  
   #####################
@@ -210,7 +214,7 @@ plot.map <- function(stat,popname,param,...){
 
     color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
       legend=pretty(pop[,param]), rect.col=cols(100), gradient='y',align='rb',...)
-  mtext(paste(param), side=4, line=3)  
+  mtext(paste(param), side=4, line=3,...)  
   
 
 }

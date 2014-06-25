@@ -77,7 +77,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     try :
       stream_pressure = dbcolumn_to_fixed_data['STREAM_PRESSURE']
       ratio_evt_stream = 0.14756
-      flow_rate = (-9*10**-5 * stream_pressure**4 + 0.0066 * stream_pressure**3 - 0.173 * stream_pressure**2 + 2.5013 * stream_pressure + 2.1059) * ratio_evt_stream
+      flow_rate = 1000 * (-9*10**-5 * stream_pressure**4 + 0.0066 * stream_pressure**3 - 0.173 * stream_pressure**2 + 2.5013 * stream_pressure + 2.1059) * ratio_evt_stream
       dbcolumn_to_fixed_data['FLOW_RATE'] = flow_rate
     except Exception as e:
       dbcolumn_to_fixed_data['FLOW_RATE'] = None
