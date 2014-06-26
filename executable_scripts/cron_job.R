@@ -35,19 +35,6 @@ mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
 dev.off()
 
 
-##############
-### CytDiv ###
-##############
-cytdiv <- get.cytdiv.table()
-
-print("creating cytometric diversity.png")
-png("~/div_indices.png",width=15,height=9,unit='in',res=300)
-par(mfrow=c(2,2),cex=cex)
-plot.cytdiv.map(cytdiv, index="N0")
-plot.cytdiv.map(cytdiv, index="H")
-plot.cytdiv.time(cytdiv, index="N0")
-plot.cytdiv.time(cytdiv, index="H")
-dev.off()
 
 
 ##################
@@ -57,13 +44,13 @@ stat <- get.stat.table()
 phyto <- unique(stat$pop)
 
 print("creating cell_conc_map.png")
-png("cell_conc_map.png",width=15, height=9, unit='in', res=300)
+png("~/cell_conc_map.png",width=15, height=9, unit='in', res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,2))
 for(i in phyto)	try(plot.map (stat, popname=i, param='abundance'))
 dev.off()
 
 print("creating cell_conc_time.png")
-png("cell_conc_time.png",width=15, height=9, unit='in', res=300)
+png("~/cell_conc_time.png",width=15, height=9, unit='in', res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
 for(i in phyto)	try(plot.time(stat, popname=i, param='abundance'))
 dev.off()
@@ -79,6 +66,44 @@ png("~/chl_small.png",width=15,height=9,unit='in',res=300)
 par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
 for(i in phyto)	try(plot.time(stat, popname=i, param='chl_small'))
 dev.off()
+
+
+
+
+##############
+### CytDiv ###
+##############
+cytdiv <- get.cytdiv.table()
+
+print("creating cytometric diversity.png")
+png("~/div_indices.png",width=15,height=9,unit='in',res=300)
+par(mfrow=c(2,2),cex=cex)
+plot.cytdiv.map(cytdiv, index="N0")
+plot.cytdiv.map(cytdiv, index="H")
+plot.cytdiv.time(cytdiv, index="N0")
+plot.cytdiv.time(cytdiv, index="H")
+dev.off()
+
+
+print("creating fluo_comp.png")
+png("~/fluo_comp.png",width=15,height=9,unit='in',res=300)
+par(mfrow=c(2,1),cex=cex)
+plot.cytdiv.time(cytdiv, index="bulk_red")
+plot.cytdiv.time(cytdiv, index="opp_red")
+dev.off()
+
+###############
+### TS PLOT ###
+###############
+
+sfl <- get.sfl.table()
+
+print("creating TS_plot.png")
+png("~/TS_plot.png",width=15, height=9, unit='in', res=300)
+par(mfrow=c(1,1),cex=cex)
+plot.ts(sfl)
+dev.off()
+
 
 print("DONE")
 

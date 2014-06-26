@@ -14,9 +14,9 @@ cytodiv <- function(opp, para, Ncat){
         N1 = exp(-sum(p_i*log(p_i)))
         H = log(N1) # Shannon-Wiener's Index - use natural log
         J = log(N1)/log(N0) # Evenness
-        
+        opp_red = sum(opp$fsc_small)/1000 # Estimates of bulk Chlorophyll from fsc_small
         # output
-        indices <- data.frame(cbind(N0, N1, H, J))
+        indices <- data.frame(cbind(N0, N1, H, J, opp_red))
         return(indices)
         
         

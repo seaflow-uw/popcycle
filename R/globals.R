@@ -1,5 +1,3 @@
-
-
 ##########################
 ### MODIFY ACCORDINGLY ###
 ##########################
@@ -10,9 +8,23 @@ cruise.id <- 'july2014' # Cruise name
 
 
 
-###################
-### DON'T TOUCH ###
-###################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+############################
+### !!! DO NOT TOUCH !!! ###
+############################
 
 # standard header for EVT files, needed for readSeaflow
 EVT.HEADER <- c("time","pulse_width","D1","D2",

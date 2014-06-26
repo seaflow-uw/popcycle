@@ -77,12 +77,14 @@ CREATE TABLE sfl (
   PRIMARY KEY (cruise, file)
 );
 
+
 CREATE TABLE opp_evt_ratio (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
   ratio REAL,
   PRIMARY KEY (cruise, file)
 );
+
 
 CREATE TABLE stats (
   cruise TEXT NOT NULL,
@@ -103,7 +105,6 @@ CREATE TABLE stats (
 );
 
 
-
 CREATE TABLE cytdiv (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
@@ -111,6 +112,7 @@ CREATE TABLE cytdiv (
   N1 REAL,
   H REAL,
   J REAL,
+  opp_red REAL,
   PRIMARY KEY (cruise, file)
 );
 

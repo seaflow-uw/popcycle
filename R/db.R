@@ -144,7 +144,7 @@ GROUP BY
 upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
  con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = cytdiv.table.name, 
-               value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4]),
+               value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4], opp_red=indices[5]),
                row.names=FALSE, append=TRUE)
   dbDisconnect(con)
 }
@@ -152,6 +152,8 @@ upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
 
 get.cytdiv.table <- function(db = db.name) {
   sql <- "SELECT
+            sfl.cruise as cruise,
+            sfl.file as file,
             sfl.date as time,
             sfl.lat as lat,
             sfl.lon as lon,
@@ -159,14 +161,13 @@ get.cytdiv.table <- function(db = db.name) {
             cytdiv.N1 as N1,
             cytdiv.H as H,
             cytdiv.J as J,
-           FROM 'sfl', 'cytdiv'
+            cytdiv.opp_red as opp_red,
+            sfl.bulk_red as bulk_red
+           FROM sfl, cytdiv
            WHERE
             sfl.cruise == cytdiv.cruise
             AND
-            sfl.file == cytdiv.file"
-
-  sql <- gsub('sfl', cytdiv.table.name, sql)
-  sql <- gsub('cytdiv', cytdiv.table.name, sql)
+            sfl.file == cytdiv.file;"
 
   con <- dbConnect(SQLite(), dbname = db)
   cytdiv <- dbGetQuery(con, sql)
@@ -175,5 +176,10 @@ get.cytdiv.table <- function(db = db.name) {
 }
 
 
-
-
+get.sfl.table <- function(db = db.name) {
+  sql <- paste('SELECT * FROM ', sfl.table.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  sfl <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return (sfl)
+}
