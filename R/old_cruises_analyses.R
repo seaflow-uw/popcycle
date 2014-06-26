@@ -40,6 +40,16 @@ files <- evt.list[grepl('evt', evt.list)]
         # store vct
         print('Uploading labels to the database')
         upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'), db=db.name)
+
+              #cytometric diversity
+        print("Calculating cytometric diversity")
+        opp$pop <- vct
+        df <- opp[!(opp$pop == 'beads'),]
+        indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
+
+        print('Uploading cytdiv')
+        upload.cytdiv(indices,cruise.id, file.name)
+
         print('Updating stat')
         insert.stats.for.file(file.name, db=db.name)
       }
@@ -88,6 +98,16 @@ files <- opp.list[grepl('opp', opp.list)]
         # store vct
         print('Uploading labels to the database')
         upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'), db=db.name)
+
+      #cytometric diversity
+        print("Calculating cytometric diversity")
+        opp$pop <- vct
+        df <- opp[!(opp$pop == 'beads'),]
+        indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
+
+        print('Uploading cytdiv')
+        upload.cytdiv(indices,cruise.id, file.name)
+        
         print('Updating stat')
         insert.stats.for.file(file.name, db=db.name)
       }

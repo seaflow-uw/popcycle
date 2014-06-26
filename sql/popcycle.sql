@@ -80,7 +80,7 @@ CREATE TABLE sfl (
 CREATE TABLE opp_evt_ratio (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
-  ratio INTEGER,
+  ratio REAL,
   PRIMARY KEY (cruise, file)
 );
 
@@ -90,7 +90,7 @@ CREATE TABLE stats (
   time TEXT,
   lat REAL,
   lon REAL,
-  opp_evt_ratio INTEGER,
+  opp_evt_ratio REAL,
   flow_rate REAL,
   file_duration REAL,
   pop TEXT NOT NULL,
@@ -101,6 +101,20 @@ CREATE TABLE stats (
   pe REAL,
   PRIMARY KEY (cruise, file, pop)
 );
+
+
+
+CREATE TABLE cytdiv (
+  cruise TEXT NOT NULL,
+  file TEXT NOT NULL,
+  N0 INTEGER,
+  N1 REAL,
+  H REAL,
+  J REAL,
+  PRIMARY KEY (cruise, file)
+);
+
+
 
 
 

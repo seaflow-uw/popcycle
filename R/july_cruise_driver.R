@@ -65,6 +65,16 @@ evaluate.last.evt <- function() {
   .delete.vct.by.file(file.name)
   upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
 
+  #cytometric diversity
+  print("Calculating cytometric diversity")
+  opp$pop <- vct
+  df <- opp[!(opp$pop == 'beads'),]
+  indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
+
+  print('Uploading cytdiv')
+  upload.cytdiv(indices,cruise.id, file.name)
+
+  #aggregate statistics
   print('Uploading stats')
   insert.stats.for.file(file.name)
 }

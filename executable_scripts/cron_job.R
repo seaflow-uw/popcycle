@@ -34,6 +34,22 @@ plot.vct.cytogram(opp, "fsc_small","pe")
 mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
 dev.off()
 
+
+##############
+### CytDiv ###
+##############
+cytdiv <- get.cytdiv.table()
+
+print("creating cytometric diversity.png")
+png("~/div_indices.png",width=15,height=9,unit='in',res=300)
+par(mfrow=c(2,2),cex=cex)
+plot.cytdiv.map(cytdiv, index="N0")
+plot.cytdiv.map(cytdiv, index="H")
+plot.cytdiv.time(cytdiv, index="N0")
+plot.cytdiv.time(cytdiv, index="H")
+dev.off()
+
+
 ##################
 ### PLOT STATS ###
 ##################

@@ -24,6 +24,8 @@ opp.table.name <- 'opp'
 vct.table.name <- 'vct'
 opp.evt.ratio.table.name <- 'opp_evt_ratio'
 stats.table.name <- 'stats'
+cytdiv.table.name <- 'cytdiv'
+sfl.table.name <- 'sfl'
 
 # location to log filtering and gating parameters
 log.location <- '~/popcycle/logs'

@@ -157,8 +157,6 @@ plot.map <- function(stat,popname,param,...){
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
 
-
-
     color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
       legend=pretty(pop[,param]), rect.col=cols(100), gradient='y',align='rb',...)
   mtext(paste(param), side=4, line=3,...)  
@@ -168,8 +166,52 @@ plot.map <- function(stat,popname,param,...){
 
 plot.time <- function(stat, popname,param, ...){
 
-stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
-pop <- subset(stat, pop == popname)
-plot(pop$time, pop[,param], xlab="time", ylab=paste(param),main=paste(popname),...)
+  stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
+  pop <- subset(stat, pop == popname)
+  plot(pop$time, pop[,param], xlab="time", ylab=paste(param),main=paste(popname),...)
+
+}
+
+
+plot.cytdiv.map <- function(cytdiv,index,...){
+  require(maps, quietly=T)
+  require(mapdata, quietly=T)
+  require(plotrix, quietly=T)
+ 
+ cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
+
+  map.type <- 'worldHires'
+  
+    xlim <- range(cytdiv$lon, na.rm=T)        
+    ylim <- range(cytdiv$lat, na.rm=T)   
+    
+    if(xlim[1] < 0 & xlim[2] > 0){
+        neg.lon <- subset(cytdiv, lon < 0)
+      cytdiv[row.names(neg.lon), "long"] <- neg.lon$lon + 360
+      xlim <- c(min(cytdiv$lon, na.rm=TRUE), max(cytdiv$lon, na.rm=TRUE))
+      cytdiv <- cytdiv[-which(is.na(cytdiv$lon)),]
+      cytdiv$lon[cytdiv$lon < 0] <- cytdiv$lon[cytdiv$lon < 0] + 360
+      map.type <- 'world2Hires'
+        }
+  
+  plot(cytdiv$lon, cytdiv$lat, xlim=xlim, ylim=ylim, asp=1,
+            xlab="Longitude (deg W)",ylab="Latitude (deg N)",type='l',lwd=3,col='lightgrey',...)
+  try(maps::map(map.type, fill=F, col='black',add=TRUE))
+  points(cytdiv$lon, cytdiv$lat, pch=16, asp=1, col=cols(100)[cut(cytdiv[,index],100)],...)
+
+    ylim <- par('usr')[c(3,4)]
+    xlim <- par('usr')[c(1,2)]
+
+    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
+      legend=pretty(cytdiv[,index]), rect.col=cols(100), gradient='y',align='rb',...)
+  mtext(paste(index), side=4, line=3,...)  
+
+}
+
+
+plot.cytdiv.time <- function(cytdiv,index, ...){
+
+  cytdiv$time <- as.POSIXct(cytdiv$time,format="%FT%T",tz='GMT')
+  plot(cytdiv$time, cytdiv[,index], xlab="time", ylab=paste(index),...)
 
 }

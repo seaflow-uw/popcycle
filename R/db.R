@@ -82,6 +82,7 @@ upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.
   dbDisconnect(con)
 }
 
+
 get.stat.table <- function(db = db.name) {
   sql <- paste('SELECT * FROM ', stats.table.name)
   con <- dbConnect(SQLite(), dbname = db)
@@ -91,7 +92,7 @@ get.stat.table <- function(db = db.name) {
 }
 
 insert.stats.for.file <- function(file.name, db = db.name) {
-  # TODO(Bill, Dan, Francois): fix abundance code because it doesn't work
+  # [TODO Francois] Name of OPP, vct, sfl, opp_evt_ratio tables should be a variable too.
   sql <- "INSERT INTO stats
 SELECT
   opp.cruise as cruise,
@@ -138,3 +139,41 @@ GROUP BY
   response <- dbGetQuery(con, sql)
   dbDisconnect(con)
 }
+
+
+upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
+ con <- dbConnect(SQLite(), dbname = db)
+  dbWriteTable(conn = con, name = cytdiv.table.name, 
+               value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4]),
+               row.names=FALSE, append=TRUE)
+  dbDisconnect(con)
+}
+
+
+get.cytdiv.table <- function(db = db.name) {
+  sql <- "SELECT
+            sfl.date as time,
+            sfl.lat as lat,
+            sfl.lon as lon,
+            cytdiv.N0 as N0,
+            cytdiv.N1 as N1,
+            cytdiv.H as H,
+            cytdiv.J as J,
+           FROM 'sfl', 'cytdiv'
+           WHERE
+            sfl.cruise == cytdiv.cruise
+            AND
+            sfl.file == cytdiv.file"
+
+  sql <- gsub('sfl', cytdiv.table.name, sql)
+  sql <- gsub('cytdiv', cytdiv.table.name, sql)
+
+  con <- dbConnect(SQLite(), dbname = db)
+  cytdiv <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return (cytdiv)
+}
+
+
+
+
