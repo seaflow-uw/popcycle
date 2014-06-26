@@ -1,4 +1,4 @@
-cytoDiv <- function(opp, para, Ncat){
+cytodiv <- function(opp, para, Ncat){
         
         require(plyr)
         
