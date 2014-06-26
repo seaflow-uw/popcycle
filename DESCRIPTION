@@ -5,7 +5,7 @@ Date: 2014-06-04
 Author: Camille Cobb, Daniel Halperin, Jeremy Hyrkas, Francois Ribalet
 Maintainer: Jeremy Hyrkas <hyrkas@cs.washington.edu>
 Description: Real-time Seaflow analysis using R/SQLite.
-Depends: RSQLite, splancs 
+Depends: RSQLite, splancs, plyr
 Suggests: plotrix, maps, mapdata
 License: GPL-2
 URL: http://seaflow.ocean.washington.edu

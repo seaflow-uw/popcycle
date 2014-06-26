@@ -1,4 +1,4 @@
 import(RSQLite);
 import(splancs);
-
+import(plyr);
 exportPattern("^[^\\.]");
