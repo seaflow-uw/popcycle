@@ -41,6 +41,10 @@ dev.off()
 ### PLOT STATS ###
 ##################
 stat <- get.stat.table()  
+
+print("saving stat.csv")
+write.csv(stat, "~/stat.csv", row.names=FALSE, quote=FALSE)
+
 phyto <- unique(stat$pop)
 
 print("creating cell_conc_map.png")

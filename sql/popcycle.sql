@@ -108,11 +108,15 @@ CREATE TABLE stats (
 CREATE TABLE cytdiv (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
+  time TEXT,
+  lat REAL,
+  lon REAL,
   N0 INTEGER,
   N1 REAL,
   H REAL,
   J REAL,
   opp_red REAL,
+  bulk_red REAL,
   PRIMARY KEY (cruise, file)
 );
 
