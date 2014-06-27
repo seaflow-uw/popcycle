@@ -1,7 +1,7 @@
 Popcycle
 ========
 
-popcycle pipeline performs 3 different analysis: 1) filtration of Optimally Positioned Particles; 2) Manual Gating of cytometric populations; 3) Aggregate statistics for the different populations. The output of each steps is save into a sql database using sqlite3. To run popcycle and analyze SeaFlow data in real-time, you need to set the filter and gating parameters, and press play, that's it!
+The Popcycle pipeline performs 3 different analysis: 1) filtration of Optimally Positioned Particles; 2) Manual Gating of cytometric populations; 3) Aggregate statistics for the different populations. The output of each steps is save into a sql database using sqlite3. To run popcycle and analyze SeaFlow data in real-time, you need to set the filter and gating parameters, and press play, that's it!
 
 # Installation
 1) Download the .zip file of the entire popcycle repository into your computer.
