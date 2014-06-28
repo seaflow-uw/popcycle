@@ -9,7 +9,7 @@ sudo adduser $USER staff
 # Update Ubuntu's R version
 # First, update the ubuntu mirror
 # .. see http://cran.rstudio.com/bin/linux/ubuntu/
-echo 'deb http://cran.us.r-project.org/bin/linux/ubuntu trusty/' | sudo tee -a /etc/apt/sources.list
+echo 'deb http://cran.us.r-project.org/bin/linux/ubuntu lucid/' | sudo tee -a /etc/apt/sources.list
 # .. also add the key of the signer
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
 # .. and update the packages
