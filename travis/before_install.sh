@@ -6,10 +6,14 @@ set -e
 # Add the current user to the `staff` group so it can install R packages
 sudo adduser $USER staff
 
-# Install R
-# .. but we need a new R, so first update the ubuntu mirror
+# Update Ubuntu's R version
+# First, update the ubuntu mirror
 # .. see http://cran.rstudio.com/bin/linux/ubuntu/
 echo 'deb http://cran.us.r-project.org/bin/linux/ubuntu trusty/' | sudo tee -a /etc/apt/sources.list
+# .. also add the key of the signer
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+# .. and update the packages
 sudo apt-get update
-# Install R
+
+# Install R for real
 sudo apt-get install r-base
