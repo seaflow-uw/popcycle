@@ -1,14 +1,8 @@
-try_to_install <- function(pkg, repos, type) {
+try_to_install <- function(pkg) {
   if (pkg %in% rownames(installed.packages())) {
-    return
+    return()
   }
-  if (missing(repos)) {
-    repos = 'http://cran.us.r-project.org'
-  }
-  if (missing(type)) {
-    type = getOption("pkgType")
-  }
-  install.packages(pkg, repos=repos, type=type)
+  install.packages(pkg, repos='http://cran.us.r-project.org')
   if (!(pkg %in% rownames(installed.packages()))) {
     # Quit R with error status
     q(status = 1)
@@ -21,4 +15,16 @@ try_to_install('plyr')
 try_to_install('maps')
 try_to_install('mapdata')
 try_to_install('plotrix')
-try_to_install('.', repos=NULL, type='source')
+
+try_to_install_local <- function(pkg) {
+  if (pkg %in% rownames(installed.packages())) {
+    return()
+  }
+  install.packages('.', repos=NULL, type='source')
+  if (!(pkg %in% rownames(installed.packages()))) {
+    # Quit R with error status
+    q(status = 1)
+  }
+}
+
+try_to_install_local('popcycle', repos=NULL, type='source')
