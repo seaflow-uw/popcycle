@@ -27,4 +27,4 @@ try_to_install_local <- function(pkg) {
   }
 }
 
-try_to_install_local('popcycle', repos=NULL, type='source')
+try_to_install_local('popcycle')
