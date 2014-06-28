@@ -2,4 +2,4 @@ before_install:
 - bash travis/before_install.sh
 
 script:
-- bash setup.sh
+- sudo -E su $USER -c 'bash setup.sh'
