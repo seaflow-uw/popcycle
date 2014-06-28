@@ -1,3 +1,9 @@
+quit_with_error <- function() {
+  # Quit R with error status
+  q(status = 1)
+}
+options(error = quit_with_error)
+
 if (!('RSQLite' %in% rownames(installed.packages()))) {
   install.packages('RSQLite', repos='http://cran.us.r-project.org')
 }
