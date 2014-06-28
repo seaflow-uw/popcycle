@@ -1,2 +1,3 @@
 before_install:
+- sh travis/before_install.sh
 - sh setup.sh
