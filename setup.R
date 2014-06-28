@@ -1,9 +1,5 @@
-if (!('DBI' %in% rownames(installed.packages()))) {
-  install.packages('DBI', repos='http://cran.us.r-project.org')
-}
-
 if (!('RSQLite' %in% rownames(installed.packages()))) {
-  install.packages('RSQLite', repos='http://cran.us.r-project.org')
+  install.packages('RSQLite', repos='http://cran.us.r-project.org', dependencies=TRUE)
 }
 
 if (!('splancs' %in% rownames(installed.packages()))) {
