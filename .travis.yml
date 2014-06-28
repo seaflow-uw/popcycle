@@ -1,3 +1,4 @@
 before_install:
 - bash travis/before_install.sh
+- ls -latr /usr/local/lib/R/site-library
 - bash setup.sh
