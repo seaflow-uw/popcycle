@@ -6,11 +6,7 @@ if (!('splancs' %in% rownames(installed.packages()))) {
   install.packages('splancs', repos='http://cran.us.r-project.org')
 }
 
-if (!('splancs' %in% rownames(installed.packages()))) {
-  install.packages('plyr', repos='http://cran.us.r-project.org')
-}
-
-if (!('splancs' %in% rownames(installed.packages()))) {
+if (!('plyr' %in% rownames(installed.packages()))) {
   install.packages('plyr', repos='http://cran.us.r-project.org')
 }
 

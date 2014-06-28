@@ -7,4 +7,4 @@ set -e
 sudo adduser $USER staff
 
 # Install R
-sudo apt-get install r-base
+sudo apt-get install r-base r-cran-dbi
