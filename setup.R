@@ -6,7 +6,7 @@ try_to_install <- function(pkg, repos, type) {
     repos = 'http://cran.us.r-project.org'
   }
   if (missing(type)) {
-    type = NULL
+    type = getOption("pkgType")
   }
   install.packages(pkg, repos=repos, type=type)
   if (!(pkg %in% rownames(installed.packages()))) {
