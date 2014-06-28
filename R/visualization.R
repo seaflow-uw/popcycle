@@ -225,7 +225,7 @@ plot(sfl$ocean_tmp, sfl$salinity, cols(100)[cut(sfl$time,100)],pch=16,xlab=expre
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
-      legend=legend=c("start","end"), rect.col=cols(100), gradient='y',align='rb',...)
+      legend=c("start","end"), rect.col=cols(100), gradient='y',align='rb',...)
 mtext("time", side=4, line=3,...)  
 
   
