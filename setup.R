@@ -1,6 +1,6 @@
 try_to_install <- function(pkg) {
   if (pkg %in% rownames(installed.packages())) {
-    return()
+    return(invisible())
   }
   install.packages(pkg, repos='http://cran.us.r-project.org')
   if (!(pkg %in% rownames(installed.packages()))) {
@@ -18,7 +18,7 @@ try_to_install('plotrix')
 
 try_to_install_local <- function(pkg) {
   if (pkg %in% rownames(installed.packages())) {
-    return()
+    return(invisible())
   }
   install.packages('.', repos=NULL, type='source')
   if (!(pkg %in% rownames(installed.packages()))) {
