@@ -19,6 +19,7 @@ mkdir ~/popcycle/logs
 mkdir ~/popcycle/logs/gates
 mkdir ~/popcycle/logs/filter
 
+sdfsdf
 # Create the initial database
 sqlite3 ~/popcycle/sqlite/popcycle.db < sql/popcycle.sql
 # Run the R setup scripts
