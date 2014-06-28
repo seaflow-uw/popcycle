@@ -221,7 +221,7 @@ plot.ts <- function(sfl,...){
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
   sfl$time <- as.POSIXct(sfl$time,format="%FT%T",tz='GMT')
 
-plot(sfl$ocean_tmp, sfl$salinity, cols(100)[cut(sfl$time,100)],pch=16,xlab=expression(paste("Temp (",degree,"C)")), ylab="Salinity (psu)",...)
+plot(sfl$ocean_tmp, sfl$salinity, cols(100)[cut(sfl$time,100)],pch=16,xlab=expression(paste("Temp (",degree,"C)")), ylab="Salinity (psu)"...)
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
