@@ -13,7 +13,7 @@ evaluate.last.evt()
 ######################
 cex=1.4
 
-last.file <- get.latest.file()
+last.file <- get.latest.evt()
 opp <- get.opp.by.file(last.file)
 vct <- get.vct.by.file(last.file)
 opp$pop <- vct
