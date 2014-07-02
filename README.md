@@ -1,6 +1,8 @@
 Popcycle
 ========
 
+![travis-ci status](https://travis-ci.org/uwescience/popcycle.svg?branch=master)
+
 The Popcycle pipeline performs 3 different analyses:
 
 1. filtration of Optimally Positioned Particles
