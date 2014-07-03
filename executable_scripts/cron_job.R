@@ -105,7 +105,7 @@ sfl <- get.sfl.table()
 print("creating TS_plot.png")
 png("~/TS_plot.png",width=15, height=9, unit='in', res=300)
 par(mfrow=c(1,1),cex=cex)
-plot.ts(sfl)
+plot.TS(sfl)
 dev.off()
 
 
