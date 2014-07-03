@@ -62,7 +62,7 @@ CREATE TABLE sfl (
   --First two columns are the SDS composite key
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
-  time TEXT,
+  date TEXT,
   file_duration REAL,
   lat REAL,
   lon REAL,

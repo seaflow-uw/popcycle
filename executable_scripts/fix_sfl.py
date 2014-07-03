@@ -8,7 +8,7 @@ DELIM = '\t'
 
 CRUISE = 'CRUISE'                          # str
 FILE = 'FILE'                              # str
-TIME = 'DATE'                              # str
+DATE = 'DATE'                              # str
 FILE_DURATION = 'FILE DURATION'            # float
 LAT = 'LAT'                                # float --> Format: Decimal Degrees (DDD)
 LON = 'LON'                                # float --> Format: Decimal Degrees (DDD)
@@ -25,7 +25,7 @@ FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, CONDUC
 INTS = [EVENT_RATE]
 STRS = [FILE, DATE]
 
-DB_COLUMNS = ['CRUISE', 'FILE', 'TIME', 'FILE_DURATION', 'LAT', 'LON',
+DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
               'STREAM_PRESSURE', 'FLOW_RATE','EVENT_RATE']
 
