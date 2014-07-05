@@ -217,6 +217,8 @@ plot.cytdiv.time <- function(cytdiv,index, ...){
 }
 
 plot.TS <- function(sfl,...){
+ 
+ require(plotrix, quietly=T)
 
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
   sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
