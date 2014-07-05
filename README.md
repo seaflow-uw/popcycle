@@ -70,6 +70,9 @@ In the R session, type:
 
     Similar to the `setFilterParams` function, `setGateParams` saves the gating parameters and order in which the gating was performed in `~/popcycle/params/params.RData`, parameters for each population are also separately saved as a `.csv` file. Note that every changes in the gating parameters are automatically saved in the logs (`~popcycle/logs/params/`).
 
+    Note: If you want to change the order of the gating, delete a population, or simply restartt over, use the function 
+    <code>resetGateParams()</code>
+    
 3. To cluster the different population according to your manual gating, type:
 
         vct <- classify.opp(opp, ManualGating)
