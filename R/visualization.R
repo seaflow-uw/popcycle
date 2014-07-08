@@ -150,7 +150,7 @@ plot.map <- function(stat,popname,param,...){
   # plot the cruise track as gray line back-ground
   pop <- subset(stat, pop == popname)
   plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
-            xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Longitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
+            xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Latitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
   try(maps::map(map.type, fill=F, col='black',add=TRUE))
   points(pop$lon, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop[,param],100)],...)
 
@@ -159,7 +159,7 @@ plot.map <- function(stat,popname,param,...){
 
     color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
       legend=pretty(pop[,param]), rect.col=cols(100), gradient='y',align='rb',...)
-  mtext(paste(param), side=4, line=3,...)  
+  mtext(paste(param), side=4, line=2,...)  
   
 
 }
@@ -168,7 +168,7 @@ plot.time <- function(stat, popname,param, ...){
 
   stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
   pop <- subset(stat, pop == popname)
-  plot(pop$time, pop[,param], xlab="time", ylab=paste(param),main=paste(popname),...)
+  plot(pop$time, pop[,param], xlab="Time", ylab=paste(param),main=paste(popname),...)
 
 }
 
@@ -195,7 +195,7 @@ plot.cytdiv.map <- function(cytdiv,index,...){
         }
   
   plot(cytdiv$lon, cytdiv$lat, xlim=xlim, ylim=ylim, asp=1,
-            xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Longitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
+            xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Latitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
   try(maps::map(map.type, fill=F, col='black',add=TRUE))
   points(cytdiv$lon, cytdiv$lat, pch=16, asp=1, col=cols(100)[cut(cytdiv[,index],100)],...)
 
@@ -204,7 +204,7 @@ plot.cytdiv.map <- function(cytdiv,index,...){
 
     color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
       legend=pretty(cytdiv[,index]), rect.col=cols(100), gradient='y',align='rb',...)
-  mtext(paste(index), side=4, line=3,...)  
+  mtext(paste(index), side=4, line=2,...)  
 
 }
 
@@ -212,7 +212,7 @@ plot.cytdiv.map <- function(cytdiv,index,...){
 plot.cytdiv.time <- function(cytdiv,index, ...){
 
   cytdiv$time <- as.POSIXct(cytdiv$time,format="%FT%T",tz='GMT')
-  plot(cytdiv$time, cytdiv[,index], xlab="time", ylab=paste(index),...)
+  plot(cytdiv$time, cytdiv[,index], xlab="Time", ylab=paste(index),...)
 
 }
 
@@ -228,7 +228,7 @@ plot(sfl$ocean_tmp, sfl$salinity, col=cols(100)[cut(sfl$date,100)],pch=16,xlab=e
     xlim <- par('usr')[c(1,2)]
    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
       legend=c("start","end"), rect.col=cols(100), gradient='y',align='rb',...)
-mtext("time", side=4, line=3,...)  
+mtext("Time", side=4, line=2,...)  
 
   
 }
