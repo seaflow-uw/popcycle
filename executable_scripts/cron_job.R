@@ -102,7 +102,7 @@ dev.off()
 
 sfl <- get.sfl.table()
 print("saving sfl.csv")
-write.csv(stat, "~/sfl.csv", row.names=FALSE, quote=FALSE)
+write.csv(sfl, "~/sfl.csv", row.names=FALSE, quote=FALSE)
 
 print("creating TS_plot.png")
 png("~/TS_plot.png",width=15, height=9, unit='in', res=300)
