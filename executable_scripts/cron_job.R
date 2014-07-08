@@ -84,6 +84,8 @@ dev.off()
 ### CytDiv ###
 ##############
 cytdiv <- get.cytdiv.table()
+print("saving cytdiv.csv")
+write.csv(cytdiv, "~/cytdiv.csv", row.names=FALSE, quote=FALSE)
 
 print("creating cytometric diversity.png")
 png("~/div_indices.png",width=15,height=9,unit='in',res=100)
