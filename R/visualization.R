@@ -42,6 +42,37 @@ plot.vct.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 
 }
 
 
+plot.gate.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
+
+  plot.cytogram(opp, para.x, para.y)
+
+     params <- list.files(param.gate.location,"params.RData")
+      if(length(params)==0){
+        print("No gate parameters found!")
+        stop
+       }else{load(paste0(param.gate.location,"/params.RData"))}
+
+            for(i in 1:length(poly.log)){
+                pop <- names(poly.log[i]) # name of the population
+                poly <- poly.log[i][[1]] # Get parameters of the gate for this population
+                para <- colnames(poly)
+                if(para[1]==para.x & para[2]==para.y){
+                  polygon(poly, lwd=2,border=i, col=NA)
+                  text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
+                  }
+          }
+}
+
+
+plot.gate.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small'){
+
+  opp <- get.opp.by.file(file.name)
+
+  plot.gate.cytogram(opp,para.x = para.x, para.y = para.y)
+
+}
+
+
 
 
 plot.filter.cytogram <- function(evt, width=1, notch=1){
