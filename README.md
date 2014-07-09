@@ -66,7 +66,7 @@ In the R session, type:
 
     Gating parameters for picoeukaryote population
 
-        setGateParams(opp, popname='picoeuk', para.x='fsc_small', para.y='chl_small')
+        > setGateParams(opp, popname='picoeuk', para.x='fsc_small', para.y='chl_small')
 
     Similar to the `setFilterParams` function, `setGateParams` saves the gating parameters and order in which the gating was performed in `~/popcycle/params/params.RData`, parameters for each population are also separately saved as a `.csv` file. Note that every changes in the gating parameters are automatically saved in the logs (`~popcycle/logs/params/`).
 
@@ -92,7 +92,7 @@ In the R session, type:
 
 Now that the filter and gating parameters are set, clic PLAY! popcycle will apply the filter and gating parameters for every new evt files collected by the instrument and generate aggregate statistics for each population. All these steps are wrapped into one single function:
 
-`evaluate.last.evt()`
+`> evaluate.last.evt()`
 
 
 
@@ -127,15 +127,15 @@ Data generated for every file can be visualize using a set of functions:
 
 1. To plot the filter steps
 
-    `plot.filter.cytogram.by.file(file.name)`
+    `> plot.filter.cytogram.by.file(file.name)`
 
 2. To plot opp
 
-    `plot.cytogram.by.file(file.name)`
+    `> plot.cytogram.by.file(file.name)`
 
 3. To plot vct
 
-    `plot.vct.cytogram.by.file(file.name)`
+    `> plot.vct.cytogram.by.file(file.name)`
 
 4. To plot aggregate statistics, for instance, cell abundance the cyanobacteria "Synechococcus" population on a map or over time
 
@@ -151,9 +151,17 @@ Data generated for every file can be visualize using a set of functions:
 
 # ReAnalyze previous files
 
-If you changes the filter parameters and need to reanalyze previous files according to these new parameters, use ` rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`, where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will update the 'opp' table in the database, and also update the 'vct' and 'stats' table.
+If you changes the filter parameters and need to reanalyze previous files according to these new parameters, use:
 
-If you changes the gating parameters and need to reanalyze previous files according to these new parameters, use ` rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`. This function will update the 'vct' and 'stats' table.
+`> rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`
+
+where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will update the 'opp' table in the database, and also update the 'vct' and 'stats' table.
+
+If you changes the gating parameters and need to reanalyze previous files according to these new parameters, use:
+
+`> rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`. 
+
+This function will update the 'vct' and 'stats' table.
 
 
 # ReAnalyze cruises
@@ -181,14 +189,14 @@ where `path/to/cruise.sfl` is the path of the new sfl file.
 
 * Initialization step to set up both filter and gating parameters
 
-* Then, type `run.filter.v1('path/to/cruise')`
+* Then, type `> run.filter.v1('path/to/cruise')`
 
 2) If you don't want to redo to filtration step, but still want to create vct and perform aggregate statistics for every evt files from the cruise and upload everything into popcycle.db, perform this 2 steps:
 
 * Initialization step to set up gating parameters
 
-* Then, type `run.gating.v1('path/to/cruise')`
+* Then, type `> run.gating.v1('path/to/cruise')`
 
 3) If you only want to upload opp, vct but still want to perform aggregate statistics for every evt files from the cruise and upload everything into popcycle.db, just type:
 
-* `run.stats.v1('path/to/cruise')`
+* `> run.stats.v1('path/to/cruise')`
