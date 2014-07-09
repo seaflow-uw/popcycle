@@ -162,13 +162,13 @@ If you changes the gating parameters and need to reanalyze previous files accord
 
 ### Conversion of sds to sfl file and upload into popcycle.db
 
-1. Open the terminal and go to path/to/popcyle_repository/executable_files
+1. Open the terminal and go to path/to/popcyle_repository/executable_scripts
 
 2. type `python sds_to_sfl.py path/to/sds.tab path/to/cruise.sfl` where `path/to/sds.tab` is the path to the sds file you want to convert (use the concatenated sds.tab file, not the sds file of each single day), and `path/to/cruise.sfl` is the path where you want to save the new sfl file.
 
 3. And then use the sfl uploader to upload the file into the database. To do that, load the fix_sfl library in python and run the bulk upload function:
 
-`python `
+```python ```
 
 `import fix_sfl as fs`
 
