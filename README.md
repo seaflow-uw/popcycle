@@ -159,7 +159,7 @@ where `start.day` and `end.day` represent the folder name (year_julianday) and `
 
 If you changes the gating parameters and need to reanalyze previous files according to these new parameters, use:
 
-`> rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`. 
+`> rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`
 
 This function will update the 'vct' and 'stats' table.
 
