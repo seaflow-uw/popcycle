@@ -139,11 +139,11 @@ Data generated for every file can be visualize using a set of functions:
 
 4. To plot aggregate statistics, for instance, cell abundance the cyanobacteria "Synechococcus" population on a map or over time
 
-    `stat <- get.stat.table()` to load the aggregate statistics
-
-    `plot.map(stat, pop='synecho', param='abundance')` 
-
-    `plot.time(stat, pop='synecho', param='abundance')`
+    ```r
+    stat <- get.stat.table() # to load the aggregate statistics
+    plot.map(stat, pop='synecho', param='abundance') 
+    plot.time(stat, pop='synecho', param='abundance')
+    ```
 
     But you can plot any parameter/population, just make sure their name match the one in the 'stat' table... 
 
@@ -168,11 +168,13 @@ If you changes the gating parameters and need to reanalyze previous files accord
 
 3. And then use the sfl uploader to upload the file into the database. To do that, load the fix_sfl library in python and run the bulk upload function:
 
-```python ```
+```sh
+> python
+> import fix_sfl as fs
+> fs.insert_file_bulk('path/to/cruise.sfl') 
+```
+where `path/to/cruise.sfl` is the path of the new sfl file.
 
-`import fix_sfl as fs`
-
-`fs.insert_file_bulk('path/to/cruise.sfl')` where `path/to/cruise.sfl` is the path of the new sfl file.
 
 ### Play
 1) To Filter opp, create vct and perform aggregate statistics for every evt files from the cruise and upload everything into popcycle.db, perform this 2 steps:
