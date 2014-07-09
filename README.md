@@ -29,7 +29,7 @@ This creates all the necessary directories, the popcycle database (`popcycle.db`
 WARNINGS: The `setup.sh` has created a popcycle directory in `~/popcycle`. This is different from the popcycle repository. 
 
 # Initialization
-1. First step is to set the parameters for the filtration method (notch and width). For this example, we are going to set the gating parameters using the last evt file collected by the instrument. Open an R session and type:
+1. First step is to set the parameters for the filtration method (notch and width). For this example, we are going to set the gating parameters using the latest evt file collected by the instrument (but you choose any evt file). Open an R session and type:
 
     ```r
     > library(popcycle)
@@ -41,7 +41,7 @@ WARNINGS: The `setup.sh` has created a popcycle directory in `~/popcycle`. This 
 
     To plot the filtration step, use the following function
 
-    `plot.filter.cytogram(evt, notch=notch, width=0.5)`
+    `> plot.filter.cytogram(evt, notch=notch, width=0.5)`
 
     Once you are satisfy with the filter parameters, save the filter parameters by using this function: 
 `setFilterParams(notch=notch, width=0.5)` This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note that every changes in the filter parameters are automatically saved in the logs (~popcycle/logs/filter/filter.csv).
