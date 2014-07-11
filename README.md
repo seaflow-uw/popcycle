@@ -33,7 +33,7 @@ WARNINGS: The `setup.sh` has created a popcycle directory in `~/popcycle`. This 
 
     ```r
     > library(popcycle)
-    > file.name <- get.latest.evt.with.day() # name of the latest evt file collected
+    > file.name <- get.latest.evt.with.day() # name of the latest evt file collected, with folder name.
     > evt <- readSeaflow(paste(evt.location, file.name, sep='/')) # load the evt file
     > notch <- best.filter.notch(evt, notch=seq(0.1, 1.4, by=0.1),width=0.5, do.plot=TRUE)
     ```
@@ -60,7 +60,7 @@ In the R session, type:
 
     ```r
     > library(popcycle)
-    > file.name <- get.latest.evt.with.day() # name of the latest evt file collected
+    > file.name <- get.latest.evt() # name of the latest evt file collected
     > opp <- get.opp.by.file(file.name)
     > setGateParams(opp, popname='beads', para.x='fsc_small', para.y='pe')
     > setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
