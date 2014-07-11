@@ -10,7 +10,6 @@ plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
 plot.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
   
   opp <- get.opp.by.file(file.name)
-  opp$pop <- vct
   plot.cytogram(opp, para.x = para.x, para.y = para.y,...)
 
 }
