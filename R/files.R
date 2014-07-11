@@ -3,7 +3,7 @@ get.evt.list <- function(...) {
   if (length(file.list) == 0) {
     return (file.list)
   }
-  id <- grep(paste('^[0-9]{1,9}.*','\\.evt.opp','$',sep=''),file.list)
+  id <- grep(paste('^[0-9]{1,9}.*','\\.evt','$',sep=''),file.list)
   if(length(id)>0) file.list <- file.list[id]
  
   #drop .sfl files
