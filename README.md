@@ -62,7 +62,7 @@ In the R session, type:
     > library(popcycle)
     > file.name <- get.latest.evt.with.day() # name of the latest evt file collected
     > opp <- get.opp.by.file(file.name)
-    > setGateParams(opp, popname='beads', para.x='chl_small', para.y='pe')
+    > setGateParams(opp, popname='beads', para.x='fsc_small', para.y='pe')
     > setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
     > setGateParams(opp, popname='prochloro', para.x='fsc_small', para.y='chl_small')
     > setGateParams(opp, popname='picoeuk', para.x='fsc_small', para.y='chl_small')
