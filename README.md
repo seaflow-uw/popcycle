@@ -58,7 +58,7 @@ This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note 
 2. Second step is to set the gating for the different populations. WARNINGS: The order in which you gate the different populations is very important, choose it wisely. The gating has to be performed over optimally positioned particles only, not over an evt file. In this example, you are going to first gate the 'beads' (this is always the first population to be gated.). The we will gate 'Synechococcus' population (this population needs to be gated before you gate Prochlorococcus or picoeukaryote), and finally 'Prochlorococcus' and 'picoeukaryote' population.
 In the R session, type:
 
-        ```r
+    ```r
         > library(popcycle)
         > file.name <- get.latest.evt.with.day() # name of the latest evt file collected
         > opp <- get.opp.by.file(file.name)
@@ -66,7 +66,7 @@ In the R session, type:
         > setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
         > setGateParams(opp, popname='prochloro', para.x='fsc_small', para.y='chl_small')
         > setGateParams(opp, popname='picoeuk', para.x='fsc_small', para.y='chl_small')
-        ```
+    ```
 
     Similar to the `setFilterParams` function, `setGateParams` saves the gating parameters and order in which the gating was performed in `~/popcycle/params/params.RData`, parameters for each population are also separately saved as a `.csv` file. Note that every changes in the gating parameters are automatically saved in the logs (`~popcycle/logs/params/`).
 
