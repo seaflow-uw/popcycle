@@ -59,13 +59,13 @@ This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note 
 In the R session, type:
 
     ```r
-        > library(popcycle)
-        > file.name <- get.latest.evt.with.day() # name of the latest evt file collected
-        > opp <- get.opp.by.file(file.name)
-        > setGateParams(opp, popname='beads', para.x='chl_small', para.y='pe')
-        > setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
-        > setGateParams(opp, popname='prochloro', para.x='fsc_small', para.y='chl_small')
-        > setGateParams(opp, popname='picoeuk', para.x='fsc_small', para.y='chl_small')
+    > library(popcycle)
+    > file.name <- get.latest.evt.with.day() # name of the latest evt file collected
+    > opp <- get.opp.by.file(file.name)
+    > setGateParams(opp, popname='beads', para.x='chl_small', para.y='pe')
+    > setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
+    > setGateParams(opp, popname='prochloro', para.x='fsc_small', para.y='chl_small')
+    > setGateParams(opp, popname='picoeuk', para.x='fsc_small', para.y='chl_small')
     ```
 
     Similar to the `setFilterParams` function, `setGateParams` saves the gating parameters and order in which the gating was performed in `~/popcycle/params/params.RData`, parameters for each population are also separately saved as a `.csv` file. Note that every changes in the gating parameters are automatically saved in the logs (`~popcycle/logs/params/`).
