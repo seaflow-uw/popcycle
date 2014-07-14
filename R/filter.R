@@ -60,17 +60,22 @@ best.filter.notch <- function(evt, notch=seq(0.1, 1.4, by=0.1),width=0.5, do.plo
     print(paste("filtering notch=",n))
     opp <- filter.notch(evt, notch=n, width=width)
     fsc.max <- round(max(opp[,"fsc_small"]))
-    para <- data.frame(cbind(notch=n, fsc.max))
+    id <- length(which(opp[,"fsc_small"] == max(opp[,"fsc_small"])))
+    para <- data.frame(cbind(notch=n, fsc.max, id))
     DF <- rbind(DF, para)
     }
 
-  best.notch.id <- min(which(DF$fsc.max == max(DF$fsc.max)))
+  best.notch.id <- min(which(DF$fsc.max == max(DF$fsc.max) & DF$id == max(DF$id)))
   best.notch <- DF$notch[best.notch.id]
 
   if(do.plot){
   par(mfrow=c(2,1),cex=1)
   par(pty='m')
-  plot(DF[,c('notch', 'fsc.max')],ylim=c(1,10^3.5), main=paste("Best notch=",best.notch)); points(best.notch, DF$fsc.max[best.notch.id], col=2, pch=16)
+  plot(DF[,c('notch', 'fsc.max')], ylim=c(1,10^3.5), main=paste("Best notch=",best.notch))
+  par(new=TRUE)
+  plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA)
+  abline(v=best.notch, col=3, lwd=3)
+  legend('bottomright',legend=c('max(fsc_small)','count'), pch=c(1,3), bty='n')
   opp <- filter.notch(evt, notch=best.notch, width=width)
   plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
   }
