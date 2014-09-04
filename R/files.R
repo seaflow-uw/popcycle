@@ -1,4 +1,4 @@
-get.evt.list <- function(...) {
+get.evt.list <- function(evt.location) {
   file.list <- list.files(evt.location, recursive=T)
   if (length(file.list) == 0) {
     return (file.list)
@@ -12,14 +12,14 @@ get.evt.list <- function(...) {
 }
 
 
-get.latest.evt.with.day <- function(...) {
-  file.list <- get.evt.list(...)
+get.latest.evt.with.day <- function(evt.location) {
+  file.list <- get.evt.list(evt.location)
   n <- length(file.list)
   return (file.list[n])
 }
 
-get.latest.evt <- function(...) {
-  return (basename(get.latest.evt.with.day(...)))
+get.latest.evt <- function(evt.location) {
+  return (basename(get.latest.evt.with.day(evt.location)))
 }
 
 files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp) {
@@ -42,7 +42,7 @@ files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp) {
 }
 
 
-file.transfer <- function(...){
+file.transfer <- function(instrument.location){
 
   last.evt <- get.latest.evt.with.day(...)
   file.list <- list.files(instrument.location, recursive=T)
