@@ -87,7 +87,7 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
   slope <- 1
 
   # linearize the LOG transformed data 
-    id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
+    id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
     if(!any(max(evt[,-c(id)]) > 10^3.5)){
       evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16 # linearize the LOG transformed data  
       print("untransform data...")

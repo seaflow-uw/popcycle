@@ -28,7 +28,7 @@ filter.notch <- function(evt, width, notch) {
   
   # linearize the LOG transformed data 
   t <- FALSE
-    id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
+    id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
     if(!any(max(evt[,-c(id)]) > 10^3.5)){
       evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16  
       t <- TRUE
@@ -75,7 +75,7 @@ best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.5, do.plo
     }
 
   best.notch.id <- min(which(DF$fsc.max == max(DF$fsc.max) & DF$id == max(DF$id)))
-  best.notch <- DF.max$notch[best.notch.id]
+  best.notch <- DF$notch[best.notch.id]
 
  if(do.plot){
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
