@@ -1,7 +1,7 @@
 ##########################
 ### MODIFY ACCORDINGLY ###
 ##########################
-
+# TODO{Francois}: MOVE THIS AWAY FROM GLOBALS.R
 evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the real-time analysis
 instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
 cruise.id <- 'july2014' # Cruise name
