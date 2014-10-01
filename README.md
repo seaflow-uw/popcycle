@@ -21,6 +21,7 @@ The output of each step is saved into a SQL database using `sqlite3`. To run `po
 4. Open the terminal and go to the directory where popcycle is unzipped, and type:
 
     ```sh
+    $ cd path/to/popcyle_repository
     $ bash setup.sh
     ```
 
