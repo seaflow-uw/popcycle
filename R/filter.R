@@ -45,7 +45,7 @@ filter.notch <- function(evt, width, notch) {
   origin <- median(evt[evt$D2>5000,"D2"])-median(evt[evt$D1>5000,"D1"])
   
   # filtering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt, D2 - origin < D1*slope + width * 10^4  & D1  < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
+  aligned <- subset(evt, D2 - origin < D1*slope + width * 10^4 & D1 < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
 
   # filtering focused particles (D/fsc_small < notch)
   if(origin >= 0) opp <- subset(aligned, D1/fsc_small < notch & (D2-origin)/fsc_small < notch) 
