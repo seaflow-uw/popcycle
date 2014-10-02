@@ -4,8 +4,8 @@ plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
 	
   par(pty='s')
   id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
-  if(max(opp[,-c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
-  else plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...) 
+  if(max(opp[,-c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
+  else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...) 
 
 }
 
@@ -79,7 +79,7 @@ plot.gate.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y =
 
 
 
-plot.filter.cytogram <- function(evt, width=1, notch=1){
+plot.filter.cytogram <- function(evt, width=0.5, notch=1){
 
 
   notch <- as.numeric(notch)
@@ -87,28 +87,35 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
   slope <- 1
 
   # linearize the LOG transformed data 
+  t <- FALSE
     id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
     if(!any(max(evt[,-c(id)]) > 10^3.5)){
-      evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16 # linearize the LOG transformed data  
-      print("untransform data...")
+      evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16  
+      t <- TRUE
          }
-  
+
    # filtering particles not detected by D1 or D2 or fsc_small
-  evt <- subset(evt, D1 > 1 & D2 > 1 & fsc_small > 1) 
+  evt. <- subset(evt, D1 > 1 & D2 > 1 & fsc_small > 1) 
 
   # # filtering particles saturating D1 or D2
   max <- max(evt[,c("D1","D2")])
-  evt <- subset(evt, D1 < max & D2 < max) 
+  evt. <- subset(evt., D1 < max & D2 < max) 
 
   # Correction for the difference of sensitivity between D1 and D2
-  origin <- median(evt[evt$D2>5000,"D2"])-median(evt[evt$D1>5000,"D1"])
+  origin <- median(evt.[evt.$D2>5000,"D2"])-median(evt.[evt.$D1>5000,"D1"])
   
   # filtering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt, D2 - origin < D1*slope + width * 10^4  & D1  < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
+  aligned <- subset(evt., D2 - origin < D1*slope + width * 10^4 & D1 < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
 
   # filtering focused particles (D/fsc_small < notch)
-  if(origin >= 0) opp <- subset(aligned, D1/fsc_small < notch | (D2-origin)/fsc_small  < notch) 
-  if(origin < 0) opp <- subset(aligned, (D1+origin)/fsc_small  < notch | D2/fsc_small  < notch) 
+  if(origin >= 0) opp <- subset(aligned, D1/fsc_small < notch & (D2-origin)/fsc_small < notch) 
+  if(origin < 0) opp <- subset(aligned, (D1+origin)/fsc_small < notch & D2/fsc_small < notch) 
+
+  if(t){
+  opp[,-c(id)] <- 10^((opp[,-c(id)]/2^16)*3.5)
+  evt[,-c(id)] <- 10^((evt[,-c(id)]/2^16)*3.5)
+ 
+    }
 
 
   ################
@@ -124,6 +131,7 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
   par(mfrow=c(2,2),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
   plot.cytogram(evt[1:display,], "D1", "D2")
     mtext("Alignment", side=3, line=1, font=2)
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...
    abline(b=slope, a=origin + width*10^4, col='red',lwd=2)
    abline(b=1/slope, a=origin -width*10^4, col='red',lwd=2)
   mtext(paste("D2 - D1=", round(origin,2)),outer=T,side=3, line=-1.5,font=2)
@@ -131,7 +139,6 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
     mtext(paste("Notch=", notch),outer=T,side=3, line=-4,font=2)
     mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)
 
-    aligned <- subset(aligned, D1/fsc_small<2 & D2/fsc_small<2)[1:display,]
     if(origin >= 0){
         aligned$D1.fsc_small <- aligned$D1/aligned$fsc_small
         aligned$D2.fsc_small <- (aligned$D2-origin)/aligned$fsc_small
@@ -140,7 +147,8 @@ plot.filter.cytogram <- function(evt, width=1, notch=1){
         aligned$D1.fsc_small <- (aligned$D1+origin)/aligned$fsc_small
         aligned$D2.fsc_small <- aligned$D2/aligned$fsc_small
       }
-  plot(aligned[,c("D1.fsc_small", "D2.fsc_small")], pch=16, cex=0.6, col = densCols(aligned[,c("D1.fsc_small", "D2.fsc_small")], colramp = cols), xlim=c(0,2), ylim=c(0,2)) 
+  aligned <- subset(aligned, D1.fsc_small<2 & D2.fsc_small<2)[1:display,]
+  plot(aligned[,c("D1.fsc_small", "D2.fsc_small")], pch=16, cex=0.3, col = densCols(aligned[,c("D1.fsc_small", "D2.fsc_small")], colramp = cols), xlim=c(0,2), ylim=c(0,2)) 
        mtext("Focus", side=3, line=1, font=2)
        abline(v=notch, h=notch, col=2,lwd=2)
      # abline(b=1, a=notch, col='red', lwd=2)

@@ -32,7 +32,6 @@ filter.notch <- function(evt, width, notch) {
     if(!any(max(evt[,-c(id)]) > 10^3.5)){
       evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16  
       t <- TRUE
-      print("untransform data...")
          }
 
   # filtering particles not detected by D1 or D2 or fsc_small
@@ -46,30 +45,30 @@ filter.notch <- function(evt, width, notch) {
   origin <- median(evt[evt$D2>5000,"D2"])-median(evt[evt$D1>5000,"D1"])
   
   # filtering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt, D2 - origin < D1*slope + width * 10^4  & D1  < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
-  
+  aligned <- subset(evt, D2 - origin < D1*slope + width * 10^4 & D1 < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
+
   # filtering focused particles (D/fsc_small < notch)
-  if(origin > 0) opp <- subset(aligned, D1/fsc_small < notch & (D2-origin)/fsc_small < notch) 
+  if(origin >= 0) opp <- subset(aligned, D1/fsc_small < notch & (D2-origin)/fsc_small < notch) 
   if(origin < 0) opp <- subset(aligned, (D1+origin)/fsc_small < notch & D2/fsc_small < notch) 
 
- 
-if(t){
+
+  if(t){
   opp[,-c(id)] <- 10^((opp[,-c(id)]/2^16)*3.5)
-  }
+    }
 
 return(opp)
 
 }
 
 
-best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.5, do.plot=TRUE){
+best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plot=TRUE){
 
   DF <- NULL
   for(n in notch){
     print(paste("filtering notch=",n))
     opp <- filter.notch(evt, notch=n, width=width)
     fsc.max <- round(max(opp[,"fsc_small"]))
-    id <- length(which(opp[,"fsc_small"] > max(opp[,"fsc_small"])))
+    id <- length(which(opp[,"fsc_small"] >= max(opp[,"fsc_small"])))
     para <- data.frame(cbind(notch=n, fsc.max, id))
     DF <- rbind(DF, para)
     }
@@ -80,12 +79,14 @@ best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.5, do.plo
  if(do.plot){
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-  par(mfrow=c(2,1),cex=1)
+  par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
   par(pty='m')
   plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch))
   abline(v=best.notch, col=3, lwd=3)
   par(new=TRUE)
-  plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2)
+  plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
+  axis(4)
+  mtext("count", 4, line=3)
   legend('topleft',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
   opp <- filter.notch(evt, notch=best.notch, width=width)
   plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
