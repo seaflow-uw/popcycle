@@ -31,29 +31,6 @@ files <- evt.list[grepl('evt', evt.list)]
       opp.evt.ratio <- nrow(opp) / nrow(evt)
       upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name, db=db.name)
     
-
-      if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) > 0) {
-        print(paste('Classifying', evt.file))
-        vct <- classify.opp(opp, ManualGating, param.gate.location)
-        # delete old vct entries if they exist so we keep cruise/file/particle distinct
-        .delete.vct.by.file(file.name)
-        # store vct
-        print('Uploading labels to the database')
-        upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'), db=db.name)
-
-              #cytometric diversity
-        print("Calculating cytometric diversity")
-        opp$pop <- vct
-        df <- opp[!(opp$pop == 'beads'),]
-        indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
-
-        print('Uploading cytdiv')
-        upload.cytdiv(indices,cruise.id, file.name)
-
-        print('Updating stat')
-        insert.stats.for.file(file.name, db=db.name)
-      }
-
 	}, error = function(e) {print(paste("Encountered error with file", file.name))},
 	finally = {print(paste("Finished with file", file.name))}
 	)
