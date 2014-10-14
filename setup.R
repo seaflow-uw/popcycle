@@ -15,6 +15,7 @@ try_to_install('plyr')
 try_to_install('maps')
 try_to_install('mapdata')
 try_to_install('plotrix')
+try_to_install('snow')
 
 try_to_install_local <- function(pkg) {
   if (pkg %in% rownames(installed.packages())) {

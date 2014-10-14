@@ -19,14 +19,27 @@ readSeaflow <- function(file.path, column.names = EVT.HEADER, column.size = 2, c
     n.rows <- ((n.bytes.file - n.bytes.header) / column.size) / n.int.columns  
     n.events <- n.int.columns * n.rows
 
-    ## open binary file for reading 
+    # Check for empty file.  If empty return an empty data frame
+    if (n.bytes.file == 0) {
+      warning(sprintf("File %s has size zero.", file.path))
+      return(data.frame(c()))
+    }
+
+    ## open binary file for reading
     con <- file(description = file.path, open="rb") 
     header <- readBin(con, integer(), n = 1, size = n.bytes.header, endian = "little")
     header.EOL <- readBin(con, integer(), n = 1, size = n.bytes.EOL, endian = "little")
 
-    ## check number of events
-    if(n.rows != header)
-      stop(paste("ERROR: the predicted number of rows (",n.rows,") doesn't equal the header specified number of events (", header,")",sep=''))
+    # Make sure the number of events stated by the file header matches the
+    # number of events calculated from file size.  If not, something is wrong
+    # with the file and it should be ignored.  Return an empty data frame.
+    if (n.rows != header) {
+      msg <- paste("In file ", file.path, " the predicted number of rows ", n.rows,
+                   " doesn't equal the header specified number of events", sep="")
+      warning(msg)
+      close(con)
+      return(data.frame(c()))
+    }
 
     if(count.only){
      return(header) #return just the event count in the header
@@ -42,17 +55,14 @@ readSeaflow <- function(file.path, column.names = EVT.HEADER, column.size = 2, c
       close(con) 
       
       ## Transform data to LOG scale
-       id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) =="pop")
-       if(transform) integer.dataframe[,-c(id)] <- 10^((integer.dataframe[,-c(id)]/2^16)*3.5)  
-           
-           
-           
+      id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) =="pop")
+      if(transform) integer.dataframe[,-c(id)] <- 10^((integer.dataframe[,-c(id)]/2^16)*3.5)  
+
       if(add.yearday.file){
-              integer.dataframe$file  <- getFileNumber(file.path)
-              integer.dataframe$year_day <- .getYearDay(file.path)
+        integer.dataframe$file  <- getFileNumber(file.path)
+        integer.dataframe$year_day <- .getYearDay(file.path)
       }
-      
-	
+
       return (integer.dataframe)
     }
   }
