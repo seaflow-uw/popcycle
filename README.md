@@ -16,18 +16,16 @@ The output of each step is saved into a SQL database using `sqlite3`. To run `po
 
 2. Unzip the file
 
-3. Set up the paths of the necessary folders. To do so, edit the file globals.R in path/to/popcyle_repository/R/globals.R. 
-
-4. Open the terminal and go to the directory where popcycle is unzipped, and type:
+3. Open the terminal and go to the directory where popcycle is unzipped, and type:
 
     ```sh
     $ cd path/to/popcyle_repository
-    $ bash setup.sh
+    $ Rscript setup.R
     ```
 
 This creates all the necessary directories, the popcycle database (`popcycle.db`), and installs `popcycle` as an R package. The `setup.R` script should also install `RSQLite` and `splancs` packages if they are not already installed.
 
-WARNINGS: The `setup.sh` has created a popcycle directory in `~/popcycle`. This is different from the popcycle repository. 
+WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This is different from the popcycle repository. 
 
 # Initialization
 1. First step is to set the parameters for the filtration method (notch and width). For this example, we are going to set the gating parameters using the latest evt file collected by the instrument (but you choose any evt file). Open an R session and type:

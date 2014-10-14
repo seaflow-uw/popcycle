@@ -183,3 +183,54 @@ get.sfl.table <- function(db = db.name) {
   dbDisconnect(con)
   return (sfl)
 }
+
+# Create a new, empty sqlite3 database using schema from original db
+#
+# Args:
+#   new.db.path = path to a new sqlite3 database
+make.sqlite.db <- function(new.db.path) {
+  sql.file <- paste(system.file("sql", package="popcycle"), "popcycle.sql", sep="/")
+  cmd <- sprintf("sqlite3 %s < %s", new.db.path, sql.file)
+  status <- system(cmd)
+  if (status > 0) {
+    stop(paste("Db creation command '", cmd, "' failed with exit status ", status))
+  }
+}
+
+# Merge opp and opp.evt.ratio tables from multiple sqlite dbs into target.db.
+# Erase files in src.dbs once merged.
+# 
+# Args:
+#   src.dbs = paths of sqlite3 dbs to merge into target.db
+#   target.db = path of sqlite3 db to be merged into [db.name]
+merge.dbs <- function(src.dbs, target.db=db.name) {
+  for (src in src.dbs) {
+    merge.sql <- paste(sprintf("attach \"%s\" as incoming", src),
+                       "BEGIN",
+                       sprintf("insert into %s select * from incoming.%s",
+                               opp.table.name, opp.table.name),
+                       sprintf("insert into %s select * from incoming.%s",
+                               opp.evt.ratio.table.name, opp.evt.ratio.table.name),
+                       "COMMIT;", sep="; ")
+    cmd <- sprintf("sqlite3 %s '%s'", target.db, merge.sql)
+    status <- system(cmd)
+    if (status > 0) {
+      stop(paste("Db merge command '", cmd, "' failed with exit status ", status))
+    }
+    file.remove(src)
+  }
+}
+
+# Create empty sqlite db for this project.  If one already exists it will be
+# overwritten.  Also erase any numbered sqlite3 dbs used for parallel filtering.
+#
+# Args:
+#   db.loc = directory containing sqlite3 database(s) [db.location]
+reset.db <- function(db.loc=db.location) {
+  db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]*$", full.names=TRUE)
+  for (db in db.files) {
+      file.remove(db)
+  }
+  # Create empty sqlite database
+  make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
+}
