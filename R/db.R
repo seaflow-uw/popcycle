@@ -188,13 +188,12 @@ get.sfl.table <- function(db = db.name) {
 #
 # Args:
 #   new.db.path = path to a new sqlite3 database
-#   original.db.path = path to sqlite3 database with schema to be copied [db.name]
-make.sqlite.db <- function(new.db.path, original.db.path=db.name) {
-  command <- sprintf("sqlite3 %s '.schema' | sqlite3 %s", original.db.path,
-                     new.db.path)
-  status <- system(command)
+make.sqlite.db <- function(new.db.path) {
+  sql.file <- paste(system.file("sql", package="popcycle"), "popcycle.sql", sep="/")
+  cmd <- sprintf("sqlite3 %s < %s", new.db.path, sql.file)
+  status <- system(cmd)
   if (status > 0) {
-    stop(paste("DB copy command '", cmd, "' failed with exit status ", status))
+    stop(paste("Db creation command '", cmd, "' failed with exit status ", status))
   }
 }
 
@@ -233,9 +232,5 @@ reset.db <- function(db.loc=db.location) {
       file.remove(db)
   }
   # Create empty sqlite database
-  sqlfile <- paste(system.file("sql", package="popcycle"), "popcycle.sql", sep="/")
-  status <- system(sprintf("sqlite3 %s < %s", paste(db.loc, "popcycle.db", sep="/"), sqlfile))
-  if (status > 0) {
-    stop(paste("Db creation command '", cmd, "' failed with exit status ", status))
-  }
+  make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
 }

@@ -52,7 +52,7 @@ set.project.location <- function(path=default.project.location) {
     dir.create(param.gate.location)
     dir.create(param.filter.location)
     dir.create(db.location)
-    reset.db(db.name)
+    reset.db(db.location)
   }
 }
 
