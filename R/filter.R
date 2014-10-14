@@ -145,12 +145,12 @@ filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
                               db=b[["db"]], evt.loc=evt.loc, check=FALSE)
     }
     # Export relevant variables to cluster
-    popvars <- c("cruise.id", "readSeaflow", "filter.notch", "upload.opp",
+    popvars <- c("readSeaflow", "filter.notch", "upload.opp",
                 "opp.to.db.opp", "filter.evt",
                 "upload.opp.evt.ratio", "opp.table.name")
     clusterExport(cl, popvars, envir = as.environment("package:popcycle"))
     clusterExport(cl, c("filter.evt.files.serial", "db.name", "db.location",
-                        "evt.location"))
+                        "evt.location", "cruise.id"))
 
     # Run filtering in parallel
     clusterApply(cl, buckets, parallel.func, notch, width, cruise)
