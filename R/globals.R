@@ -13,8 +13,8 @@ sfl.table.name <- 'sfl'
 
 default.project.location <- paste('~/popcycle') # Default project directory location
 default.evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the real-time analysis
-instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
-cruise.id <- 'july2014' # Cruise name
+default.instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
+default.cruise.id <- 'july2014' # Cruise name
 
 # Configure project locations based on top-level directory path.  Place
 # location definitions in the global environment.  Create project directory
@@ -66,6 +66,30 @@ set.project.location <- function(path=default.project.location) {
 #   * Move variables defined in this function to the package namespace
 set.evt.location <- function(path=default.evt.location) {
   assign("evt.location", path.expand(path), 1)
+}
+
+# Configure cruise name.  Place location definition in the global
+# environment.
+#
+# Args:
+#   cruise.name = cruise name
+# 
+# TODO (CTB):
+#   * Move variables defined in this function to the package namespace
+set.cruise.id <- function(cruise.name=default.cruise.id) {
+  assign("cruise.id", path.expand(cruise.name), 1)
+}
+
+# Configure instrument directory location.  Place location definition in the
+# global environment.
+#
+# Args:
+#   instrument.location = path to instrument directory
+#
+# TODO (CTB):
+#   * Move variables defined in this function to the package namespace
+set.instrument.location <- function(instrument.loc=default.instrument.location) {
+  assign("instrument.location", path.expand(instrument.loc), 1)
 }
 
 # flow calibration for SEAFLOW1
