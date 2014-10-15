@@ -3,7 +3,11 @@ get.evt.list <- function(evt.loc=evt.location) {
   if (length(file.list) == 0) {
     return (file.list)
   }
-  id <- grep('[0-9]{1,9}\\.evt$',file.list)
+  # regexp to match both types of EVT files
+  #   - 37.evt (old style)
+  #   - 2014-05-15T17-07-08+0000 (new style)
+  regexp <- '/?[0-9]+\\.evt$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{4}$'
+  id <- grep(regexp,file.list)
   file.list <- file.list[id]
 
   return (sort(file.list))
