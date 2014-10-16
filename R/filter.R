@@ -121,8 +121,6 @@ return(best.notch)
 #
 # Returns:
 #   Return list of EVT files which produced no OPP data.
-#
-# TODO (CTB): add check to remove any lingering partial dbs
 filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
                                       db=db.name, evt.loc=evt.location,
                                       cores=1) {
@@ -132,6 +130,9 @@ filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
                             evt.loc=evt.loc, check=TRUE)
   } else {
     # Snow parallel filtering to use multiple cores
+
+    # Cleanup any lingering database parts
+    reset.db(parts.only=T)
 
     # Prepare data lists and databases for child workers
     buckets <- make.buckets(evt.list, cores, db=db)

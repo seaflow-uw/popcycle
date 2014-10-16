@@ -202,7 +202,7 @@ make.sqlite.db <- function(new.db.path) {
 # 
 # Args:
 #   src.dbs = paths of sqlite3 dbs to merge into target.db
-#   target.db = path of sqlite3 db to be merged into [db.name]
+#   target.db = path of sqlite3 db to be merged into
 merge.dbs <- function(src.dbs, target.db=db.name) {
   for (src in src.dbs) {
     merge.sql <- paste(sprintf("attach \"%s\" as incoming", src),
@@ -225,12 +225,20 @@ merge.dbs <- function(src.dbs, target.db=db.name) {
 # overwritten.  Also erase any numbered sqlite3 dbs used for parallel filtering.
 #
 # Args:
-#   db.loc = directory containing sqlite3 database(s) [db.location]
-reset.db <- function(db.loc=db.location) {
-  db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]*$", full.names=TRUE)
+#   db.loc = directory containing sqlite3 database(s)
+#   parts.only = only erase numbered databases (e.g. popcycle.db5) and leave
+#                main db untouched
+reset.db <- function(db.loc=db.location, parts.only=FALSE) {
+  if (parts.only) {
+    db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]+$", full.names=TRUE)
+  } else {
+    db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]*$", full.names=TRUE)
+  }
   for (db in db.files) {
       file.remove(db)
   }
   # Create empty sqlite database
-  make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
+  if (! parts.only) {
+    make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
+  }
 }
