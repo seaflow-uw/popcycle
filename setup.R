@@ -18,9 +18,6 @@ try_to_install('plotrix')
 try_to_install('snow')
 
 try_to_install_local <- function(pkg) {
-  if (pkg %in% rownames(installed.packages())) {
-    return(invisible())
-  }
   install.packages('.', repos=NULL, type='source')
   if (!(pkg %in% rownames(installed.packages()))) {
     # Quit R with error status
