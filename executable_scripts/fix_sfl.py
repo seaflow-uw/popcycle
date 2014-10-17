@@ -43,6 +43,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
     for d, h in zip(data, header):
         h = h.upper()
         h = h.strip('\n')
+        d = d.strip('\n')
         if h in FLOATS:
             h = h.strip().replace(' ', '_')
             try:
@@ -65,13 +66,16 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
 
     # add cruise and data 
     dbcolumn_to_fixed_data[CRUISE] = cruise
-    try :
-      iso_split = dbcolumn_to_fixed_data[FILE].split('T')
-      iso_split[1] = iso_split[1].replace('-', ':')
-      #iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
-      dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
-    except:
-      dbcolumn_to_fixed_data[DATE] = None
+    if re.match('\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+0000', dbcolumn_to_fixed_data[FILE]):
+        # New style EVT file names, e.g. 2014-05-15T17-07-08+0000.
+        # Convert to a ISO 8601 date string
+        try :
+          iso_split = dbcolumn_to_fixed_data[FILE].split('T')
+          iso_split[1] = iso_split[1].replace('-', ':')
+          #iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
+          dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
+        except:
+          dbcolumn_to_fixed_data[DATE] = None
 
     # try to add flow rate
     try :
@@ -133,12 +137,13 @@ def insert_last_file(db = '~/popcycle/sqlite/popcycle.db') :
 
 def insert_from_command_line() :
     dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
-    lines = []
+    header = None
     for line in sys.stdin :
-        print line
-        lines.append(line)
-
-    fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
+        if not header:
+            header = line.split('\t')
+        else:
+            fields = line.split('\t')
+            fix_and_insert_sfl(line.split('\t'), header, dbpath)
 
 if __name__ == "__main__":
     insert_last_file()
