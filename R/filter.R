@@ -237,15 +237,15 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
 #
 # Returns:
 #   List of dbs and files for each part of a parallel EVT filtering analysis
-make.buckets <- function(evt.list, ways, db=db.name) {
-    file.lists <- split.list(evt.list, ways)
-    buckets <- list()
-    i <- 1
-    for (sublist in file.lists) {
-        buckets[[i]] <- list("db"=paste(db, i, sep=""), "files"=sublist)
-        i <- i + 1
-    }
-    return(buckets)
+make.buckets <- function(evt.list, ways, db=.db.name) {
+  file.lists <- split.list(evt.list, ways)
+  buckets <- list()
+  i <- 1
+  for (sublist in file.lists) {
+    buckets[[i]] <- list("db"=paste(db, i, sep=""), "files"=sublist)
+    i <- i + 1
+  }
+  return(buckets)
 }
 
 # Split a list into N sublists as evenly as possible
@@ -265,14 +265,14 @@ split.list <- function(some.list, ways) {
   i <- 1
   bucket.i <- 1
   while (bucket.i < ways) {
-      if (bucket.i <= bucket.rem) {
-          buckets[[bucket.i]] <- some.list[i:(i+bucket.size)]
-          i <- i + bucket.size + 1
-      } else {
-          buckets[[bucket.i]] <- some.list[i:(i+bucket.size-1)]
-          i <- i + bucket.size
-      }
-      bucket.i <- bucket.i + 1
+    if (bucket.i <= bucket.rem) {
+      buckets[[bucket.i]] <- some.list[i:(i+bucket.size)]
+      i <- i + bucket.size + 1
+    } else {
+      buckets[[bucket.i]] <- some.list[i:(i+bucket.size-1)]
+      i <- i + bucket.size
+    }
+    bucket.i <- bucket.i + 1
   }
   buckets[[bucket.i]] <- some.list[i:length(some.list)]
   return(buckets)
