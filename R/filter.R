@@ -50,11 +50,12 @@ filter.notch <- function(evt, width, notch) {
   origin <- median(evt[evt$D2>5000,"D2"])-median(evt[evt$D1>5000,"D1"])
   
   # filtering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt, D2 - origin < D1*slope + width * 10^4 & D1 < D2*slope - origin + width * 10^4) # filtering aligned particles (D1 = D2)
-
+  if(origin >= 0) aligned <- subset(evt, D2 < (D1+origin)*slope + width * 10^4 & (D1+origin) < D2*slope + width * 10^4)
+  if(origin < 0) aligned <- subset(evt, (D2-origin)  < D1*slope + width * 10^4 & D1 < (D2-origin)*slope + width * 10^4)
+  
   # filtering focused particles (D/fsc_small < notch)
-  if(origin >= 0) opp <- subset(aligned, D1/fsc_small < notch & (D2-origin)/fsc_small < notch) 
-  if(origin < 0) opp <- subset(aligned, (D1+origin)/fsc_small < notch & D2/fsc_small < notch) 
+  if(origin >= 0) opp <- subset(aligned, (D1+origin)/fsc_small < notch & D2/fsc_small < notch) 
+  if(origin < 0) opp <- subset(aligned, D1/fsc_small < notch & (D2-origin)/fsc_small < notch) 
 
   if(t & nrow(opp) > 0){
     opp[,-c(id)] <- 10^((opp[,-c(id)]/2^16)*3.5)
