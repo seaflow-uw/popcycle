@@ -37,27 +37,28 @@ WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This i
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
     ```
 
-2. The second step is to set the parameters for the filtration method (notch and width). For this example, we are going to set the gating parameters using the latest evt file collected by the instrument (but you choose any evt file). Open an R session and type:
+2. The second step is to set the parameters for the filtration method, i.e., `notch` (which controls the ratio D/Fsc_small) and `width`(which controls the diameter of the virtual core). The value of the `notch` parameter depends on the instrument settings, while the `width` parameter  depends of the particle size range the user wants to focus on.  For this example, we are going to use to set the `notch` using the latest evt file collected by the instrument (but you choose any evt file you want of course). The `width` is  set to 0.2. Open an R session and type:
 
     ```r
-    file.name <- get.latest.evt.with.day() # name of the latest evt file collected
+    # name of the latest evt file collected
+    file.name <- get.latest.evt.with.day() 
+    # load evt file
     evt <- readSeaflow(paste(evt.location, file.name, sep='/')) # load the evt file
-    notch <- best.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=0.2, do.plot=TRUE)
+    # find the best notch parameter
+    width <- 0.2
+    notch <- best.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=width, do.plot=TRUE)
+    # to plot the filtration step, use the following function
+    plot.filter.cytogram(evt, notch=notch, width=width)
     ```
-    This function helps you set the best notch (it is not fully tested, so it may not always work...)
-
-    To plot the filtration step, use the following function
-
-    `plot.filter.cytogram(evt, notch=notch, width=0.2)`
     
   Once you are satisfy with the filter parameters, you can filter `evt` to get `opp` by typing:
   
-    `opp <- filter.notch(evt, notch=notch, width=0.2)`
+    `opp <- filter.notch(evt, notch=notch, width=width)`
 
 
     IMPORTANT: To save the filter parameters so the filter parmaters will be apply to all new evt files, you need to call the function: 
     
-    `setFilterParams(notch=notch, width=0.2)` 
+    `setFilterParams(notch=notch, width=width)` 
 
 This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note that every changes in the filter parameters are automatically saved in the logs (~popcycle/logs/filter/filter.csv).
 
