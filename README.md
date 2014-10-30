@@ -99,9 +99,7 @@ In the R session, type:
 
 Now that the filter and gating parameters are set, clic PLAY! popcycle will apply the filter and gating parameters for every new evt files collected by the instrument and generate aggregate statistics for each population. All these steps are wrapped into one single function:
 
-    ```r 
-    evaluate.last.evt()
-    ```
+    `evaluate.last.evt()`
 
 Here are the 6 steps that the wrapping function is performing. This is for your information but you don't need to execute each of these steps, `evaluate.last.evt()` is doing it for you!
 
@@ -127,7 +125,7 @@ Here are the 6 steps that the wrapping function is performing. This is for your 
 
 6. Finally, popcycle will performs aggregate statistics for each population. To calculate cell abundance, we need to know the flow rate and acquisition time of the instrument for each file as well as the opp/evt ratio. Informations related to the instrument are automatically recorded in SeaFlow Log files (.sfl) and stored in a table called 'sfl' in the database. The opp/evt ratio is also stored in a table called 'opp_evt_ratio' in the database. Aggregate statistics are then calculated and recorded in a table called 'stats' in the database.
 
-    `> insert.stats.for.file(file.name)`
+    `insert.stats.for.file(file.name)`
 
 # Visualization
 Data generated for every file can be visualize using a set of functions:
@@ -160,15 +158,12 @@ Data generated for every file can be visualize using a set of functions:
 
 If you changes the filter parameters and need to reanalyze previous files according to these new parameters, use:
 
-    ```r
-    rerun.filter(start.day, start.timestamp, end.day, end.timestamp)
-    ```
+    `rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`
+    
 where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will update the 'opp' table in the database, and also update the 'vct' and 'stats' table.
 
 If you changes the gating parameters and need to reanalyze previous files according to these new parameters, use:
 
-    ```r
-    rerun.gating(start.day, start.timestamp, end.day, end.timestamp)
-    ```
+    `rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`
     
 This function will update the 'vct' and 'stats' table.
