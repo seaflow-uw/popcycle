@@ -157,13 +157,13 @@ Data generated for every file can be visualize using a set of functions:
 # ReAnalyze previous files
 
 If you changes the filter parameters and need to reanalyze previous files according to these new parameters, use:
-
+    
     `rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`
     
 where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will update the 'opp' table in the database, and also update the 'vct' and 'stats' table.
 
 If you changes the gating parameters and need to reanalyze previous files according to these new parameters, use:
-
+   
     `rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`
     
 This function will update the 'vct' and 'stats' table.
