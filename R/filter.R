@@ -70,39 +70,40 @@ best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
   for(n in notch){
     print(paste("filtering notch=",n))
     opp <- filter.notch(evt, notch=n, width=width)
-    percent.kept <- 0
-    if (nrow(evt) > 0) {
-      percent.kept <- nrow(opp)/nrow(evt)
-    }
-    print(sprintf("kept %% %.04f of original particles (%d/%d)", percent.kept, nrow(opp), nrow(evt)))
     fsc.max <- round(max(opp[,"fsc_small"]))
     id <- length(which(opp[,"fsc_small"] >= max(opp[,"fsc_small"])))
-    para <- data.frame(cbind(notch=n, fsc.max, id))
+    para <- data.frame(cbind(notch=n, fsc.max, id, original=nrow(evt), passed=nrow(opp)))
     DF <- rbind(DF, para)
   }
+  print(DF)
 
-  best.notch.id <- min(which(DF$fsc.max == max(DF$fsc.max) & DF$id == max(DF$id)))
-  best.notch <- DF$notch[best.notch.id]
+  # subset DF to only rows with globally maximum fsc.max value
+  max.row.indexes <- which(DF$fsc.max == max(DF$fsc.max))
+  DF.max <- DF[max.row.indexes, ]
 
- if(do.plot){
-  def.par <- par(no.readonly = TRUE) # save default, for resetting...
+  # get row index for smallest notch which has the most "saturated" fsc_small
+  # measurements, where saturated means equal to globally maximum fsc_small
+  best.notch.id <- min(which(DF.max$id == max(DF.max$id)))
+  best.notch <- DF.max$notch[best.notch.id]
 
-  par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
-  par(pty='m')
-  plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch))
-  abline(v=best.notch, col=3, lwd=3)
-  par(new=TRUE)
-  plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
-  axis(4)
-  mtext("count", 4, line=3)
-  legend('topleft',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
-  opp <- filter.notch(evt, notch=best.notch, width=width)
-  plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
-  par(def.par)    
-}
+  if(do.plot){
+    def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-return(best.notch)
+    par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
+    par(pty='m')
+    plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch))
+    abline(v=best.notch, col=3, lwd=3)
+    par(new=TRUE)
+    plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
+    axis(4)
+    mtext("count", 4, line=3)
+    legend('topleft',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
+    opp <- filter.notch(evt, notch=best.notch, width=width)
+    plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
+    par(def.par)    
+  }
 
+  return(best.notch)
 }
 
 # Filter a list of EVT files in parallel and upload OPP data to multiple sqlite
