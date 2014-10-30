@@ -32,32 +32,32 @@ WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This i
 
     ```r
     library(popcycle) 
-    set.evt.location("/path-to-the-evt-files") # Usually "/Volumes/Cruise_id/evt"
-    set.project.location("/path-to-the-project") # for instance "~/Cruise_id_project"
     set.cruise.id("foo")
+    set.evt.location("/path/to/evt/files") # e.g., "/Volumes/cruise.id/evt"
+    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
     ```
 
 2. The second step is to set the parameters for the filtration method (notch and width). For this example, we are going to set the gating parameters using the latest evt file collected by the instrument (but you choose any evt file). Open an R session and type:
 
     ```r
-    file.name <- get.latest.evt.with.day() # name of the latest evt file collected, with folder name.
+    file.name <- get.latest.evt.with.day() # name of the latest evt file collected
     evt <- readSeaflow(paste(evt.location, file.name, sep='/')) # load the evt file
-    notch <- best.filter.notch(evt, notch=seq(0.1, 1.4, by=0.1),width=0.5, do.plot=TRUE)
+    notch <- best.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=0.2, do.plot=TRUE)
     ```
     This function helps you set the best notch (it is not fully tested, so it may not always work...)
 
     To plot the filtration step, use the following function
 
-    `plot.filter.cytogram(evt, notch=notch, width=0.5)`
+    `plot.filter.cytogram(evt, notch=notch, width=0.2)`
     
   Once you are satisfy with the filter parameters, you can filter `evt` to get `opp` by typing:
   
-    `opp <- filter.notch(evt, notch=notch, width=0.5)`
+    `opp <- filter.notch(evt, notch=notch, width=0.2)`
 
 
     IMPORTANT: To save the filter parameters so the filter parmaters will be apply to all new evt files, you need to call the function: 
     
-    `setFilterParams(notch=notch, width=0.5)` 
+    `setFilterParams(notch=notch, width=0.2)` 
 
 This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note that every changes in the filter parameters are automatically saved in the logs (~popcycle/logs/filter/filter.csv).
 
