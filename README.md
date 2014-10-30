@@ -37,7 +37,7 @@ WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This i
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
     ```
 
-2. The second step is to set the parameters for the filtration method, i.e., `notch` (which controls the ratio D/Fsc_small) and `width`(which controls the diameter of the virtual core). The value of the `notch` parameter depends on the instrument settings, while the `width` parameter  depends of the particle size range the user wants to focus on.  For this example, we are going to use to set the `notch` using the latest evt file collected by the instrument (but you choose any evt file you want of course). The `width` is  set to 0.2. Open an R session and type:
+2. The second step is to set the parameters for the filtration method, i.e., the `width`(to adjust the alignment of the instrument) and the `notch` (to adjust the focus of the instrument) . The `notch` represents the the ratio D/fsc_small and  depends on how the PMTs of D1/D2 and fsc_small were set up, the `width` represents the acceptable difference between D1 and D2 for a particle to be considered 'aligned', it is usually set between 0.1 and 0.5. For this example, we are going to choose the `notch` using the latest evt file collected by the instrument (but you choose any evt file that you want, of course). The `width` is  set to 0.2. Open an R session and type:
 
     ```r
     # name of the latest evt file collected
