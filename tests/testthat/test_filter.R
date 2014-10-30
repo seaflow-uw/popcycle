@@ -96,7 +96,6 @@ test_that("Successfully run realtime pipeline", {
 
   evaluate.last.evt()
   opp.count <- nrow(get.opp.by.file(basename(get.latest.evt.with.day())))
-  print(opp.count)
     
   # Reset locations
   set.project.location(save.project)
