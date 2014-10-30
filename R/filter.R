@@ -69,9 +69,13 @@ best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
   for(n in notch){
     print(paste("filtering notch=",n))
     opp <- filter.notch(evt, notch=n, width=width)
-    fsc.max <- round(max(opp[,"fsc_small"]))
-    id <- length(which(opp[,"fsc_small"] >= max(opp[,"fsc_small"])))
-    para <- data.frame(cbind(notch=n, fsc.max, id, original=nrow(evt), passed=nrow(opp)))
+    if (nrow(opp) == 0) {
+      fsc.max = 0
+    } else {
+      fsc.max <- max(opp[,"fsc_small"])
+    }
+    id <- length(which(opp[,"fsc_small"] >= fsc.max))
+    para <- data.frame(cbind(notch=n, fsc.max=round(fsc.max), id, original=nrow(evt), passed=nrow(opp)))
     DF <- rbind(DF, para)
   }
   print(DF)
