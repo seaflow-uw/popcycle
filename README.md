@@ -44,7 +44,7 @@ WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This i
     file.name <- get.latest.evt.with.day() 
     # load evt file
     evt <- readSeaflow(paste(evt.location, file.name, sep='/')) # load the evt file
-    # find the best notch parameter
+    # Set the width and find the best notch parameter
     width <- 0.2
     notch <- best.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=width, do.plot=TRUE)
     # to plot the filtration step, use the following function
