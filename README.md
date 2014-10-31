@@ -11,24 +11,26 @@ The Popcycle pipeline performs 3 different analyses:
 
 The output of each step is saved into a SQL database using `sqlite3`. To run `popcycle` and analyze SeaFlow data in real-time, you need to set the filter and gating parameters, and press play, that's it!
 
-# Installation
-1. Download the .zip file of the entire popcycle repository into your computer.
+# Installation (only for OSX)
+1. Clone the popcycle git repository into your computer. For that, open the terminal and type
 
-2. Unzip the file
+```sh
+$ cd ~
+$ git clone https://github.com/uwescience/popcycle.git popcycle-master
+```
 
-3. Open the terminal and go to the directory where popcycle is unzipped, and type:
+This will create a `popcycle-master` folder in the root of the computer
 
-    ```sh
-    $ cd path/to/popcyle_repository
-    $ Rscript setup.R
-    ```
+2. Install popcycle package and its dependencies, such as `RSQLite` and `splancs` packages if they are not already installed.
 
-This creates all the necessary directories, the popcycle database (`popcycle.db`), and installs `popcycle` as an R package. The `setup.R` script should also install `RSQLite` and `splancs` packages if they are not already installed.
+```sh
+$ Rscript ~/popcyle-master/setup.R
+```
 
 WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This is different from the popcycle repository. 
 
 # Initialization
-1. The first step is to indicate where the data are located and where to save the project
+1. The first step is to indicate where the database (`popcycle.db`) is located and where to save the project
 
     ```r
     library(popcycle) 
