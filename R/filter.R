@@ -70,9 +70,13 @@ best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
   for(n in notch){
     print(paste("filtering notch=",n))
     opp <- filter.notch(evt, notch=n, width=width)
-    fsc.max <- round(max(opp[,"fsc_small"]))
-    id <- length(which(opp[,"fsc_small"] >= max(opp[,"fsc_small"])))
-    para <- data.frame(cbind(notch=n, fsc.max, id, original=nrow(evt), passed=nrow(opp)))
+    if (nrow(opp) == 0) {
+      fsc.max = 0
+    } else {
+      fsc.max <- max(opp[,"fsc_small"])
+    }
+    id <- length(which(opp[,"fsc_small"] >= fsc.max))
+    para <- data.frame(cbind(notch=n, fsc.max=round(fsc.max), id, original=nrow(evt), passed=nrow(opp)))
     DF <- rbind(DF, para)
   }
   print(DF)
@@ -143,20 +147,13 @@ filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
 
     # Create snow cluster
     cl <- makeCluster(cores, type="SOCK")
-    parallel.func <- function(b, notch, width, cruise) {
+    parallel.func <- function(b, notch, width, cruise, evt.loc) {
       filter.evt.files.serial(b[["files"]], notch, width, cruise=cruise, 
                               db=b[["db"]], evt.loc=evt.loc, check=FALSE)
     }
-    # Export relevant variables to cluster
-    popvars <- c("readSeaflow", "filter.notch", "upload.opp",
-                "opp.to.db.opp", "filter.evt",
-                "upload.opp.evt.ratio", "opp.table.name")
-    clusterExport(cl, popvars, envir = as.environment("package:popcycle"))
-    clusterExport(cl, c("filter.evt.files.serial", "db.name", "db.location",
-                        "evt.location", "cruise.id"))
 
     # Run filtering in parallel
-    clusterApply(cl, buckets, parallel.func, notch, width, cruise)
+    clusterApply(cl, buckets, parallel.func, notch, width, cruise, evt.loc)
     stopCluster(cl)
 
     # Merge databases
@@ -207,6 +204,11 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
       print(err)
     }) 
 
+    write(paste0("nrow(opp) = ", nrow(opp)), file = paste0("~/mnt/", basename(evt.file)))
+    write(paste0("evt.loc = ", evt.loc), file = paste0("~/mnt/", basename(evt.file)), append=T)
+    write(paste0("evt.location = ", evt.location), file = paste0("~/mnt/", basename(evt.file)), append=T)
+    write(paste0("project.location = ", project.location), file = paste0("~/mnt/", basename(evt.file)), append=T)
+
     # Upload OPP data
     #.delete.opp.by.file(evtfile)           # is this delete necessary?
     if (nrow(opp) > 0) {
@@ -239,15 +241,15 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
 #
 # Returns:
 #   List of dbs and files for each part of a parallel EVT filtering analysis
-make.buckets <- function(evt.list, ways, db=db.name) {
-    file.lists <- split.list(evt.list, ways)
-    buckets <- list()
-    i <- 1
-    for (sublist in file.lists) {
-        buckets[[i]] <- list("db"=paste(db, i, sep=""), "files"=sublist)
-        i <- i + 1
-    }
-    return(buckets)
+make.buckets <- function(evt.list, ways, db=.db.name) {
+  file.lists <- split.list(evt.list, ways)
+  buckets <- list()
+  i <- 1
+  for (sublist in file.lists) {
+    buckets[[i]] <- list("db"=paste(db, i, sep=""), "files"=sublist)
+    i <- i + 1
+  }
+  return(buckets)
 }
 
 # Split a list into N sublists as evenly as possible
@@ -267,14 +269,14 @@ split.list <- function(some.list, ways) {
   i <- 1
   bucket.i <- 1
   while (bucket.i < ways) {
-      if (bucket.i <= bucket.rem) {
-          buckets[[bucket.i]] <- some.list[i:(i+bucket.size)]
-          i <- i + bucket.size + 1
-      } else {
-          buckets[[bucket.i]] <- some.list[i:(i+bucket.size-1)]
-          i <- i + bucket.size
-      }
-      bucket.i <- bucket.i + 1
+    if (bucket.i <= bucket.rem) {
+      buckets[[bucket.i]] <- some.list[i:(i+bucket.size)]
+      i <- i + bucket.size + 1
+    } else {
+      buckets[[bucket.i]] <- some.list[i:(i+bucket.size-1)]
+      i <- i + bucket.size
+    }
+    bucket.i <- bucket.i + 1
   }
   buckets[[bucket.i]] <- some.list[i:length(some.list)]
   return(buckets)
