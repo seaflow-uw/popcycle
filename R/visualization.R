@@ -79,7 +79,7 @@ plot.gate.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y =
 
 
 
-plot.filter.cytogram <- function(evt, width=0.5, notch=1){
+plot.filter.cytogram <- function(evt, width=0.2, notch=1){
 
 
   notch <- as.numeric(notch)
@@ -102,11 +102,11 @@ plot.filter.cytogram <- function(evt, width=0.5, notch=1){
   evt. <- subset(evt., D1 < max & D2 < max) 
 
   # Correction for the difference of sensitivity between D1 and D2
-  origin <- median(evt[evt$D2>5000,"D2"])-median(evt[evt$D1>5000,"D1"])
+  origin <- median(evt.[evt.$D2>5000,"D2"])-median(evt.[evt.$D1>5000,"D1"])
   
   # filtering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  if(origin >= 0) aligned <- subset(evt, D2 < (D1+origin)*slope + width * 10^4 & (D1+origin) < D2*slope + width * 10^4)
-  if(origin < 0) aligned <- subset(evt, (D2-origin)  < D1*slope + width * 10^4 & D1 < (D2-origin)*slope + width * 10^4)
+  if(origin >= 0) aligned <- subset(evt., D2 < (D1+origin)*slope + width * 10^4 & (D1+origin) < D2*slope + width * 10^4)
+  if(origin < 0) aligned <- subset(evt., (D2-origin)  < D1*slope + width * 10^4 & D1 < (D2-origin)*slope + width * 10^4)
   
   # filtering focused particles (D/fsc_small < notch)
   if(origin >= 0) opp <- subset(aligned, (D1+origin)/fsc_small < notch & D2/fsc_small < notch) 
@@ -115,7 +115,6 @@ plot.filter.cytogram <- function(evt, width=0.5, notch=1){
   origin <- origin  
   if(t){
   opp[,-c(id)] <- 10^((opp[,-c(id)]/2^16)*3.5)
-  evt[,-c(id)] <- 10^((evt[,-c(id)]/2^16)*3.5)
     }
 
 
@@ -128,12 +127,6 @@ plot.filter.cytogram <- function(evt, width=0.5, notch=1){
   origin1 <- origin + width*10^4
   origin2 <- origin - width*10^4
  
-  if(t){
-   origin1 <- 10^((origin1/2^16)*3.5) 
-   origin1 <- 10^((origin2/2^16)*3.5) 
-
-  }
-
   if(nrow(evt) > 10000){display <- 10000}else{display <- nrow(evt)}
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
@@ -143,7 +136,7 @@ plot.filter.cytogram <- function(evt, width=0.5, notch=1){
     mtext("Alignment", side=3, line=1, font=2)
    # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...
    abline(b=slope, a=origin1, col='red',lwd=2)
-   abline(b=1/slope, a=origin2, col='red',lwd=2)
+   abline(b=slope, a=origin2, col='red',lwd=2)
   mtext(paste("D2 - D1=", round(origin,2)),outer=T,side=3, line=-1.5,font=2)
     mtext(paste("Width=", width),outer=T,side=3, line=-3,font=2)
     mtext(paste("Notch=", notch),outer=T,side=3, line=-4,font=2)
@@ -175,8 +168,10 @@ plot.filter.cytogram <- function(evt, width=0.5, notch=1){
 
 
 
+evt.location <- "/Volumes/seaflow/DeepDOM"
+"2013_119/362.evt"
 
-plot.filter.cytogram.by.file <- function(evt.location,file.name,notch=1, width=0.5,...){
+plot.filter.cytogram.by.file <- function(evt.location,file.name,width=0.2,notch=1, ...){
 
     evt.list <- get.evt.list(evt.location)
     id <- which(file.name == evt.list)

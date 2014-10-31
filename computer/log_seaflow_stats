@@ -1,0 +1,34 @@
+id			sample ID	
+trip		cruise ID	
+long		longitude deg W
+lat			latitude deg N
+day			julian day
+resamp      concatenatd file ID
+file        file ID
+time		GMT time	
+pop			population name	 	synecho: Synechococcus
+								crypto: Cryptophytes
+								pico: picoplankton 2 micron in nominal mean cell size
+								ultra: ultraplankton 3 micron in nominal mean cell size
+								cocco: Coccolithophores 
+								nano: nanoplankton 4-15 micron in nominal mean cell size
+								beads: Internal standard of 1 micron diameter
+n			number of cells during 3 minute time periode
+fsc_avg		mean forward light scatter in orthogonal state (proxy of cell size)
+fsc_med		median forward light scatter in orthogonal state (proxy of cell size)
+fsc_sd		standard deviation forward light scatter in orthogonal state (proxy of cell size)
+chl_avg		mean Chlorophyll fluorescence (red fluorescence, proxy of chlorophyll content)
+chl_med		median Chlorophyll fluorescence (red fluorescence, proxy of chlorophyll content)
+chl_sd		standard deviation Chlorophyll fluorescence (red fluorescence, proxy of chlorophyll content)
+pe_avg		mean Phycoerythrin fluorescence (orange fluorescence, proxy of phycoerythrin content)
+pe_med		median Phycoerythrin fluorescence (orange fluorescence, proxy of phycoerythrin content)
+pe_sd		standard deviation Phycoerythrin fluorescence (orange fluorescence, proxy of phycoerythrin content)
+chl_big_avg 	mean Chlorophyll fluorescence for large particles (red fluorescence, proxy of chlorophyll content)
+chl_big	_med    median Chlorophyll fluorescence for large particles (red fluorescence, proxy of chlorophyll content)
+chl_big_sd	standard deviation Chlorophyll fluorescence for large particles (red fluorescence, proxy of chlorophyll content)
+perp_avg	mean forward light scatter in perpendicular polarization state (for coccoliths detection) 
+perp_med	median forward light scatter in perpendicular polarization state (for coccoliths detection) 
+perp_sd		standard deviation forward light scatter in perpendicular polarization state (for coccoliths detection) 
+flow		sample flow rate (mL min-1)
+conc		cell concentration (10^6 cells L-1)																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										
+outlier     TRUE or FALSE

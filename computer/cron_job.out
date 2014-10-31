@@ -1,0 +1,64 @@
+Loading required package: RSQLite
+Loading required package: methods
+Loading required package: DBI
+Loading required package: splancs
+Loading required package: sp
+
+Spatial Point Pattern Analysis Code in S-Plus
+ 
+ Version 2 - Spatial and Space-Time analysis
+
+Loading required package: plyr
+Error in id:length(file.list) : NA/NaN argument
+Calls: file.transfer
+Execution halted
+[1] "Analyzing 2014_206/2014-07-25T23-57-36+00-00"
+[1] "Loading 2014_206/2014-07-25T23-57-36+00-00"
+[1] "Filtering 2014_206/2014-07-25T23-57-36+00-00"
+[1] "Uploading filtered particles to database"
+[1] "Uploading opp/evt ratio"
+[1] "Classifying 2014_206/2014-07-25T23-57-36+00-00"
+[1] "Gating beads"
+[1] "Gating synecho"
+[1] "Gating prochloro"
+[1] "Gating picoeuk"
+[1] "Gating pennates"
+[1] "Uploading labels to the database"
+[1] "Calculating cytometric diversity"
+[1] "Uploading cytdiv"
+[1] "Uploading stats"
+[1] TRUE
+[1] "creating cytogram.png"
+null device 
+          1 
+[1] "creating vct.cytogram.png"
+null device 
+          1 
+[1] "creating gate.cytogram.png"
+null device 
+          1 
+[1] "saving stat.csv"
+[1] "creating cell_conc_map.png"
+null device 
+          1 
+[1] "creating cell_conc_time.png"
+null device 
+          1 
+[1] "creating light_scatter.png"
+null device 
+          1 
+[1] "creating chl_small.png"
+null device 
+          1 
+[1] "saving cytdiv.csv"
+[1] "creating cytometric diversity.png"
+null device 
+          1 
+[1] "creating fluo_comp.png"
+null device 
+          1 
+[1] "saving sfl.csv"
+[1] "creating TS_plot.png"
+null device 
+          1 
+[1] "DONE"

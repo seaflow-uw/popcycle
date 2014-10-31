@@ -1,0 +1,17 @@
+cron job starting at Sat Aug 30 17:15:00 BST 2014
+Loading required package: RSQLite
+Loading required package: methods
+Loading required package: DBI
+Loading required package: splancs
+Loading required package: sp
+
+Spatial Point Pattern Analysis Code in S-Plus
+ 
+ Version 2 - Spatial and Space-Time analysis
+
+Loading required package: plyr
+Warning message:
+In value[[3L]](cond) :
+  RS-DBI driver: (RS_SQLite_exec: could not execute: columns cruise, file are not unique)
+KernSmooth 2.23 loaded
+Copyright M. P. Wand 1997-2009
