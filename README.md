@@ -113,3 +113,36 @@ where `start.day` and `end.day` represent the folder name (year_julianday) and `
    ```
 
 This function will create/update the 'vct' and 'stats' table.
+
+# Visualization
+Data generated can be visualize using a set of functions:
+
+1. To plot the filter steps
+
+    ```r
+    plot.filter.cytogram.by.file(file.name)
+    ```
+
+2. To plot opp
+
+    ```r
+    plot.cytogram.by.file(file.name)
+    ```
+
+3. To plot vct
+
+    ```r
+    plot.vct.cytogram.by.file(file.name)
+    ```
+
+4. To plot aggregate statistics, for instance, cell abundance the cyanobacteria "Synechococcus" population on a map or over time
+
+    ```r
+    stat <- get.stat.table() # to load the aggregate statistics
+    plot.map(stat, pop='synecho', param='abundance') 
+    plot.time(stat, pop='synecho', param='abundance')
+    ```
+
+    But you can plot any parameter/population, just make sure their name match the one in the 'stat' table... 
+
+    FYI, type `colnames(stat)` to know which parameters are available in the 'stat' table,  and `unique(stat$pop)` to know the name of the different populations.
