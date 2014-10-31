@@ -18,12 +18,11 @@ The output of each step is saved into a SQL database using `sqlite3`. To run `po
     (replace path/to/popcycle-master by the actual path...)
     ```
 
-2. Install popcycle package and its dependencies, such as `RSQLite` and `splancs` packages if they are not already installed.
+2. Install popcycle package and its dependencies, such as `RSQLite` and `splancs` packages if they are not already installed
 
-```sh
-$ Rscript path/to/popcyle-master/setup.R
-```
-
+    ```sh
+    $ Rscript path/to/popcyle-master/setup.R
+    ```
 WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This is different from the popcycle repository. 
 
 # Initialization
@@ -158,12 +157,12 @@ Data generated for every file can be visualize using a set of functions:
 
 To change the filter parameters and reanalyze previous files according to these new parameters, use the following function
 
-`rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`
+    `rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`
     
 where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will update the 'opp' table in the database, and also update the 'vct' and 'stats' table.
 
 To change the gating parameters and reanalyze previous files according to these new parameters, use the following function
 
-`rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`
+    `rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`
 
 This function will update the 'vct' and 'stats' table.
