@@ -45,7 +45,7 @@ test_that("Successfully filter two files, one core", {
   opp.count <- nrow(get.opp.by.file(evt.path[1]))
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
 
-  expect_equal(opp.count, 31)
+  expect_equal(opp.count, 32)
   
   # Reset locations
   set.project.location(save.project)
@@ -73,7 +73,7 @@ test_that("Successfully filter two files, one core", {
 #   opp.count <- nrow(get.opp.by.file(evt.path[1]))
 #   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
   
-#   expect_equal(opp.count, 31)
+#   expect_equal(opp.count, 32)
   
 #   # Reset locations
 #   set.project.location(save.project)
