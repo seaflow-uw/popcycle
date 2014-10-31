@@ -202,12 +202,7 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
       # Return empty data frame on error
       return(data.frame(c()))
       print(err)
-    }) 
-
-    write(paste0("nrow(opp) = ", nrow(opp)), file = paste0("~/mnt/", basename(evt.file)))
-    write(paste0("evt.loc = ", evt.loc), file = paste0("~/mnt/", basename(evt.file)), append=T)
-    write(paste0("evt.location = ", evt.location), file = paste0("~/mnt/", basename(evt.file)), append=T)
-    write(paste0("project.location = ", project.location), file = paste0("~/mnt/", basename(evt.file)), append=T)
+    })
 
     # Upload OPP data
     #.delete.opp.by.file(evtfile)           # is this delete necessary?
