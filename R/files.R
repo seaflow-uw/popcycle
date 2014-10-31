@@ -5,8 +5,8 @@ get.evt.list <- function(evt.loc=evt.location) {
   }
   # regexp to match both types of EVT files
   #   - 37.evt (old style)
-  #   - 2014-05-15T17-07-08+0000 (new style)
-  regexp <- '/?[0-9]+\\.evt$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{4}$'
+  #   - 2014-05-15T17-07-08+0000 or 2014-07-04T00-03-02+00-00 (new style)
+  regexp <- '/?[0-9]+\\.evt$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{2}-?[0-9]{2}$'
   id <- grep(regexp,file.list)
   file.list <- file.list[id]
 
