@@ -51,13 +51,16 @@ WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This i
     
   Once you are satisfy with the filter parameters, you can filter `evt` to get `opp` by typing:
   
-    `opp <- filter.notch(evt, notch=notch, width=width)`
+    ```r
+    opp <- filter.notch(evt, notch=notch, width=width)
+    ```
 
 
     IMPORTANT: To save the filter parameters so the filter parmaters will be apply to all new evt files, you need to call the function: 
     
-    `setFilterParams(notch=notch, width=width)` 
-
+    ```r
+    setFilterParams(notch=notch, width=width)` 
+    ```
 This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note that every changes in the filter parameters are automatically saved in the logs (~popcycle/logs/filter/filter.csv).
 
 
@@ -93,76 +96,20 @@ In the R session, type:
     ```
 
 
-
 # Play
 
-Now that the filter and gating parameters are set, clic PLAY! popcycle will apply the filter and gating parameters for every new evt files collected by the instrument and generate aggregate statistics for each population. All these steps are wrapped into one single function:
+1. To apply the filter parameters and analyze evt files according to the filter parameters, use the following function
 
-    `evaluate.last.evt()`
+   ```r
+   run.filter(start.day, start.timestamp, end.day, end.timestamp)
+   ```
+   
+where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the 'opp' table in the database.
 
-Here are the 6 steps that the wrapping function is performing. This is for your information but you don't need to execute each of these steps, `evaluate.last.evt()` is doing it for you!
+2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
-1. First, popcycle loads the filter parameters
+   ```r
+   run.gating(start.day, start.timestamp, end.day, end.timestamp)
+   ```
 
-    `params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))`
-
-2. Filter opp using the `filter.notch` function
-
-    `opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)`
-
-3. Upload the opp into the database (and saving the cruise ID and the file name for each particle)
-
-    `upload.opp(opp.to.db.opp(opp, cruise.id, file.name))` where `file.name` represent the filename of the last evt file (using `get.latest.file.with.day()` function).
-
-4. Apply the gating parameters defined by the manual method for each population
-
-    `vct <- classify.opp(opp, ManualGating)` 
-
-5. Upload the particle assignment into the database (and saving the cruise ID and the file name for each particle).
-
-    `upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))`
-
-6. Finally, popcycle will performs aggregate statistics for each population. To calculate cell abundance, we need to know the flow rate and acquisition time of the instrument for each file as well as the opp/evt ratio. Informations related to the instrument are automatically recorded in SeaFlow Log files (.sfl) and stored in a table called 'sfl' in the database. The opp/evt ratio is also stored in a table called 'opp_evt_ratio' in the database. Aggregate statistics are then calculated and recorded in a table called 'stats' in the database.
-
-    `insert.stats.for.file(file.name)`
-
-# Visualization
-Data generated for every file can be visualize using a set of functions:
-
-1. To plot the filter steps
-
-    `plot.filter.cytogram.by.file(file.name)`
-
-2. To plot opp
-
-    `plot.cytogram.by.file(file.name)`
-
-3. To plot vct
-
-    `plot.vct.cytogram.by.file(file.name)`
-
-4. To plot aggregate statistics, for instance, cell abundance the cyanobacteria "Synechococcus" population on a map or over time
-
-    ```r
-    stat <- get.stat.table() # to load the aggregate statistics
-    plot.map(stat, pop='synecho', param='abundance') 
-    plot.time(stat, pop='synecho', param='abundance')
-    ```
-
-    But you can plot any parameter/population, just make sure their name match the one in the 'stat' table... 
-
-    FYI, type `colnames(stat)` to know which parameters are available in the 'stat' table,  and `unique(stat$pop)` to know the name of the different populations.
-
-# ReAnalyze previous files
-
-To change the filter parameters and reanalyze previous files according to these new parameters, use the following function
-
-   `rerun.filter(start.day, start.timestamp, end.day, end.timestamp)`
-    
-where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will update the 'opp' table in the database, and also update the 'vct' and 'stats' table.
-
-To change the gating parameters and reanalyze previous files according to these new parameters, use the following function
-
-   `rerun.gating(start.day, start.timestamp, end.day, end.timestamp)`
-
-This function will update the 'vct' and 'stats' table.
+This function will create/update the 'vct' and 'stats' table.
