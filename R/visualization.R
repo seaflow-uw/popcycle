@@ -105,7 +105,9 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
   evt. <- subset(evt., D1 < D1D2.max & D2 < D1D2.max)
   
   # Correction for the difference of sensitivity between D1 and D2
-  origin <- median(evt.[evt.$D2>5000,"D2"])-median(evt.[evt.$D1>5000,"D1"])
+      #remove potential electrical noise from calculation
+  evt.origin  <- subset(evt., D2 > 5000 | D1 > 5000)
+  origin <- median(evt.origin$D2)-median(evt.origin$D1)
       if(origin > 0)  evt.$D1 <-  evt.$D1 + origin
       if(origin < 0)  evt.$D2 <-   evt.$D2 - origin 
  
@@ -124,12 +126,12 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
   origin1 <- origin + width*10^4
   origin2 <- origin - width*10^4
  
-  if(nrow(evt) > 10000){display <- 10000}else{display <- nrow(evt)}
+  if(nrow(evt) > 10000)  evt <- evt[round(seq(1,nrow(evt), length.out=10000)),]
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
   par(mfrow=c(2,2),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-  plot.cytogram(evt[1:display,], "D1", "D2")
+  plot.cytogram(evt, "D1", "D2")
     mtext("Alignment", side=3, line=1, font=2)
    # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...
    abline(b=slope, a=origin1, col='red',lwd=2)

@@ -50,7 +50,8 @@ filter.notch <- function(evt, width, notch) {
   evt. <- subset(evt., D1 < D1D2.max & D2 < D1D2.max)
   
   # Correction for the difference of sensitivity between D1 and D2
-  origin <- median(evt.[evt.$D2>5000,"D2"])-median(evt.[evt.$D1>5000,"D1"])
+    evt.origin  <- subset(evt., D2 > 5000 | D1 > 5000)
+    origin <- median(evt.origin$D2)-median(evt.origin$D1)
       if(origin > 0)  evt.$D1 <-  evt.$D1 + origin
       if(origin < 0)  evt.$D2 <-   evt.$D2 - origin 
  
