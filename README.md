@@ -59,7 +59,7 @@ WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This i
     IMPORTANT: To save the filter parameters so the filter parmaters will be apply to all new evt files, you need to call the function: 
     
     ```r
-    setFilterParams(notch=notch, width=width)
+    setFilterParams(width, notch)
     ```
 This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note that every changes in the filter parameters are automatically saved in the logs (~popcycle/logs/filter/filter.csv).
 
