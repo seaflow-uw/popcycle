@@ -7,7 +7,7 @@ setFilterParams <- function(width, notch) {
   log.file <- paste(log.filter.location, 'filter.csv', sep='/')
   
   if (file.exists(log.file)) {  
-    write.table(data.frame(time=time, widht=width, notch=notch), log.file, 
+    write.table(data.frame(time=time, width=width, notch=notch), log.file, 
                 row.names = F, col.names = F, append = T, quote = F, sep=',')  
   } else {
     write.table(data.frame(time=time, width=width, notch=notch), log.file,
