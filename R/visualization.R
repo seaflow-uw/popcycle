@@ -143,8 +143,9 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
 
         aligned$D1.fsc_small <- aligned$D1/aligned$fsc_small
         aligned$D2.fsc_small <- aligned$D2/aligned$fsc_small
-        aligned <- subset(aligned, D1.fsc_small<2 & D2.fsc_small<2)[1:display,]
-  
+        aligned <- subset(aligned, D1.fsc_small<2 & D2.fsc_small<2)
+        if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
+     
   plot(aligned[,c("D1.fsc_small", "D2.fsc_small")], pch=16, cex=0.3, col = densCols(aligned[,c("D1.fsc_small", "D2.fsc_small")], colramp = cols), xlim=c(0,2), ylim=c(0,2)) 
        mtext("Focus", side=3, line=1, font=2)
        abline(v=notch, h=notch, col=2,lwd=2)
