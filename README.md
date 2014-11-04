@@ -21,9 +21,10 @@ The output of each step is saved into a SQL database using `sqlite3`. To run `po
 2. Install popcycle package and its dependencies, such as `RSQLite` and `splancs` packages if they are not already installed
 
     ```sh
-    $ Rscript path/to/popcyle-master/setup.R
+    $ cd path/to/popcyle-master
+    $ Rscript setup.R
     ```
-WARNINGS: The setup process creates a popcycle directory in `~/popcycle`. This is different from the popcycle repository. 
+WARNINGS: You need to be in the popcycle repository to execute the setup.R script. The setup process creates a popcycle directory in `~/popcycle`, this is different from the popcycle repository. 
 
 # Initialization
 1. The first step is to indicate where the database (`popcycle.db`) is located and where to save the project
