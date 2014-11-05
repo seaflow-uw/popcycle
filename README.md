@@ -105,7 +105,7 @@ In the R session, type:
    run.filter(start.day, start.timestamp, end.day, end.timestamp)
    ```
    
-where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the 'opp' table in the database.
+ where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the 'opp' table in the database.
 
 2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
