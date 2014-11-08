@@ -213,13 +213,13 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
     })
 
     # Upload OPP data
-    #.delete.opp.by.file(evtfile)           # is this delete necessary?
+    .delete.opp.by.file(evt.file)
     if (nrow(opp) > 0) {
       upload.opp(opp.to.db.opp(opp, cruise, evt.file), db=db)
     }
 
     # Upload OPP/EVT particle count ratio
-    #.delete.opp.evt.ratio.by.file(evtfile) # is this delete necessary?
+    .delete.opp.evt.ratio.by.file(evt.file)
     if (nrow(evt) > 0) {
       opp.evt.ratio <- nrow(opp) / nrow(evt)
       upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file, db=db)
