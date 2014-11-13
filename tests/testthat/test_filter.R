@@ -15,7 +15,7 @@ test_that("Best notch is found", {
   evt.path <- file.path(evt.location, "SeaFlow", "datafiles", "evt",
                         "2014_135", "2014-05-15T17-07-08+0000")
   evt <- readSeaflow(evt.path)
-  notch <- best.filter.notch(evt, notch=seq(0.1, 1.4, by=0.1), width=0.2, do.plot=F)
+  notch <- find.filter.notch(evt, notch=seq(0.1, 1.4, by=0.1), width=0.2, do.plot=F)
 
   expect_equal(notch, 1.1)
   

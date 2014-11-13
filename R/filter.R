@@ -72,7 +72,7 @@ filter.notch <- function(evt, width, notch) {
   return(opp)
 }
 
-best.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plot=TRUE){
+find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plot=TRUE){
 
   DF <- NULL
   for(n in notch){
