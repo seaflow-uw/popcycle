@@ -69,8 +69,7 @@ set.project.location <- function(path) {
   }
 }
 
-# Configure EVT file location.  Place location definition in the global
-# environment.
+# Configure EVT file location.
 #
 # Args:
 #   path = top-level directory for EVT files
@@ -78,8 +77,7 @@ set.evt.location <- function(path) {
   .assign.to.envs("evt.location", path.expand(path))
 }
 
-# Configure cruise name.  Place location definition in the global
-# environment.
+# Configure cruise name.
 #
 # Args:
 #   cruise.name = cruise name
@@ -87,8 +85,7 @@ set.cruise.id <- function(cruise.name) {
   .assign.to.envs("cruise.id", path.expand(cruise.name))
 }
 
-# Configure instrument directory location.  Place location definition in the
-# global environment.
+# Configure instrument directory location.
 #
 # Args:
 #   instrument.location = path to instrument directory
