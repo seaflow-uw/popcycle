@@ -7,11 +7,9 @@ test_that("EVT files are located correctly", {
   save <- evt.location
   set.evt.location("../../inst/extdata")
 
-  answer <- c("SeaFlow/datafiles/evt/2014_135/2014-05-15T17-07-08+0000",
-              "SeaFlow/datafiles/evt/2014_135/2014-05-15T17-10-09+0000",
-              "SeaFlow/datafiles/evt/2014_135/2014-05-15T17-13-09+0000",
-              "SeaFlow/datafiles/evt/2014_135/2014-05-15T17-16-09+0000",
-              "SeaFlow/datafiles/evt/2014_135/2014-05-15T17-19-09+0000",
+  answer <- c("SeaFlow/datafiles/evt/2014_185/2014-07-04T00-00-02+00-00",
+              "SeaFlow/datafiles/evt/2014_185/2014-07-04T00-03-02+00-00",
+              "SeaFlow/datafiles/evt/2014_185/2014-07-04T00-06-02+00-00",
               "37.evt",
               "367.evt"
             )
