@@ -3,6 +3,7 @@ import os
 import glob
 import re
 import sys
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 DELIM = '\t'
 
@@ -29,12 +30,16 @@ DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
               'STREAM_PRESSURE', 'FLOW_RATE','EVENT_RATE']
 
-# default for july 2014 cruise, change later
-cruise_id = 'july2014'
+# Default file system locations
+DEFAULT_EVT_DIR = '~/SeaFlow/datafiles/evt/'
+DEFAULT_DB = '~/popcycle/sqlite/popcycle.db'
+
+# Default for july 2014 cruise
+DEFAULT_CRUISE_ID = 'july2014'
 
 
 # takes data and header as lists, dbpath as a string
-def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
+def fix_and_insert_sfl(data, header, dbpath = DEFAULT_DB, cruise = DEFAULT_CRUISE_ID):
     #if len(data) != len(header):
     #    raise IndexError("Different number of items in data and header: h - " + str(len(header)) + ", d - " + str(len(data)))
 
@@ -105,7 +110,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise=cruise_id):
 
     #return db_tuple
 
-def insert_file_bulk(sfl_file, db = '~/popcycle/sqlite/popcycle.db') :
+def insert_file_bulk(sfl_file, db = DEFAULT_DB, cruise = DEFAULT_CRUISE_ID) :
     lines = open(sfl_file).readlines()
     header = lines[0].split('\t')
     dbpath = os.path.expanduser(db)
@@ -117,33 +122,64 @@ def insert_file_bulk(sfl_file, db = '~/popcycle/sqlite/popcycle.db') :
         conn.commit()
         conn.close()
 
-        fix_and_insert_sfl(data, header, dbpath)
+        fix_and_insert_sfl(data, header, dbpath, cruise)
 
-def insert_last_entry(db = '~/popcycle/sqlite/popcycle.db') :
+def insert_last_entry(db = DEFAULT_DB, evt_path = DEFAULT_EVT_DIR, cruise = DEFAULT_CRUISE_ID) :
     dbpath = os.path.expanduser(db)
-    evt_path = os.path.expanduser('~/SeaFlow/datafiles/evt/')
+    evt_path = os.path.expanduser(evt_path)
     latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
     sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
     lines = open(sfl_file).readlines()
 
-    fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath)
+    fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath, cruise)
 
-def insert_last_file(db = '~/popcycle/sqlite/popcycle.db') :
+def insert_last_file(db = DEFAULT_DB, evt_path = DEFAULT_EVT_DIR, cruise = DEFAULT_CRUISE_ID) :
     dbpath = os.path.expanduser(db)
-    evt_path = os.path.expanduser('~/SeaFlow/datafiles/evt/')
+    evt_path = os.path.expanduser(evt_path)
     latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
     sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
-    insert_file_bulk(sfl_file)
+    insert_file_bulk(sfl_file, dbpath, cruise)
 
-def insert_from_command_line() :
-    dbpath = os.path.expanduser('~/popcycle/sqlite/popcycle.db')
+def insert_from_command_line(db = DEFAULT_DB, cruise = DEFAULT_CRUISE_ID) :
+    dbpath = os.path.expanduser(db)
     header = None
     for line in sys.stdin :
         if not header:
             header = line.split('\t')
         else:
             fields = line.split('\t')
-            fix_and_insert_sfl(line.split('\t'), header, dbpath)
+            fix_and_insert_sfl(line.split('\t'), header, dbpath, cruise)
 
 if __name__ == "__main__":
-    insert_last_file()
+    parser = ArgumentParser(
+        description='Insert SFL file data into a popcycle sqlite3 database',
+        prog='fix_sfl.py',
+        formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        '-d', '--db',
+        help='sqlite3 database file',
+        default=DEFAULT_DB)
+    parser.add_argument(
+        '-c', '--cruise',
+        help='cruise name',
+        default=DEFAULT_CRUISE_ID)
+    parser.add_argument(
+        '-e', '--evt_dir',
+        help='EVT data directory',
+        default=DEFAULT_EVT_DIR)
+    parser.add_argument(
+        '-s', '--sfl',
+        help='''SFL file.  If not provided, the SFL file for the latest day in
+                EVT_DIR will be used.  Use - to read from STDIN.''')
+
+    args = parser.parse_args()
+
+    if args.sfl == '-':
+        # From STDIN
+        insert_from_command_line(args.db, args.cruise)
+    elif not args.sfl:
+        # SFL file for last day
+        insert_last_file(args.db, args.evt_dir, args.cruise)
+    else:
+        # User specific SFL file
+        insert_file_bulk(args.sfl, args.db, args.cruise)
