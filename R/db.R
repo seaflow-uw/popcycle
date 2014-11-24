@@ -82,6 +82,51 @@ upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.
   dbDisconnect(con)
 }
 
+# Return a vector of distinct file values in opp table
+#
+# Args:
+#   db = sqlite3 db
+get.opp.files <- function(db = db.name) {
+  sql <- paste0("SELECT DISTINCT file from ", opp.table.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  files <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(files$file)
+}
+
+# Return a vector of distinct file values in vct.table.name
+#
+# Args:
+#   db = sqlite3 db
+get.vct.files <- function(db = db.name) {
+  sql <- paste0("SELECT DISTINCT file from ", vct.table.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  files <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(files$file)
+}
+
+# Return a vector of distinct file values in opp.evt.ratio.table.name
+#
+# Args:
+#   db = sqlite3 db
+get.opp.evt.ratio.files <- function(db = db.name) {
+  sql <- paste0("SELECT DISTINCT file from ", opp.evt.ratio.table.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  files <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(files$file)
+}
+
+# Return a list of EVT files for which there is no OPP data in the database
+#
+# Args:
+#   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
+#   db = sqlite3 db
+get.empty.evt.files <- function(evt.list, db = db.name) {
+  opp.files <- get.opp.files(db)
+  return(setdiff(evt.list, opp.files))
+}
 
 get.stat.table <- function(db = db.name) {
   sql <- paste('SELECT * FROM ', stats.table.name)
@@ -205,6 +250,17 @@ make.sqlite.db <- function(new.db.path) {
 #   target.db = path of sqlite3 db to be merged into
 merge.dbs <- function(src.dbs, target.db=db.name) {
   for (src in src.dbs) {
+    # First erase existing opp and opp.evt.ratio entries in main db for files
+    # about to be merged.  Otherwise we'll get sqlite3 errors about 
+    # "UNIQUE constraint failed" if filtering is being rerun for some files.
+    for (f in get.opp.files(src)) {
+      .delete.opp.by.file(f, db=db.name)
+    }
+    for (f in get.opp.evt.ratio.files(src)) {
+      .delete.opp.evt.ratio.by.file(f, db=db.name)
+    }
+
+    # Now merge src db into main db
     merge.sql <- paste(sprintf("attach \"%s\" as incoming", src),
                        "BEGIN",
                        sprintf("insert into %s select * from incoming.%s",

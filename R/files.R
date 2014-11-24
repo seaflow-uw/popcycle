@@ -69,25 +69,3 @@ file.transfer <- function(evt.loc=evt.location, instrument.loc=instrument.locati
     system(paste0("scp ",instrument.loc,"/",sfl.list," ", evt.loc,"/",sfl.list, collapse=";"))
   }
 }
-
-# Return a list of EVT files for which there is no OPP data in the database
-#
-# Args:
-#   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
-#   db = sqlite3 db containing OPP data from EVT files [db.name]
-get.empty.evt.files <- function(evt.list, db=db.name) {
-  opp.files <- get.opp.files(db)
-  return(setdiff(evt.list, opp.files$file))
-}
-
-# Return a list of EVT files represented in OPP table
-#
-# Args:
-#   db = sqlite3 db containing OPP data from EVT files [db.name]
-get.opp.files <- function(db=db.name) {
-  sql <- paste0("SELECT DISTINCT file FROM ", opp.table.name)
-  con <- dbConnect(SQLite(), dbname=db)
-  oppfiles <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(oppfiles)
-}

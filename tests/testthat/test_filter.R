@@ -67,7 +67,7 @@ test_that("Successfully filter two files with filter.evt", {
   unlink(projdir, recursive=T)
 })
 
-test_that("Successfully filter two files, one core", {
+test_that("Successfully filter five files, one core", {
   save.project <- project.location
   save.evt <- evt.location
 
@@ -78,19 +78,31 @@ test_that("Successfully filter two files, one core", {
   set.evt.location("../../inst/extdata")
 
   evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
-                          "2014_185", "2014-07-04T00-00-02+00-00"),
+                          "2014_185", "2014-07-04T00-00-02+00-00"), # good file
                 file.path("SeaFlow", "datafiles", "evt",
-                          "2014_185", "2014-07-04T00-03-02+00-00"))
-  
+                          "2014_185", "2014-07-04T00-03-02+00-00"), # good file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-06-02+00-00"), # empty file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-09-02+00-00"), # corrupt file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-12-02+00-00")) # good file
+
   notch <- 1.0
   width <- 0.2
 
-  filter.evt.files.parallel(evt.path, notch=notch, width=width)
+  bad.evt.files <- filter.evt.files.parallel(evt.path, notch=notch, width=width)
   opp.count <- nrow(get.opp.by.file(evt.path[1]))
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
+  opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
+  opp.count <- opp.count + nrow(get.opp.by.file(evt.path[4]))
+  opp.count <- opp.count + nrow(get.opp.by.file(evt.path[5]))
 
   print(paste0("opp.count = ", opp.count))
-  expect_equal(opp.count, 360)
+  expect_equal(opp.count, 437)
+
+  print(paste0("bad.evt.files = ", paste(bad.evt.files, collapse=" ")))
+  expect_equal(bad.evt.files, evt.path[3:4])
   
   # Reset locations
   set.project.location(save.project)
@@ -102,7 +114,7 @@ test_that("Successfully filter two files, one core", {
 
 # [TODO Chris]: configure travis to use two cores
 # Does not work in our current Travis setup so comment out for now
-# test_that("Successfully filter two files, two cores", {
+# test_that("Successfully filter five files, two cores", {
 #   save.project <- project.location
 #   save.evt <- evt.location
 
@@ -112,20 +124,35 @@ test_that("Successfully filter two files, one core", {
 #   set.project.location(projdir)
 #   set.evt.location("../../inst/extdata")
 
-#   evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
-#                           "2014_185", "2014-07-04T00-00-02+00-00"),
-#                 file.path("SeaFlow", "datafiles", "evt",
-#                           "2014_185", "2014-07-04T00-03-02+00-00"))
+# evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
+#                         "2014_185", "2014-07-04T00-00-02+00-00"), # good file
+#               file.path("SeaFlow", "datafiles", "evt",
+#                         "2014_185", "2014-07-04T00-03-02+00-00"), # good file
+#               file.path("SeaFlow", "datafiles", "evt",
+#                         "2014_185", "2014-07-04T00-06-02+00-00"), # empty file
+#               file.path("SeaFlow", "datafiles", "evt",
+#                         "2014_185", "2014-07-04T00-09-02+00-00"), # corrupt file
+#               file.path("SeaFlow", "datafiles", "evt",
+#                         "2014_185", "2014-07-04T00-12-02+00-00")) # good file
 
 #   notch <- 1.0
 #   width <- 0.2
 
+#   # Filter the second file without SNOW multicore parallelism so there
+#   # is some duplicate opp/opp.evt.ratio data in the database.  This way
+#   # we can test potential UNIQUE key sqlite3 errors when re-filtering the second
+#   # file.
+#   filter.evt.files.parallel(evt.path[2], notch=notch, width=width, cores=1)
+
 #   filter.evt.files.parallel(evt.path, notch=notch, width=width, cores=2)
 #   opp.count <- nrow(get.opp.by.file(evt.path[1]))
 #   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
+#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
+#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[4]))
+#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[5]))
   
 #   print(paste0("opp.count = ", opp.count))
-#   expect_equal(opp.count, 360)
+#   expect_equal(opp.count, 437)
   
 #   # Reset locations
 #   set.project.location(save.project)
