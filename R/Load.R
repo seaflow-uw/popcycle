@@ -1,5 +1,6 @@
-readSeaflow <- function(file.path, column.names = EVT.HEADER, column.size = 2, count.only=FALSE, transform=TRUE, add.yearday.file=FALSE){ 
+readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADER, count.only=FALSE, transform=TRUE){ 
 
+  file.path <- paste(path, file.name,sep="/")
   #if(!(substr(file.path, nchar(file.path)-2, nchar(file.path)) %in% c('opp','evt')))
   #  warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
   # reads a binary seaflow event file into memory as a dataframe
@@ -12,6 +13,7 @@ readSeaflow <- function(file.path, column.names = EVT.HEADER, column.size = 2, c
     ## initialize dimentional parameters
     n.bytes.header <- 4
     n.bytes.EOL <- 4
+    column.size <- 2
     n.columns <- length(column.names)
     n.extra.columns <- n.bytes.EOL / column.size  # number of 16 bit integers (2:10&0) in the EOL character
     n.int.columns <- n.columns + n.extra.columns
@@ -58,18 +60,13 @@ readSeaflow <- function(file.path, column.names = EVT.HEADER, column.size = 2, c
       id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) =="pop")
       if(transform) integer.dataframe[,-c(id)] <- 10^((integer.dataframe[,-c(id)]/2^16)*3.5)  
 
-      if(add.yearday.file){
-        integer.dataframe$file  <- getFileNumber(file.path)
-        integer.dataframe$year_day <- .getYearDay(file.path)
-      }
-
-      return (integer.dataframe)
+        return (integer.dataframe)
     }
   }
 }
 
 
-writeSeaflow <- function(file.path, df, column.names = EVT.HEADER, linearize=TRUE){
+writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
   if(!all(EVT.HEADER %in% names(df)))
     warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
 
@@ -85,7 +82,7 @@ writeSeaflow <- function(file.path, df, column.names = EVT.HEADER, linearize=TRU
   if(linearize) df[,-c(id)] <- (log10(df[,-c(id)])/3.5)*2^16
 
   ## open connection ##
-  con <- file(description = file.path, open="wb")
+  con <- file(description = path, open="wb")
   ## write newline ##
   writeBin(as.integer(c(nrow(df),EOL.double)), con, size = n.bytes.header, endian = "little")
 
