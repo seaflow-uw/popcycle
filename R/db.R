@@ -37,6 +37,13 @@ upload.opp <- function(db.opp, db = db.name) {
   dbDisconnect(con)
 }
 
+.delete.sfl <- function(db = db.name) {
+  sql <- paste0("DELETE FROM ", sfl.table.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  dbGetQuery(con, sql)
+  dbDisconnect(con)
+}
+
 vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {
   n <- length(vct)
   cruise = rep(cruise.name, n)
