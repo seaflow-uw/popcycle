@@ -54,10 +54,10 @@ WARNINGS: You need to be in the popcycle repository to execute the setup.R scrip
     plot.filter.cytogram(evt, notch=notch, width=width) # to plot the filtration steps
     ```
     
-    NOTE that if you have trouble finding the right NOTCH, you can use the function `best.filter.notch()`
+    NOTE that if you have trouble finding the optimal NOTCH, you can use the function `find.filter.notch()`
     ```r
     width <- 0.2
-    notch <- best.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=width, do.plot=TRUE)
+    notch <- find.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=width, do.plot=TRUE)
     plot.filter.cytogram(evt, notch=notch, width=width)
     ```
     
@@ -93,7 +93,7 @@ In the R session, type:
     Similar to the `setFilterParams` function, `setGateParams` saves the gating parameters and order in which the gating was performed in `~/popcycle/params/params.RData`, parameters for each population are also separately saved as a `.csv` file. Note that every changes in the gating parameters are automatically saved in the logs (`~popcycle/logs/params/`).
 
     Note: If you want to change the order of the gating, delete a population, or simply restart over, use the function 
-    <code>resetGateParams()</code>
+    `resetGateParams()`
     
 3. To cluster the different population according to your manual gating, type:
 
@@ -118,7 +118,7 @@ In the R session, type:
    run.filter(start.day, start.timestamp, end.day, end.timestamp)
    ```
    
- where `start.day` and `end.day` represent the folder name (year_julianday) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the 'opp' table in the database.
+ where `start.day` and `end.day` represent the folder name (`year_julianday`) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the `opp` table in the database.
 
 2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
@@ -126,7 +126,7 @@ In the R session, type:
    run.gating(start.day, start.timestamp, end.day, end.timestamp)
    ```
 
-This function will create/update the 'vct' and 'stats' table.
+This function will create/update the `vct` and `stats` table.
 
 # Visualization
 Data can be visualized using a set of functions:
@@ -169,7 +169,7 @@ Data can be visualized using a set of functions:
     plot.vct.cytogram.by.file(opp.name)
     ```
 
-5. To plot aggregate statistics, e.g., cell abundance the cyanobacteria "Synechococcus" population on a map or over time
+5. To plot aggregate statistics, e.g., cell abundance the cyanobacteria `Synechococcus` population on a map or over time
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
@@ -180,4 +180,4 @@ Data can be visualized using a set of functions:
 
     But you can plot any parameter/population, just make sure their name match the one in the 'stat' table... 
 
-    FYI, type `colnames(stat)` to know which parameters are available in the 'stat' table,  and `unique(stat$pop)` to know the name of the different populations.
+    FYI, type `colnames(stat)` to know which parameters are available in the `stat` table,  and `unique(stat$pop)` to know the name of the different populations.
