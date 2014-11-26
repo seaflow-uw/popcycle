@@ -15,3 +15,4 @@ Rscript tests/testthat.R
 
 * `tests/testthat.R` will exit with non-zero status if any test fails or
 experiences an error.
+* The current working directory for each test is the directory in which the test file resides, not the directory from which the test script is called.  For example, consider tests in `tests/testthat/test_evaluate_last_file.R`.  Let's say our current working directory in a terminal is the root of the repository working copy.  We would run tests with `Rscript tests/testthat.R`.  Each test in `tests/testthat/test_evaluate_last_file.R` runs with a working directory of `tests/testthat/`, not the root of the repository working copy.
