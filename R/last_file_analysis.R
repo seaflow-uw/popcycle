@@ -12,7 +12,7 @@ evaluate.last.evt <- function() {
   #upload evt count
   file.name = basename(evt.file)
   print(paste('Loading', evt.file))
-  evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
+  evt <- readSeaflow(evt.file)
  
   #if we don't have filter parameters yet
   if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {

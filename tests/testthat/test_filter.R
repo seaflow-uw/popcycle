@@ -12,7 +12,7 @@ test_that("Best notch is found", {
   set.project.location(projdir)
   set.evt.location("../../inst/extdata")
 
-  evt.path <- file.path(evt.location, "SeaFlow", "datafiles", "evt",
+  evt.path <- file.path("SeaFlow", "datafiles", "evt",
                         "2014_185", "2014-07-04T00-00-02+00-00")
   evt <- readSeaflow(evt.path)
   notch <- find.filter.notch(evt, notch=seq(0.1, 1.4, by=0.1), width=0.2, do.plot=F)
@@ -46,11 +46,11 @@ test_that("Successfully filter two files with filter.evt", {
   notch <- 1.0
   width <- 0.2
 
-  evt1 <- readSeaflow(file.path(evt.location, evt.path[1]))
+  evt1 <- readSeaflow(evt.path[1])
   opp1 <- filter.evt(evt1, filter.notch, notch=notch, width=width)
   opp1.count <- nrow(opp1)
 
-  evt2 <- readSeaflow(file.path(evt.location, evt.path[2]))
+  evt2 <- readSeaflow(evt.path[2])
   opp2 <- filter.evt(evt2, filter.notch, notch=notch, width=width)
   opp2.count <- nrow(opp2)
 
