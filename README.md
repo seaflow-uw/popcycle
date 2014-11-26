@@ -27,7 +27,7 @@ The output of each step is saved into a SQL database using `sqlite3`. To run `po
 WARNINGS: You need to be in the popcycle repository to execute the setup.R script. The setup process creates a popcycle directory in `~/popcycle`, this is different from the popcycle repository. 
 
 # Initialization
-1. The first step is to indicate where the database (`popcycle.db`) is located and where to save the project
+1. The first step is to indicate where the raw files (`evt`) and database (`popcycle.db`) are located and where to save the project
 
     ```r
     library(popcycle) 
@@ -39,14 +39,25 @@ WARNINGS: You need to be in the popcycle repository to execute the setup.R scrip
 2. The second step is to set the parameters for the filtration method, i.e., the `width`(to adjust the alignment of the instrument) and the `notch` (to adjust the focus of the instrument) . The `notch` represents the the ratio D/fsc_small and  depends on how the PMTs of D1/D2 and fsc_small were set up, the `width` represents the acceptable difference between D1 and D2 for a particle to be considered 'aligned', it is usually set between 0.1 and 0.5. For this example, we are going to choose the `notch` using the latest evt file collected by the instrument (but you choose any evt file that you want, of course). The `width` is  set to 0.2. Open an R session and type:
 
     ```r
-    # name of the latest evt file collected
-    file.name <- get.latest.evt.with.day() 
-    # load evt file
-    evt <- readSeaflow(paste(evt.location, file.name, sep='/')) # load the evt file
-    # Set the width and find the best notch parameter
+    # SELECT AN EVT FILE
+    evt.list <- get.evt.list() # to get the entire list of evt files
+    evt.name <- evt.list[10] # then select the evt file (e.g., the 10th evt file in the list)
+    # OR
+    evt.name <- get.latest.evt.with.day() # to get the last evt file of the list
+   
+    # LOAD THE EVT FILE
+    evt <- readSeaflow(evt.name) # load the evt file
+    
+    # SET the WIDTH and NOTCH parameter
+    width <- 0.2 # usually between 0.1 and 0.5
+    notch <- 1 # usually between 0.5 and 1
+    plot.filter.cytogram(evt, notch=notch, width=width) # to plot the filtration steps
+    ```
+    
+    NOTE that if you have trouble finding the right NOTCH, you can use the function `best.filter.notch()`
+    ```r
     width <- 0.2
     notch <- best.filter.notch(evt, notch=seq(0.5, 1.5, by=0.1),width=width, do.plot=TRUE)
-    # to plot the filtration step, use the following function
     plot.filter.cytogram(evt, notch=notch, width=width)
     ```
     
@@ -69,8 +80,10 @@ This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note 
 In the R session, type:
 
     ```r
-    file.name <- get.latest.evt() # name of the latest evt file collected
-    opp <- get.opp.by.file(file.name)
+    # SELECT an OPP file
+    opp.list <- get.opp.files()
+    opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
+    opp <- get.opp.by.file(opp.name)
     setGateParams(opp, popname='beads', para.x='fsc_small', para.y='pe')
     setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
     setGateParams(opp, popname='prochloro', para.x='fsc_small', para.y='chl_small')
@@ -116,29 +129,39 @@ In the R session, type:
 This function will create/update the 'vct' and 'stats' table.
 
 # Visualization
-Data generated can be visualize using a set of functions:
+Data can be visualized using a set of functions:
 
 1. To plot the filter steps
 
     ```r
-    plot.filter.cytogram.by.file(file.name)
+    set.evt.location("/path/to/evt/files")
+    evt.list <- get.evt.list()
+    evt.name <- evt.list[10] # to select to 10th evt file of the list
+    plot.filter.cytogram.by.file(evt.name,width=0.2, notch=1)
     ```
 
-2. To plot opp
+2. To plot a cytogram
 
     ```r
-    plot.cytogram.by.file(file.name)
+    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
+    opp.list <- get.opp.files()
+    opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
+    plot.cytogram.by.file(opp.name, "fsc_small","chl_small)
     ```
 
 3. To plot vct
 
     ```r
-    plot.vct.cytogram.by.file(file.name)
+    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
+    opp.list <- get.opp.files()
+    opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
+    plot.vct.cytogram.by.file(opp.name)
     ```
 
 4. To plot aggregate statistics, for instance, cell abundance the cyanobacteria "Synechococcus" population on a map or over time
 
     ```r
+    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
     stat <- get.stat.table() # to load the aggregate statistics
     plot.map(stat, pop='synecho', param='abundance') 
     plot.time(stat, pop='synecho', param='abundance')
