@@ -1,5 +1,6 @@
 
-rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
+run.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
+  
   files <- files.in.range(start.day, start.timestamp, end.day, end.timestamp)
 
   params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))
@@ -13,7 +14,7 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
   	#if we get an error, move to next file
     tryCatch({
     	print(paste('Loading', evt.file))
-      evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
+      evt <- readSeaflow(evt.file)
       
    		print(paste('Filtering', evt.file))
 	    opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
@@ -55,7 +56,8 @@ rerun.filter <- function(start.day, start.timestamp, end.day, end.timestamp) {
   }
 }
 
-rerun.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
+run.gating <- function(start.day, start.timestamp, end.day, end.timestamp) {
+  
   files <- files.in.range(start.day, start.timestamp, end.day, end.timestamp)
   if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
     stop('No gate paramters yet; no gating.')

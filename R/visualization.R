@@ -168,7 +168,7 @@ plot.filter.cytogram.by.file <- function(evt.location,file.name,width=0.2,notch=
     evt.list <- get.evt.list(evt.location)
     id <- which(file.name == evt.list)
     evt.file <- evt.list[id]
-    evt <- readSeaflow(paste(evt.location, evt.file, sep='/'))
+    evt <- readSeaflow(evt.file)
 
   plot.filter.cytogram(evt, notch=notch, width=width)
 
