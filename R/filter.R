@@ -192,7 +192,7 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
   for (evt.file in evt.list) {
     # Read EVT file
     evt <- tryCatch({
-      readSeaflow(paste(evt.loc, evt.file, sep='/'))
+      readSeaflow(evt.file)
     }, warnings = function(war) {
       print(war)
     }, error = function(err) {
