@@ -46,7 +46,7 @@ WARNINGS: You need to be in the popcycle repository to execute the setup.R scrip
     evt.name <- get.latest.evt.with.day() # to get the last evt file of the list
    
     # LOAD THE EVT FILE
-    evt <- readSeaflow(evt.name) # load the evt file
+    evt <- readSeaflow(evt.name)
     
     # SET the WIDTH and NOTCH parameter
     width <- 0.2 # usually between 0.1 and 0.5
@@ -140,7 +140,18 @@ Data can be visualized using a set of functions:
     plot.filter.cytogram.by.file(evt.name,width=0.2, notch=1)
     ```
 
-2. To plot a cytogram
+2. To plot an evt cytogram. WARNING: the number of particles in an evt file can be high (>10,000) which can be a problem for some computer. We advise to limit the disply to < 10,000 particles 
+  ```r
+    set.evt.location("/path/to/evt/files")
+    evt.list <- get.evt.list()
+    evt.name <- evt.list[10] # to select to 10th evt file of the list
+    evt <- readSeaflow(evt.name)
+    # TO LIMIT the number of displyed particles to 10,000
+    if(nrow(evt) > 10000) evt <- evt[round(seq(1,nrow(evt), length.out=10000)),]
+    plot.cytogram(evt, "fsc_small","chl_small")
+    ```
+
+3. To plot an opp cytogram
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
@@ -149,7 +160,7 @@ Data can be visualized using a set of functions:
     plot.cytogram.by.file(opp.name, "fsc_small","chl_small)
     ```
 
-3. To plot vct
+4. To plot an opp cytogram with clustered populations
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
@@ -158,7 +169,7 @@ Data can be visualized using a set of functions:
     plot.vct.cytogram.by.file(opp.name)
     ```
 
-4. To plot aggregate statistics, for instance, cell abundance the cyanobacteria "Synechococcus" population on a map or over time
+5. To plot aggregate statistics, e.g., cell abundance the cyanobacteria "Synechococcus" population on a map or over time
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
