@@ -35,7 +35,7 @@ DEFAULT_EVT_DIR = '~/SeaFlow/datafiles/evt/'
 DEFAULT_DB = '~/popcycle/sqlite/popcycle.db'
 
 # Default for july 2014 cruise
-DEFAULT_CRUISE_ID = 'july2014'
+DEFAULT_CRUISE_ID = 'realtime'
 
 
 # takes data and header as lists, dbpath as a string
@@ -181,5 +181,5 @@ if __name__ == "__main__":
         # SFL file for last day
         insert_last_file(args.db, args.evt_dir, args.cruise)
     else:
-        # User specific SFL file
+        # User specified SFL file
         insert_file_bulk(args.sfl, args.db, args.cruise)
