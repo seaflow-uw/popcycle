@@ -93,7 +93,7 @@ upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.
 #
 # Args:
 #   db = sqlite3 db
-get.opp.files <- function(db = db.name) {
+get.opp.list <- function(db = db.name) {
   sql <- paste0("SELECT DISTINCT file from ", opp.table.name)
   con <- dbConnect(SQLite(), dbname = db)
   files <- dbGetQuery(con, sql)
@@ -131,7 +131,7 @@ get.opp.evt.ratio.files <- function(db = db.name) {
 #   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
 #   db = sqlite3 db
 get.empty.evt.files <- function(evt.list, db = db.name) {
-  opp.files <- get.opp.files(db)
+  opp.files <- get.opp.list(db)
   return(setdiff(evt.list, opp.files))
 }
 
@@ -260,7 +260,7 @@ merge.dbs <- function(src.dbs, target.db=db.name) {
     # First erase existing opp and opp.evt.ratio entries in main db for files
     # about to be merged.  Otherwise we'll get sqlite3 errors about 
     # "UNIQUE constraint failed" if filtering is being rerun for some files.
-    for (f in get.opp.files(src)) {
+    for (f in get.opp.list(src)) {
       .delete.opp.by.file(f, db=db.name)
     }
     for (f in get.opp.evt.ratio.files(src)) {

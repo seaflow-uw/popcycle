@@ -81,7 +81,7 @@ In the R session, type:
 
     ```r
     # SELECT an OPP file
-    opp.list <- get.opp.files()
+    opp.list <- get.opp.list()
     opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
     opp <- get.opp.by.file(opp.name)
     setGateParams(opp, popname='beads', para.x='fsc_small', para.y='pe')
@@ -155,7 +155,7 @@ Data can be visualized using a set of functions:
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-    opp.list <- get.opp.files()
+    opp.list <- get.opp.list()
     opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
     plot.cytogram.by.file(opp.name, "fsc_small","chl_small)
     ```
@@ -164,7 +164,7 @@ Data can be visualized using a set of functions:
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-    opp.list <- get.opp.files()
+    opp.list <- get.opp.list()
     opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
     plot.vct.cytogram.by.file(opp.name)
     ```
