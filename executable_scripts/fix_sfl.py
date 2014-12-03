@@ -71,8 +71,8 @@ def fix_and_insert_sfl(data, header, dbpath = DEFAULT_DB, cruise = DEFAULT_CRUIS
 
     # add cruise and data 
     dbcolumn_to_fixed_data[CRUISE] = cruise
-    if re.match('\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+0000', dbcolumn_to_fixed_data[FILE]):
-        # New style EVT file names, e.g. 2014-05-15T17-07-08+0000.
+    if re.match('\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+00-?00', dbcolumn_to_fixed_data[FILE]):
+        # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
         # Convert to a ISO 8601 date string
         try :
           iso_split = dbcolumn_to_fixed_data[FILE].split('T')
