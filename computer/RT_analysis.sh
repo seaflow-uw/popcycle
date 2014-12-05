@@ -4,7 +4,6 @@ lckfile=/tmp/SeaFlow_RT.lock
 if shlock -f ${lckfile} -p $$
 then
 echo "cron job starting at $(date)"
-rm ~/cron_job.out
 Rscript ~/popcycle-master/executable_scripts/copy_file.R >> ~/cron_job.out 2>&1
 python ~/popcycle-master/executable_scripts/fix_sfl_newlines.py >> ~/cron_job.out 2>&1
 python ~/popcycle-master/executable_scripts/fix_sfl.py >> ~/cron_job.out 2>&1
