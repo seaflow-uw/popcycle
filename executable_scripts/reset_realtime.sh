@@ -6,7 +6,7 @@
 # This script will erase
 #  ~/stat.csv
 #  ~/sfl.csv
-#  ~/RT_analysis.sh
+#  ~/RT_analysis.log
 #  ~/cron_job.out
 #  ~/SeaFlow/datafiles/evt/*
 #  ~/popcycle/
@@ -16,7 +16,7 @@
 
 rm ~/stat.csv
 rm ~/sfl.csv
-rm ~/RT_analysis.sh
+rm ~/RT_analysis.log
 rm ~/cron_job.out
 rm -rf ~/SeaFlow/datafiles/evt/*
 rm -rf ~/popcycle
