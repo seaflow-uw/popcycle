@@ -129,7 +129,16 @@ In the R session, type:
 This function will create/update the `vct` and `stats` table.
 
 # Visualization
-Data can be visualized using a set of functions:
+
+Data that are stored in the popcycle.db can be visualized directly in R. Here is an example to display the first 10 row of the opp table in popcycle.db
+
+    ```r
+    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
+    conn <- dbConnect(SQLite(), dbname = db.name)
+    dbGetQuery(conn, "SELECT * FROM opp LIMIT 10;")
+    ```
+
+Data can be plotted using a set of functions:
 
 1. To plot the filter steps
 
@@ -140,8 +149,9 @@ Data can be visualized using a set of functions:
     plot.filter.cytogram.by.file(evt.name,width=0.2, notch=1)
     ```
 
-2. To plot an evt cytogram. WARNING: the number of particles in an evt file can be high (>10,000) which can be a problem for some computer. We advise to limit the disply to < 10,000 particles 
-  ```r
+2. To plot an evt cytogram. WARNING: the number of particles in an evt file can be high (>10,000) which can be a problem for some computer. We advise to limit the disply to < 10,000 particles.
+
+    ```r
     set.evt.location("/path/to/evt/files")
     evt.list <- get.evt.list()
     evt.name <- evt.list[10] # to select to 10th evt file of the list
@@ -181,3 +191,4 @@ Data can be visualized using a set of functions:
     But you can plot any parameter/population, just make sure their name match the one in the 'stat' table... 
 
     FYI, type `colnames(stat)` to know which parameters are available in the `stat` table,  and `unique(stat$pop)` to know the name of the different populations.
+    
