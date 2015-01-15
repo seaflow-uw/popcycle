@@ -130,14 +130,6 @@ This function will create/update the `vct` and `stats` table.
 
 # Visualization
 
-Data that are stored in the popcycle.db can be visualized directly in R. Here is an example to display the first 10 row of the opp table in popcycle.db
-
-    ```r
-    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-    conn <- dbConnect(SQLite(), dbname = db.name)
-    dbGetQuery(conn, "SELECT * FROM opp LIMIT 10;")
-    ```
-
 Data can be plotted using a set of functions:
 
 1. To plot the filter steps
@@ -192,3 +184,10 @@ Data can be plotted using a set of functions:
 
     FYI, type `colnames(stat)` to know which parameters are available in the `stat` table,  and `unique(stat$pop)` to know the name of the different populations.
     
+6. Data stored in the popcycle.db can be visualized directly in R. Here is an example to display the first 10 row of the opp table in popcycle.db
+
+    ```r
+    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
+    conn <- dbConnect(SQLite(), dbname = db.name)
+    dbGetQuery(conn, "SELECT * FROM opp LIMIT 10;")
+    ```
