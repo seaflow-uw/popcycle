@@ -1,6 +1,14 @@
 library(RSQLite)
 
 opp.to.db.opp <- function(opp, cruise.name, file.name) {
+  
+  #First, the function checks that OPP data is transformed before uploading it into the database. if not, tranform it.
+  id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
+    if(!any(max(opp[,-c(id)]) < 10^3.5)){
+      opp <- .transformData(opp)
+      print("data was transformed to be consistent with popcycle.sql databse")
+    }
+
   n <- dim(opp)[1]
   new.columns = cbind(cruise = rep(cruise.name, n), file = rep(file.name, n), particle = 1:n)
   return (cbind(new.columns, opp))

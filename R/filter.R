@@ -32,11 +32,11 @@ filter.notch <- function(evt, width, notch) {
   }
   
   # linearize the LOG transformed data 
-  t <- FALSE
+  lin <- FALSE
   id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
   if(!any(max(evt[,-c(id)]) > 10^3.5)){
-    evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16  
-    t <- TRUE
+    evt <- .untransformData(evt)
+    lin <- TRUE
   }
 
   # Filtering particles detected by fsc_small 
@@ -65,8 +65,8 @@ filter.notch <- function(evt, width, notch) {
     if(origin > 0)  opp$D1 <-  opp$D1 - origin
     if(origin < 0)  opp$D2 <-   opp$D2 + origin 
  
-  if(t & nrow(opp) > 0){
-    opp[,-c(id)] <- 10^((opp[,-c(id)]/2^16)*3.5)
+  if(lin & nrow(opp) > 0){
+    opp <- .transformData(opp)
   }
 
   return(opp)

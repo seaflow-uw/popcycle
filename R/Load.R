@@ -1,3 +1,15 @@
+.transformData <- function(integer.dataframe){
+  id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) =="pop")
+  integer.dataframe[,-c(id)] <-10^((integer.dataframe[,-c(id)]/2^16)*3.5)  
+  return(integer.dataframe)
+}
+
+.untransformData <- function(float.dataframe){
+  id <- which(colnames(float.dataframe) == "pulse_width" | colnames(float.dataframe) == "time" | colnames(float.dataframe) =="pop")
+  float.dataframe[,-c(id)] <-(log10(float.dataframe[,-c(id)])/3.5)*2^16
+  return(float.dataframe)
+}
+
 readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADER, count.only=FALSE, transform=TRUE){ 
 
   file.path <- paste(path, file.name,sep="/")
@@ -57,8 +69,7 @@ readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADE
       close(con) 
       
       ## Transform data to LOG scale
-      id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) =="pop")
-      if(transform) integer.dataframe[,-c(id)] <- 10^((integer.dataframe[,-c(id)]/2^16)*3.5)  
+      if(transform) integer.dataframe <- .transformData(integer.dataframe)
 
         return (integer.dataframe)
     }
@@ -78,8 +89,7 @@ writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
   EOL.double <- 10
 
 	## UNTRANSFORM LOG-SCALED DATA (BACK TO ORIGINAL DATA)
-	id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
-  if(linearize) df[,-c(id)] <- (log10(df[,-c(id)])/3.5)*2^16
+  if(linearize)  df <- .untransformData(df)
 
   ## open connection ##
   con <- file(description = path, open="wb")

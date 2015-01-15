@@ -9,14 +9,14 @@
   -- at version 3 of the evt header
 --  time INTEGER NOT NULL,
 --  pulse_width INTEGER NOT NULL,
---  D1 INTEGER NOT NULL,
---  D2 INTEGER NOT NULL,
---  fsc_small INTEGER NOT NULL,
---  fsc_perp INTEGER NOT NULL,
---  fsc_big INTEGER NOT NULL,
---  pe INTEGER NOT NULL,
---  chl_small INTEGER NOT NULL,
---  chl_big INTEGER NOT NULL,
+--  D1 REAL NOT NULL,
+--  D2 REAL NOT NULL,
+--  fsc_small REAL NOT NULL,
+--  fsc_perp REAL NOT NULL,
+--  fsc_big REAL NOT NULL,
+--  pe REAL NOT NULL,
+--  chl_small REAL NOT NULL,
+--  chl_big REAL NOT NULL,
 --  PRIMARY KEY (cruise, file, particle)
 --);
 
@@ -30,14 +30,14 @@ CREATE TABLE opp (
   -- at version 3 of the evt header
   time INTEGER NOT NULL,
   pulse_width INTEGER NOT NULL,
-  D1 INTEGER NOT NULL,
-  D2 INTEGER NOT NULL,
-  fsc_small INTEGER NOT NULL,
-  fsc_perp INTEGER NOT NULL,
-  fsc_big INTEGER NOT NULL,
-  pe INTEGER NOT NULL,
-  chl_small INTEGER NOT NULL,
-  chl_big INTEGER NOT NULL,
+  D1 REAL NOT NULL,
+  D2 REAL NOT NULL,
+  fsc_small REAL NOT NULL,
+  fsc_perp REAL NOT NULL,
+  fsc_big REAL NOT NULL,
+  pe REAL NOT NULL,
+  chl_small REAL NOT NULL,
+  chl_big REAL NOT NULL,
   PRIMARY KEY (cruise, file, particle)
 );
 
