@@ -136,3 +136,7 @@ set.instrument.location <- function(instrument.loc) {
 # ratio.evt.stream = 0.14756
 # x <- 12 #psi
 # flow_rate <- (-9*10^-5 * x^4 + 0.0066 * x^3 - 0.173 * x^2 + 2.5013 * x + 2.1059)  *  ratio.evt.stream # where x is STREAM_PRESSURE (psi)
+
+# ratio.evt.stream = 0.1738 # for SeaFlow serial number 740
+# ratio.evt.stream = 0.2769 # for SeaFlow serial number 751
+# ratio.evt.stream = 0.1800 # for SeaFlow serial number 989
