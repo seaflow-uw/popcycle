@@ -144,7 +144,7 @@ get.empty.evt.files <- function(evt.list, db = db.name) {
 }
 
 get.stat.table <- function(db = db.name) {
-  sql <- paste('SELECT * FROM ', stats.table.name)
+  sql <- paste('SELECT * FROM ', stats.table.name, 'ORDER BY time ASC')
   con <- dbConnect(SQLite(), dbname = db)
   stats <- dbGetQuery(con, sql)
   dbDisconnect(con)
@@ -227,7 +227,8 @@ get.cytdiv.table <- function(db = db.name) {
            WHERE
             sfl.cruise == cytdiv.cruise
             AND
-            sfl.file == cytdiv.file;"
+            sfl.file == cytdiv.file
+            ORDER BY time ASC ;"
 
   con <- dbConnect(SQLite(), dbname = db)
   cytdiv <- dbGetQuery(con, sql)
@@ -237,7 +238,7 @@ get.cytdiv.table <- function(db = db.name) {
 
 
 get.sfl.table <- function(db = db.name) {
-  sql <- paste('SELECT * FROM ', sfl.table.name)
+  sql <- paste('SELECT * FROM ', sfl.table.name, 'ORDER BY date ASC')
   con <- dbConnect(SQLite(), dbname = db)
   sfl <- dbGetQuery(con, sql)
   dbDisconnect(con)

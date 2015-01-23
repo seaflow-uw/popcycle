@@ -12,11 +12,12 @@ stats.table.name <- 'stats'
 cytdiv.table.name <- 'cytdiv'
 sfl.table.name <- 'sfl'
 
-# Data locations and cruise identifier
+# Data locations and cruise / instrument identifier
 project.location <- paste('~/popcycle') # Default project directory location
 evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the real-time analysis
 instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
 cruise.id <- 'realtime' # Cruise name
+instrument.id <- '740'
 
 # This package's name
 .pkg.name <- 'popcycle'
@@ -137,6 +138,6 @@ set.instrument.location <- function(instrument.loc) {
 # x <- 12 #psi
 # flow_rate <- (-9*10^-5 * x^4 + 0.0066 * x^3 - 0.173 * x^2 + 2.5013 * x + 2.1059)  *  ratio.evt.stream # where x is STREAM_PRESSURE (psi)
 
-# ratio.evt.stream = 0.1738 # for SeaFlow serial number 740
-# ratio.evt.stream = 0.2769 # for SeaFlow serial number 751
-# ratio.evt.stream = 0.1800 # for SeaFlow serial number 989
+# ratio.evt.stream = 0.1738 # for SeaFlow inventory number 740
+# ratio.evt.stream = 0.2769 # for SeaFlow inventory number 751
+# ratio.evt.stream = 0.1800 # for SeaFlow inventory number 989

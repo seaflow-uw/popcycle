@@ -44,7 +44,7 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 }
 
 
-ManualGating <- function(opp,gate_path=param.gate.location){
+ManualGating <- function(opp, param.gate.location){
 
   opp$pop <- "unknown"
   
@@ -72,9 +72,37 @@ ManualGating <- function(opp,gate_path=param.gate.location){
 }
 
 
-resetGateParams <- function(){
+resetGateParams <- function(param.gate.location){
 
   system(paste0("rm ", param.gate.location,"/*.csv"))
   system(paste0("rm ", param.gate.location,"/*.RData"))
 
+}
+
+
+
+run.gating <- function(opp.list, param.gate.location) {
+  
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
+    stop('No gate paramters yet; no gating.')
+  }
+  
+  for (opp.file in opp.list) {
+    tryCatch({
+      print(paste('Loading', opp.file))
+      opp <- get.opp.by.file(opp.file)
+      print(paste('Classifying', opp.file))
+      vct <- classify.opp(opp, ManualGating, param.gate.location)
+      # delete old vct entries if they exist so we keep cruise/file/particle distinct
+      .delete.vct.by.file(opp.file)
+      # store vct
+      print('Uploading labels to the database')
+      upload.vct(vct.to.db.vct(vct, cruise.id, opp.file, 'Manual Gating'), db=db.name)
+
+      print('Updating stat')
+      insert.stats.for.file(opp.file, db=db.name)
+    }, error = function(e) {print(paste("Encountered error with file", opp.file))},
+    finally = {print(paste("Finished with file", opp.file))}
+    )
+  }
 }
