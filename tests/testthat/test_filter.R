@@ -56,8 +56,8 @@ test_that("Successfully filter two files with filter.evt", {
 
   print(paste0("opp1.count = ", opp1.count))
   print(paste0("opp2.count = ", opp2.count))
-  expect_equal(opp1.count, 154)
-  expect_equal(opp2.count, 206)
+  expect_equal(opp1.count, 141)
+  expect_equal(opp2.count, 220)
   
   # Reset locations
   set.project.location(save.project)
@@ -99,7 +99,7 @@ test_that("Successfully filter five files, one core", {
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[5]))
 
   print(paste0("opp.count = ", opp.count))
-  expect_equal(opp.count, 437)
+  expect_equal(opp.count, 458)
 
   print(paste0("bad.evt.files = ", paste(bad.evt.files, collapse=" ")))
   expect_equal(bad.evt.files, evt.path[3:4])
