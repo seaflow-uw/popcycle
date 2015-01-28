@@ -40,7 +40,7 @@ test_that("Successfully run realtime last file pipeline", {
   print(paste0("stats$n_count = c(", paste(stats$n_count, collapse=" "), ")"))
 
   expect_equal(stats$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
-  expect_equal(stats$n_count, c(8, 11, 25, 11, 7))
+  expect_equal(stats$n_count, c(6, 10, 44, 12, 13))
   
   # Reset locations
   set.project.location(save.project)
