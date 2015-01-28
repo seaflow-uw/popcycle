@@ -107,7 +107,7 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
   # Correction for the difference of sensitivity between D1 and D2
       #remove potential electrical noise from calculation
   evt.origin  <- subset(evt., D2 > 5000 | D1 > 5000)
-  origin <- median(evt.origin$D2)-median(evt.origin$D1)
+  origin <- median(evt.origin$D2-evt.origin$D1)
       if(origin > 0)  evt.$D1 <-  evt.$D1 + origin
       if(origin < 0)  evt.$D2 <-   evt.$D2 - origin 
  

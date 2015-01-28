@@ -1,6 +1,7 @@
 get.evt.list <- function(evt.loc=evt.location) {
   file.list <- list.files(evt.loc, recursive=T)
   if (length(file.list) == 0) {
+    print(paste("no evt files found in", evt.loc))
     return (file.list)
   }
   # regexp to match both types of EVT files
@@ -9,7 +10,7 @@ get.evt.list <- function(evt.loc=evt.location) {
   regexp <- '/?[0-9]+\\.evt$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{2}-?[0-9]{2}$'
   id <- grep(regexp,file.list)
   file.list <- file.list[id]
-
+  print(paste(length(file.list), "evt files found"))
   return (sort(file.list))
 }
 

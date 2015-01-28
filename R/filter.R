@@ -51,7 +51,7 @@ filter.notch <- function(evt, width, notch) {
   
   # Correction for the difference of sensitivity between D1 and D2
     evt.origin  <- subset(evt., D2 > 5000 | D1 > 5000)
-    origin <- median(evt.origin$D2)-median(evt.origin$D1)
+    origin <- median(evt.origin$D2-evt.origin$D1)
       if(origin > 0)  evt.$D1 <-  evt.$D1 + origin
       if(origin < 0)  evt.$D2 <-   evt.$D2 - origin 
  
@@ -109,7 +109,7 @@ find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
     plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
     axis(4)
     mtext("count", 4, line=3)
-    legend('topleft',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
+    legend('bottomright',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
     opp <- filter.notch(evt, notch=best.notch, width=width)
     plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
     par(def.par)    
