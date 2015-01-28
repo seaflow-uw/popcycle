@@ -120,7 +120,16 @@ In the R session, type:
    ```
    
  where `start.day` and `end.day` represent the folder name (`year_julianday`) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the `opp` table in the database.
+ 
+ NOTE: you can also filter the files in a parallel fashon, using the following code:
+    ```r
+    # Get a list of evt files at evt.location
+    evt.files <- get.evt.list()
 
+    # Filter the first ten EVT files using two cores.
+    evt.files.without.opp <- filter.evt.files.parallel(evt.files[1:10], 1.2, .5, cores=2)
+    ```
+    
 2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
    ```r
