@@ -44,7 +44,7 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 }
 
 
-ManualGating <- function(opp, param.gate.location){
+ManualGating <- function(opp){
 
   opp$pop <- "unknown"
   
@@ -56,7 +56,7 @@ ManualGating <- function(opp, param.gate.location){
 
 	for(i in 1:length(poly.log)){
 		pop <- names(poly.log[i]) # name of the population
-    print(paste('Gating',pop))
+    # print(paste('Gating',pop))
 		poly <- poly.log[i][[1]] # Get parameters of the gate for this population
 		para <- colnames(poly)
 		df <- subset(opp, pop=="unknown")[,para]
@@ -81,28 +81,34 @@ resetGateParams <- function(param.gate.location){
 
 
 
-run.gating <- function(opp.list, param.gate.location) {
+run.gating <- function(opp.list) {
   
-  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
+if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
     stop('No gate paramters yet; no gating.')
   }
   
+  i <- 0
   for (opp.file in opp.list) {
+    
+     message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
+
     tryCatch({
-      print(paste('Loading', opp.file))
+     # print(paste('Loading', opp.file))
       opp <- get.opp.by.file(opp.file)
-      print(paste('Classifying', opp.file))
-      vct <- classify.opp(opp, ManualGating, param.gate.location)
+  #   print(paste('Classifying', opp.file))
+      vct <- classify.opp(opp, ManualGating)
       # delete old vct entries if they exist so we keep cruise/file/particle distinct
       .delete.vct.by.file(opp.file)
       # store vct
-      print('Uploading labels to the database')
+   #  print('Uploading labels to the database')
       upload.vct(vct.to.db.vct(vct, cruise.id, opp.file, 'Manual Gating'), db=db.name)
 
-      print('Updating stat')
+   #   print('Updating stat')
       insert.stats.for.file(opp.file, db=db.name)
-    }, error = function(e) {print(paste("Encountered error with file", opp.file))},
-    finally = {print(paste("Finished with file", opp.file))}
-    )
+    }, error = function(e) {print(paste("Encountered error with file", opp.file))})
+    
+    i <-  i + 1
+    flush.console()
+
   }
 }

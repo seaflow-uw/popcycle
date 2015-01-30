@@ -106,6 +106,7 @@ get.opp.list <- function(db = db.name) {
   con <- dbConnect(SQLite(), dbname = db)
   files <- dbGetQuery(con, sql)
   dbDisconnect(con)
+  print(paste(length(files$file), "opp files found"))
   return(files$file)
 }
 
