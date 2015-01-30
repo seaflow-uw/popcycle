@@ -5,4 +5,4 @@
 - [x] Add instrument info to apply the appropriate `ratio_evt_stream`
 - [x] returned tables should be sorted by ascending time
 - [ ] Implement SeaFlowViz for onboard visualization 
-- [ ] Implement `run.gatin()` in parallel fashion
+- [ ] Implement `run.gating()` in parallel fashion
