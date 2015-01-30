@@ -116,7 +116,8 @@ In the R session, type:
 1. To apply the filter parameters and analyze evt files according to the filter parameters, use the following function
 
    ```r
-   run.filter(start.day, start.timestamp, end.day, end.timestamp)
+   evt.files <- get.evt.list()
+   run.filter(evt.files)
    ```
    
  where `start.day` and `end.day` represent the folder name (`year_julianday`) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the `opp` table in the database.
@@ -133,7 +134,8 @@ In the R session, type:
 2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
    ```r
-   run.gating(start.day, start.timestamp, end.day, end.timestamp)
+   opp.files <- get.opp.list()
+   run.gating(opp.files)
    ```
 
 This function will create/update the `vct` and `stats` table.
