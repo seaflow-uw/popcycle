@@ -135,12 +135,12 @@ find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
 #
 # Returns:
 #   Return list of EVT files which produced no OPP data.
-filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
+filter.evt.files.parallel <- function(evt.list, cruise=cruise.id,
                                       db=db.name, evt.loc=evt.location,
-                                      cores=1) {
+                                      cores=2) {
   if (cores == 1) {
     # Just iterate over files and filter one by one
-    filter.evt.files.serial(evt.list, notch, width, cruise=cruise, db=db,
+    filter.evt.files.serial(evt.list, cruise=cruise, db=db,
                             evt.loc=evt.loc, check=TRUE)
   } else {
     # Snow parallel filtering to use multiple cores
@@ -156,7 +156,7 @@ filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
     # Create snow cluster
     cl <- makeCluster(cores, type="SOCK")
     parallel.func <- function(b, notch, width, cruise, evt.loc) {
-      filter.evt.files.serial(b[["files"]], notch, width, cruise=cruise, 
+      filter.evt.files.serial(b[["files"]], cruise=cruise, 
                               db=b[["db"]], evt.loc=evt.loc, check=FALSE)
     }
 
@@ -186,9 +186,14 @@ filter.evt.files.parallel <- function(evt.list, notch, width, cruise=cruise.id,
 #
 # Returns:
 #   If check is TRUE return list of EVT files which produced no OPP data.
-filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
+filter.evt.files.serial <- function(evt.list, cruise=cruise.id,
                                     db=db.name, evt.loc=evt.location,
                                     check=TRUE) {
+    params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))
+  if (is.null(params$notch) || is.null(params$width)) {
+    stop('Notch or Width is not defined; skipping filtering.')
+  }
+
   i <- 0
   for (evt.file in evt.list) {
     
@@ -207,7 +212,7 @@ filter.evt.files.serial <- function(evt.list, notch, width, cruise=cruise.id,
 
     # Filter EVT to OPP
     opp <- tryCatch({
-      filter.evt(evt, filter.notch, notch=notch, width=width)
+      filter.evt(evt, filter.notch, notch=params$notch, width=params$width)
     }, warnings = function(war) {
       print(war)
     }, error = function(err) {

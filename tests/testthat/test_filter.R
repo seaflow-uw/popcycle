@@ -88,10 +88,9 @@ test_that("Successfully filter five files, one core", {
                 file.path("SeaFlow", "datafiles", "evt",
                           "2014_185", "2014-07-04T00-12-02+00-00")) # good file
 
-  notch <- 1.0
-  width <- 0.2
+  setFilterParams(notch=1, width=0.2)
 
-  bad.evt.files <- filter.evt.files.parallel(evt.path, notch=notch, width=width)
+  bad.evt.files <- filter.evt.files.parallel(evt.path, cores=1)
   opp.count <- nrow(get.opp.by.file(evt.path[1]))
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
