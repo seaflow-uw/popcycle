@@ -74,12 +74,12 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
         # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
         # Convert to a ISO 8601 date string
         try :
-          iso_split = dbcolumn_to_fixed_data[FILE].split('T')
-          iso_split[1] = iso_split[1].replace('-', ':')
-          #iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
-          dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
+            iso_split = dbcolumn_to_fixed_data[FILE].split('T')
+            iso_split[1] = iso_split[1].replace('-', ':')
+            #iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
+            dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
         except:
-          dbcolumn_to_fixed_data[DATE] = None
+            dbcolumn_to_fixed_data[DATE] = None
         
     # any fields that weren't passed in should be None
     for c in DB_COLUMNS:
@@ -89,7 +89,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
     # populate list
     db_tuple = []
     for c in DB_COLUMNS :
-      db_tuple.append(dbcolumn_to_fixed_data[c])
+        db_tuple.append(dbcolumn_to_fixed_data[c])
 
     # insert into sqlite
     conn = sqlite3.connect(dbpath)
@@ -97,8 +97,6 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
     c.execute("insert into sfl values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(db_tuple))
     conn.commit()
     conn.close()
-
-    #return db_tuple
 
 def insert_file_bulk(sfl_file, db, cruise) :
     lines = open(sfl_file).readlines()
@@ -143,28 +141,28 @@ def insert_from_command_line(db, cruise) :
 if __name__ == "__main__":
     parser = ArgumentParser(
         description='Insert SFL file data into a popcycle sqlite3 database',
-        prog='fix_sfl.py',
+        prog='import_sfl.py',
         formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '-d', '--db',
+        required=True,
         help='sqlite3 database file, e.g. ~/popcycle/sqlite/popcycle.db')
     parser.add_argument(
         '-c', '--cruise',
+        required=True,
         help='cruise name, e.g. CMOP_3')
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         '-e', '--evt_dir',
-        help='EVT data directory, e.g ~/SeaFlow/datafiles/evt/')
-    parser.add_argument(
+        help='EVT data directory if specific SFL file not provided, e.g ~/SeaFlow/datafiles/evt/')
+    group.add_argument(
         '-s', '--sfl',
         help='''SFL file.  If not provided, the SFL file for the latest day in
                 EVT_DIR will be used.''')
 
     args = parser.parse_args()
 
-    if not (args.db and args.cruise and args.evt_dir):
-        print("A required argument is missing\n")
-        parser.print_help()
-    elif not args.sfl:
+    if not args.sfl:
         # SFL file for last day
         insert_last_file(args.db, args.evt_dir, args.cruise)
     else:
