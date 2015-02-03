@@ -10,8 +10,9 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 # key = instrument serial number
 # value = ratio_evt_stream for that instrument
 SERIALS = {
-    "serial1": 0.14756,
-    "serial2": 0.23453
+    "740": 0.1738,
+    "751": 0.2769,
+    "989": 0.1800
 }
 
 parser = ArgumentParser(
