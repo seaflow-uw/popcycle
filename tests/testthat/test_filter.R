@@ -112,51 +112,54 @@ test_that("Successfully filter five files, one core", {
 })
 
 # [TODO Chris]: configure travis to use two cores
-# Does not work in our current Travis setup so comment out for now
-# test_that("Successfully filter five files, two cores", {
-#   save.project <- project.location
-#   save.evt <- evt.location
+# Does not work in our current Travis setup so use env var INTRAVIS
+# (set to 1 in .travis.yml) to determine if the test is run locally
+# or in Travis.
+test_that("Successfully filter five files, two cores", {
+  if (Sys.getenv("INTRAVIS") != 1) {
+    save.project <- project.location
+    save.evt <- evt.location
 
-#   newdir <- tempdir()
-#   projdir <- file.path(newdir, "project")
+    newdir <- tempdir()
+    projdir <- file.path(newdir, "project")
 
-#   set.project.location(projdir)
-#   set.evt.location("../../inst/extdata")
+    set.project.location(projdir)
+    set.evt.location("../../inst/extdata")
 
-# evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
-#                         "2014_185", "2014-07-04T00-00-02+00-00"), # good file
-#               file.path("SeaFlow", "datafiles", "evt",
-#                         "2014_185", "2014-07-04T00-03-02+00-00"), # good file
-#               file.path("SeaFlow", "datafiles", "evt",
-#                         "2014_185", "2014-07-04T00-06-02+00-00"), # empty file
-#               file.path("SeaFlow", "datafiles", "evt",
-#                         "2014_185", "2014-07-04T00-09-02+00-00"), # corrupt file
-#               file.path("SeaFlow", "datafiles", "evt",
-#                         "2014_185", "2014-07-04T00-12-02+00-00")) # good file
+    evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-00-02+00-00"), # good file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-03-02+00-00"), # good file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-06-02+00-00"), # empty file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-09-02+00-00"), # corrupt file
+                file.path("SeaFlow", "datafiles", "evt",
+                          "2014_185", "2014-07-04T00-12-02+00-00")) # good file
 
-#   notch <- 1.0
-#   width <- 0.2
+    setFilterParams(notch=1, width=0.2)
 
-#   # Filter the second file without SNOW multicore parallelism so there
-#   # is some duplicate opp/opp.evt.ratio data in the database.  This way
-#   # we can test potential UNIQUE key sqlite3 errors when re-filtering the second
-#   # file.
-#   filter.evt.files.parallel(evt.path[2], notch=notch, width=width, cores=1)
+    # Filter the second file without SNOW multicore parallelism so there
+    # is some duplicate opp/opp.evt.ratio data in the database.  This way
+    # we can test potential UNIQUE key sqlite3 errors when re-filtering the second
+    # file.
+    filter.evt.files.parallel(evt.path[2], cores=1)
 
-#   filter.evt.files.parallel(evt.path, notch=notch, width=width, cores=2)
-#   opp.count <- nrow(get.opp.by.file(evt.path[1]))
-#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
-#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
-#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[4]))
-#   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[5]))
-  
-#   print(paste0("opp.count = ", opp.count))
-#   expect_equal(opp.count, 437)
-  
-#   # Reset locations
-#   set.project.location(save.project)
-#   set.evt.location(save.evt)
+    filter.evt.files.parallel(evt.path, cores=2)
+    opp.count <- nrow(get.opp.by.file(evt.path[1]))
+    opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
+    opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
+    opp.count <- opp.count + nrow(get.opp.by.file(evt.path[4]))
+    opp.count <- opp.count + nrow(get.opp.by.file(evt.path[5]))
+    
+    print(paste0("opp.count = ", opp.count))
+    expect_equal(opp.count, 458)
+    
+    # Reset locations
+    set.project.location(save.project)
+    set.evt.location(save.evt)
 
-#   # Erase temp dir
-#   unlink(projdir, recursive=T)
-# })
+    # Erase temp dir
+    unlink(projdir, recursive=T)
+  }
+})

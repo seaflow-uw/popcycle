@@ -36,7 +36,7 @@ readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADE
     # Check for empty file.  If empty return an empty data frame
     if (n.bytes.file == 0) {
       warning(sprintf("File %s has size zero.", file.path))
-      return(data.frame(c()))
+      return(data.frame())
     }
 
     ## open binary file for reading
@@ -52,7 +52,7 @@ readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADE
                    " doesn't equal the header specified number of events", sep="")
       warning(msg)
       close(con)
-      return(data.frame(c()))
+      return(data.frame())
     }
 
     if(count.only){

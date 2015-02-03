@@ -16,3 +16,11 @@ Rscript tests/testthat.R
 * `tests/testthat.R` will exit with non-zero status if any test fails or
 experiences an error.
 * The current working directory for each test is the directory in which the test file resides, not the directory from which the test script is called.  For example, consider tests in `tests/testthat/test_evaluate_last_file.R`.  Let's say our current working directory in a terminal is the root of the repository working copy.  We would run tests with `Rscript tests/testthat.R`.  Each test in `tests/testthat/test_evaluate_last_file.R` runs with a working directory of `tests/testthat/`, not the root of the repository working copy.
+* The environment variable `INTRAVIS` can be tested to determine if the test is being run in Travis or locally.  This can be useful to fence off tests that will always fail in Travis, for example code that uses more than one core with SNOW.  `INTRAVIS` is set to 1 in `.travis.yml`. For example:
+
+```
+if (Sys.getenv("INTRAVIS") != 1) {
+	# Test code that should only run locally
+	# ...
+}
+```

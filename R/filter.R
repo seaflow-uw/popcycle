@@ -123,11 +123,10 @@ find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
 #
 # Args:
 #   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
-#   notch = notch size for filtering
-#   width = width size for filtering
 #   cruise = cruise name [cruise.id]
 #   db = sqlite3 db path [db.name]
 #   evt.loc = location of evt files listed in evt.list [evt.location]
+#   param.loc = location of paramter files [param.filter.location]
 #   cores = number of cpu cores to use when filtering EVT files.  If > 1, the
 #           R package snow will be used to process EVT files in parallel.
 #           If == 1, this function uses the current process to filter. 
@@ -135,13 +134,13 @@ find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
 #
 # Returns:
 #   Return list of EVT files which produced no OPP data.
-filter.evt.files.parallel <- function(evt.list, cruise=cruise.id,
-                                      db=db.name, evt.loc=evt.location,
-                                      cores=2) {
+filter.evt.files.parallel <- function(evt.list, cruise=cruise.id, db=db.name,
+                                      evt.loc=evt.location, param.loc=param.filter.location,
+                                      cores=1) {
   if (cores == 1) {
     # Just iterate over files and filter one by one
-    filter.evt.files.serial(evt.list, cruise=cruise, db=db,
-                            evt.loc=evt.loc, check=TRUE)
+    filter.evt.files.serial(evt.list, cruise=cruise, db=db, evt.loc=evt.loc,
+                            param.loc=param.loc, check=TRUE)
   } else {
     # Snow parallel filtering to use multiple cores
 
@@ -155,13 +154,18 @@ filter.evt.files.parallel <- function(evt.list, cruise=cruise.id,
 
     # Create snow cluster
     cl <- makeCluster(cores, type="SOCK")
-    parallel.func <- function(b, notch, width, cruise, evt.loc) {
-      filter.evt.files.serial(b[["files"]], cruise=cruise, 
-                              db=b[["db"]], evt.loc=evt.loc, check=FALSE)
+    parallel.func <- function(b, cruise, evt.loc, param.loc) {
+      filter.evt.files.serial(b[["files"]], cruise=cruise, db=b[["db"]],
+                              evt.loc=evt.loc, param.loc=param.loc, check=FALSE)
     }
 
     # Run filtering in parallel
-    clusterApply(cl, buckets, parallel.func, notch, width, cruise, evt.loc)
+    # It's important to pass in evt.loc as an argument here because child
+    # processes created by SNOW don't have access to these variables.  i.e.
+    # the function called here should be reentrant, except for reads from
+    # the filesystem.  Likewise, param.loc must be provided because
+    # param.filter.location is not available to child processes.
+    clusterApply(cl, buckets, parallel.func, cruise, evt.loc, param.loc)
     stopCluster(cl)
 
     # Merge databases
@@ -172,12 +176,11 @@ filter.evt.files.parallel <- function(evt.list, cruise=cruise.id,
   }
 }
 
+
 # Filter a list of EVT files and upload OPP data to sqlite db.
 # 
 # Args:
 #   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
-#   notch = notch size for filtering
-#   width = width size for filtering
 #   cruise = cruise name [cruise.id]
 #   db = sqlite3 db path [db.name]
 #   evt.loc = location of evt files listed in evt.list [evt.location]
@@ -186,39 +189,48 @@ filter.evt.files.parallel <- function(evt.list, cruise=cruise.id,
 #
 # Returns:
 #   If check is TRUE return list of EVT files which produced no OPP data.
-filter.evt.files.serial <- function(evt.list, cruise=cruise.id,
-                                    db=db.name, evt.loc=evt.location,
+filter.evt.files.serial <- function(evt.list, cruise=cruise.id, db=db.name,
+                                    evt.loc=evt.location, param.loc=param.filter.location,
                                     check=TRUE) {
-    params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))
-  if (is.null(params$notch) || is.null(params$width)) {
-    stop('Notch or Width is not defined; skipping filtering.')
+  # Get notch and width to use from params file
+  # Return empty data frame on warning or error
+  params <- tryCatch({
+    read.csv(paste(param.loc, 'filter.csv', sep='/'))
+  }, warnings = function(err) {
+    return(data.frame())
+  }, error = function(err) {
+    return(data.frame())
+  })
+  
+  if (is.null(params$notch)) {
+    stop('Notch not defined; skipping filtering.')
+  }
+  if (is.null(params$width)) {
+    stop('Width not defined; skipping filtering.')
   }
 
   i <- 0
   for (evt.file in evt.list) {
-    
-     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
+    message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
 
     # Read EVT file
+    # Return empty data frame on warning or error
     evt <- tryCatch({
-      readSeaflow(evt.file)
-    }, warnings = function(war) {
-      print(war)
+      readSeaflow(evt.file, path=evt.loc)
+    }, warnings = function(err) {
+      return(data.frame())
     }, error = function(err) {
-      # Return empty data frame on error
-      return(data.frame(c()))
-      print(err)
+      return(data.frame())
     })
 
     # Filter EVT to OPP
+    # Return empty data frame on warning or error
     opp <- tryCatch({
       filter.evt(evt, filter.notch, notch=params$notch, width=params$width)
-    }, warnings = function(war) {
-      print(war)
+    }, warnings = function(err) {
+      return(data.frame())
     }, error = function(err) {
-      # Return empty data frame on error
-      return(data.frame(c()))
-      print(err)
+      return(data.frame())
     })
 
     # Upload OPP data
@@ -233,9 +245,10 @@ filter.evt.files.serial <- function(evt.list, cruise=cruise.id,
       opp.evt.ratio <- nrow(opp) / nrow(evt)
       upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file, db=db)
     }
+
     i <-  i + 1
     flush.console()
-      }
+  }
 
   # Return list of EVT files which produced no OPP data
   if (check) {

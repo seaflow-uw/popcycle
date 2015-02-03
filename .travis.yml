@@ -1,3 +1,7 @@
+# In tests check INTRAVIS to see if in Travis
+env:
+- INTRAVIS=1
+
 before_install:
 - bash travis/before_install.sh
 
