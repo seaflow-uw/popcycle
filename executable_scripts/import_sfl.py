@@ -76,7 +76,9 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
         try :
             iso_split = dbcolumn_to_fixed_data[FILE].split('T')
             iso_split[1] = iso_split[1].replace('-', ':')
-            #iso_split[1] = iso_split[1][:-2] + ':' + iso_split[1][-2:]
+            # Get rid of ":" in time zone offset if present for consistency in DB
+            if (iso_split[1][-3] == ":"):
+                iso_split[1] = iso_split[1][:-3] + iso_split[1][-2:]
             dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
         except:
             dbcolumn_to_fixed_data[DATE] = None
@@ -141,8 +143,7 @@ def insert_from_command_line(db, cruise) :
 if __name__ == "__main__":
     parser = ArgumentParser(
         description='Insert SFL file data into a popcycle sqlite3 database',
-        prog='import_sfl.py',
-        formatter_class=ArgumentDefaultsHelpFormatter)
+        prog='import_sfl.py')
     parser.add_argument(
         '-d', '--db',
         required=True,
