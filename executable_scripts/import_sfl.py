@@ -9,6 +9,7 @@ import os
 import glob
 import re
 import sys
+import datetime
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 DELIM = '\t'
@@ -73,17 +74,22 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
     if re.match('\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+00-?00', dbcolumn_to_fixed_data[FILE]):
         # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
         # Convert to a ISO 8601 date string
-        try :
-            iso_split = dbcolumn_to_fixed_data[FILE].split('T')
-            iso_split[1] = iso_split[1].replace('-', ':')
-            # Get rid of ":" in time zone offset if present for consistency in DB
-            if (iso_split[1][-3] == ":"):
-                iso_split[1] = iso_split[1][:-3] + iso_split[1][-2:]
-            dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
-        except:
-            dbcolumn_to_fixed_data[DATE] = None
-        
-    # any fields that weren't passed in should be None
+        iso_split = dbcolumn_to_fixed_data[FILE].split('T')
+        iso_split[1] = iso_split[1].replace('-', ':')
+        dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
+
+        # Add containing folder to file field
+        # e.g. "2014-07-04T00-00-02+00-00" becomes "2014_184/2014-07-04T00-00-02+00-00"
+        day_of_year_folder = evt_filename_to_day_of_year(dbcolumn_to_fixed_data[FILE])
+        dbcolumn_to_fixed_data[FILE] = "%s/%s" % (day_of_year_folder, dbcolumn_to_fixed_data[FILE])
+
+    # Make sure DATE field is formatted consistently
+    # Add ":" in time zone offset if not present for consistency in DB.  All DATE fields in DB should
+    # have time zone format 00:00, not 0000
+    if (dbcolumn_to_fixed_data[DATE][-3] != ":"):
+        dbcolumn_to_fixed_data[DATE] = dbcolumn_to_fixed_data[DATE][:-2] + ":" + dbcolumn_to_fixed_data[DATE][-2:]
+    
+    # any fields that weren't passed in should be
     for c in DB_COLUMNS:
         if not c in dbcolumn_to_fixed_data:
             dbcolumn_to_fixed_data[c] = None
@@ -139,6 +145,24 @@ def insert_from_command_line(db, cruise) :
         else:
             fields = line.split('\t')
             fix_and_insert_sfl(line.split('\t'), header, dbpath, cruise)
+
+def evt_filename_to_day_of_year(evt_filename):
+    """Converts a dated EVT file name to a Seaflow day of year folder name.
+
+    "2014-07-04T00-00-02+00-00" or "2014-07-04T00-00-02+0000" would return
+    "2014_184".
+
+    Args:
+        evt_filename: EVT filename, may include path information
+    """
+    evt_filename = os.path.basename(evt_filename)
+    regexp = re.compile("^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})\+00-?00$")
+    match = regexp.match(evt_filename)
+    groups = match.groups()
+    dt = datetime.date(int(groups[0]), int(groups[1]), int(groups[2]))
+    dt_jan1 = datetime.date(int(groups[0]), 1, 1)
+    day = dt.toordinal() - dt_jan1.toordinal()
+    return "%s_%i" % (groups[0], day)
 
 if __name__ == "__main__":
     parser = ArgumentParser(

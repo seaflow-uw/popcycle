@@ -82,7 +82,7 @@ for line in f :
     elements[-1] = '180'
     # Construct a ISO 8601 date string from 'time' field of SDS file and
     # replace 'time' field with this string
-    elements[-3] = elements[-3].replace(' ', 'T') + '+0000'
+    elements[-3] = elements[-3].replace(' ', 'T') + '+00:00'
     # Create a new FLOW RATE element from STREAM PRESSURE and ratio_evt_stream
     try:
         stream_pressure = float(elements[stream_index])
