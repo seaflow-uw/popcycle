@@ -18,8 +18,7 @@ SERIALS = {
 parser = ArgumentParser(
     description="""Convert old Seaflow SDS file format to SFL, with STREAM
                 PRESSURE converted to FLOW RATE with user supplied ratio.""",
-    prog='sds_to_sfl.py',
-    formatter_class=ArgumentDefaultsHelpFormatter)
+    prog='sds_to_sfl.py')
 parser.add_argument(
     '--sds',
     required=True,
