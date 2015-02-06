@@ -141,10 +141,14 @@ get.opp.by.date <- function(start.day, end.day,
   if (nrow(start.sfl) & nrow(end.sfl)) {
     # Dates are covered by sfl data
     con <- dbConnect(SQLite(), dbname = db)
+    if (is.null(channel)) {
+      sql <- "SELECT opp.*,"
+    } else {
+      sql <- paste0("SELECT opp.", channel, " as ", channel, ",")
+    }
     if (is.null(pop)) {
-      sql <- paste0("SELECT
-        opp.*,
-        sfl.date as time
+      sql <- paste0(sql,
+        "sfl.date as time
       FROM
         opp, sfl
       WHERE
@@ -155,9 +159,8 @@ get.opp.by.date <- function(start.day, end.day,
         sfl.date >= '", start.sfl$date, "'
         AND sfl.date <= '", end.sfl$date, "'")
     } else {
-      sql <- paste0("SELECT
-        opp.*,
-        sfl.date as time,
+      sql <- paste0(sql,
+        "sfl.date as time,
         vct.pop as pop,
       FROM
         opp, sfl, vct
