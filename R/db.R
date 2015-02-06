@@ -79,6 +79,151 @@ get.opp.by.file <- function(file.name, db = db.name) {
   return (opp[,-c(1,2,3)])
 }
 
+# Return data frame of OPP data that covers the provided time range. If the
+# time range specified does not fall exactly on a 3 minute boundary stored in
+# the database then expand the time range to include data for start time and
+# end time.
+#
+# Args:
+#   start.day: Start date, formatted as YYYY-MM-DD
+#   end.day: End date, formatted as YYYY-MM-DD
+#   start.time: Start time, formatted as HH[:MM]. Default is 00:00
+#   end.time: End time, formatted as HH[:MM]. Default is 00:00
+#   pop: Only return data for this population. Should be a population name
+#     found in the VCT table. If not specified return particle data for all
+#     populations.
+#   channel: Only return data for this measurement channel. Should be a
+#     column name from OPP table. If not specified return data for all
+#     channels.
+get.opp.by.date <- function(start.day, end.day,
+                            start.time="00:00", end.time="00:00",
+                            pop=NULL, channel=NULL,
+                            db=db.name) {
+  # Validate days
+  day.regexp <- "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+  if (! grepl(day.regexp, start.day)) {
+    stop(paste("malformed start.day parameter in get.opp.by.date", start.day, sep=": "))
+  }
+  if (! grepl(day.regexp, end.day)) {
+    stop(paste("malformed end.day parameter in get.opp.by.date", end.day, sep=": "))
+  }
+
+  # Validate times
+  time.regexp <- "^[0-9]{2}(:[0-9]{2})?$"
+  if (! grepl(time.regexp, start.time)) {
+    stop(paste("malformed start.time parameter in get.opp.by.date", start.time, sep=": "))
+  }
+  if (! grepl(time.regexp, end.time)) {
+    stop(paste("malformed end.time parameter in get.opp.by.date", end.time, sep=": "))
+  }
+
+  # Add 00 minutes to time if not minutes aren't present
+  if (grepl("^[0-9]{2}$", start.time)) {
+    start.time <- paste(start.time, "00", sep=":")
+  }
+  if (grepl("^[0-9]{2}$", end.time)) {
+    end.time <- paste(end.time, "00", sep=":")
+  }
+
+  start.date.str <- paste(start.day, start.time, sep=":")
+  end.date.str <- paste(end.day, end.time, sep=":")
+  date.format <- "%Y-%m-%d:%H:%M"
+  # Make POSIXct objects in GMT time zone
+  start.date.ct <- as.POSIXct(strptime(start.date.str, format=date.format, tz="GMT"))
+  end.date.ct <- as.POSIXct(strptime(end.date.str, format=date.format, tz="GMT"))
+
+  start.sfl <- get.sfl.by.date(start.date.ct)
+  end.sfl <- get.sfl.by.date(end.date.ct)
+
+  # Now we know exactly where the date boundaries are in the SFL data.
+  # Next join OPP/VCT/SFL tables by file and select by sfl.date
+
+  if (nrow(start.sfl) & nrow(end.sfl)) {
+    # Dates are covered by sfl data
+    con <- dbConnect(SQLite(), dbname = db)
+    if (is.null(pop)) {
+      sql <- paste0("SELECT
+        opp.*,
+        sfl.date as time
+      FROM
+        opp, sfl
+      WHERE
+        opp.cruise == sfl.cruise
+        AND
+        opp.file == sfl.file
+        AND
+        sfl.date >= '", start.sfl$date, "'
+        AND sfl.date <= '", end.sfl$date, "'")
+    } else {
+      sql <- paste0("SELECT
+        opp.*,
+        sfl.date as time,
+        vct.pop as pop,
+      FROM
+        opp, sfl, vct
+      WHERE
+        opp.cruise == sfl.cruise
+        AND
+        opp.cruise == vct.cruise
+        AND
+        opp.file == sfl.file
+        AND
+        opp.file == vct.file
+        AND
+        vct.pop == '", pop, "'
+        AND
+        sfl.date >= '", start.sfl$date, "'
+        AND sfl.date <= '", end.sfl$date, "'")
+    }
+    opp <- dbGetQuery(con, sql)
+    dbDisconnect(con)
+  } else {
+    opp <- data.frame()
+  }
+  return(opp)
+}
+
+# Given GMT POSIXct object, return data frame for sfl row which contains data
+# for that date
+get.sfl.by.date <- function(date.ct, db=db.name) {
+  # Make sure time zone is GMT
+  if (attr(date.ct, "tzone") != "GMT") {
+    stop("non-GMT time zone used in POSIXct object passed to POSIXct.to.time.str")
+  }
+
+  con <- dbConnect(SQLite(), dbname = db)
+
+  # Data is stored in database in three minute chunks, with date field showing
+  # start of first minute in chunk. For each datetime t there are three possible
+  # chunk time values that can cover the request:
+  # t - 2 minutes
+  # t - 1 minutes
+  # t - 0 minutes
+  for (minute in c(2, 1, 0)) {
+    tminus <- date.ct - (minute * 60)
+    # Create a vector of two strings which are formatted as a date field
+    # in sfl table (minus time zone) with seconds at 00 and 59
+    date.bounds <- c(format(tminus, "%Y-%m-%dT%H:%M:00"),
+                     format(tminus, "%Y-%m-%dT%H:%M:59"))
+    sql <- paste0("SELECT * FROM ", sfl.table.name,
+                  " WHERE date >= '", date.bounds[1],
+                  "' AND", " date <= '", date.bounds[2], "'")
+    sfl <- dbGetQuery(con, sql)
+    if (nrow(sfl) > 0) {
+      break
+    }
+  }
+
+  dbDisconnect(con)
+
+  if (nrow(sfl) > 1) {
+    minutes <- paste(date.bounds[1], date.bounds[2], sep=" -> ")
+    stop(paste0("multiple rows in sfl table for date ", minutes))
+  } else {
+    return(sfl)
+  }
+}
+
 get.vct.by.file <- function(file.name, db = db.name) {
   sql <- paste0("SELECT * FROM ", vct.table.name, " WHERE file == '", 
                 file.name, "' ORDER BY particle")
