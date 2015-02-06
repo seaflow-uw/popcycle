@@ -118,29 +118,29 @@ find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plo
   return(best.notch)
 }
 
-# Filter a list of EVT files in parallel and upload OPP data to multiple sqlite
+# Filter a list of EVT files  and upload OPP data to multiple sqlite
 # dbs, then merge data into main db.
 #
 # Args:
-#   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
-#   cruise = cruise name [cruise.id]
-#   db = sqlite3 db path [db.name]
-#   evt.loc = location of evt files listed in evt.list [evt.location]
-#   param.loc = location of paramter files [param.filter.location]
-#   cores = number of cpu cores to use when filtering EVT files.  If > 1, the
-#           R package snow will be used to process EVT files in parallel.
-#           If == 1, this function uses the current process to filter. 
-#           Must be > 0. [1]
+#   evt.list: list of EVT file paths, e.g. get.evt.list(evt.location)
+#   cruise: cruise name [cruise.id]
+#   db: sqlite3 db path [db.name]
+#   evt.loc: location of evt files listed in evt.list [evt.location]
+#   param.loc: location of paramter files [param.filter.location]
+#   cores: number of cpu cores to use when filtering EVT files. If > 1, the
+#     R package snow will be used to process EVT files in parallel.
+#     If == 1, this function uses the current process to filter. 
+#     Must be > 0. [1]
 #
 # Returns:
 #   Return list of EVT files which produced no OPP data.
-filter.evt.files.parallel <- function(evt.list, cruise=cruise.id, db=db.name,
-                                      evt.loc=evt.location, param.loc=param.filter.location,
-                                      cores=1) {
+filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
+                             evt.loc=evt.location, param.loc=param.filter.location,
+                             cores=1) {
   if (cores == 1) {
     # Just iterate over files and filter one by one
-    filter.evt.files.serial(evt.list, cruise=cruise, db=db, evt.loc=evt.loc,
-                            param.loc=param.loc, check=TRUE)
+    .filter.evt.files.serial(evt.list, cruise=cruise, db=db, evt.loc=evt.loc,
+                             param.loc=param.loc, check=TRUE)
   } else {
     # Snow parallel filtering to use multiple cores
 
@@ -155,15 +155,15 @@ filter.evt.files.parallel <- function(evt.list, cruise=cruise.id, db=db.name,
     # Create snow cluster
     cl <- makeCluster(cores, type="SOCK")
     parallel.func <- function(b, cruise, evt.loc, param.loc) {
-      filter.evt.files.serial(b[["files"]], cruise=cruise, db=b[["db"]],
-                              evt.loc=evt.loc, param.loc=param.loc, check=FALSE)
+      .filter.evt.files.serial(b[["files"]], cruise=cruise, db=b[["db"]],
+                               evt.loc=evt.loc, param.loc=param.loc, check=FALSE)
     }
 
     # Run filtering in parallel
     # It's important to pass in evt.loc as an argument here because child
-    # processes created by SNOW don't have access to these variables.  i.e.
+    # processes created by SNOW don't have access to these variables. i.e.
     # the function called here should be reentrant, except for reads from
-    # the filesystem.  Likewise, param.loc must be provided because
+    # the filesystem. Likewise, param.loc must be provided because
     # param.filter.location is not available to child processes.
     clusterApply(cl, buckets, parallel.func, cruise, evt.loc, param.loc)
     stopCluster(cl)
@@ -177,21 +177,23 @@ filter.evt.files.parallel <- function(evt.list, cruise=cruise.id, db=db.name,
 }
 
 
-# Filter a list of EVT files and upload OPP data to sqlite db.
+# Filter a list of EVT files in serial on one coreand upload OPP data to sqlite
+# db.
 # 
 # Args:
-#   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
-#   cruise = cruise name [cruise.id]
-#   db = sqlite3 db path [db.name]
-#   evt.loc = location of evt files listed in evt.list [evt.location]
-#   check = if TRUE return a list of evt files that produced no OPP data,
-#           else return NULL
+#   evt.list: list of EVT file paths, e.g. get.evt.list(evt.location)
+#   cruise: cruise name [cruise.id]
+#   db: sqlite3 db path [db.name]
+#   evt.loc: location of evt files listed in evt.list [evt.location]
+#   check: if TRUE return a list of evt files that produced no OPP data,
+#     else return NULL
 #
 # Returns:
 #   If check is TRUE return list of EVT files which produced no OPP data.
-filter.evt.files.serial <- function(evt.list, cruise=cruise.id, db=db.name,
-                                    evt.loc=evt.location, param.loc=param.filter.location,
-                                    check=TRUE) {
+.filter.evt.files.serial <- function(evt.list, cruise=cruise.id, db=db.name,
+                                     evt.loc=evt.location,
+                                     param.loc=param.filter.location,
+                                     check=TRUE) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
   params <- tryCatch({
@@ -246,6 +248,13 @@ filter.evt.files.serial <- function(evt.list, cruise=cruise.id, db=db.name,
       upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file, db=db)
     }
 
+    # Upload unknown VCT classifications
+    .delete.vct.by.file(evt.file, db=db)
+    if (nrow(opp) > 0) {
+      vct <- rep("unknown", nrow(opp))
+      upload.vct(vct.to.db.vct(vct, cruise, evt.file, 'None'), db)
+    }
+
     i <-  i + 1
     flush.console()
   }
@@ -257,14 +266,14 @@ filter.evt.files.serial <- function(evt.list, cruise=cruise.id, db=db.name,
 }
 
 # Create lists where each element contains information necessary to filter one
-# part of EVT files.  Each element is a named list with a "db" item containing
+# part of EVT files. Each element is a named list with a "db" item containing
 # the path to a sqlite3 database file for that part, and a "files" item listing
 # EVT files for that part.
 #
 # Args:
-#   evt.list = list of EVT file paths, e.g. return value of get.evt.list(evt.location)
-#   ways = number of ways to split the list of EVT files.  Must be > 0.
-#   db = sqlite3 db path [db.name]
+#   evt.list: list of EVT file paths, e.g. return value of get.evt.list(evt.location)
+#   ways: number of ways to split the list of EVT files. Must be > 0.
+#   db: sqlite3 db path [db.name]
 #
 # Returns:
 #   List of dbs and files for each part of a parallel EVT filtering analysis
@@ -282,9 +291,9 @@ make.buckets <- function(evt.list, ways, db=.db.name) {
 # Split a list into N sublists as evenly as possible
 #
 # Args:
-#   some.list = list of things to split up
-#   ways = number of ways to split some.list.  If ways > length(some.list) then
-#          ways = length(some.list)
+#   some.list: list of things to split up
+#   ways: number of ways to split some.list. If ways > length(some.list) then
+#     ways = length(some.list)
 #
 # Returns:
 #   List of lists representing some.list evenly split N ways

@@ -22,7 +22,7 @@ upload.opp <- function(db.opp, db = db.name) {
 
 # these delete functions should only be called when re-running analyses
 .delete.opp.by.file <- function(file.name, db = db.name) {
-  sql <- paste0("DELETE FROM ", opp.table.name, " WHERE file == '", 
+  sql <- paste0("DELETE FROM ", opp.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
   dbGetQuery(con, sql)
@@ -30,7 +30,7 @@ upload.opp <- function(db.opp, db = db.name) {
 }
 
 .delete.vct.by.file <- function(file.name, db = db.name) {
-  sql <- paste0("DELETE FROM ", vct.table.name, " WHERE file == '", 
+  sql <- paste0("DELETE FROM ", vct.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
   dbGetQuery(con, sql)
@@ -38,7 +38,7 @@ upload.opp <- function(db.opp, db = db.name) {
 }
 
 .delete.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
-  sql <- paste0("DELETE FROM ", opp.evt.ratio.table.name, " WHERE file == '", 
+  sql <- paste0("DELETE FROM ", opp.evt.ratio.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
   dbGetQuery(con, sql)
@@ -136,47 +136,42 @@ get.opp.by.date <- function(start.day, end.day,
   end.sfl <- get.sfl.by.date(end.date.ct)
 
   # Now we know exactly where the date boundaries are in the SFL data.
-  # Next join OPP/VCT/SFL tables by file and select by sfl.date
-
+  # Next join OPP/VCT/SFL tables by file/particle and select by sfl.date
+  # and possible channel and population.
   if (nrow(start.sfl) & nrow(end.sfl)) {
     # Dates are covered by sfl data
     con <- dbConnect(SQLite(), dbname = db)
     if (is.null(channel)) {
-      sql <- "SELECT opp.*,"
+      sql <- "SELECT
+        opp.*, "
     } else {
-      sql <- paste0("SELECT opp.", channel, " as ", channel, ",")
+      sql <- paste0("SELECT
+        opp.", channel, ", ")
     }
-    if (is.null(pop)) {
-      sql <- paste0(sql,
-        "sfl.date as time
-      FROM
-        opp, sfl
-      WHERE
-        opp.cruise == sfl.cruise
-        AND
-        opp.file == sfl.file
-        AND
-        sfl.date >= '", start.sfl$date, "'
-        AND sfl.date <= '", end.sfl$date, "'")
-    } else {
-      sql <- paste0(sql,
-        "sfl.date as time,
-        vct.pop as pop,
+    sql <- paste0(sql,
+        "sfl.date as time, vct.pop
       FROM
         opp, sfl, vct
       WHERE
         opp.cruise == sfl.cruise
         AND
-        opp.cruise == vct.cruise
+        vct.cruise == sfl.cruise
         AND
         opp.file == sfl.file
         AND
-        opp.file == vct.file
+        vct.file == sfl.file
         AND
-        vct.pop == '", pop, "'
+        vct.particle == opp.particle
         AND
         sfl.date >= '", start.sfl$date, "'
-        AND sfl.date <= '", end.sfl$date, "'")
+        AND
+        sfl.date <= '", end.sfl$date, "'"
+    )
+    if (! is.null(pop)) {
+      sql <- paste0(sql, "
+        AND
+        vct.pop == '", pop, "'"
+      )
     }
     opp <- dbGetQuery(con, sql)
     dbDisconnect(con)
@@ -249,7 +244,7 @@ upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.
 #
 # Args:
 #   db = sqlite3 db
-get.opp.list <- function(db = db.name) {
+get.opp.files <- function(db = db.name) {
   sql <- paste0("SELECT DISTINCT file from ", opp.table.name)
   con <- dbConnect(SQLite(), dbname = db)
   files <- dbGetQuery(con, sql)
@@ -288,7 +283,7 @@ get.opp.evt.ratio.files <- function(db = db.name) {
 #   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
 #   db = sqlite3 db
 get.empty.evt.files <- function(evt.list, db = db.name) {
-  opp.files <- get.opp.list(db)
+  opp.files <- get.opp.files(db)
   return(setdiff(evt.list, opp.files))
 }
 
@@ -407,19 +402,22 @@ make.sqlite.db <- function(new.db.path) {
   }
 }
 
-# Merge opp and opp.evt.ratio tables from multiple sqlite dbs into target.db.
+# Merge opp, opp.evt.ratio, vct tables from multiple sqlite dbs into target.db.
 # Erase files in src.dbs once merged.
 # 
 # Args:
-#   src.dbs = paths of sqlite3 dbs to merge into target.db
-#   target.db = path of sqlite3 db to be merged into
+#   src.dbs: paths of sqlite3 dbs to merge into target.db
+#   target.db: path of sqlite3 db to be merged into
 merge.dbs <- function(src.dbs, target.db=db.name) {
   for (src in src.dbs) {
-    # First erase existing opp and opp.evt.ratio entries in main db for files
-    # about to be merged.  Otherwise we'll get sqlite3 errors about 
+    # First erase existing opp, opp.evt.ratio, and vct entries in main db for
+    # files about to be merged. Otherwise we'll get sqlite3 errors about 
     # "UNIQUE constraint failed" if filtering is being rerun for some files.
-    for (f in get.opp.list(src)) {
+    for (f in get.opp.files(src)) {
       .delete.opp.by.file(f, db=db.name)
+    }
+    for (f in get.vct.files(src)) {
+      .delete.vct.by.file(f, db=db.name)
     }
     for (f in get.opp.evt.ratio.files(src)) {
       .delete.opp.evt.ratio.by.file(f, db=db.name)
@@ -430,6 +428,8 @@ merge.dbs <- function(src.dbs, target.db=db.name) {
                        "BEGIN",
                        sprintf("insert into %s select * from incoming.%s",
                                opp.table.name, opp.table.name),
+                       sprintf("insert into %s select * from incoming.%s",
+                               vct.table.name, vct.table.name),
                        sprintf("insert into %s select * from incoming.%s",
                                opp.evt.ratio.table.name, opp.evt.ratio.table.name),
                        "COMMIT;", sep="; ")
@@ -442,13 +442,13 @@ merge.dbs <- function(src.dbs, target.db=db.name) {
   }
 }
 
-# Create empty sqlite db for this project.  If one already exists it will be
-# overwritten.  Also erase any numbered sqlite3 dbs used for parallel filtering.
+# Create empty sqlite db for this project. If one already exists it will be
+# overwritten. Also erase any numbered sqlite3 dbs used for parallel filtering.
 #
 # Args:
-#   db.loc = directory containing sqlite3 database(s)
-#   parts.only = only erase numbered databases (e.g. popcycle.db5) and leave
-#                main db untouched
+#   db.loc: directory containing sqlite3 database(s)
+#   parts.only: only erase numbered databases (e.g. popcycle.db5) and leave
+#     main db untouched
 reset.db <- function(db.loc=db.location, parts.only=FALSE) {
   if (parts.only) {
     db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]+$", full.names=TRUE)
