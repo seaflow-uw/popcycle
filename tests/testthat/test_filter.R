@@ -90,7 +90,7 @@ test_that("Successfully filter five files, one core", {
 
   setFilterParams(notch=1, width=0.2)
 
-  bad.evt.files <- filter.evt.files.parallel(evt.path, cores=1)
+  bad.evt.files <- filter.evt.files(evt.path, cores=1)
   opp.count <- nrow(get.opp.by.file(evt.path[1]))
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
   opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
@@ -143,9 +143,9 @@ test_that("Successfully filter five files, two cores", {
     # is some duplicate opp/opp.evt.ratio data in the database.  This way
     # we can test potential UNIQUE key sqlite3 errors when re-filtering the second
     # file.
-    filter.evt.files.parallel(evt.path[2], cores=1)
+    filter.evt.files(evt.path[2], cores=1)
 
-    filter.evt.files.parallel(evt.path, cores=2)
+    filter.evt.files(evt.path, cores=2)
     opp.count <- nrow(get.opp.by.file(evt.path[1]))
     opp.count <- opp.count + nrow(get.opp.by.file(evt.path[2]))
     opp.count <- opp.count + nrow(get.opp.by.file(evt.path[3]))
