@@ -150,7 +150,7 @@ def evt_filename_to_day_of_year(evt_filename):
     """Converts a dated EVT file name to a Seaflow day of year folder name.
 
     "2014-07-04T00-00-02+00-00" or "2014-07-04T00-00-02+0000" would return
-    "2014_184".
+    "2014_185".
 
     Args:
         evt_filename: EVT filename, may include path information
@@ -161,7 +161,7 @@ def evt_filename_to_day_of_year(evt_filename):
     groups = match.groups()
     dt = datetime.date(int(groups[0]), int(groups[1]), int(groups[2]))
     dt_jan1 = datetime.date(int(groups[0]), 1, 1)
-    day = dt.toordinal() - dt_jan1.toordinal()
+    day = dt.toordinal() - dt_jan1.toordinal() + 1
     return "%s_%i" % (groups[0], day)
 
 if __name__ == "__main__":
