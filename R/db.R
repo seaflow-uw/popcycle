@@ -79,10 +79,11 @@ get.opp.by.file <- function(file.name, db = db.name) {
   return (opp[,-c(1,2,3)])
 }
 
-# Return data frame of OPP data that covers the provided time range. If the
-# time range specified does not fall exactly on a 3 minute boundary stored in
-# the database then expand the time range to include data for start time and
-# end time.
+# Return data frame of OPP data that covers the provided time range.
+#
+# If the time range specified does not fall exactly on a 3 minute boundary
+# stored in the database then the time range will be expanded to fall on a
+# 3 minute  boundary.
 #
 # Args:
 #   start.day: Start date, formatted as YYYY-MM-DD
