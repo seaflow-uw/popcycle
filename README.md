@@ -116,26 +116,18 @@ In the R session, type:
 1. To apply the filter parameters and analyze evt files according to the filter parameters, use the following function
 
    ```r
-   evt.files <- get.evt.list()
-   run.filter(evt.files)
+   evt.list <- get.evt.list()
+   filter.evt.files(evt.list)
    ```
-   
- where `start.day` and `end.day` represent the folder name (`year_julianday`) and `start.timestamp` and `end.timestamp` the file name (ISO8601) of the first and last file you want to reanalyze. This function will create/update the `opp` table in the database.
- 
- NOTE: you can also filter the files in a parallel fashon, using the following code:
-    ```r
-    # Get a list of evt files at evt.location
-    evt.files <- get.evt.list()
-
-    # Filter the first ten EVT files using two cores.
-    evt.files.without.opp <- filter.evt.files.parallel(evt.files[1:10], 1.2, .5, cores=2)
-    ```
+   NOTE that you can run `filter.evt.files` in a parallel fashion. If your computer has 4 cores, then type `filter.evt.files(evt.list, cores=4)`   
+    
     
 2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
    ```r
-   opp.files <- get.opp.files()
-   run.gating(opp.files)
+   opp.list <- get.opp.files() # if you want ALL the available files collected during the cruise
+   opp.list2 <- get.opp.by.date(start.day, end.day) # if you only want files from a specific time range
+   run.gating(opp.list)
    ```
 
 This function will create/update the `vct` and `stats` table.
