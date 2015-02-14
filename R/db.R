@@ -96,42 +96,20 @@ get.opp.by.file <- function(file.name, db = db.name) {
 #   channel: Only return data for this measurement channel. Should be a
 #     column name from OPP table. If not specified return data for all
 #     channels.
-get.opp.by.date <- function(start.day, end.day,
-                            start.time="00:00", end.time="00:00",
+get.opp.by.date <- function(start.time, end.time,
                             pop=NULL, channel=NULL,
                             db=db.name) {
-  # Validate days
-  day.regexp <- "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-  if (! grepl(day.regexp, start.day)) {
-    stop(paste("malformed start.day parameter in get.opp.by.date", start.day, sep=": "))
-  }
-  if (! grepl(day.regexp, end.day)) {
-    stop(paste("malformed end.day parameter in get.opp.by.date", end.day, sep=": "))
-  }
-
-  # Validate times
-  time.regexp <- "^[0-9]{2}(:[0-9]{2})?$"
-  if (! grepl(time.regexp, start.time)) {
-    stop(paste("malformed start.time parameter in get.opp.by.date", start.time, sep=": "))
-  }
-  if (! grepl(time.regexp, end.time)) {
-    stop(paste("malformed end.time parameter in get.opp.by.date", end.time, sep=": "))
-  }
-
-  # Add 00 minutes to time if not minutes aren't present
-  if (grepl("^[0-9]{2}$", start.time)) {
-    start.time <- paste(start.time, "00", sep=":")
-  }
-  if (grepl("^[0-9]{2}$", end.time)) {
-    end.time <- paste(end.time, "00", sep=":")
-  }
-
-  start.date.str <- paste(start.day, start.time, sep=":")
-  end.date.str <- paste(end.day, end.time, sep=":")
-  date.format <- "%Y-%m-%d:%H:%M"
+  
+  date.format <- "%Y-%m-%d %H:%M"
   # Make POSIXct objects in GMT time zone
-  start.date.ct <- as.POSIXct(strptime(start.date.str, format=date.format, tz="GMT"))
-  end.date.ct <- as.POSIXct(strptime(end.date.str, format=date.format, tz="GMT"))
+  start.date.ct <- as.POSIXct(strptime(start.time, format=date.format, tz="GMT"))
+     if(is.na(start.date.ct)){
+    stop(paste("wrong format for start.time parameter : ", start.time, "instead of ", date.format))
+     }
+  end.date.ct <- as.POSIXct(strptime(end.time, format=date.format, tz="GMT"))
+    if(is.na(end.date.ct)){
+    stop(paste("wrong format for end.time parameter : ", start.time, "instead of ", date.format))
+     }
 
   start.sfl <- get.sfl.by.date(start.date.ct)
   end.sfl <- get.sfl.by.date(end.date.ct)
@@ -142,6 +120,13 @@ get.opp.by.date <- function(start.day, end.day,
   if (nrow(start.sfl) & nrow(end.sfl)) {
     # Dates are covered by sfl data
     con <- dbConnect(SQLite(), dbname = db)
+    sql <- paste0("SELECT file from sfl WHERE
+      sfl.date >= '", start.sfl$date, "'
+       AND
+       sfl.date <= '", end.sfl$date, "'")
+    sfl.files <- dbGetQuery(con, sql)
+    file.str <- paste0("'", paste(sfl.files$file, collapse="','"), "'")
+
     if (is.null(channel)) {
       sql <- "SELECT
         opp.*, "
@@ -150,29 +135,22 @@ get.opp.by.date <- function(start.day, end.day,
         opp.", channel, ", ")
     }
     sql <- paste0(sql,
-        "sfl.date as time, vct.pop
+      "vct.pop
       FROM
-        opp, sfl, vct
+        opp, vct
       WHERE
-        opp.cruise == sfl.cruise
+        opp.cruise == vct.cruise
         AND
-        vct.cruise == sfl.cruise
+        opp.file == vct.file
         AND
-        opp.file == sfl.file
+        opp.file IN (",file.str,")
         AND
-        vct.file == sfl.file
-        AND
-        vct.particle == opp.particle
-        AND
-        sfl.date >= '", start.sfl$date, "'
-        AND
-        sfl.date <= '", end.sfl$date, "'"
-    )
+        vct.particle == opp.particle")
     if (! is.null(pop)) {
       sql <- paste0(sql, "
         AND
         vct.pop == '", pop, "'"
-      )
+        )
     }
     opp <- dbGetQuery(con, sql)
     dbDisconnect(con)
@@ -181,7 +159,6 @@ get.opp.by.date <- function(start.day, end.day,
   }
   return(opp)
 }
-
 # Given GMT POSIXct object, return data frame for sfl row which contains data
 # for that date
 get.sfl.by.date <- function(date.ct, db=db.name) {
