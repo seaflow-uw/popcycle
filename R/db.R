@@ -152,21 +152,21 @@ get.opp.by.date <- function(start.day, end.day,
     sql <- paste0(sql,
         "sfl.date as time, vct.pop
       FROM
-        opp, sfl, vct
+        sfl, opp, vct
       WHERE
-        opp.cruise == sfl.cruise
+        sfl.date >= '", start.sfl$date, "'
         AND
-        vct.cruise == sfl.cruise
+        sfl.date <= '", end.sfl$date, "'
+        AND
+        opp.cruise == sfl.cruise
         AND
         opp.file == sfl.file
         AND
-        vct.file == sfl.file
+        opp.cruise = vct.cruise
         AND
-        vct.particle == opp.particle
+        opp.file = vct.file
         AND
-        sfl.date >= '", start.sfl$date, "'
-        AND
-        sfl.date <= '", end.sfl$date, "'"
+        opp.particle == vct.particle"
     )
     if (! is.null(pop)) {
       sql <- paste0(sql, "
@@ -462,5 +462,12 @@ reset.db <- function(db.loc=db.location, parts.only=FALSE) {
   # Create empty sqlite database
   if (! parts.only) {
     make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
+  }
+}
+
+# Ensure that there is an sfl.date index in sqlite3 db
+ensure.sfl.date.index <- function(db.loc=db.location) {
+  if (! any(system(paste0("sqlite3 ", db.loc, " .indices"), intern=T) == "sflDateIndex")) {
+    system(paste0("sqlite3 ", db.loc, " 'CREATE INDEX sflDateIndex ON sfl (date)'"))
   }
 }

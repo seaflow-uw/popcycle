@@ -77,6 +77,9 @@ CREATE TABLE sfl (
   PRIMARY KEY (cruise, file)
 );
 
+CREATE INDEX sflDateIndex
+ON sfl (date);
+
 
 CREATE TABLE opp_evt_ratio (
   cruise TEXT NOT NULL,
