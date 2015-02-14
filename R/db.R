@@ -447,7 +447,7 @@ reset.db <- function(db.loc=db.location, parts.only=FALSE) {
 
 # Ensure that there is an sfl.date index in sqlite3 db
 ensure.sfl.date.index <- function(db.loc=db.location) {
-  if (! any(system(paste0("sqlite3 ", db.loc, " .indices"), intern=T) == "sflDateIndex")) {
+  if (! any(system(paste0("sqlite3 ", db.loc, "/popcycle.db .indices"), intern=T) == "sflDateIndex")) {
     system(paste0("sqlite3 ", db.loc, " 'CREATE INDEX sflDateIndex ON sfl (date)'"))
   }
 }
