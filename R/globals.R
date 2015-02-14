@@ -54,9 +54,9 @@ set.project.location <- function(path) {
 
   # folder for sqlite db files
   .assign.to.envs("db.location", paste(project.location, 'sqlite', sep='/'))
-  # name of SQLite database containing OPP and VCT tables
+  # name of SQLite database
   .assign.to.envs("db.name", paste(db.location, 'popcycle.db', sep="/"))
-
+  
   if (! file.exists(project.location)) {
     dir.create(project.location)
     dir.create(log.location)
@@ -68,6 +68,10 @@ set.project.location <- function(path) {
     dir.create(db.location)
     reset.db(db.location)
   }
+
+  # make sure the index on sfl.date exists
+  ensure.sfl.date.index(paste(db.location, 'popcycle.db', sep="/"))
+
 }
 
 # Configure EVT file location.

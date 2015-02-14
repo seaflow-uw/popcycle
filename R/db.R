@@ -120,13 +120,6 @@ get.opp.by.date <- function(start.time, end.time,
   if (nrow(start.sfl) & nrow(end.sfl)) {
     # Dates are covered by sfl data
     con <- dbConnect(SQLite(), dbname = db)
-    sql <- paste0("SELECT file from sfl WHERE
-      sfl.date >= '", start.sfl$date, "'
-       AND
-       sfl.date <= '", end.sfl$date, "'")
-    sfl.files <- dbGetQuery(con, sql)
-    file.str <- paste0("'", paste(sfl.files$file, collapse="','"), "'")
-
     if (is.null(channel)) {
       sql <- "SELECT
         opp.*, "
@@ -135,22 +128,29 @@ get.opp.by.date <- function(start.time, end.time,
         opp.", channel, ", ")
     }
     sql <- paste0(sql,
-      "vct.pop
+        "sfl.date as time, vct.pop
       FROM
-        opp, vct
+        sfl, opp, vct
       WHERE
-        opp.cruise == vct.cruise
+        sfl.date >= '", start.sfl$date, "'
         AND
-        opp.file == vct.file
+        sfl.date <= '", end.sfl$date, "'
         AND
-        opp.file IN (",file.str,")
+        opp.cruise == sfl.cruise
         AND
-        vct.particle == opp.particle")
+        opp.file == sfl.file
+        AND
+        opp.cruise = vct.cruise
+        AND
+        opp.file = vct.file
+        AND
+        opp.particle == vct.particle"
+    )
     if (! is.null(pop)) {
       sql <- paste0(sql, "
         AND
         vct.pop == '", pop, "'"
-        )
+      )
     }
     opp <- dbGetQuery(con, sql)
     dbDisconnect(con)
@@ -159,6 +159,9 @@ get.opp.by.date <- function(start.time, end.time,
   }
   return(opp)
 }
+
+
+
 # Given GMT POSIXct object, return data frame for sfl row which contains data
 # for that date
 get.sfl.by.date <- function(date.ct, db=db.name) {
@@ -439,5 +442,12 @@ reset.db <- function(db.loc=db.location, parts.only=FALSE) {
   # Create empty sqlite database
   if (! parts.only) {
     make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
+  }
+}
+
+# Ensure that there is an sfl.date index in sqlite3 db
+ensure.sfl.date.index <- function(db.loc=db.location) {
+  if (! any(system(paste0("sqlite3 ", db.loc, " .indices"), intern=T) == "sflDateIndex")) {
+    system(paste0("sqlite3 ", db.loc, " 'CREATE INDEX sflDateIndex ON sfl (date)'"))
   }
 }
