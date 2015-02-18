@@ -446,7 +446,7 @@ reset.db <- function(db.loc=db.location, parts.only=FALSE) {
 # Ensure that there is an sfl.date index in sqlite3 db
 #
 # Args:
-#   db.name: path to sqlite3 db file
+#   db: path to sqlite3 db file
 ensure.sfl.date.index <- function(db=db.name) {
   system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date)'"))
 }
