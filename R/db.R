@@ -86,10 +86,8 @@ get.opp.by.file <- function(file.name, db = db.name) {
 # 3 minute  boundary.
 #
 # Args:
-#   start.day: Start date, formatted as YYYY-MM-DD
-#   end.day: End date, formatted as YYYY-MM-DD
-#   start.time: Start time, formatted as HH[:MM]. Default is 00:00
-#   end.time: End time, formatted as HH[:MM]. Default is 00:00
+#   start.day: Start date, formatted as YYYY-MM-DD HH[:MM]
+#   end.day: End date, formatted as YYYY-MM-DD HH[:MM]
 #   pop: Only return data for this population. Should be a population name
 #     found in the VCT table. If not specified return particle data for all
 #     populations.
@@ -103,13 +101,13 @@ get.opp.by.date <- function(start.time, end.time,
   date.format <- "%Y-%m-%d %H:%M"
   # Make POSIXct objects in GMT time zone
   start.date.ct <- as.POSIXct(strptime(start.time, format=date.format, tz="GMT"))
-     if(is.na(start.date.ct)){
+  if(is.na(start.date.ct)){
     stop(paste("wrong format for start.time parameter : ", start.time, "instead of ", date.format))
-     }
+  }
   end.date.ct <- as.POSIXct(strptime(end.time, format=date.format, tz="GMT"))
-    if(is.na(end.date.ct)){
+  if(is.na(end.date.ct)){
     stop(paste("wrong format for end.time parameter : ", start.time, "instead of ", date.format))
-     }
+  }
 
   start.sfl <- get.sfl.by.date(start.date.ct)
   end.sfl <- get.sfl.by.date(end.date.ct)
