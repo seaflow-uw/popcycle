@@ -25,11 +25,11 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small',...
 			par(pty='s')
       ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
       id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
-      if(max(opp[,-c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
-      else plot(opp[,c(para.x, para.y)], pch=16, cex=0.6, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
+      if(max(opp[,-c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
+      else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
 			legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
 		}else{
-			print("No Gating parameters yet!")
+			print("No Gating parameters yet")
 			plot.cytogram(opp, para.x, para.y)
 			mtext(paste("No Gating parameters yet!"),3,line=-1,font=2)
 		}
@@ -52,7 +52,7 @@ plot.gate.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
 
      params <- list.files(param.gate.location,"params.RData")
       if(length(params)==0){
-        print("No gate parameters found!")
+        print("No Gating parameters yet")
         stop
        }else{load(paste0(param.gate.location,"/params.RData"))}
 
@@ -61,7 +61,7 @@ plot.gate.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
                 poly <- poly.log[i][[1]] # Get parameters of the gate for this population
                 para <- colnames(poly)
                 if(para[1]==para.x & para[2]==para.y){
-                  polygon(poly, lwd=2,border=i, col=NA)
+                  polygon(poly, lwd=3,border=i, col=NA)
                   text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
                   }
           }

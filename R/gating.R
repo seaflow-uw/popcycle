@@ -10,7 +10,7 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
   para.y <- as.character(para.y)
   
   par(mfrow=c(1,1))
-  plot.vct.cytogram(opp, para.x, para.y)
+  plot.gate.cytogram(opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
