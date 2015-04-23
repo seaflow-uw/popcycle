@@ -76,7 +76,7 @@ get.opp.by.file <- function(file.name, db = db.name) {
   opp <- dbGetQuery(con, sql)
   dbDisconnect(con)
   # drop cruise, file, particle columns
-  return (opp[,-c(1,2,3)])
+  return (opp[,-c(1:4)])
 }
 
 # Return data frame of OPP data that covers the provided time range.
@@ -155,7 +155,7 @@ get.opp.by.date <- function(start.time, end.time,
   } else {
     opp <- data.frame()
   }
-  return(opp)
+   return (opp[,-c(1:4)])
 }
 
 
