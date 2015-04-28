@@ -76,7 +76,7 @@ get.opp.by.file <- function(file.name, db = db.name) {
   opp <- dbGetQuery(con, sql)
   dbDisconnect(con)
   # drop cruise, file, particle columns
-  return (opp[,-c(1,2,3)])
+  return (opp[,-c(1:4)])
 }
 
 # Return data frame of OPP data that covers the provided time range.
@@ -155,7 +155,7 @@ get.opp.by.date <- function(start.time, end.time,
   } else {
     opp <- data.frame()
   }
-  return(opp)
+   return (opp[,-c(1:4)])
 }
 
 
@@ -255,6 +255,42 @@ get.opp.evt.ratio.files <- function(db = db.name) {
   dbDisconnect(con)
   return(files$file)
 }
+
+get.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
+  sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name, " WHERE file == '", 
+                file.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  file <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(file$ratio)
+}
+
+get.opp.evt.ratio.by.date <- function(start.time, end.time, db = db.name) {
+    
+  date.format <- "%Y-%m-%d %H:%M"
+  # Make POSIXct objects in GMT time zone
+  start.date.ct <- as.POSIXct(strptime(start.time, format=date.format, tz="GMT"))
+  if(is.na(start.date.ct)){
+    stop(paste("wrong format for start.time parameter : ", start.time, "instead of ", date.format))
+  }
+  end.date.ct <- as.POSIXct(strptime(end.time, format=date.format, tz="GMT"))
+  if(is.na(end.date.ct)){
+    stop(paste("wrong format for end.time parameter : ", start.time, "instead of ", date.format))
+  }
+
+  start.sfl <- get.sfl.by.date(start.date.ct)
+  end.sfl <- get.sfl.by.date(end.date.ct)
+
+    sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name,
+                  " WHERE date >= '", start.sfl$date,
+                  "' AND", " date <= '", end.sfl$date, "'")
+  con <- dbConnect(SQLite(), dbname = db)
+  files <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(files[, c(2,3)])
+}
+
+
 
 # Return a list of EVT files for which there is no OPP data in the database
 #
