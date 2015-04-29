@@ -69,9 +69,10 @@ set.project.location <- function(path) {
     reset.db(db.location)
   }
 
-  # make sure the index on sfl.date exists
-  ensure.sfl.date.index(paste(db.location, 'popcycle.db', sep="/"))
-
+  # Create any indexes that have been added to library since last time
+  # db was loaded
+  ensure.sfl.date.index()
+  ensure.opp.channel.indexes()
 }
 
 # Configure EVT file location.

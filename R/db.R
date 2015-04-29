@@ -158,7 +158,33 @@ get.opp.by.date <- function(start.time, end.time,
    return (opp[,-c(1:4)])
 }
 
-
+# Return a list of min and max values for each of opp channels:
+# "fsc_small", pe", "chl_small"
+# The list contains a named member for each channel (e.g. x$fsc_small),
+# and each member is a two item vector of min and max values (e.g. c(1, 1000))
+#
+# To retrieve the min value for fsc_small from the list:
+# x$fsc_small[1]
+# To retriev ethe max value for fsc_small from the list:
+# x$ fsc_small[2]
+get.opp.channel.ranges <- function(db=db.name) {
+  con <- dbConnect(SQLite(), dbname=db)
+  # It would be nice to do all the MIN MAX calls in one query, but
+  # due to some sqlite quirks this bypasses any indexes.
+  # http://www.sqlite.org/optoverview.html#minmax
+  minmaxes = list()
+  #channels <- c("fsc_small", "fsc_big", "fsc_perp", "pe", "chl_small", "chl_big")
+  channels <- c("fsc_small", "pe", "chl_small")
+  for (channel in channels) {
+    sql <- paste0("SELECT MIN(", channel, ") FROM ", opp.table.name)
+    min.answer <- dbGetQuery(con, sql)
+    sql <- paste0("SELECT MAX(", channel, ") FROM ", opp.table.name)
+    max.answer <- dbGetQuery(con, sql)
+    minmaxes[[channel]] = c(min.answer[1,1], max.answer[1,1])
+  }
+  dbDisconnect(con)
+  return(minmaxes)
+}
 
 # Given GMT POSIXct object, return data frame for sfl row which contains data
 # for that date
@@ -485,4 +511,17 @@ reset.db <- function(db.loc=db.location, parts.only=FALSE) {
 #   db: path to sqlite3 db file
 ensure.sfl.date.index <- function(db=db.name) {
   system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date)'"))
+}
+
+# Ensure that there is are per channel indexes on opp in sqlite3 db
+#
+# Args:
+#   db: path to sqlite3 db file
+ensure.opp.channel.indexes <- function(db=db.name) {
+  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppFsc_smallIndex ON opp (fsc_small)'"))
+  #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppFsc_perpIndex ON opp (fsc_perp)'"))
+  #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppFsc_bigIndex ON opp (fsc_big)'"))
+  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppPeIndex ON opp (pe)'"))
+  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppChl_smallIndex ON opp (chl_small)'"))
+  #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppChl_bigIndex ON opp (chl_big)'"))
 }

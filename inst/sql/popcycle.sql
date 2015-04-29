@@ -41,8 +41,10 @@ CREATE TABLE opp (
   PRIMARY KEY (cruise, file, particle)
 );
 
-CREATE INDEX oppFileIndex
-ON opp (file);
+CREATE INDEX oppFileIndex ON opp (file);
+CREATE INDEX oppFsc_smallIndex ON opp (fsc_small);
+CREATE INDEX oppPeIndex ON opp (pe);
+CREATE INDEX oppChl_smallIndex ON opp (chl_small);
 
 CREATE TABLE vct (
   -- First three columns are the EVT, OPP, VCT, SDS composite key
@@ -55,8 +57,7 @@ CREATE TABLE vct (
   PRIMARY KEY (cruise, file, particle)
 );
 
-CREATE INDEX vctFileIndex
-ON vct (file);
+CREATE INDEX vctFileIndex ON vct (file);
 
 CREATE TABLE sfl (
   --First two columns are the SDS composite key
@@ -77,8 +78,7 @@ CREATE TABLE sfl (
   PRIMARY KEY (cruise, file)
 );
 
-CREATE INDEX sflDateIndex
-ON sfl (date);
+CREATE INDEX sflDateIndex ON sfl (date);
 
 
 CREATE TABLE opp_evt_ratio (
@@ -118,9 +118,3 @@ CREATE TABLE cytdiv (
   opp_red REAL,
   PRIMARY KEY (cruise, file)
 );
-
-
-
-
-
-
