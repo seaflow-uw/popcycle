@@ -81,9 +81,9 @@ This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note 
 In the R session, type:
 
     ```r
-    # OPTION 1: SELECT OPP data by FILE
+    # OPTION 1: SELECT OPP data by FILES
     opp.list <- get.opp.files()
-    opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
+    opp.name <- opp.list[c(10,11,12)] # to select the opp files (e.g., the 10th, 11th and 12th opp file in the list, corresponding to 9 minutes of data)
     opp <- get.opp.by.file(opp.name)
     
     # OPTION 2: SELECT OPP data by DATE
