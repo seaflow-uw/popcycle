@@ -81,10 +81,17 @@ This function saves the parameters in ~/popcycle/params/filter/filter.csv. Note 
 In the R session, type:
 
     ```r
-    # SELECT an OPP file
+    # OPTION 1: SELECT OPP data by FILE
     opp.list <- get.opp.files()
     opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
     opp <- get.opp.by.file(opp.name)
+    
+    # OPTION 2: SELECT OPP data by DATE
+    sfl <- get.sfl.table()
+    sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
+    opp <- get.opp.by.date(sfl$date[1], sfl$date[1]+60*60, pop=NULL, channel=NULL) # e.g., select 1-h of data
+    
+    # SET THE MANUAL GATING SCHEME
     setGateParams(opp, popname='beads', para.x='fsc_small', para.y='pe')
     setGateParams(opp, popname='synecho', para.x='fsc_small', para.y='pe')
     setGateParams(opp, popname='prochloro', para.x='fsc_small', para.y='chl_small')
