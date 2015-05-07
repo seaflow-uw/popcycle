@@ -132,12 +132,11 @@ In the R session, type:
 2. To apply the gating parameters and analyze opp files according to gating parameters, use the following function
 
    ```r
-   opp.list <- get.opp.files() # if you want ALL the available files collected during the cruise
-   opp.list2 <- get.opp.by.date(start.day, end.day) # if you only want files from a specific time range
-   run.gating(opp.list)
+   opp.list <- get.opp.files() 
+   run.gating(opp.list) # if you want to apply the gating scheme to ALL the available OPP data from the cruise
    ```
 
-This function will create/update the `vct` and `stats` table.
+This function will create/update the `vct` and `stats` tables.
 
 # Visualization
 
