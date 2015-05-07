@@ -83,7 +83,7 @@ In the R session, type:
     ```r
     # OPTION 1: SELECT OPP data by FILES
     opp.list <- get.opp.files()
-    opp.name <- opp.list[c(10,11,12)] # to select the opp files (e.g., the 10th, 11th and 12th opp file in the list, corresponding to 9 minutes of data)
+    opp.name <- opp.list[10] # to select the opp files (e.g., the 10th opp file in the list, corresponding to 9 minutes of data)
     opp <- get.opp.by.file(opp.name)
     
     # OPTION 2: SELECT OPP data by DATE
@@ -168,9 +168,20 @@ Data can be plotted using a set of functions:
 
     ```r
     set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
+
+    # OPTION 1: SELECT OPP data by FILES
     opp.list <- get.opp.files()
-    opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
+    opp.name <- opp.list[10] # to select the opp files (e.g., the 10th opp file in the list, corresponding to 9 minutes of data)
+    opp <- get.opp.by.file(opp.name)
+    plot.cytogram(opp, "fsc_small","chl_small)
+    # OR DIRECTLY
     plot.cytogram.by.file(opp.name, "fsc_small","chl_small)
+
+    # OPTION 2: SELECT OPP data by DATE
+    sfl <- get.sfl.table()
+    sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
+    opp <- get.opp.by.date(sfl$date[1], sfl$date[1]+60*60, pop=NULL, channel=NULL) # e.g., select 1-h of data
+    plot.cytogram(opp, "fsc_small","chl_small)
     ```
 
 4. To plot an opp cytogram with clustered populations
