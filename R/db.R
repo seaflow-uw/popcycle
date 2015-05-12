@@ -155,7 +155,7 @@ get.opp.by.date <- function(start.time, end.time,
   } else {
     opp <- data.frame()
   }
-   return (opp[,-c(1:4)])
+   return (opp)
 }
 
 # Return a list of min and max values for each of opp channels:
