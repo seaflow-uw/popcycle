@@ -3,8 +3,8 @@ plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
 	cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 	
   par(pty='s')
-  id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
-  if(max(opp[,-c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
+  id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
+  if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
   else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...) 
 
 }
@@ -24,8 +24,8 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small',...
 		if(!is.null(opp$pop)){
 			par(pty='s')
       ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
-      id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
-      if(max(opp[,-c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
+      id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
+      if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
       else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
 			legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
 		}else{
@@ -88,9 +88,9 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
 
   # linearize the LOG transformed data 
   t <- FALSE
-    id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
-    if(!any(max(evt[,-c(id)]) > 10^3.5)){
-      evt[,-c(id)] <- (log10(evt[,-c(id)])/3.5)*2^16  
+   id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp" | colnames(opp) =="D1" | colnames(opp) =="D2")
+    if(!any(max(evt[,c(id)]) > 10^3.5)){
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  
       t <- TRUE
          }
 
@@ -272,7 +272,8 @@ plot.TS <- function(sfl,...){
 
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
   sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
-
+  
+par(pty='s')
 plot(sfl$ocean_tmp, sfl$salinity, col=cols(100)[cut(sfl$date,100)],pch=16,xlab=expression(paste("Temp (",degree,"C)")), ylab="Salinity (psu)",...)
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]

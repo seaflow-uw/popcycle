@@ -24,6 +24,7 @@ try_to_install_local <- function(pkg) {
     # Quit R with error status
     q(status = 1)
   }
-}
 
 try_to_install_local('popcycle')
+
+}
