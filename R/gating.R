@@ -81,7 +81,7 @@ resetGateParams <- function(param.gate.location){
 
 
 
-run.gating <- function(opp.list) {
+run.gating <- function(opp.list, db=db.name) {
   
 if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
     stop('No gate paramters yet; no gating.')
