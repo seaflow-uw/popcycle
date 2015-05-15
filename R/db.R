@@ -52,6 +52,15 @@ upload.opp <- function(db.opp, db = db.name) {
   dbDisconnect(con)
 }
 
+.delete.stats <- function(db = db.name) {
+  sql <- paste0("DELETE FROM ", stats.table.name)
+  con <- dbConnect(SQLite(), dbname = db)
+  dbGetQuery(con, sql)
+  dbDisconnect(con)
+}
+
+
+
 vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {
   n <- length(vct)
   cruise = rep(cruise.name, n)
@@ -384,6 +393,29 @@ GROUP BY
   response <- dbGetQuery(con, sql)
   dbDisconnect(con)
 }
+
+
+run.stats <- function(opp.list, db=db.name){
+
+  # delete old stats entries if they exist so we keep cruise/file distinct
+  .delete.stats() 
+  
+  i <- 0
+  for (opp.file in opp.list) {
+    
+     message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
+
+    tryCatch({
+    #   print('Updating stat')
+      insert.stats.for.file(opp.file, db=db.name)
+    }, error = function(e) {print(paste("Encountered error with file", opp.file))})
+    
+    i <-  i + 1
+    flush.console()
+
+  }
+}
+
 
 
 upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
