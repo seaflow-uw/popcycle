@@ -27,10 +27,9 @@ PAR = 'PAR'                                # float
 BULK_RED  = 'BULK RED'                     # float
 STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
 FLOW_RATE = 'FLOW RATE'                    # float
-EVENT_RATE  = 'EVENT RATE'                 # int
+EVENT_RATE  = 'EVENT RATE'                 # float
 
-FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, FLOW_RATE, CONDUCTIVITY, PAR, LAT, LON]
-INTS = [EVENT_RATE]
+FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, FLOW_RATE, CONDUCTIVITY, PAR, LAT, LON, EVENT_RATE]
 STRS = [FILE, DATE]
 
 DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
@@ -55,12 +54,6 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
                 dbcolumn_to_fixed_data[h] = float(d)
             except:
                 dbcolumn_to_fixed_data[h] = None
-        elif h in INTS:
-            h = h.strip().replace(' ', '_')
-            try:
-                dbcolumn_to_fixed_data[h] = int(d)
-            except:
-                dbcolumn_to_fixed_data[h] = None
         elif h in STRS:
             h = h.strip().replace(' ', '_')
             try:
@@ -80,8 +73,8 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
 
         # Add containing folder to file field
         # e.g. "2014-07-04T00-00-02+00-00" becomes "2014_184/2014-07-04T00-00-02+00-00"
-        day_of_year_folder = evt_filename_to_day_of_year(dbcolumn_to_fixed_data[FILE])
-        dbcolumn_to_fixed_data[FILE] = "%s/%s" % (day_of_year_folder, dbcolumn_to_fixed_data[FILE])
+        # day_of_year_folder = evt_filename_to_day_of_year(dbcolumn_to_fixed_data[FILE])
+        # dbcolumn_to_fixed_data[FILE] = "%s/%s" % (day_of_year_folder, dbcolumn_to_fixed_data[FILE])
 
     # Make sure DATE field is formatted consistently
     # Add ":" in time zone offset if not present for consistency in DB.  All DATE fields in DB should
