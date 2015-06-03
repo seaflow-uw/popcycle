@@ -156,8 +156,8 @@ filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
                              cores=1) {
   if (cores == 1) {
     # Just iterate over files and filter one by one
-    .filter.evt.files.serial(evt.list, cruise=cruise, db=db, evt.loc=evt.loc,
-                             param.loc=param.loc, check=TRUE)
+    return(.filter.evt.files.serial(evt.list, cruise=cruise, db=db, evt.loc=evt.loc,
+                                    param.loc=param.loc, check=TRUE))
   } else {
     # Snow parallel filtering to use multiple cores
 
@@ -232,6 +232,8 @@ filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
   for (evt.file in evt.list) {
     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
 
+    evt.file.clean <- clean.file.name(evt.file)
+
     # Read EVT file
     # Return empty data frame on warning or error
     evt <- tryCatch({
@@ -253,23 +255,23 @@ filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
     })
 
     # Upload OPP data
-    .delete.opp.by.file(evt.file, db=db)
+    .delete.opp.by.file(evt.file.clean, db=db)
     if (nrow(opp) > 0) {
-      upload.opp(opp.to.db.opp(opp, cruise, evt.file), db=db)
+      upload.opp(opp.to.db.opp(opp, cruise, evt.file.clean), db=db)
     }
 
     # Upload OPP/EVT particle count ratio
-    .delete.opp.evt.ratio.by.file(evt.file, db=db)
+    .delete.opp.evt.ratio.by.file(evt.file.clean, db=db)
     if (nrow(evt) > 0) {
       opp.evt.ratio <- nrow(opp) / nrow(evt)
-      upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file, db=db)
+      upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file.clean, db=db)
     }
 
     # Upload unknown VCT classifications
-    .delete.vct.by.file(evt.file, db=db)
+    .delete.vct.by.file(evt.file.clean, db=db)
     if (nrow(opp) > 0) {
       vct <- rep("unknown", nrow(opp))
-      upload.vct(vct.to.db.vct(vct, cruise, evt.file, 'None'), db)
+      upload.vct(vct.to.db.vct(vct, cruise, evt.file.clean, 'None'), db)
     }
 
     i <-  i + 1

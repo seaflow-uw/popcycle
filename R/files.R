@@ -70,3 +70,20 @@ file.transfer <- function(evt.loc=evt.location, instrument.loc=instrument.locati
     system(paste0("scp ",instrument.loc,"/",sfl.list," ", evt.loc,"/",sfl.list, collapse=";"))
   }
  }
+
+is.new.style.file <- function(file.name) {
+  # regexp to new style EVT file names
+  #   - 2014-05-15T17-07-08+0000 or 2014-07-04T00-03-02+00-00 (new style)
+  regexp.new <- '/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{2}-?[0-9]{2}$'
+  return(length(grep(regexp.new, file.name)) == 1)
+}
+
+# For old style EVT file names, don't remove folder if it exists
+# For new style EVT file names, remove folder
+clean.file.name <- function(file.name) {
+  if (is.new.style.file(file.name)) {
+    return(basename(file.name))
+  } else {
+    return(file.name)
+  }
+}

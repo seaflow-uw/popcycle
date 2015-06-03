@@ -9,7 +9,7 @@ evaluate.evt <- function(evt.file) {
   print(paste('Analyzing', evt.file))
   
   #upload evt count
-  file.name = basename(evt.file)
+  file.name = clean.file.name(evt.file)
   print(paste('Loading', evt.file))
   evt <- readSeaflow(evt.file)
  

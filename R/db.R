@@ -22,6 +22,7 @@ upload.opp <- function(db.opp, db = db.name) {
 
 # these delete functions should only be called when re-running analyses
 .delete.opp.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("DELETE FROM ", opp.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
@@ -30,6 +31,7 @@ upload.opp <- function(db.opp, db = db.name) {
 }
 
 .delete.vct.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("DELETE FROM ", vct.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
@@ -38,6 +40,7 @@ upload.opp <- function(db.opp, db = db.name) {
 }
 
 .delete.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("DELETE FROM ", opp.evt.ratio.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
@@ -46,6 +49,7 @@ upload.opp <- function(db.opp, db = db.name) {
 }
 
 .delete.cytdiv.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("DELETE FROM ", cytdiv.table.name, " WHERE file == '",
                 file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
@@ -86,6 +90,7 @@ upload.vct <- function(db.vct, db = db.name) {
 }
 
 get.opp.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("SELECT * FROM ", opp.table.name, " WHERE file == '", 
                 file.name, "' ORDER BY particle")
   con <- dbConnect(SQLite(), dbname = db)
@@ -244,6 +249,7 @@ get.sfl.by.date <- function(date.ct, db=db.name) {
 }
 
 get.vct.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("SELECT * FROM ", vct.table.name, " WHERE file == '", 
                 file.name, "' ORDER BY particle")
   con <- dbConnect(SQLite(), dbname = db)
@@ -299,6 +305,7 @@ get.opp.evt.ratio.files <- function(db = db.name) {
 }
 
 get.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name, " WHERE file == '", 
                 file.name)
   con <- dbConnect(SQLite(), dbname = db)
@@ -341,7 +348,10 @@ get.opp.evt.ratio.by.date <- function(start.time, end.time, db = db.name) {
 #   db = sqlite3 db
 get.empty.evt.files <- function(evt.list, db = db.name) {
   opp.files <- get.opp.files(db)
-  return(setdiff(evt.list, opp.files))
+  # Make sure user provided file list has folder removed for new style file
+  # names and kept for old style names
+  clean.evt.list <- unlist(lapply(evt.list, clean.file.name))
+  return(setdiff(clean.evt.list, opp.files))
 }
 
 get.stat.table <- function(db = db.name) {
@@ -353,6 +363,7 @@ get.stat.table <- function(db = db.name) {
 }
 
 insert.stats.for.file <- function(file.name, db = db.name) {
+  file.name <- clean.file.name(file.name)
   # [TODO Francois] Name of OPP, vct, sfl, opp_evt_ratio tables should be a variable too.
   sql <- "INSERT INTO stats
 SELECT
@@ -426,7 +437,8 @@ run.stats <- function(opp.list, db=db.name){
 
 
 upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
- con <- dbConnect(SQLite(), dbname = db)
+  file.name <- clean.file.name(file.name)
+  con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = cytdiv.table.name, 
                value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4], opp_red=indices[5]),
                row.names=FALSE, append=TRUE)

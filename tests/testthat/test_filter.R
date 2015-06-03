@@ -101,7 +101,8 @@ test_that("Successfully filter five files, one core", {
   expect_equal(opp.count, 458)
 
   print(paste0("bad.evt.files = ", paste(bad.evt.files, collapse=" ")))
-  expect_equal(bad.evt.files, evt.path[3:4])
+  print(paste0("evt.path[3:4] = ", paste(unlist(lapply(evt.path[3:4], clean.file.name)), collapse=" ")))
+  expect_equal(bad.evt.files, unlist(lapply(evt.path[3:4], clean.file.name)))
   
   # Reset locations
   set.project.location(save.project)

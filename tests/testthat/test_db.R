@@ -12,7 +12,7 @@ test_that("Delete SFL rows", {
 
   # Load SFL data
   cmd <- paste("python",
-               "../../executable_scripts/fix_sfl.py",
+               "../../executable_scripts/import_sfl.py",
                "--sfl",
                file.path(evt.location, "2014_185", "2014-07-04T00-00-00+00-00.sfl"),
                "--db",

@@ -20,7 +20,7 @@ test_that("Successfully run realtime last file pipeline", {
 
   # Load SFL data
   cmd <- paste("python",
-               "../../executable_scripts/fix_sfl.py",
+               "../../executable_scripts/import_sfl.py",
                "--sfl",
                file.path(evt.location, "2014_185", "2014-07-04T00-00-00+00-00.sfl"),
                "--db",
@@ -32,7 +32,9 @@ test_that("Successfully run realtime last file pipeline", {
 
   expect_equal(status, 0)
 
-  evaluate.evt()
+  evt.file <- get.latest.evt.with.day()
+
+  evaluate.evt(evt.file)
 
   stats <- get.stat.table()
 
