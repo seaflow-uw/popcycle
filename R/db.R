@@ -45,6 +45,14 @@ upload.opp <- function(db.opp, db = db.name) {
   dbDisconnect(con)
 }
 
+.delete.cytdiv.by.file <- function(file.name, db = db.name) {
+  sql <- paste0("DELETE FROM ", cytdiv.table.name, " WHERE file == '",
+                file.name, "'")
+  con <- dbConnect(SQLite(), dbname = db)
+  dbGetQuery(con, sql)
+  dbDisconnect(con)
+}
+
 .delete.sfl <- function(db = db.name) {
   sql <- paste0("DELETE FROM ", sfl.table.name)
   con <- dbConnect(SQLite(), dbname = db)
@@ -58,7 +66,6 @@ upload.opp <- function(db.opp, db = db.name) {
   dbGetQuery(con, sql)
   dbDisconnect(con)
 }
-
 
 
 vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {

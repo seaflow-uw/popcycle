@@ -1,3 +1,20 @@
+filter.evt <- function(evt, filter.func, ...) {
+  opp <- filter.func(evt, ...)
+  
+  # SANITY CHECKS
+  # need same columns for opp
+  if (!all(names(evt) == names(opp))) {
+    stop('Filtering function produced OPP with different columns')
+  }
+  
+  # filtered all particles out?
+  if (dim(opp)[1] < 1) {
+    stop('Filtering dropped all particles.')
+  }
+
+  return (opp)
+}
+
 # set width and notch, log old parameters if they exist
 setFilterParams <- function(width, notch) {
   params <- data.frame(width = width, notch = notch)
@@ -316,45 +333,4 @@ split.list <- function(some.list, ways) {
   }
   buckets[[bucket.i]] <- some.list[i:length(some.list)]
   return(buckets)
-}
-
-
-run.filter <- function(evt.list) {
-  
-  params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))
-  if (is.null(params$notch) || is.null(params$width)) {
-    stop('Notch or Width is not defined; skipping filtering.')
-  }
-  
-  i <- 0
-  for (evt.file in evt.list) {
-    
-     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
-
-    #if we get an error, move to next file
-    tryCatch({
-    # print(paste('Loading', evt.file))
-      evt <- readSeaflow(evt.file)
-      
-    # print(paste('Filtering', evt.file))
-      opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
-      # delete old opp entries if they exist so we keep cruise/file/particle distinct
-      .delete.opp.by.file(evt.file)
-      # store opp
-   #   print('Uploading filtered particles to database')
-      upload.opp(opp.to.db.opp(opp, cruise.id, evt.file), db=db.name)
-    
-  #    print(paste('Uploading opp/evt ratio for', evt.file))
-      .delete.opp.evt.ratio.by.file(evt.file)
-      opp.evt.ratio <- nrow(opp) / nrow(evt)
-      upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file, db=db.name)
-   
-    }, error = function(e) {print(paste("Encountered error with file", evt.file))},
-  finally = {print(paste("Finished with file", evt.file))}
-  )
-    
-    i <-  i + 1
-    flush.console()
-
-  }
 }

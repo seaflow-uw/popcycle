@@ -1,3 +1,21 @@
+
+classify.opp <- function(opp, classify.func, ...) {
+  vct <- classify.func(opp, ...)
+  
+  # SANITY CHECKS
+  # dropped particles
+  if (!(dim(opp)[1] == length(vct))) {
+    stop('Filtering function returned incorrect number of labels.')
+  }
+  
+  # in case classify.func didn't return text
+  vct <- as.character(vct)
+  
+  return (vct)
+}
+
+
+
 ## merge vct to opp if vct already exist 
 setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 

@@ -1,0 +1,270 @@
+library(popcycle)
+opp.list <- get.opp.files()
+opp.list
+popcycle:::.delete.opp.by.file(opp.list[301])
+for(i in 256:300){}
+for(i in 256:300){}
+opp.list <- get.opp.files()
+opp.list
+for(i in 257:301){#
+	popcycle:::.delete.opp.by.file(opp.list[i])#
+}
+opp.list <- get.opp.files()
+opp.list
+evt.list <- get.evt.list()
+evt.list
+run.filter <- function(evt.list) {#
+  params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))#
+  if (is.null(params$notch) || is.null(params$width)) {#
+    stop('Notch or Width is not defined; skipping filtering.')#
+  }#
+  i <- 0#
+  for (evt.file in evt.list) {#
+     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)#
+#
+    #if we get an error, move to next file#
+    tryCatch({#
+    # print(paste('Loading', evt.file))#
+      evt <- readSeaflow(evt.file)#
+    # print(paste('Filtering', evt.file))#
+ 	file.name = basename(evt.file)#
+      opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
+      # delete old opp entries if they exist so we keep cruise/file/particle distinct#
+      .delete.opp.by.file(file.name)#
+      # store opp#
+   #   print('Uploading filtered particles to database')#
+      upload.opp(opp.to.db.opp(opp, cruise.id, file.name), db=db.name)#
+  #    print(paste('Uploading opp/evt ratio for', evt.file))#
+      .delete.opp.evt.ratio.by.file(file.name)#
+      opp.evt.ratio <- nrow(opp) / nrow(evt)#
+      upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name, db=db.name)#
+    }, error = function(e) {print(paste("Encountered error with file", file.name))},#
+  finally = {print(paste("Finished with file", file.name))}#
+  )#
+    i <-  i + 1#
+    flush.console()#
+#
+  }#
+}
+run.filter(evt.list[182:223])
+filter.evt.files(evt.list[182:223], core=2)
+evt.list <- get.evt.list()
+evt.list
+filter.evt.files(evt.list[182:402], core=2)
+opp.list <- get.opp.files()
+opp.list
+for(i in 263:483){#
+	popcycle:::.delete.opp.by.file(opp.list[i])#
+}
+evt.list <- get.evt.list()
+evt.list
+evaluate.last.evt <- function(evt.file) {#
+  if (length(evt.file) == 0) {#
+    print('No data collected yet.')#
+    return()#
+  }#
+#
+  print(paste('Analyzing', evt.file))#
+  #upload evt count#
+  file.name = basename(evt.file)#
+  print(paste('Loading', evt.file))#
+  evt <- readSeaflow(evt.file)#
+  #if we don't have filter parameters yet#
+  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {#
+    print('No filtering parameters have been set; skipping filtering.')#
+    return()#
+  }#
+  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))#
+  if (is.null(params$notch) || is.null(params$width)) {#
+    print('Notch or Width is not defined; skipping filtering.')#
+    return()#
+  }#
+  #filter evt#
+  # file.name for db should get rid of directory structure#
+#
+  print(paste('Filtering', evt.file))#
+  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
+  #store opp#
+  print('Uploading filtered particles to database')#
+#
+  .delete.opp.by.file(file.name) #
+  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))#
+  print('Uploading opp/evt ratio')#
+  .delete.opp.evt.ratio.by.file(file.name)#
+  opp.evt.ratio <- nrow(opp)/nrow(evt)#
+  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)#
+  #classify opp#
+  #if we don't have gating parameters yet#
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {#
+    print('No gating parameters have been set; skipping gating.')#
+    return()#
+  }#
+  print(paste('Classifying', evt.file))#
+  vct <- classify.opp(opp, ManualGating)#
+  #store vct#
+  print('Uploading labels to the database')#
+#
+  .delete.vct.by.file(file.name)#
+  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))#
+#
+  #cytometric diversity#
+  print("Calculating cytometric diversity")#
+  opp$pop <- vct#
+  df <- opp[!(opp$pop == 'beads'),]#
+  indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)#
+#
+  print('Uploading cytdiv')#
+  upload.cytdiv(indices,cruise.id, file.name)#
+#
+  #aggregate statistics#
+  print('Uploading stats')#
+  insert.stats.for.file(file.name)#
+}
+for(evt.file in evt.list[182:402]){#
+	print(evt.file)#
+	evaluate.last.evt(evt.file)#
+	}
+evaluate.last.evt <- function(evt.file) {#
+  if (length(evt.file) == 0) {#
+    print('No data collected yet.')#
+    return()#
+  }#
+#
+  print(paste('Analyzing', evt.file))#
+  #upload evt count#
+  file.name = basename(evt.file)#
+  print(paste('Loading', evt.file))#
+  evt <- readSeaflow(evt.file)#
+  #if we don't have filter parameters yet#
+  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {#
+    print('No filtering parameters have been set; skipping filtering.')#
+    return()#
+  }#
+  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))#
+  if (is.null(params$notch) || is.null(params$width)) {#
+    print('Notch or Width is not defined; skipping filtering.')#
+    return()#
+  }#
+  #filter evt#
+  # file.name for db should get rid of directory structure#
+#
+  print(paste('Filtering', evt.file))#
+  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
+  #store opp#
+  print('Uploading filtered particles to database')#
+#
+  popcycle:::.delete.opp.by.file(file.name) #
+  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))#
+  print('Uploading opp/evt ratio')#
+  popcycle:::.delete.opp.evt.ratio.by.file(file.name)#
+  opp.evt.ratio <- nrow(opp)/nrow(evt)#
+  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)#
+  #classify opp#
+  #if we don't have gating parameters yet#
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {#
+    print('No gating parameters have been set; skipping gating.')#
+    return()#
+  }#
+  print(paste('Classifying', evt.file))#
+  vct <- classify.opp(opp, ManualGating)#
+  #store vct#
+  print('Uploading labels to the database')#
+#
+  popcycle:::.delete.vct.by.file(file.name)#
+  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))#
+#
+  #cytometric diversity#
+  print("Calculating cytometric diversity")#
+  opp$pop <- vct#
+  df <- opp[!(opp$pop == 'beads'),]#
+  indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)#
+#
+  print('Uploading cytdiv')#
+  upload.cytdiv(indices,cruise.id, file.name)#
+#
+  #aggregate statistics#
+  print('Uploading stats')#
+  insert.stats.for.file(file.name)#
+}
+for(evt.file in evt.list[182:402]){#
+	print(evt.file)#
+	evaluate.last.evt(evt.file)#
+	}
+evaluate.last.evt <- function(evt.file) {#
+  if (length(evt.file) == 0) {#
+    print('No data collected yet.')#
+    return()#
+  }#
+#
+  print(paste('Analyzing', evt.file))#
+  #upload evt count#
+  file.name = basename(evt.file)#
+  print(paste('Loading', evt.file))#
+  evt <- readSeaflow(evt.file)#
+  #if we don't have filter parameters yet#
+  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {#
+    print('No filtering parameters have been set; skipping filtering.')#
+    return()#
+  }#
+  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))#
+  if (is.null(params$notch) || is.null(params$width)) {#
+    print('Notch or Width is not defined; skipping filtering.')#
+    return()#
+  }#
+  #filter evt#
+  # file.name for db should get rid of directory structure#
+#
+  print(paste('Filtering', evt.file))#
+  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
+  #store opp#
+  print('Uploading filtered particles to database')#
+#
+  popcycle:::.delete.opp.by.file(file.name) #
+  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))#
+  print('Uploading opp/evt ratio')#
+  popcycle:::.delete.opp.evt.ratio.by.file(file.name)#
+  opp.evt.ratio <- nrow(opp)/nrow(evt)#
+  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)#
+  #classify opp#
+  #if we don't have gating parameters yet#
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {#
+    print('No gating parameters have been set; skipping gating.')#
+    return()#
+  }#
+  print(paste('Classifying', evt.file))#
+  vct <- classify.opp(opp, ManualGating)#
+  #store vct#
+  print('Uploading labels to the database')#
+#
+  popcycle:::.delete.vct.by.file(file.name)#
+  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))#
+#
+  # #cytometric diversity#
+  # print("Calculating cytometric diversity")#
+  # opp$pop <- vct#
+  # df <- opp[!(opp$pop == 'beads'),]#
+  # indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)#
+#
+  # print('Uploading cytdiv')#
+  # upload.cytdiv(indices,cruise.id, file.name)#
+#
+  #aggregate statistics#
+  print('Uploading stats')#
+  insert.stats.for.file(file.name)#
+}
+for(evt.file in evt.list[182:402]){#
+	print(evt.file)#
+	evaluate.last.evt(evt.file)#
+	}
+file.transfer()
+evt.list <- get.evt.list()
+evt.list
+for(evt.file in evt.list[403:422]){#
+	print(evt.file)#
+	evaluate.last.evt(evt.file)#
+	}
+stat <- get.stat.table()  #
+#
+print("saving stat.csv")#
+write.csv(stat, "~/stat.csv", row.names=FALSE, quote=FALSE)
+plot.time(stat, popname='prochloro', param='abundance')

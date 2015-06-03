@@ -74,7 +74,7 @@ CREATE TABLE sfl (
   bulk_red REAL,
   stream_pressure REAL,
   flow_rate REAL,
-  event_rate INTEGER,
+  event_rate REAL,
   PRIMARY KEY (cruise, file)
 );
 

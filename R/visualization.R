@@ -115,7 +115,7 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
   aligned <- subset(evt., D2 < D1*slope + width * 10^4 & D1 < D2*slope + width * 10^4)
 
   # Filtering focused particles (D/fsc_small < notch)
- opp <- subset(aligned, D1/fsc_small < notch & D2/fsc_small < notch)    
+  opp <- subset(aligned, D1/fsc_small < notch & D2/fsc_small < notch)    
 
   ################
   ### PLOTTING ###
@@ -274,11 +274,11 @@ plot.TS <- function(sfl,...){
   sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
   
 par(pty='s')
-plot(sfl$ocean_tmp, sfl$salinity, col=cols(100)[cut(sfl$date,100)],pch=16,xlab=expression(paste("Temp (",degree,"C)")), ylab="Salinity (psu)",...)
+plot(sfl$ocean_tmp, sfl$salinity, col=cols(50)[cut(sfl$date,50)],pch=16,xlab=expression(paste("Temp (",degree,"C)")), ylab="Salinity (psu)",...)
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
-      legend=c("start","end"), rect.col=cols(100), gradient='y',align='rb',...)
+      legend=c("start","end"), rect.col=cols(50), gradient='y',align='rb',...)
 mtext("Time", side=4, line=2,...)  
 
   

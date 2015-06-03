@@ -4,7 +4,17 @@ library(popcycle)
 ############################
 ### ANALYZE LAST FILE(s) ###
 ############################
-evaluate.last.evt()
+opp.list <- get.opp.files()
+evt.list <- get.evt.list()
+id <- match(opp.list, basename(evt.list))
+
+if(length(id) > 0){
+		for(evt.file in evt.list[-id]) evaluate.evt(evt.file)
+	}else{
+		for(evt.file in evt.list) evaluate.evt(evt.file)
+}
+
+
 
 
 
@@ -18,14 +28,6 @@ opp <- get.opp.by.file(last.file)
 vct <- get.vct.by.file(last.file)
 opp$pop <- vct
 
-print("creating cytogram.png")
-png("~/cytogram.png",width=15,height=9,unit='in',res=100)
-par(mfrow=c(1,2),cex=cex)
-plot.cytogram(opp, "fsc_small","chl_small")
-plot.cytogram(opp, "fsc_small","pe")
-mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
-dev.off()
-
 print("creating vct.cytogram.png")
 png("~/vct.cytogram.png",width=15,height=9,unit='in',res=100)
 par(mfrow=c(1,2),cex=cex)
@@ -35,7 +37,7 @@ mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
 dev.off()
 
 print("creating gate.cytogram.png")
-png("~/gate.cytogram.png",width=15,height=9,unit='in',res=50)
+png("~/gate.cytogram.png",width=15,height=9,unit='in',res=100)
 par(mfrow=c(1,2),cex=cex)
 plot.gate.cytogram(opp, "fsc_small","chl_small")
 plot.gate.cytogram(opp, "fsc_small","pe")
@@ -51,31 +53,31 @@ stat <- get.stat.table()
 print("saving stat.csv")
 write.csv(stat, "~/stat.csv", row.names=FALSE, quote=FALSE)
 
-phyto <- unique(stat$pop)
+# phyto <- unique(stat$pop)
 
-print("creating cell_conc_map.png")
-png("~/cell_conc_map.png",width=15, height=9, unit='in', res=100)
-par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,2))
-for(i in phyto)	try(plot.map (stat, popname=i, param='abundance'))
-dev.off()
+# print("creating cell_conc_map.png")
+# png("~/cell_conc_map.png",width=15, height=9, unit='in', res=100)
+# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,2))
+# for(i in phyto)	try(plot.map (stat, popname=i, param='abundance'))
+# dev.off()
 
-print("creating cell_conc_time.png")
-png("~/cell_conc_time.png",width=15, height=9, unit='in', res=100)
-par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
-for(i in phyto)	try(plot.time(stat, popname=i, param='abundance'))
-dev.off()
+# print("creating cell_conc_time.png")
+# png("~/cell_conc_time.png",width=15, height=9, unit='in', res=100)
+# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
+# for(i in phyto)	try(plot.time(stat, popname=i, param='abundance'))
+# dev.off()
 
-print("creating light_scatter.png")
-png("~/light_scatter.png",width=15,height=9,unit='in',res=100)
-par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
-for(i in phyto) try(plot.time(stat, popname=i, param='fsc_small'))
-dev.off()
+# print("creating light_scatter.png")
+# png("~/light_scatter.png",width=15,height=9,unit='in',res=100)
+# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
+# for(i in phyto) try(plot.time(stat, popname=i, param='fsc_small'))
+# dev.off()
 
-print("creating chl_small.png")
-png("~/chl_small.png",width=15,height=9,unit='in',res=100)
-par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
-for(i in phyto)	try(plot.time(stat, popname=i, param='chl_small'))
-dev.off()
+# print("creating chl_small.png")
+# png("~/chl_small.png",width=15,height=9,unit='in',res=100)
+# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
+# for(i in phyto)	try(plot.time(stat, popname=i, param='chl_small'))
+# dev.off()
 
 
 
@@ -104,9 +106,9 @@ plot.cytdiv.time(cytdiv, index="bulk_red")
 plot.cytdiv.time(cytdiv, index="opp_red")
 dev.off()
 
-###############
-### TS PLOT ###
-###############
+# ###############
+# ### TS PLOT ###
+# ###############
 
 sfl <- get.sfl.table()
 print("saving sfl.csv")

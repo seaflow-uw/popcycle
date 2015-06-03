@@ -1,31 +1,80 @@
-filter.evt <- function(evt, filter.func, ...) {
-  opp <- filter.func(evt, ...)
+#main function
+evaluate.evt <- function(evt.file) {
   
-  # SANITY CHECKS
-  # need same columns for opp
-  if (!all(names(evt) == names(opp))) {
-    stop('Filtering function produced OPP with different columns')
-  }
-  
-  # filtered all particles out?
-  if (dim(opp)[1] < 1) {
-    stop('Filtering dropped all particles.')
+  if (length(evt.file) == 0) {
+    print('No data collected yet.')
+    return()
   }
 
-  return (opp)
-}
-
-classify.opp <- function(opp, classify.func, ...) {
-  vct <- classify.func(opp, ...)
+  print(paste('Analyzing', evt.file))
   
-  # SANITY CHECKS
-  # dropped particles
-  if (!(dim(opp)[1] == length(vct))) {
-    stop('Filtering function returned incorrect number of labels.')
+  #upload evt count
+  file.name = basename(evt.file)
+  print(paste('Loading', evt.file))
+  evt <- readSeaflow(evt.file)
+ 
+  #if we don't have filter parameters yet
+  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {
+    print('No filtering parameters have been set; skipping filtering.')
+    return()
   }
   
-  # in case classify.func didn't return text
-  vct <- as.character(vct)
+  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))
   
-  return (vct)
+  if (is.null(params$notch) || is.null(params$width)) {
+    print('Notch or Width is not defined; skipping filtering.')
+    return()
+  }
+  
+  #filter evt
+  
+  # file.name for db should get rid of directory structure
+
+  print(paste('Filtering', evt.file))
+    
+  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)
+  
+  #store opp
+  
+  print('Uploading filtered particles to database')
+
+  .delete.opp.by.file(file.name) 
+  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))
+  
+  print('Uploading opp/evt ratio')
+  .delete.opp.evt.ratio.by.file(file.name)
+  opp.evt.ratio <- nrow(opp)/nrow(evt)
+  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)
+  
+  #classify opp
+  
+  #if we don't have gating parameters yet
+  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
+    print('No gating parameters have been set; skipping gating.')
+    return()
+  }
+  
+  print(paste('Classifying', evt.file))
+  
+  vct <- classify.opp(opp, ManualGating)
+  
+  #store vct
+  print('Uploading labels to the database')
+
+  .delete.vct.by.file(file.name)
+  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))
+
+  #cytometric diversity
+  print("Calculating cytometric diversity")
+  opp$pop <- vct
+  df <- opp[!(opp$pop == 'beads'),]
+  indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
+
+  print('Uploading cytdiv')
+  .delete.cytdiv.by.file(file.name)
+  upload.cytdiv(indices,cruise.id, file.name)
+
+  #aggregate statistics
+  print('Uploading stats')
+  insert.stats.for.file(file.name)
 }

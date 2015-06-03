@@ -48,8 +48,8 @@ file.transfer <- function(evt.loc=evt.location, instrument.loc=instrument.locati
 
   last.evt <- get.latest.evt.with.day(evt.loc)
   file.list <- list.files(instrument.loc, recursive=T)
-  file.list <- file.list[-length(file.list)] # remove the last file (opened file)
   sfl.list <- file.list[grepl('.sfl', file.list)]
+  file.list <- file.list[-length(file.list)] # remove the last file (opened file)
   file.list <- sort(file.list[!grepl('.sfl', file.list)])
 
   id <- match(last.evt, file.list)
@@ -69,4 +69,4 @@ file.transfer <- function(evt.loc=evt.location, instrument.loc=instrument.locati
     system(paste0("scp ",instrument.loc,"/",file.list," ", evt.loc,"/",file.list, collapse=";"))
     system(paste0("scp ",instrument.loc,"/",sfl.list," ", evt.loc,"/",sfl.list, collapse=";"))
   }
-}
+ }

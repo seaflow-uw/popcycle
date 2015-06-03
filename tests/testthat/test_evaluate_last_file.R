@@ -32,7 +32,7 @@ test_that("Successfully run realtime last file pipeline", {
 
   expect_equal(status, 0)
 
-  evaluate.last.evt()
+  evaluate.evt()
 
   stats <- get.stat.table()
 
