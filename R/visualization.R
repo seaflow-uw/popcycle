@@ -53,20 +53,19 @@ plot.gate.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
      params <- list.files(param.gate.location,"params.RData")
       if(length(params)==0){
         print("No Gating parameters yet")
-        stop
-       }else{load(paste0(param.gate.location,"/params.RData"))}
+       }else{load(paste0(param.gate.location,"/params.RData"))
 
             for(i in 1:length(poly.log)){
                 pop <- names(poly.log[i]) # name of the population
                 poly <- poly.log[i][[1]] # Get parameters of the gate for this population
                 para <- colnames(poly)
-                if(para[1]==para.x & para[2]==para.y){
-                  polygon(poly, lwd=3,border=i, col=NA)
-                  text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
-                  }
-          }
+                    if(para[1]==para.x & para[2]==para.y){
+                      polygon(poly, lwd=3,border=i, col=NA)
+                      text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
+                      }
+              }
+       }
 }
-
 
 plot.gate.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small'){
 
@@ -88,7 +87,7 @@ plot.filter.cytogram <- function(evt, width=0.2, notch=1){
 
   # linearize the LOG transformed data 
   t <- FALSE
-   id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp" | colnames(opp) =="D1" | colnames(opp) =="D2")
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
     if(!any(max(evt[,c(id)]) > 10^3.5)){
       evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  
       t <- TRUE
