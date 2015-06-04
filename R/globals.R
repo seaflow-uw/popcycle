@@ -16,7 +16,7 @@ sfl.table.name <- 'sfl'
 project.location <- paste('~/popcycle') # Default project directory location
 evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the real-time analysis
 instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
-cruise.id <- 'realtime' # Cruise name
+cruise.id <- NULL # Cruise name
 instrument.id <- '740'
 
 # This package's name
@@ -89,6 +89,16 @@ set.evt.location <- function(path) {
 #   cruise.name = cruise name
 set.cruise.id <- function(cruise.name) {
   .assign.to.envs("cruise.id", path.expand(cruise.name))
+}
+
+# Check that cruise is set, and if not throw warning
+#
+# Args:
+#   cruise.name = cruise name
+check.cruise.id <- function(cruise.name) {
+  if (is.null(cruise.name)) {
+    stop("cruise.id not defined. Run set.cruise.id() to set cruise name")
+  }
 }
 
 # Configure instrument directory location.

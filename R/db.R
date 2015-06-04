@@ -1,6 +1,7 @@
 library(RSQLite)
 
 opp.to.db.opp <- function(opp, cruise.name, file.name) {
+  check.cruise.id(cruise.name)
   
   #First, the function checks that OPP data is transformed before uploading it into the database. if not, tranform it.
   id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
@@ -73,6 +74,8 @@ upload.opp <- function(db.opp, db = db.name) {
 
 
 vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {
+  check.cruise.id(cruise.name)
+
   n <- length(vct)
   cruise = rep(cruise.name, n)
   file = rep(file.name, n)
@@ -260,6 +263,8 @@ get.vct.by.file <- function(file.name, db = db.name) {
 }
 
 upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.name) {
+  check.cruise.id(cruise.name)
+
   con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = opp.evt.ratio.table.name, 
                value = data.frame(cruise = cruise.name, file = file.name, ratio = opp.evt.ratio),
@@ -437,6 +442,8 @@ run.stats <- function(opp.list, db=db.name){
 
 
 upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
+  check.cruise.id(cruise.name)
+
   file.name <- clean.file.name(file.name)
   con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = cytdiv.table.name, 

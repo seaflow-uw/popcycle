@@ -264,7 +264,7 @@ filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
     .delete.opp.evt.ratio.by.file(evt.file.clean, db=db)
     if (nrow(evt) > 0) {
       opp.evt.ratio <- nrow(opp) / nrow(evt)
-      upload.opp.evt.ratio(opp.evt.ratio, cruise.id, evt.file.clean, db=db)
+      upload.opp.evt.ratio(opp.evt.ratio, cruise, evt.file.clean, db=db)
     }
 
     # Upload unknown VCT classifications

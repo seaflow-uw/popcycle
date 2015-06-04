@@ -4,6 +4,5 @@
 .onLoad <- function(libname, pkgname) {
     set.project.location(project.location)
     set.evt.location(evt.location)
-    set.cruise.id(cruise.id)
     set.instrument.location(instrument.location)
 }

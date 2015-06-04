@@ -3,14 +3,12 @@ library(popcycle)
 context("EVT filtering")
 
 test_that("Best notch is found", {
-  save.project <- project.location
-  save.evt <- evt.location
-
   newdir <- tempdir()
   projdir <- file.path(newdir, "project")
 
   set.project.location(projdir)
   set.evt.location("../../inst/extdata")
+  set.cruise.id("test")
 
   evt.path <- file.path("SeaFlow", "datafiles", "evt",
                         "2014_185", "2014-07-04T00-00-02+00-00")
@@ -19,24 +17,18 @@ test_that("Best notch is found", {
 
   print(paste0("notch = ", notch))
   expect_equal(notch, 1.0)
-  
-  # Reset locations
-  set.project.location(save.project)
-  set.evt.location(save.evt)
 
   # Erase temp dir
   unlink(projdir, recursive=T)
 })
 
 test_that("Successfully filter two files with filter.evt", {
-  save.project <- project.location
-  save.evt <- evt.location
-
   newdir <- tempdir()
   projdir <- file.path(newdir, "project")
 
   set.project.location(projdir)
   set.evt.location("../../inst/extdata")
+  set.cruise.id("test")
 
   evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
                           "2014_185", "2014-07-04T00-00-02+00-00"),
@@ -58,24 +50,18 @@ test_that("Successfully filter two files with filter.evt", {
   print(paste0("opp2.count = ", opp2.count))
   expect_equal(opp1.count, 141)
   expect_equal(opp2.count, 220)
-  
-  # Reset locations
-  set.project.location(save.project)
-  set.evt.location(save.evt)
 
   # Erase temp dir
   unlink(projdir, recursive=T)
 })
 
 test_that("Successfully filter five files, one core", {
-  save.project <- project.location
-  save.evt <- evt.location
-
   newdir <- tempdir()
   projdir <- file.path(newdir, "project")
 
   set.project.location(projdir)
   set.evt.location("../../inst/extdata")
+  set.cruise.id("test")
 
   evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
                           "2014_185", "2014-07-04T00-00-02+00-00"), # good file
@@ -104,10 +90,6 @@ test_that("Successfully filter five files, one core", {
   print(paste0("evt.path[3:4] = ", paste(unlist(lapply(evt.path[3:4], clean.file.name)), collapse=" ")))
   expect_equal(bad.evt.files, unlist(lapply(evt.path[3:4], clean.file.name)))
   
-  # Reset locations
-  set.project.location(save.project)
-  set.evt.location(save.evt)
-
   # Erase temp dir
   unlink(projdir, recursive=T)
 })
@@ -118,14 +100,12 @@ test_that("Successfully filter five files, one core", {
 # or in Travis.
 test_that("Successfully filter five files, two cores", {
   if (Sys.getenv("INTRAVIS") != 1) {
-    save.project <- project.location
-    save.evt <- evt.location
-
     newdir <- tempdir()
     projdir <- file.path(newdir, "project")
 
     set.project.location(projdir)
     set.evt.location("../../inst/extdata")
+    set.cruise.id("test")
 
     evt.path <- c(file.path("SeaFlow", "datafiles", "evt",
                           "2014_185", "2014-07-04T00-00-02+00-00"), # good file
@@ -155,10 +135,6 @@ test_that("Successfully filter five files, two cores", {
     
     print(paste0("opp.count = ", opp.count))
     expect_equal(opp.count, 458)
-    
-    # Reset locations
-    set.project.location(save.project)
-    set.evt.location(save.evt)
 
     # Erase temp dir
     unlink(projdir, recursive=T)

@@ -6,6 +6,7 @@ test_that("EVT files are located correctly", {
   # Test EVT data is in inst folder
   save <- evt.location
   set.evt.location("../../inst/extdata")
+  set.cruise.id("test")
 
   answer <- c("SeaFlow/datafiles/evt/2014_185/2014-07-04T00-00-02+00-00",
               "SeaFlow/datafiles/evt/2014_185/2014-07-04T00-03-02+00-00",
