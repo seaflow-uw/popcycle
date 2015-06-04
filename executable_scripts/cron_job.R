@@ -1,17 +1,19 @@
 library(popcycle)
 
+set.cruise.id("realtime")
+
 
 ############################
 ### ANALYZE LAST FILE(s) ###
 ############################
 opp.list <- get.opp.files()
 evt.list <- get.evt.list()
-id <- match(opp.list, basename(evt.list))
+id <- match(opp.list, unlist(lapply(evt.list, clean.file.name)))
 
 if(length(id) > 0){
-		for(evt.file in evt.list[-id]) evaluate.evt(evt.file)
-	}else{
-		for(evt.file in evt.list) evaluate.evt(evt.file)
+    for(evt.file in evt.list[-id]) evaluate.evt(evt.file)
+}else{
+	for(evt.file in evt.list) evaluate.evt(evt.file)
 }
 
 
