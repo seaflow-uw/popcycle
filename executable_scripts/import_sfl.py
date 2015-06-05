@@ -94,21 +94,22 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
     conn.commit()
     conn.close()
 
-def insert_file_bulk(sfl_file, db, cruise) :
-    lines = open(sfl_file).readlines()
-    header = lines[0].split('\t')
-    dbpath = os.path.expanduser(db)
-    for line in lines[1:] :
-        data = line.split('\t')
-        conn = sqlite3.connect(dbpath)
-        c = conn.cursor()
-        c.execute("delete from sfl where file == '" + data[0] + "'")
-        conn.commit()
-        conn.close()
+def insert_files_bulk(sfl_files, db, cruise):
+    for sfl_file in sfl_files:
+        lines = open(sfl_file).readlines()
+        header = lines[0].split('\t')
+        dbpath = os.path.expanduser(db)
+        for line in lines[1:] :
+            data = line.split('\t')
+            conn = sqlite3.connect(dbpath)
+            c = conn.cursor()
+            c.execute("delete from sfl where file == '" + data[0] + "'")
+            conn.commit()
+            conn.close()
 
-        fix_and_insert_sfl(data, header, dbpath, cruise)
+            fix_and_insert_sfl(data, header, dbpath, cruise)
 
-def insert_last_entry(db, evt_path, cruise) :
+def insert_last_entry(db, evt_path, cruise):
     dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser(evt_path)
     latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
@@ -117,14 +118,19 @@ def insert_last_entry(db, evt_path, cruise) :
 
     fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath, cruise)
 
-def insert_last_file(db, evt_path, cruise) :
+def insert_last_file(db, evt_path, cruise):
     dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser(evt_path)
     latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
     sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
-    insert_file_bulk(sfl_file, dbpath, cruise)
+    insert_files_bulk([sfl_file], dbpath, cruise)
 
-def insert_from_command_line(db, cruise) :
+def insert_all_files(db, evt_path, cruise):
+    dbpath = os.path.expanduser(db)
+    evt_path = os.path.expanduser(evt_path)
+    insert_files_bulk(find_sfl_files(evt_path), db, cruise)
+
+def insert_from_command_line(db, cruise):
     dbpath = os.path.expanduser(db)
     header = None
     for line in sys.stdin :
@@ -133,6 +139,15 @@ def insert_from_command_line(db, cruise) :
         else:
             fields = line.split('\t')
             fix_and_insert_sfl(line.split('\t'), header, dbpath, cruise)
+
+def find_sfl_files(evt_path):
+    evt_path = os.path.expanduser(evt_path)
+    sfl_paths = []
+    for dirpath, dirnames, filenames in os.walk(evt_path):
+        for f in filenames:
+            if f.endswith(".sfl"):
+                sfl_paths.append(os.path.join(dirpath, f))
+    return sfl_paths
 
 if __name__ == "__main__":
     parser = ArgumentParser(
@@ -152,14 +167,14 @@ if __name__ == "__main__":
         help='EVT data directory if specific SFL file not provided, e.g ~/SeaFlow/datafiles/evt/')
     group.add_argument(
         '-s', '--sfl',
-        help='''SFL file.  If not provided, the SFL file for the latest day in
-                EVT_DIR will be used.''')
+        help='''SFL file.  If not provided, all SFL files in EVT_DIR will be
+             imported.''')
 
     args = parser.parse_args()
 
     if not args.sfl:
-        # SFL file for last day
-        insert_last_file(args.db, args.evt_dir, args.cruise)
+        # Try to insert all SFl files in EVT dir
+        insert_all_files(args.db, args.evt_dir, args.cruise)
     else:
         # User specified SFL file
-        insert_file_bulk(args.sfl, args.db, args.cruise)
+        insert_files_bulk([args.sfl], args.db, args.cruise)
