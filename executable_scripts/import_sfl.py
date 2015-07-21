@@ -18,8 +18,8 @@ CRUISE = 'CRUISE'                          # str
 FILE = 'FILE'                              # str
 DATE = 'DATE'                              # str
 FILE_DURATION = 'FILE DURATION'            # float
-LAT = 'LAT'                                # float --> Format: Decimal Degrees (DDD)
-LON = 'LON'                                # float --> Format: Decimal Degrees (DDD)
+LAT = 'LAT'                                # string --> Format: Decimal Degrees (DDD) or GGA
+LON = 'LON'                                # string --> Format: Decimal Degrees (DDD) or GGA
 CONDUCTIVITY = 'CONDUCTIVITY'              # float
 SALINITY = 'SALINITY'                      # float
 OCEAN_TEMP = 'OCEAN TEMP'                  # float
@@ -29,8 +29,8 @@ STREAM_PRESSURE  = 'STREAM PRESSURE'       # float
 FLOW_RATE = 'FLOW RATE'                    # float
 EVENT_RATE  = 'EVENT RATE'                 # float
 
-FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, FLOW_RATE, CONDUCTIVITY, PAR, LAT, LON, EVENT_RATE]
-STRS = [FILE, DATE]
+FLOATS = [FILE_DURATION, SALINITY, OCEAN_TEMP, BULK_RED, STREAM_PRESSURE, FLOW_RATE, CONDUCTIVITY, PAR, EVENT_RATE]
+STRS = [FILE, DATE, LAT, LON]
 
 DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'CONDUCTIVITY', 'SALINITY', 'OCEAN_TEMP', 'PAR', 'BULK_RED',
@@ -52,14 +52,11 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
             h = h.strip().replace(' ', '_')
             try:
                 dbcolumn_to_fixed_data[h] = float(d)
-            except:
+            except ValueError:
                 dbcolumn_to_fixed_data[h] = None
         elif h in STRS:
             h = h.strip().replace(' ', '_')
-            try:
-                dbcolumn_to_fixed_data[h] = d
-            except:
-                dbcolumn_to_fixed_data[h] = None
+            dbcolumn_to_fixed_data[h] = d
         # else, do nothing
 
     # add cruise and data
