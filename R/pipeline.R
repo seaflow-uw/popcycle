@@ -11,6 +11,9 @@ evaluate.evt <- function(evt.file) {
   #upload evt count
   file.name = clean.file.name(evt.file)
   print(paste('Loading', evt.file))
+  
+  tryCatch({
+  
   evt <- readSeaflow(evt.file)
  
   #if we don't have filter parameters yet
@@ -77,4 +80,6 @@ evaluate.evt <- function(evt.file) {
   #aggregate statistics
   print('Uploading stats')
   insert.stats.for.file(file.name)
+  }, error = function(e) {print(paste("Encountered error with file", evt.file))})
+  
 }
