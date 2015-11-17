@@ -120,7 +120,14 @@ if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE
       # store vct
    #  print('Uploading labels to the database')
       upload.vct(vct.to.db.vct(vct, cruise.id, opp.file, 'Manual Gating'), db=db.name)
-
+   
+   #print("Calculating cytometric diversity")
+       opp$pop <- vct
+      df <- opp[!(opp$pop == 'beads'),]
+      indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
+      .delete.cytdiv.by.file(file.name)
+       upload.cytdiv(indices,cruise.id, opp.file,db=db.name)
+       
    #   print('Updating stat')
       insert.stats.for.file(opp.file, db=db.name)
     }, error = function(e) {print(paste("Encountered error with file", opp.file))})

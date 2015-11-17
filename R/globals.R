@@ -15,7 +15,7 @@ sfl.table.name <- 'sfl'
 # Data locations and cruise / instrument identifier
 project.location <- paste('~/popcycle') # Default project directory location
 evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the real-time analysis
-instrument.location <- '/Volumes/evt' # Path to the evt files on the SeaFlow 
+instrument.location <- '/Volumes/SeaFlow/datafiles/evt' # Path to the evt files on the SeaFlow 
 cruise.id <- NULL # Cruise name
 instrument.id <- '740'
 
