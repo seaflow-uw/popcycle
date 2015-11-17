@@ -7,7 +7,9 @@ get.evt.list <- function(evt.loc=evt.location) {
   # regexp to match both types of EVT files
   #   - 37.evt (old style)
   #   - 2014-05-15T17-07-08+0000 or 2014-07-04T00-03-02+00-00 (new style)
-  regexp <- '/?[0-9]+\\.evt$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{2}-?[0-9]{2}$'
+  # In the new style the final timezone offset may not always be UTC (00-00)
+  # so be sure to correctly parse it in all code.
+  regexp <- '/?[0-9]+\\.evt$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}[+-][0-9]{2}-?[0-9]{2}$'
   id <- grep(regexp,file.list)
   file.list <- file.list[id]
   print(paste(length(file.list), "evt files found"))
@@ -28,18 +30,18 @@ files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp, e
   file.list <- get.evt.list(evt.loc)
   start.file = paste(start.day, start.timestamp, sep='/')
   end.file = paste(end.day, end.timestamp, sep='/')
-  
+
   if(!any(file.list == start.file)) {
     stop(paste("Could not find file", start.file))
   }
-  
+
   if(!any(file.list == end.file)) {
     stop(paste("Could not find file", end.file))
   }
-  
+
   start.index = which(file.list == start.file)
   end.index = which(file.list == end.file)
-  
+
   return(file.list[start.index:end.index])
 }
 
