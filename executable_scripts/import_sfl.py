@@ -9,8 +9,7 @@ import os
 import glob
 import re
 import sys
-import datetime
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import ArgumentParser
 
 DELIM = '\t'
 
@@ -61,7 +60,7 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
 
     # add cruise and data
     dbcolumn_to_fixed_data[CRUISE] = cruise
-    if re.match('\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+00-?00', dbcolumn_to_fixed_data[FILE]):
+    if re.match(r'\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+00-?00', dbcolumn_to_fixed_data[FILE]):
         # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
         # Convert to a ISO 8601 date string
         iso_split = dbcolumn_to_fixed_data[FILE].split('T')
@@ -125,7 +124,7 @@ def insert_last_file(db, evt_path, cruise):
 def insert_all_files(db, evt_path, cruise):
     dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser(evt_path)
-    insert_files_bulk(find_sfl_files(evt_path), db, cruise)
+    insert_files_bulk(find_sfl_files(evt_path), dbpath, cruise)
 
 def insert_from_command_line(db, cruise):
     dbpath = os.path.expanduser(db)
@@ -134,7 +133,6 @@ def insert_from_command_line(db, cruise):
         if not header:
             header = line.split('\t')
         else:
-            fields = line.split('\t')
             fix_and_insert_sfl(line.split('\t'), header, dbpath, cruise)
 
 def find_sfl_files(evt_path):
