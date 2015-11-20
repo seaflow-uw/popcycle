@@ -1,270 +1,4099 @@
-library(popcycle)
-opp.list <- get.opp.files()
-opp.list
-popcycle:::.delete.opp.by.file(opp.list[301])
-for(i in 256:300){}
-for(i in 256:300){}
-opp.list <- get.opp.files()
-opp.list
-for(i in 257:301){#
-	popcycle:::.delete.opp.by.file(opp.list[i])#
-}
-opp.list <- get.opp.files()
-opp.list
-evt.list <- get.evt.list()
-evt.list
-run.filter <- function(evt.list) {#
-  params <- read.csv(paste(param.filter.location, 'filter.csv', sep='/'))#
-  if (is.null(params$notch) || is.null(params$width)) {#
-    stop('Notch or Width is not defined; skipping filtering.')#
+   if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+id <- which(aligned$fsc_small > max(aligned$fsc_small)-5000)#
+
+id#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+
+which(aligned$fsc_small > max(aligned$fsc_small)-5000)#
+      #
+
+min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+
+d1.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+
+d1.min#
+
+mean(aligned[which(aligned$D1 == d1.min),"fsc_small"]))#
+
+mean(aligned[which(aligned$D1 == d1.min),"fsc_small"])#
+
+which(aligned$D1 == d1.min)#
+
+aligned[which(aligned$D1 == d1.min),"fsc_small"]#
+
+d1.min #
+
+min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+
+which(aligned$fsc_small > max(aligned$fsc_small)-5000)#
+
+min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+
+max(aligned[which(aligned$D1 == d1.min),"fsc_small"])#
+
+    d1.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d1.min),"fsc_small"])#
+      notch1 <- fsc.max / d1.min#
+
+notch1 #
+
+d1.min / fsc.max #
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch1 <- d.min / fsc.max #
+        }#
+    if(is.na(notch2)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D2"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch2 <- d.min / fsc.max #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+
+    d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch1 <- d.min / fsc.max #
+
+notch1 #
+
+   d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D2"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch2 <- d.min / fsc.max #
+  #
+
+notch2#
+
+min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D2"])#
+
+min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+
+max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D2"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+
+fsc.max #
+
+    d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+
+fsc.max #
+
+origin #
+
+median(evt.origin$D2-evt.origin$D1)#
+
+origin#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch1 <- d.min / fsc.max #
+        }#
+    if(is.na(notch2)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D2"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch2 <- d.min / fsc.max #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+
+notch2 #
+
+d.min / fsc.max #
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch1 <- d.min / fsc.max #
+        }#
+    if(is.na(notch2)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)-5000),"D2"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch2 <- d.min / fsc.max #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)),"D1"])#
+
+min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+
+      d.min <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+
+fsc.max#
+
+d.min / fsc.max #
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch1 <- d.min / fsc.max #
+        }#
+    if(is.na(notch2)){#
+      d.min <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)),"D2"])#
+      fsc.max <- max(aligned[which(aligned$D1 == d.min),"fsc_small"])#
+      notch2 <- d.min / fsc.max #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small > max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D1 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D1 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+
+   d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+  #
+
+notch1#
+
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D1 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+
+notch2 #
+
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+
+notch2#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=-1000, width=0.5, notch=c(NA, NA))#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+
+width=0.5#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+      evt.origin  <- subset(evt., D2 > 10000 | D1 > 10000 | D1 < 60000 | D2 < 60000)#
+      origin <- median(evt.origin$D2-evt.origin$D1)#
+      }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+
+median(evt.origin$D2-evt.origin$D1)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+evt.origin  <- subset(evt., D2 > 5000 & D1 > 5000 & D1 < 60000 & D2 < 60000)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+origin <- median(evt.origin$D2-evt.origin$D1)#
+
+origin #
+
+nrow(evt.origin)#
+
+evt.origin  <- subset(evt., D2 > 000 & D1 > 000 & D1 < 65000 & D2 < 65000)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+evt.origin  <- subset(evt., D2 > 000 & D1 > 000 & D1 < 10^3.5 & D2 < 10^3.5)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+10^3.5 #
+
+evt.origin  <- subset(evt., D2 > 000 & D1 > 000 & D1 < 2^16 & D2 < 2^16)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+plot.cytogram(evt.origin  , "fsc_small", "chl_small")#
+
+evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA))#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+
+     evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+   #
+
+ # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+
+   d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+  #
+
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+   #
+
+opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+
+cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+
+origin#
+
+evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+      evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+ #
+
+origin#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+         }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA))#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+               print(origin)#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA))#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+               print(origin)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 1)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA))#
+
+evt. <- subset(evt, fsc_small > 1)#
+
+evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1  & fsc_small > D2*notch2)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA))#
+
+evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+         evt.origin  <- subset(evt., D2 > 5000 & D1 > 5000 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+
+print(origin)#
+
+2^16#
+
+      evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+
+origin #
+
+ width <- 0.25#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+
+plot.cytogram(evt.origin  , "D1", "D2")#
+
+plot.cytogram(aligned, "D1", "D2")#
+
+lm(evt.$D1 ~ evt.$D2)#
+
+width <- 0.5#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+
+plot.cytogram(aligned, "D1", "D2")#
+
+ width <- 0.75#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    plot.cytogram(aligned, "D1", "D2")#
+
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+ #
+
+opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+
+offset <- 0#
+
+opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+
+ par(mfrow=c(2,2))#
+    plot.cytogram(opp , "fsc_small", "D1")#
+    plot.cytogram(opp , "fsc_small", "D2")#
+    plot.cytogram(opp , "fsc_small", "pe")#
+    plot.cytogram(opp , "fsc_small", "chl_small")#
+
+setwd("/Users/francois/Documents/DATA/Codes/popcycle/R")#
+
+notch2#
+
+otch1 #
+
+notch1#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+  #
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+
+notch1#
+
+notch=c(NA, NA)#
+
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+  #
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- d.min1 / fsc.max1 #
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- d.min2 / fsc.max2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+
+ par(mfrow=c(2,2))#
+    plot.cytogram(opp , "fsc_small", "D1")#
+    plot.cytogram(opp , "fsc_small", "D2")#
+    plot.cytogram(opp , "fsc_small", "pe")#
+    plot.cytogram(opp , "fsc_small", "chl_small")#
+
+opp <- subset(aligned, fsc_small > D1/notch1 - offset*10^4 & fsc_small > D2/notch2 - offset*10^4)#
+
+ par(mfrow=c(2,2))#
+    plot.cytogram(opp , "fsc_small", "D1")#
+    plot.cytogram(opp , "fsc_small", "D2")#
+    plot.cytogram(opp , "fsc_small", "pe")#
+    plot.cytogram(opp , "fsc_small", "chl_small")#
+
+notch1#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA)){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- fsc.max1 / d.min1#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- fsc.max2 / d.min2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0)#
+
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- fsc.max1 / d.min1#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- fsc.max2 / d.min2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0)#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- fsc.max1 / d.min1#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- fsc.max2 / d.min2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=0, width=0.5, notch=c(NA, NA), offset=0)#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+?LM()#
+
+?lm()#
+
+lm(D1 ~ D2, data=evt.origin)#
+
+l <- lm(D1 ~ D2, data=evt.origin)#
+
+plot(l)#
+
+str(l)#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+median(evt.origin$D1)#
+
+median(evt.origin$D2)#
+
+median(evt.origin$D2)-median(evt.origin$D1)#
+
+plot.cytogram(aligned, "D1", "D2")#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])#
+      notch1 <- fsc.max1 / d.min1#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])#
+      notch2 <- fsc.max2 / d.min2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=0, width=0.5, notch=c(NA, NA), offset=0)#
+
+plot.filter.cytogram(evt, origin=0, width=1, notch=c(NA, NA), offset=0)#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) + 5000#
+      notch1 <- fsc.max1 / d.min1#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) + 5000#
+      notch2 <- fsc.max2 / d.min2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=0, width=1, notch=c(NA, NA), offset=0)#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) + 5000#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / d.min1#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) + 5000#
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / d.min2 #
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=0, width=1, notch=c(NA, NA), offset=0)#
+
+min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])#
+
+min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) + 5000#
+
+     d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) + 5000#
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / d.min1#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)){#
+         evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+          origin <- median(evt.origin$D2-evt.origin$D1)#
+         print(origin)#
+         }#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 5000)#
+        }#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +5000)#
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=0, width=1, notch=c(NA, NA), offset=0)#
+
+#
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    width <- 1#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 5000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +5000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    width <- 1#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 5000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +5000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+slope1 #
+
+notch1#
+
+notch2#
+
+fsc.max1 / (d.min1)#
+
+fsc.max1 / (d.min1+ 10000)#
+
+fsc.max2 / (d.min2 +10000)#
+
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    width <- 0.25#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +10000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+#
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    width <- 1#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +10000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+#
+        origin = 0#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    width <- 1#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +10000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+#
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+#
+        origin = 0#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+     width <- 0.25#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +10000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+rigin#
+
+origin #
+
+      # Correction for the difference of sensitivity between D1 and D2#
+        evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 2^16 & D2 < 2^16)#
+        origin <- median(evt.origin$D2-evt.origin$D1)#
+
+origin #
+
+summary(evt)#
+
+2^16#
+
+evt.origin  <- subset(evt., D2 > 0 & D1 > 0 & D1 < 65000 & D2 < 65000)#
+
+median(evt.origin$D2-evt.origin$D1)#
+
+median(evt.origin$D2)#
+
+edian(evt.origin$D1)#
+
+median(evt.origin$D1)#
+
+median(evt.$D2)-median(evt.$D1)#
+
+median(evt.$D2)#
+
+median(evt$D1)#
+
+origin <- median(evt$D2)-median(evt$D1)#
+
+origin #
+
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        origin <- median(evt$D2)-median(evt$D1)#
+#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+     width <- 0.25#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +10000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+median(evt$D2)-median(evt$D1)#
+
+median(evt$D2-evt$D1)#
+
+mean(evt$D2-evt$D1)#
+
+median(evt$D2-evt$D1)#
+
+#
+for(i in 1:length(log$filename)){#
+#
+    file <- log$filename[i]#
+    print(file)#
+    if(i == 3) next #
+    if(i <= 4) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_214", transform=FALSE) # 1 - 3#
+#
+    if(i > 4 & i <= 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_215", transform=FALSE) # 5 - 16#
+#
+    if(i > 16) evt <- readSeaflow(file, path="/Volumes/seaflow/SCOPE_6/evt/2015_216", transform=FALSE) # 17 - 26#
+#
+#
+    ######################
+    ### EVT FILTRATION ####
+    ######################
+#
+       # Filtering particles detected by fsc_small #
+        evt. <- subset(evt, fsc_small > 0)#
+#
+      # Correction for the difference of sensitivity between D1 and D2#
+        origin <- median(evt$D2-evt$D1)#
+#
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+     width <- 0.25#
+     aligned <- subset(evt., D2 < (D1 + origin) + width* 10^4 & D1 + origin < D2 + width * 10^4)#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(aligned, "D1", "D2")#
+    # plot.cytogram(aligned , "fsc_small", "D1")#
+    # plot.cytogram(aligned , "fsc_small", "D2")#
+#
+    # slope1 <- max(aligned$fsc_small) / mean(c(min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]),#
+    # min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])))*0.8#
+#
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+    #
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 +10000)#
+#
+    offset <- 0#
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+#
+    # par(mfrow=c(1,1))#
+    # plot.cytogram(aligned  , "fsc_small", "D1")#
+    # if(draw.gate) poly <- getpoly(quiet=TRUE)#
+#
+    # plot.cytogram(aligned  , "fsc_small", "D2")#
+    # if(draw.gate) poly2 <- getpoly(quiet=TRUE)#
+#
+    # pre.opp <- subset(aligned ,inout(aligned[,c("fsc_small","D1")],poly=poly, bound=TRUE, quiet=TRUE))#
+    # opp <- subset(pre.opp,inout(pre.opp[,c("fsc_small","D2")],poly=poly, bound=TRUE, quiet=TRUE))#
+#
+#
+    # par(mfrow=c(2,2))#
+    # plot.cytogram(opp , "fsc_small", "D1")#
+    # plot.cytogram(opp , "fsc_small", "D2")#
+    # plot.cytogram(opp , "fsc_small", "pe")#
+    # plot.cytogram(opp , "fsc_small", "chl_small")#
+#
+#
+#
+    ###############
+    ### GATING ####
+    ###############
+    draw.gate2 <- FALSE#
+#
+    opp$pop <- 0#
+    x <- subset(opp, pop==0)#
+#
+    if(draw.gate2) plot.cytogram(x , "fsc_small", "pe")#
+#
+    if(draw.gate2) poly.syn <- getpoly(quiet=TRUE)#
+    syn <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.syn, bound=TRUE, quiet=TRUE))#
+    opp[row.names(syn),'pop'] <- "synecho"#
+#
+    if(draw.gate2) poly.crocco <- getpoly(quiet=TRUE)#
+    crocco <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.crocco, bound=TRUE, quiet=TRUE))#
+    opp[row.names(crocco),'pop'] <- "crocco"#
+#
+    ### PRO & PicoEUK#
+    x <- subset(opp, pop==0)#
+    if(draw.gate2) plot.cytogram(x, "fsc_small", "chl_small")#
+#
+    if(draw.gate2) poly.noise <- getpoly(quiet=TRUE)#
+    noise <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.noise, bound=TRUE, quiet=TRUE))#
+    opp[row.names(noise),'pop'] <- "noise"#
+#
+#
+    if(draw.gate2) poly.pro <- getpoly(quiet=TRUE)#
+    pro <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pro, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pro),'pop'] <- "prochloro"#
+#
+    if(draw.gate2) poly.pico <- getpoly(quiet=TRUE)#
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))#
+    opp[row.names(pico),'pop'] <- "picoeuk"#
+#
+    n.syn <- nrow(subset(opp, pop =="synecho"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.picoeuk <- nrow(subset(opp, pop =="picoeuk"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.crocco <- nrow(subset(opp, pop =="crocco"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    w <- as.numeric(diff(c(quantile(pro$fsc_small, 0.25), quantile(pro$fsc_small, 0.75)))/diff(range(noise$fsc_small)))#
+    n.noise <- w*nrow(subset(opp, pop =="noise"))/(nrow(opp)/nrow(evt) * 2910 * 3)#
+    n.pro <- nrow(subset(opp, pop =="prochloro"))/(nrow(opp)/nrow(evt) * 2910 * 3) - n.noise#
+    sf <- data.frame(cbind(i=c('noise','synecho','prochloro','picoeuk','crocco'), abundance=c(n.noise, n.syn, n.pro, n.picoeuk, n.crocco)),#
+        stringsAsFactors=FALSE)#
+    sf$abundance <- as.numeric(sf$abundance)#
+    df <- summary[which(summary$time == log[which(log$filename == file), 'time']),]#
+#
+#
+#
+#
+    png(paste("~/Desktop/", file,".png", sep=""),width=9, height=12, unit='in', res=100)#
+    par(mfrow=c(2,2))#
+    plot.cytogram(opp ,"fsc_small", "chl_small", main=paste(file))#
+    mtext(paste("INFLUX"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(df$abundance[2])), 1, 6)#
+    mtext(paste("Syn =", round(df$abundance[1],2)), 1, 7)#
+    mtext(paste("Pico =", round(df$abundance[3],2)), 1, 8)#
+    mtext(paste("Crocco =", round(df$abundance[4],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","chl_small")#
+    mtext(paste("SEAFLOW"), 1, 5, col=2)#
+    mtext(paste("Pro =", round(sf$abundance[3])), 1, 6)#
+    mtext(paste("Syn =", round(sf$abundance[2],2)), 1, 7)#
+    mtext(paste("Pico =", round(sf$abundance[4],2)), 1, 8)#
+    mtext(paste("Crocco =", round(sf$abundance[5],2)), 1, 9)#
+    plot.vct.cytogram(opp, "fsc_small","pe")#
+    plot.vct.cytogram(opp, "chl_small","pe")#
+#
+    dev.off()#
+#
+#
+}#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)) origin <- median(evt$D2-evt$D1)#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+        }#
+        #
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 + 10000)#
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt) > 10000)  evt. <- evt[round(seq(1,nrow(evt), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=1, notch=c(NA, NA), offset=0)#
+
+plot.filter.cytogram(evt, origin=NA, width=0.25, notch=c(NA, NA), offset=0)#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)) origin <- median(evt$D2-evt$D1)#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+        }#
+#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 + 10000)#
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt.) > 10000)  evt. <- evt[round(seq(1,nrow(evt.), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.25, notch=c(NA, NA), offset=0)#
+
+#
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)) origin <- median(evt$D2-evt$D1)#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+        }#
+#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 + 10000)#
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),,side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.25, notch=c(NA, NA), offset=0)#
+
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){#
+#
+  origin <- as.numeric(origin)#
+  width <- as.numeric(width)#
+#
+  notch1 <- as.numeric(notch[1])#
+  notch2 <- as.numeric(notch[2])#
+  offset <- as.numeric(offset)#
+#
+  # linearize the LOG transformed data #
+  t <- FALSE#
+   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")#
+    if(!any(max(evt[,c(id)]) > 10^3.5)){#
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  #
+      t <- TRUE#
+   }#
+#
+  # Correction for the difference of sensitivity between D1 and D2#
+    if(is.na(origin)) origin <- median(evt$D2-evt$D1)#
+#
+ # Filtering particles detected by fsc_small #
+    evt. <- subset(evt, fsc_small > 0)#
+  #
+  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2#
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)#
+#
+ # finding the notch#
+    if(is.na(notch1)){#
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) #
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) #
+      notch1 <- fsc.max1 / (d.min1+ 10000)#
+        }#
+#
+    if(is.na(notch2)){#
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) #
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) #
+      notch2 <- fsc.max2 / (d.min2 + 10000)#
+        }#
+    #
+   # Filtering focused particles (fsc_small > D + notch) #
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)#
+#
+  #################
+  ### PLOTTING ####
+  #################
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))#
+  percent.opp <- round(100*nrow(opp)/nrow(evt),2)#
+  #
+  origin1 <- origin + width*10^4#
+  origin2 <- origin - width*10^4#
+ #
+  if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]#
+  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]#
+#
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...#
+#
+  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           #
+  plot.cytogram(evt., "D1", "D2")#
+    mtext("Alignment", side=3, line=4, font=2, col=2)#
+   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...#
+   abline(b=1, a=origin1, col='red',lwd=2)#
+   abline(b=1, a=origin2, col='red',lwd=2)#
+    mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)#
+    mtext(paste("Width=", width),side=3, line=1,font=2)#
+#
+  plot.cytogram(aligned, "fsc_small", "D1")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)#
+      mtext(paste("Offset=", offset),side=3, line=1,font=2)#
+      abline(b=1/notch1, a=0, col=2,lwd=2)#
+ #
+  plot.cytogram(aligned, "fsc_small", "D2")#
+      mtext("Focus", side=3, line=4, font=2,col=2)#
+      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)#
+      mtext(paste("Offset=", offset),side=3, line=1,font=2)#
+      abline(b=1/notch2, a=0, col=2,lwd=2)#
+     # abline(b=1, a=notch, col='red', lwd=2)#
+     # abline(b=1, a=-notch, col='red', lwd=2)#
+#
+  plot.cytogram(opp, "fsc_small", "pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+  plot.cytogram(opp, "fsc_small","chl_small")#
+      mtext("OPP", side=3, line=1, font=2)#
+      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)#
+  plot.cytogram(opp, "chl_small","pe")#
+      mtext("OPP", side=3, line=1, font=2)#
+#
+  par(def.par)      #
+#
+}#
+
+plot.filter.cytogram(evt, origin=NA, width=0.25, notch=c(NA, NA), offset=0)#
+
+library(popcycle)#
+set.project.location("/Users/francois/Documents/DATA/SeaFlow/SCOPE/SCOPE_6")#
+set.cruise.id("SCOPE_6")#
+set.evt.location("/Volumes/seaflow/SCOPE_6")#
+param.gate.location <- "/Users/francois/Documents/DATA/SeaFlow/SCOPE/SCOPE_6/params/gates"#
+#
+# SELECT AN EVT FILE#
+evt.list <- get.evt.list() # to get the entire list of evt files#
+
+evt.file#
+
+evt.list #
+
+evt.file <- evt.list[2300] # select the evt file (e.g., the 10th evt file in the list)#
+evt <- readSeaflow(evt.file) # load the evt#
+
+?plot.filter.cytoram#
+
+?plot.filter.cytogram#
+#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=NA, width=0.75, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=500, width=0.75, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=1500, width=0.75, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=1500, width=1, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=NA, width=1, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=NA, width=1, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=NA, width=1, notch=c(1.2, 1.2), offset=0) # to plot the filtration steps#
+
+plot.filter.cytogram(evt, origin=NA, width=1, notch=c(1.5, 1.5), offset=0) # to plot the filtration steps#
+
+setFilterParams(origin=NA, width=0.5, notch=c(NA, NA), offset=0)#
+
+setFilterParams <- function(origin=NA, width=0.5, notch=c(NA, NA), offset=0) {#
+   #log#
+  if(length(notch) == !2) {#
+    stop('Notch should contains 2 values; filtering parameters not saved.')#
   }#
-  i <- 0#
-  for (evt.file in evt.list) {#
-     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)#
 #
-    #if we get an error, move to next file#
-    tryCatch({#
-    # print(paste('Loading', evt.file))#
-      evt <- readSeaflow(evt.file)#
-    # print(paste('Filtering', evt.file))#
- 	file.name = basename(evt.file)#
-      opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
-      # delete old opp entries if they exist so we keep cruise/file/particle distinct#
-      .delete.opp.by.file(file.name)#
-      # store opp#
-   #   print('Uploading filtered particles to database')#
-      upload.opp(opp.to.db.opp(opp, cruise.id, file.name), db=db.name)#
-  #    print(paste('Uploading opp/evt ratio for', evt.file))#
-      .delete.opp.evt.ratio.by.file(file.name)#
-      opp.evt.ratio <- nrow(opp) / nrow(evt)#
-      upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name, db=db.name)#
-    }, error = function(e) {print(paste("Encountered error with file", file.name))},#
-  finally = {print(paste("Finished with file", file.name))}#
-  )#
-    i <-  i + 1#
-    flush.console()#
-#
+  time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")#
+   params <- data.frame(time=time, origin=origin, width = width, notch1 = notch[1], notch2=notch[2], offset=offset)#
+  #
+  log.file <- paste(log.filter.location, 'filter.csv', sep='/')#
+  #
+  if (file.exists(log.file)) {  #
+    write.table(params, log.file, row.names = F, col.names = F, append = T, quote = F, sep=',')  #
+  } else {#
+    write.table(params, log.file, row.names = F, col.names = T, quote=F, sep=',')#
   }#
-}
-run.filter(evt.list[182:223])
-filter.evt.files(evt.list[182:223], core=2)
-evt.list <- get.evt.list()
-evt.list
-filter.evt.files(evt.list[182:402], core=2)
-opp.list <- get.opp.files()
-opp.list
-for(i in 263:483){#
-	popcycle:::.delete.opp.by.file(opp.list[i])#
-}
-evt.list <- get.evt.list()
-evt.list
-evaluate.last.evt <- function(evt.file) {#
-  if (length(evt.file) == 0) {#
-    print('No data collected yet.')#
-    return()#
-  }#
-#
-  print(paste('Analyzing', evt.file))#
-  #upload evt count#
-  file.name = basename(evt.file)#
-  print(paste('Loading', evt.file))#
-  evt <- readSeaflow(evt.file)#
-  #if we don't have filter parameters yet#
-  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {#
-    print('No filtering parameters have been set; skipping filtering.')#
-    return()#
-  }#
-  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))#
-  if (is.null(params$notch) || is.null(params$width)) {#
-    print('Notch or Width is not defined; skipping filtering.')#
-    return()#
-  }#
-  #filter evt#
-  # file.name for db should get rid of directory structure#
-#
-  print(paste('Filtering', evt.file))#
-  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
-  #store opp#
-  print('Uploading filtered particles to database')#
-#
-  .delete.opp.by.file(file.name) #
-  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))#
-  print('Uploading opp/evt ratio')#
-  .delete.opp.evt.ratio.by.file(file.name)#
-  opp.evt.ratio <- nrow(opp)/nrow(evt)#
-  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)#
-  #classify opp#
-  #if we don't have gating parameters yet#
-  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {#
-    print('No gating parameters have been set; skipping gating.')#
-    return()#
-  }#
-  print(paste('Classifying', evt.file))#
-  vct <- classify.opp(opp, ManualGating)#
-  #store vct#
-  print('Uploading labels to the database')#
-#
-  .delete.vct.by.file(file.name)#
-  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))#
-#
-  #cytometric diversity#
-  print("Calculating cytometric diversity")#
-  opp$pop <- vct#
-  df <- opp[!(opp$pop == 'beads'),]#
-  indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)#
-#
-  print('Uploading cytdiv')#
-  upload.cytdiv(indices,cruise.id, file.name)#
-#
-  #aggregate statistics#
-  print('Uploading stats')#
-  insert.stats.for.file(file.name)#
-}
-for(evt.file in evt.list[182:402]){#
-	print(evt.file)#
-	evaluate.last.evt(evt.file)#
-	}
-evaluate.last.evt <- function(evt.file) {#
-  if (length(evt.file) == 0) {#
-    print('No data collected yet.')#
-    return()#
-  }#
-#
-  print(paste('Analyzing', evt.file))#
-  #upload evt count#
-  file.name = basename(evt.file)#
-  print(paste('Loading', evt.file))#
-  evt <- readSeaflow(evt.file)#
-  #if we don't have filter parameters yet#
-  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {#
-    print('No filtering parameters have been set; skipping filtering.')#
-    return()#
-  }#
-  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))#
-  if (is.null(params$notch) || is.null(params$width)) {#
-    print('Notch or Width is not defined; skipping filtering.')#
-    return()#
-  }#
-  #filter evt#
-  # file.name for db should get rid of directory structure#
-#
-  print(paste('Filtering', evt.file))#
-  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
-  #store opp#
-  print('Uploading filtered particles to database')#
-#
-  popcycle:::.delete.opp.by.file(file.name) #
-  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))#
-  print('Uploading opp/evt ratio')#
-  popcycle:::.delete.opp.evt.ratio.by.file(file.name)#
-  opp.evt.ratio <- nrow(opp)/nrow(evt)#
-  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)#
-  #classify opp#
-  #if we don't have gating parameters yet#
-  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {#
-    print('No gating parameters have been set; skipping gating.')#
-    return()#
-  }#
-  print(paste('Classifying', evt.file))#
-  vct <- classify.opp(opp, ManualGating)#
-  #store vct#
-  print('Uploading labels to the database')#
-#
-  popcycle:::.delete.vct.by.file(file.name)#
-  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))#
-#
-  #cytometric diversity#
-  print("Calculating cytometric diversity")#
-  opp$pop <- vct#
-  df <- opp[!(opp$pop == 'beads'),]#
-  indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)#
-#
-  print('Uploading cytdiv')#
-  upload.cytdiv(indices,cruise.id, file.name)#
-#
-  #aggregate statistics#
-  print('Uploading stats')#
-  insert.stats.for.file(file.name)#
-}
-for(evt.file in evt.list[182:402]){#
-	print(evt.file)#
-	evaluate.last.evt(evt.file)#
-	}
-evaluate.last.evt <- function(evt.file) {#
-  if (length(evt.file) == 0) {#
-    print('No data collected yet.')#
-    return()#
-  }#
-#
-  print(paste('Analyzing', evt.file))#
-  #upload evt count#
-  file.name = basename(evt.file)#
-  print(paste('Loading', evt.file))#
-  evt <- readSeaflow(evt.file)#
-  #if we don't have filter parameters yet#
-  if (!file.exists(paste(param.filter.location, 'filter.csv', sep='/'))) {#
-    print('No filtering parameters have been set; skipping filtering.')#
-    return()#
-  }#
-  params <- read.csv(paste(param.filter.location,"filter.csv", sep='/'))#
-  if (is.null(params$notch) || is.null(params$width)) {#
-    print('Notch or Width is not defined; skipping filtering.')#
-    return()#
-  }#
-  #filter evt#
-  # file.name for db should get rid of directory structure#
-#
-  print(paste('Filtering', evt.file))#
-  opp <- filter.evt(evt, filter.notch, width = params$width, notch = params$notch)#
-  #store opp#
-  print('Uploading filtered particles to database')#
-#
-  popcycle:::.delete.opp.by.file(file.name) #
-  upload.opp(opp.to.db.opp(opp, cruise.id, file.name))#
-  print('Uploading opp/evt ratio')#
-  popcycle:::.delete.opp.evt.ratio.by.file(file.name)#
-  opp.evt.ratio <- nrow(opp)/nrow(evt)#
-  upload.opp.evt.ratio(opp.evt.ratio, cruise.id, file.name)#
-  #classify opp#
-  #if we don't have gating parameters yet#
-  if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {#
-    print('No gating parameters have been set; skipping gating.')#
-    return()#
-  }#
-  print(paste('Classifying', evt.file))#
-  vct <- classify.opp(opp, ManualGating)#
-  #store vct#
-  print('Uploading labels to the database')#
-#
-  popcycle:::.delete.vct.by.file(file.name)#
-  upload.vct(vct.to.db.vct(vct, cruise.id, file.name, 'Manual Gating'))#
-#
-  # #cytometric diversity#
-  # print("Calculating cytometric diversity")#
-  # opp$pop <- vct#
-  # df <- opp[!(opp$pop == 'beads'),]#
-  # indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)#
-#
-  # print('Uploading cytdiv')#
-  # upload.cytdiv(indices,cruise.id, file.name)#
-#
-  #aggregate statistics#
-  print('Uploading stats')#
-  insert.stats.for.file(file.name)#
-}
-for(evt.file in evt.list[182:402]){#
-	print(evt.file)#
-	evaluate.last.evt(evt.file)#
-	}
-file.transfer()
-evt.list <- get.evt.list()
-evt.list
-for(evt.file in evt.list[403:422]){#
-	print(evt.file)#
-	evaluate.last.evt(evt.file)#
-	}
-stat <- get.stat.table()  #
-#
-print("saving stat.csv")#
-write.csv(stat, "~/stat.csv", row.names=FALSE, quote=FALSE)
-plot.time(stat, popname='prochloro', param='abundance')
+  #
+  #write params#
+  write.table(params, file = paste(param.filter.location, 'filter.csv', sep='/'), sep = ",",#
+              quote=F, row.names=F)#
+}#
+
+setFilterParams(origin=NA, width=0.5, notch=c(NA, NA), offset=0)#
+
+set.project.location("/Users/francois/Documents/DATA/SeaFlow/SCOPE/SCOPE_6")#
+
+set.project.location("/Users/francois/Documents/DATA/SeaFlow/SCOPE/SCOPE_6/SeaFlow")#
+
+param.gate.location <- "/Users/francois/Documents/DATA/SeaFlow/SCOPE/SCOPE_6/SeaFlow/params/gates"#
+
+set.cruise.id("SCOPE_6")#
+set.evt.location("/Volumes/seaflow/SCOPE_6")#
+
+evt.list <- get.evt.list() # to get the entire list of evt files#
+
+evt.file <- evt.list[2300] # select the evt file (e.g., the 10th evt file in the list)#
+evt <- readSeaflow(evt.file) # load the evt#
+plot.filter.cytogram(evt, origin=NA, width=1, notch=c(NA, NA), offset=0) # to plot the filtration steps#
+
+setFilterParams(origin=NA, width=0.5, notch=c(NA, NA), offset=0)#
+
+log.filter.location#
+
+time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")#
+
+params <- data.frame(time=time, origin=origin, width = width, notch1 = notch[1], notch2=notch[2], offset=offset)#
+
+params #
+
+paste(log.filter.location, 'filter.csv', sep='/')#
+
+paste(param.filter.location, 'filter.csv', sep='/')#
+
