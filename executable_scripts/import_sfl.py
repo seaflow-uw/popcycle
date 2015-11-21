@@ -58,20 +58,9 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
             dbcolumn_to_fixed_data[h] = d
         # else, do nothing
 
-    # add cruise and data
+    # add cruise and date
     dbcolumn_to_fixed_data[CRUISE] = cruise
-    if re.match(r'\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\+00-?00', dbcolumn_to_fixed_data[FILE]):
-        # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
-        # Convert to a ISO 8601 date string
-        iso_split = dbcolumn_to_fixed_data[FILE].split('T')
-        iso_split[1] = iso_split[1].replace('-', ':')
-        dbcolumn_to_fixed_data[DATE] = 'T'.join(iso_split)
-
-    # Make sure DATE field is formatted consistently
-    # Add ":" in time zone offset if not present for consistency in DB.  All DATE fields in DB should
-    # have time zone format 00:00, not 0000
-    if (dbcolumn_to_fixed_data[DATE][-3] != ":"):
-        dbcolumn_to_fixed_data[DATE] = dbcolumn_to_fixed_data[DATE][:-2] + ":" + dbcolumn_to_fixed_data[DATE][-2:]
+    dbcolumn_to_fixed_data[DATE] = date_from_file_name(dbcolumn_to_fixed_data[FILE])
 
     # any fields that weren't passed in should be
     for c in DB_COLUMNS:
@@ -143,6 +132,32 @@ def find_sfl_files(evt_path):
             if f.endswith(".sfl"):
                 sfl_paths.append(os.path.join(dirpath, f))
     return sfl_paths
+
+def date_from_file_name(file_name):
+    date = None
+    match = re.match(r'(\d{4}-\d{2}-\d{2})(T\d{2}-\d{2}-\d{2})([+-]\d{2}-?\d{2})', file_name)
+    if match:
+        # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
+        # Convert to a ISO 8601 date string
+        print(match.groups())
+        datestamp, timestamp, tz = match.groups()
+        if len(tz) == 5:
+            # If the timezone string (e.g. +0000) does not have a
+            # "-" in the middle, add ":" in its place
+            tz = tz[:3] + ":" + tz[3:]
+        else:
+            # Convert middle "-" to ":"
+            tz = tz[:3] + ":" + tz[4:]
+        # SeaFlow EVT file names have "-"s instead of ":"s due to filesystem
+        # naming rules. Fix things up to make valid time strings here
+        timestamp = timestamp.replace('-', ':')
+        # Put it all back together
+        date = datestamp + 'T' + timestamp + tz
+    if not date:
+        sys.stderr.write("Could not parse file name %s\n" % file_name)
+        sys.exit(1)
+    return date
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(
