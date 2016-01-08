@@ -16,19 +16,21 @@ filter.evt <- function(evt, filter.func, ...) {
 }
 
 # set width and notch, log old parameters if they exist
-setFilterParams <- function(width, notch) {
-  params <- data.frame(width = width, notch = notch)
-  
-  #log
+setFilterParams <- function(origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
+   #log
+  if(length(notch) == !2) {
+    stop('Notch should contains 2 values; filtering parameters not saved.')
+  }
+
   time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
+   params <- data.frame(time=time, origin=origin, width = width, notch1 = notch[1], notch2=notch[2], offset=offset)
+  
   log.file <- paste(log.filter.location, 'filter.csv', sep='/')
   
   if (file.exists(log.file)) {  
-    write.table(data.frame(time=time, width=width, notch=notch), log.file, 
-                row.names = F, col.names = F, append = T, quote = F, sep=',')  
+    write.table(params, log.file, row.names = F, col.names = F, append = T, quote = F, sep=',')  
   } else {
-    write.table(data.frame(time=time, width=width, notch=notch), log.file,
-                row.names = F, col.names = T, quote=F, sep=',')
+    write.table(params, log.file, row.names = F, col.names = T, quote=F, sep=',')
   }
   
   #write params
@@ -36,12 +38,13 @@ setFilterParams <- function(width, notch) {
               quote=F, row.names=F)
 }
 
-filter.notch <- function(evt, width, notch) {
+filter.notch <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
 
- 
-  notch <- as.numeric(notch)
+  origin <- as.numeric(origin)
   width <- as.numeric(width)
-  slope <- 1
+  notch1 <- as.numeric(notch[1])
+  notch2 <- as.numeric(notch[2])
+  offset <- as.numeric(offset)
 
   # Check for empty evt data frame.  If empty return empty opp data frame.
   if (nrow(evt) == 0) {
@@ -56,31 +59,35 @@ filter.notch <- function(evt, width, notch) {
     lin <- TRUE
   }
 
+# Correction for the difference of sensitivity between D1 and D2
+    if(is.na(origin))  origin <- median(evt$D2-evt$D1)
+  
+
   # Filtering particles detected by fsc_small 
     evt. <- subset(evt, fsc_small > 1)
 
- # Filtering particles detected by D1 and D2 
-    evt. <- subset(evt., D1 > 1 & D2 > 1)
-
-  # Fltering particles not saturating D1 and D2 (both)
-  D1D2.max <- max(evt[,c("D1","D2")])
-  evt. <- subset(evt., D1 < D1D2.max & D2 < D1D2.max)
-  
-  # Correction for the difference of sensitivity between D1 and D2
-    evt.origin  <- subset(evt., D2 > 5000 | D1 > 5000)
-    origin <- median(evt.origin$D2-evt.origin$D1)
-      if(origin > 0)  evt.$D1 <-  evt.$D1 + origin
-      if(origin < 0)  evt.$D2 <-   evt.$D2 - origin 
- 
   # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt., D2 < D1*slope + width * 10^4 & D1 < D2*slope + width * 10^4)
+    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
 
-  # Filtering focused particles (D/fsc_small < notch)
- opp <- subset(aligned, D1/fsc_small < notch & D2/fsc_small < notch)
-    
- # Back to original D1 and D2 values
-    if(origin > 0)  opp$D1 <-  opp$D1 - origin
-    if(origin < 0)  opp$D2 <-   opp$D2 + origin 
+ # finding the notch
+    if(is.na(notch1)){
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) 
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) 
+      notch1 <- fsc.max1 / (d.min1+ 10000)
+        }
+
+    if(is.na(notch2)){
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) 
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) 
+      notch2 <- fsc.max2 / (d.min2 + 10000)
+        }
+
+    # Filtering focused particles (fsc_small > D + notch) 
+    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)
+  
+ # # Back to original D1 and D2 values
+ #    if(origin > 0)  opp$D1 <-  opp$D1 - origin
+ #    if(origin < 0)  opp$D2 <-   opp$D2 + origin 
  
   if(lin & nrow(opp) > 0){
     opp <- .transformData(opp)
@@ -89,51 +96,51 @@ filter.notch <- function(evt, width, notch) {
   return(opp)
 }
 
-find.filter.notch <- function(evt, notch=seq(0.5, 1.5, by=0.1),width=0.1, do.plot=TRUE){
+# find.filter.notch <- function(evt, notch=seq(-0.5, 0.5, by=0.1),width=0.1, do.plot=TRUE){
 
-  DF <- NULL
-  for(n in notch){
-    print(paste("filtering notch=",n))
-    opp <- filter.notch(evt, notch=n, width=width)
-    if (nrow(opp) == 0) {
-      fsc.max = 0
-    } else {
-      fsc.max <- max(opp[,"fsc_small"])
-    }
-    id <- length(which(opp[,"fsc_small"] >= fsc.max))
-    para <- data.frame(cbind(notch=n, fsc.max=round(fsc.max), id, original=nrow(evt), passed=nrow(opp)))
-    DF <- rbind(DF, para)
-  }
-  print(DF)
+#   DF <- NULL
+#   for(n in notch){
+#     print(paste("filtering notch=",n))
+#     opp <- filter.notch(evt, notch=n, width=width)
+#     if (nrow(opp) == 0) {
+#       fsc.max = 0
+#     } else {
+#       fsc.min<- median(opp[,"fsc_small"])
+#     }
+#     id <- length(which(opp[,"fsc_small"] >= fsc.min))
+#     para <- data.frame(cbind(notch=n, fsc.min=round(fsc.min), id, original=nrow(evt), passed=nrow(opp)))
+#     DF <- rbind(DF, para)
+#   }
+#   print(DF)
 
-  # subset DF to only rows with globally maximum fsc.max value
-  max.row.indexes <- which(DF$fsc.max == max(DF$fsc.max))
-  DF.max <- DF[max.row.indexes, ]
+#   # subset DF to only rows with globally maximum fsc.max value
+#   max.row.indexes <- which(DF$fsc.min == max(DF$fsc.min))
+#   DF.max <- DF[max.row.indexes, ]
 
-  # get row index for smallest notch which has the most "saturated" fsc_small
-  # measurements, where saturated means equal to globally maximum fsc_small
-  best.notch.id <- min(which(DF.max$id == max(DF.max$id)))
-  best.notch <- DF.max$notch[best.notch.id]
+#   # get row index for smallest notch which has the most "saturated" fsc_small
+#   # measurements, where saturated means equal to globally maximum fsc_small
+#   best.notch.id <- min(which(DF.max$id == max(DF.max$id)))
+#   best.notch <- DF.max$notch[best.notch.id]
 
-  if(do.plot){
-    def.par <- par(no.readonly = TRUE) # save default, for resetting...
+#   if(do.plot){
+#     def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-    par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
-    par(pty='m')
-    plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch))
-    abline(v=best.notch, col=3, lwd=3)
-    par(new=TRUE)
-    plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
-    axis(4)
-    mtext("count", 4, line=3)
-    legend('bottomright',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
-    opp <- filter.notch(evt, notch=best.notch, width=width)
-    plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
-    par(def.par)    
-  }
+#     par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
+#     par(pty='m')
+#     plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch))
+#     abline(v=best.notch, col=3, lwd=3)
+#     par(new=TRUE)
+#     plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
+#     axis(4)
+#     mtext("count", 4, line=3)
+#     legend('bottomright',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
+#     opp <- filter.notch(evt, notch=best.notch, width=width)
+#     plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
+#     par(def.par)    
+#   }
 
-  return(best.notch)
-}
+#   return(best.notch)
+# }
 
 # Filter a list of EVT files  and upload OPP data to multiple sqlite
 # dbs, then merge data into main db.
@@ -220,12 +227,21 @@ filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
   }, error = function(err) {
     return(data.frame())
   })
-  
-  if (is.null(params$notch)) {
-    stop('Notch not defined; skipping filtering.')
+
+    if (is.null(params$origin)) {
+    stop('Origin not defined; skipping filtering.')
   }
-  if (is.null(params$width)) {
+    if (is.null(params$width)) {
     stop('Width not defined; skipping filtering.')
+  }
+  if (is.null(params$notch1)) {
+    stop('Notch1 not defined; skipping filtering.')
+  }
+    if (is.null(params$notch2)) {
+    stop('Notch2 not defined; skipping filtering.')
+  }
+ if (is.null(params$offset)) {
+    stop('Offset not defined; skipping filtering.')
   }
 
   i <- 0
@@ -247,7 +263,7 @@ filter.evt.files <- function(evt.list, cruise=cruise.id, db=db.name,
     # Filter EVT to OPP
     # Return empty data frame on warning or error
     opp <- tryCatch({
-      filter.evt(evt, filter.notch, notch=params$notch, width=params$width)
+      filter.evt(evt, filter.notch, origin=params$origin, width=params$width,notch=c(params$notch1,params$notch2), offset=params$offset)
     }, warnings = function(err) {
       return(data.frame())
     }, error = function(err) {
