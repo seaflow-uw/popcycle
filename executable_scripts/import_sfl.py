@@ -135,7 +135,7 @@ def find_sfl_files(evt_path):
 
 def date_from_file_name(file_name):
     date = None
-    match = re.match(r'(\d{4}-\d{2}-\d{2})(T\d{2}-\d{2}-\d{2})([+-]\d{2}-?\d{2})', file_name)
+    match = re.match(r'(\d{4}-\d{2}-\d{2})T(\d{2}-\d{2}-\d{2})([+-]\d{2}-?\d{2})', file_name)
     if match:
         # New style EVT file names, e.g.
         # - 2014-05-15T17-07-08+0000
