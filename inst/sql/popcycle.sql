@@ -20,7 +20,7 @@
 --  PRIMARY KEY (cruise, file, particle)
 --);
 
-CREATE TABLE opp (
+CREATE TABLE IF NOT EXISTS opp (
   -- First three columns are the EVT, OPP, VCT composite key
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
@@ -41,12 +41,12 @@ CREATE TABLE opp (
   PRIMARY KEY (cruise, file, particle)
 );
 
-CREATE INDEX oppFileIndex ON opp (file);
-CREATE INDEX oppFsc_smallIndex ON opp (fsc_small);
-CREATE INDEX oppPeIndex ON opp (pe);
-CREATE INDEX oppChl_smallIndex ON opp (chl_small);
+CREATE INDEX IF NOT EXISTS oppFileIndex ON opp (file);
+CREATE INDEX IF NOT EXISTS oppFsc_smallIndex ON opp (fsc_small);
+CREATE INDEX IF NOT EXISTS oppPeIndex ON opp (pe);
+CREATE INDEX IF NOT EXISTS oppChl_smallIndex ON opp (chl_small);
 
-CREATE TABLE vct (
+CREATE TABLE IF NOT EXISTS vct (
   -- First three columns are the EVT, OPP, VCT, SDS composite key
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
@@ -57,9 +57,9 @@ CREATE TABLE vct (
   PRIMARY KEY (cruise, file, particle)
 );
 
-CREATE INDEX vctFileIndex ON vct (file);
+CREATE INDEX IF NOT EXISTS vctFileIndex ON vct (file);
 
-CREATE TABLE sfl (
+CREATE TABLE IF NOT EXISTS sfl (
   --First two columns are the SDS composite key
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
@@ -78,10 +78,10 @@ CREATE TABLE sfl (
   PRIMARY KEY (cruise, file)
 );
 
-CREATE INDEX sflDateIndex ON sfl (date);
+CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date);
 
 
-CREATE TABLE opp_evt_ratio (
+CREATE TABLE IF NOT EXISTS opp_evt_ratio (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
   ratio REAL,
@@ -89,7 +89,7 @@ CREATE TABLE opp_evt_ratio (
 );
 
 
-CREATE TABLE stats (
+CREATE TABLE IF NOT EXISTS stats (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
   time TEXT,
@@ -108,7 +108,7 @@ CREATE TABLE stats (
 );
 
 
-CREATE TABLE cytdiv (
+CREATE TABLE IF NOT EXISTS cytdiv (
   cruise TEXT NOT NULL,
   file TEXT NOT NULL,
   N0 INTEGER,
