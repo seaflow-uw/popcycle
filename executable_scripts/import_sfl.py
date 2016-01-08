@@ -137,9 +137,13 @@ def date_from_file_name(file_name):
     date = None
     match = re.match(r'(\d{4}-\d{2}-\d{2})(T\d{2}-\d{2}-\d{2})([+-]\d{2}-?\d{2})', file_name)
     if match:
-        # New style EVT file names, e.g. 2014-05-15T17-07-08+0000 or 2014-05-15T17-07-08+00-00
+        # New style EVT file names, e.g.
+        # - 2014-05-15T17-07-08+0000
+        # - 2014-05-15T17-07-08+00-00
+        # - 2014-05-15T17-07-08-0700
+        # - 2014-05-15T17-07-08-07-00
+
         # Convert to a ISO 8601 date string
-        print(match.groups())
         datestamp, timestamp, tz = match.groups()
         if len(tz) == 5:
             # If the timezone string (e.g. +0000) does not have a
@@ -153,9 +157,10 @@ def date_from_file_name(file_name):
         timestamp = timestamp.replace('-', ':')
         # Put it all back together
         date = datestamp + 'T' + timestamp + tz
-    if not date:
-        sys.stderr.write("Could not parse file name %s\n" % file_name)
-        sys.exit(1)
+
+    if date is None:
+        raise ValueError("Could not parse file name %s\n" % file_name)
+
     return date
 
 
