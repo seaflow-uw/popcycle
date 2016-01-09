@@ -125,7 +125,7 @@ if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE
        opp$pop <- vct
       df <- opp[!(opp$pop == 'beads'),]
       indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
-      .delete.cytdiv.by.file(file.name)
+      .delete.cytdiv.by.file(opp.file)
        upload.cytdiv(indices,cruise.id, opp.file,db=db.name)
        
    #   print('Updating stat')
