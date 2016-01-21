@@ -86,11 +86,9 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
   offset <- as.numeric(offset)
 
   # linearize the LOG transformed data 
-  t <- FALSE
    id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
     if(!any(max(evt[,c(id)]) > 10^3.5)){
       evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  
-      t <- TRUE
    }
 
   # Correction for the difference of sensitivity between D1 and D2
@@ -128,14 +126,14 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
   origin2 <- origin - width*10^4
  
   if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
-  if(nrow(aligned) > 10000)  aligned<- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
+  if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-  par(mfrow=c(2,3),pty='s')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  par(mfrow=c(2,3),pty='s')
+
   plot.cytogram(evt., "D1", "D2")
     mtext("Alignment", side=3, line=4, font=2, col=2)
-   # TODO[FRANCOIS] ADD LINE FOR CASE WHEN DATA UNTRANSFORM...
    abline(b=1, a=origin1, col='red',lwd=2)
    abline(b=1, a=origin2, col='red',lwd=2)
     mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)
@@ -145,16 +143,14 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
       mtext("Focus", side=3, line=4, font=2,col=2)
       mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)
       mtext(paste("Offset=", offset),side=3, line=1,font=2)
-      abline(b=1/notch1, a=0, col=2,lwd=2)
+      abline(b=1/notch1, a=offset*10^4, col=2,lwd=2)
  
   plot.cytogram(aligned, "fsc_small", "D2")
       mtext("Focus", side=3, line=4, font=2,col=2)
       mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)
       mtext(paste("Offset=", offset),side=3, line=1,font=2)
-      abline(b=1/notch2, a=0, col=2,lwd=2)
-     # abline(b=1, a=notch, col='red', lwd=2)
-     # abline(b=1, a=-notch, col='red', lwd=2)
-
+      abline(b=1/notch2, a=offset*10^4, col=2,lwd=2)
+  
   plot.cytogram(opp, "fsc_small", "pe")
       mtext("OPP", side=3, line=1, font=2)
   plot.cytogram(opp, "fsc_small","chl_small")

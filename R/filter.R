@@ -96,51 +96,85 @@ filter.notch <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
   return(opp)
 }
 
-# find.filter.notch <- function(evt, notch=seq(-0.5, 0.5, by=0.1),width=0.1, do.plot=TRUE){
+find.filter.notch <- function(evt.list, origin=NA, width=0.5, notch=c(NA, NA), offset=0, do.plot=TRUE){
 
-#   DF <- NULL
-#   for(n in notch){
-#     print(paste("filtering notch=",n))
-#     opp <- filter.notch(evt, notch=n, width=width)
-#     if (nrow(opp) == 0) {
-#       fsc.max = 0
-#     } else {
-#       fsc.min<- median(opp[,"fsc_small"])
-#     }
-#     id <- length(which(opp[,"fsc_small"] >= fsc.min))
-#     para <- data.frame(cbind(notch=n, fsc.min=round(fsc.min), id, original=nrow(evt), passed=nrow(opp)))
-#     DF <- rbind(DF, para)
-#   }
-#   print(DF)
+  origin <- as.numeric(origin)
+  width <- as.numeric(width)
+  notch1 <- as.numeric(notch[1])
+  notch2 <- as.numeric(notch[2])
+  offset <- as.numeric(offset)
 
-#   # subset DF to only rows with globally maximum fsc.max value
-#   max.row.indexes <- which(DF$fsc.min == max(DF$fsc.min))
-#   DF.max <- DF[max.row.indexes, ]
 
-#   # get row index for smallest notch which has the most "saturated" fsc_small
-#   # measurements, where saturated means equal to globally maximum fsc_small
-#   best.notch.id <- min(which(DF.max$id == max(DF.max$id)))
-#   best.notch <- DF.max$notch[best.notch.id]
+DF <- NULL
+   
+   for(file in evt.list){
+      evt <- readSeaflow(file, transform=F)  
 
-#   if(do.plot){
-#     def.par <- par(no.readonly = TRUE) # save default, for resetting...
+      if(nrow(evt) == 0){
+        print(paste("no evt found in", file))
+        next
+        }
+      
+      print(paste("processing ",file))
+     # Correction for the difference of sensitivity between D1 and D2
+        if(is.na(origin)) origin <- median(evt$D2-evt$D1)
 
-#     par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
-#     par(pty='m')
-#     plot(DF[,c('notch', 'fsc.max')], main=paste("Best notch=",best.notch))
-#     abline(v=best.notch, col=3, lwd=3)
-#     par(new=TRUE)
-#     plot(DF[,'notch'], DF[,'id'], pch=3, xaxt='n',yaxt='n',xlab=NA,ylab=NA, col=2, ylim=c(0, max(DF[,'id'])))
-#     axis(4)
-#     mtext("count", 4, line=3)
-#     legend('bottomright',legend=c('max(fsc_small)','count'), pch=c(1,3), col=c(1,2), bty='n')
-#     opp <- filter.notch(evt, notch=best.notch, width=width)
-#     plot.cytogram(opp,"fsc_small","chl_small"); mtext(paste("OPP with notch=",best.notch),3,line=1)
-#     par(def.par)    
-#   }
+     # Filtering particles detected by fsc_small 
+        evt. <- subset(evt, fsc_small > 0)
+      
+      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
+        aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
 
-#   return(best.notch)
-# }
+     # finding the notch
+        if(is.na(notch1)){
+          d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) 
+          fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) 
+          notch.1 <- fsc.max1 / (d.min1+ 10000)
+            }
+
+        if(is.na(notch2)){
+          d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) 
+          fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) 
+          notch.2 <- fsc.max2 / (d.min2 + 10000)
+            }
+
+        opp <- subset(aligned, fsc_small > D1*notch.1 - offset*10^4 & fsc_small > D2*notch.2 - offset*10^4)
+
+      if(nrow(opp) == 0){
+        print(paste("no opp found in", file))
+        next
+        }
+
+      para <- data.frame(cbind(file=file, notch1=as.numeric(round(notch.1,2)), notch2=as.numeric(round(notch.2,2)), 
+                    fsc.med=as.numeric(round(median(opp$fsc_small))), chl.med=as.numeric(round(median(opp$chl_small))),
+                    original=as.numeric(nrow(evt)), passed=as.numeric(nrow(opp))),stringsAsFactors = FALSE)
+       
+       DF <- rbind(DF, para)
+      }
+
+     if(do.plot){
+    def.par <- par(no.readonly = TRUE) # save default, for resetting...
+      
+      best.notch1 <- mean(as.numeric(DF$notch1), na.rm=T)
+      best.notch2 <- mean(as.numeric(DF$notch2), na.rm=T)    
+ 
+
+    par(mfrow=c(2,1),oma=c(2,2,2,4), cex=1)
+    par(pty='s')
+    plot(DF[,c('notch1', 'notch2')], asp=1)
+    points(x=best.notch1, y=best.notch2, col=2, pch=3, lwd=3,cex=2)
+    mtext(paste("Optimal notch D1 =", round(best.notch1,2)), 3, line=2)    
+    mtext(paste("Optimal notch D2 =", round(best.notch2,2)), 3, line=1)    
+    par(pty='m')
+    plot(DF$notch1, 100*as.numeric(DF$passed)/as.numeric(DF$original), xlab="notch1", ylab="Opp/Evt ratio (%)")
+
+  }
+
+  return(DF)
+}
+
+
+
 
 # Filter a list of EVT files  and upload OPP data to multiple sqlite
 # dbs, then merge data into main db.
