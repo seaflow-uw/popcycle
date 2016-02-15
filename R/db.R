@@ -2,7 +2,7 @@ library(RSQLite)
 
 opp.to.db.opp <- function(opp, cruise.name, file.name) {
   check.cruise.id(cruise.name)
-  
+
   #First, the function checks that OPP data is transformed before uploading it into the database. if not, tranform it.
   id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
     if(!any(max(opp[,-c(id)]) < 10^3.5)){
@@ -82,7 +82,7 @@ vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {
   particle = 1:n
   pop <- vct
   method <- rep(method.name, n)
-  
+
   return (data.frame(cruise = cruise, file = file, particle = particle, pop = pop, method = method))
 }
 
@@ -94,7 +94,7 @@ upload.vct <- function(db.vct, db = db.name) {
 
 get.opp.by.file <- function(file.name, db = db.name) {
   file.name <- clean.file.name(file.name)
-  sql <- paste0("SELECT * FROM ", opp.table.name, " WHERE file == '", 
+  sql <- paste0("SELECT * FROM ", opp.table.name, " WHERE file == '",
                 file.name, "' ORDER BY particle")
   con <- dbConnect(SQLite(), dbname = db)
   opp <- dbGetQuery(con, sql)
@@ -121,65 +121,44 @@ get.opp.by.file <- function(file.name, db = db.name) {
 get.opp.by.date <- function(start.time, end.time,
                             pop=NULL, channel=NULL,
                             db=db.name) {
-  
-  date.format <- "%Y-%m-%d %H:%M"
-  # Make POSIXct objects in GMT time zone
-  start.date.ct <- as.POSIXct(strptime(start.time, format=date.format, tz="GMT"))
-  if(is.na(start.date.ct)){
-    stop(paste("wrong format for start.time parameter : ", start.time, "instead of ", date.format))
-  }
-  end.date.ct <- as.POSIXct(strptime(end.time, format=date.format, tz="GMT"))
-  if(is.na(end.date.ct)){
-    stop(paste("wrong format for end.time parameter : ", start.time, "instead of ", date.format))
-  }
+  date.bounds <- c(date.to.db.date(start.time), date.to.db.date(end.time))
 
-  start.sfl <- get.sfl.by.date(start.date.ct)
-  end.sfl <- get.sfl.by.date(end.date.ct)
-
-  # Now we know exactly where the date boundaries are in the SFL data.
-  # Next join OPP/VCT/SFL tables by file/particle and select by sfl.date
-  # and possible channel and population.
-  if (nrow(start.sfl) & nrow(end.sfl)) {
-    # Dates are covered by sfl data
-    con <- dbConnect(SQLite(), dbname = db)
-    if (is.null(channel)) {
-      sql <- "SELECT
-        opp.*, "
-    } else {
-      sql <- paste0("SELECT
-        opp.", channel, ", ")
-    }
-    sql <- paste0(sql,
-        "sfl.date as time, vct.pop
-      FROM
-        sfl, opp, vct
-      WHERE
-        sfl.date >= '", start.sfl$date, "'
-        AND
-        sfl.date <= '", end.sfl$date, "'
-        AND
-        opp.cruise == sfl.cruise
-        AND
-        opp.file == sfl.file
-        AND
-        opp.cruise = vct.cruise
-        AND
-        opp.file = vct.file
-        AND
-        opp.particle == vct.particle"
-    )
-    if (! is.null(pop)) {
-      sql <- paste0(sql, "
-        AND
-        vct.pop == '", pop, "'"
-      )
-    }
-    opp <- dbGetQuery(con, sql)
-    dbDisconnect(con)
+  con <- dbConnect(SQLite(), dbname = db)
+  if (is.null(channel)) {
+    sql <- "SELECT
+      opp.*, "
   } else {
-    opp <- data.frame()
+    sql <- paste0("SELECT
+      opp.", channel, ", ")
   }
-   return (opp)
+  sql <- paste0(sql,
+    "sfl.date as time, vct.pop
+    FROM
+      sfl, opp, vct
+    WHERE
+      sfl.date >= '", date.bounds[1], "'
+      AND
+      sfl.date < '", date.bounds[2], "'
+      AND
+      opp.cruise == sfl.cruise
+      AND
+      opp.file == sfl.file
+      AND
+      opp.cruise = vct.cruise
+      AND
+      opp.file = vct.file
+      AND
+      opp.particle == vct.particle"
+  )
+  if (! is.null(pop)) {
+    sql <- paste0(sql, "
+      AND
+      vct.pop == '", pop, "'"
+    )
+  }
+  opp <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return (opp)
 }
 
 # Return a list of min and max values for each of opp channels:
@@ -210,50 +189,25 @@ get.opp.channel.ranges <- function(db=db.name) {
   return(minmaxes)
 }
 
-# Given GMT POSIXct object, return data frame for sfl row which contains data
-# for that date
-get.sfl.by.date <- function(date.ct, db=db.name) {
-  # Make sure time zone is GMT
-  if (attr(date.ct, "tzone") != "GMT") {
-    stop("non-GMT time zone used in POSIXct object passed to POSIXct.to.time.str")
-  }
+# Get SFL rows >= start.date and < end.date
+#
+# Args:
+#   start.date: start date in format YYYY-MM-DD HH:MM
+#   end.date:   end date in format YYYY-MM-DD HH:MM
+get.sfl.by.date <- function(start.date, end.date, db=db.name) {
+  date.bounds <- c(date.to.db.date(start.date), date.to.db.date(end.date))
 
   con <- dbConnect(SQLite(), dbname = db)
-
-  # Data is stored in database in three minute chunks, with date field showing
-  # start of first minute in chunk. For each datetime t there are three possible
-  # chunk time values that can cover the request:
-  # t - 2 minutes
-  # t - 1 minutes
-  # t - 0 minutes
-  for (minute in c(2, 1, 0)) {
-    tminus <- date.ct - (minute * 60)
-    # Create a vector of two strings which are formatted as a date field
-    # in sfl table (minus time zone) with seconds at 00 and 59
-    date.bounds <- c(format(tminus, "%Y-%m-%dT%H:%M:00"),
-                     format(tminus, "%Y-%m-%dT%H:%M:59"))
-    sql <- paste0("SELECT * FROM ", sfl.table.name,
-                  " WHERE date >= '", date.bounds[1],
-                  "' AND", " date <= '", date.bounds[2], "'")
-    sfl <- dbGetQuery(con, sql)
-    if (nrow(sfl) > 0) {
-      break
-    }
-  }
-
-  dbDisconnect(con)
-
-  if (nrow(sfl) > 1) {
-    minutes <- paste(date.bounds[1], date.bounds[2], sep=" -> ")
-    stop(paste0("multiple rows in sfl table for date ", minutes))
-  } else {
-    return(sfl)
-  }
+  sql <- paste0("SELECT * FROM ", sfl.table.name,
+                " WHERE date >= '", date.bounds[1], "'",
+                " AND", " date < '", date.bounds[2], "'")
+  sfl <- dbGetQuery(con, sql)
+  return(sfl)
 }
 
 get.vct.by.file <- function(file.name, db = db.name) {
   file.name <- clean.file.name(file.name)
-  sql <- paste0("SELECT * FROM ", vct.table.name, " WHERE file == '", 
+  sql <- paste0("SELECT * FROM ", vct.table.name, " WHERE file == '",
                 file.name, "' ORDER BY particle")
   con <- dbConnect(SQLite(), dbname = db)
   vct <- dbGetQuery(con, sql)
@@ -266,7 +220,7 @@ upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.
   check.cruise.id(cruise.name)
 
   con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = opp.evt.ratio.table.name, 
+  dbWriteTable(conn = con, name = opp.evt.ratio.table.name,
                value = data.frame(cruise = cruise.name, file = file.name, ratio = opp.evt.ratio),
                row.names=FALSE, append=TRUE)
   dbDisconnect(con)
@@ -311,7 +265,7 @@ get.opp.evt.ratio.files <- function(db = db.name) {
 
 get.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
   file.name <- clean.file.name(file.name)
-  sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name, " WHERE file == '", 
+  sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name, " WHERE file == '",
                 file.name)
   con <- dbConnect(SQLite(), dbname = db)
   file <- dbGetQuery(con, sql)
@@ -319,32 +273,25 @@ get.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
   return(file$ratio)
 }
 
-get.opp.evt.ratio.by.date <- function(start.time, end.time, db = db.name) {
-    
-  date.format <- "%Y-%m-%d %H:%M"
-  # Make POSIXct objects in GMT time zone
-  start.date.ct <- as.POSIXct(strptime(start.time, format=date.format, tz="GMT"))
-  if(is.na(start.date.ct)){
-    stop(paste("wrong format for start.time parameter : ", start.time, "instead of ", date.format))
-  }
-  end.date.ct <- as.POSIXct(strptime(end.time, format=date.format, tz="GMT"))
-  if(is.na(end.date.ct)){
-    stop(paste("wrong format for end.time parameter : ", start.time, "instead of ", date.format))
-  }
-
-  start.sfl <- get.sfl.by.date(start.date.ct)
-  end.sfl <- get.sfl.by.date(end.date.ct)
-
-    sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name,
-                  " WHERE date >= '", start.sfl$date,
-                  "' AND", " date <= '", end.sfl$date, "'")
+get.opp.evt.ratio.by.date <- function(start.date, end.date, db = db.name) {
+  date.bounds <- c(date.to.db.date(start.date), date.to.db.date(end.date))
+  sql <- paste0("SELECT
+    opp_evt_ratio.file, opp_evt_ratio.ratio
+  FROM
+    sfl, opp_evt_ratio
+  WHERE
+    sfl.date >= '", date.bounds[1], "'
+    AND
+    sfl.date < '", date.bounds[2], "'
+    AND
+    sfl.cruise == opp_evt_ratio.cruise
+    AND
+    sfl.file == opp_evt_ratio.file")
   con <- dbConnect(SQLite(), dbname = db)
   files <- dbGetQuery(con, sql)
   dbDisconnect(con)
-  return(files[, c(2,3)])
+  return(files)
 }
-
-
 
 # Return a list of EVT files for which there is no OPP data in the database
 #
@@ -421,18 +368,18 @@ GROUP BY
 run.stats <- function(opp.list, db=db.name){
 
   # delete old stats entries if they exist so we keep cruise/file distinct
-  .delete.stats() 
-  
+  .delete.stats()
+
   i <- 0
   for (opp.file in opp.list) {
-    
+
      message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
 
     tryCatch({
     #   print('Updating stat')
       insert.stats.for.file(opp.file, db=db.name)
     }, error = function(e) {print(paste("Encountered error with file", opp.file))})
-    
+
     i <-  i + 1
     flush.console()
 
@@ -446,7 +393,7 @@ upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
 
   file.name <- clean.file.name(file.name)
   con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = cytdiv.table.name, 
+  dbWriteTable(conn = con, name = cytdiv.table.name,
                value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4], opp_red=indices[5]),
                row.names=FALSE, append=TRUE)
   dbDisconnect(con)
@@ -503,14 +450,14 @@ make.sqlite.db <- function(new.db.path) {
 
 # Merge opp, opp.evt.ratio, vct tables from multiple sqlite dbs into target.db.
 # Erase files in src.dbs once merged.
-# 
+#
 # Args:
 #   src.dbs: paths of sqlite3 dbs to merge into target.db
 #   target.db: path of sqlite3 db to be merged into
 merge.dbs <- function(src.dbs, target.db=db.name) {
   for (src in src.dbs) {
     # First erase existing opp, opp.evt.ratio, and vct entries in main db for
-    # files about to be merged. Otherwise we'll get sqlite3 errors about 
+    # files about to be merged. Otherwise we'll get sqlite3 errors about
     # "UNIQUE constraint failed" if filtering is being rerun for some files.
     for (f in get.opp.files(src)) {
       .delete.opp.by.file(f, db=db.name)
@@ -582,4 +529,32 @@ ensure.opp.channel.indexes <- function(db=db.name) {
   system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppPeIndex ON opp (pe)'"))
   system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppChl_smallIndex ON opp (chl_small)'"))
   #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppChl_bigIndex ON opp (chl_big)'"))
+}
+
+# Convert a date string in format YYYY-MM-DD HH:MM to format suitable for db
+# date field comparison.
+#
+# Args:
+#   date.string: In format YYYY-MM-DD HH:MM
+date.to.db.date <- function(date.string) {
+  return(POSIXct.to.db.date(string.to.POSIXct(date.string)))
+}
+
+# Returns a POSIXct object for a human readable date string
+#
+# Args:
+#   date.string: In format YYYY-MM-DD HH:MM
+string.to.POSIXct <- function(date.string) {
+  # Make POSIXct objects in GMT time zone
+  date.ct <- as.POSIXct(strptime(date.string, format="%Y-%m-%d %H:%M", tz="GMT"))
+  if (is.na(date.ct)) {
+    stop(paste("wrong format for date.string parameter : ", date.string, "instead of ", "%Y-%m-%d %H:%M"))
+  }
+  return(date.ct)
+}
+
+# Convert a POSIXct date into a string suitable for comparisons in db date
+# fields comparison.
+POSIXct.to.db.date <- function(date.ct) {
+  return(format(date.ct, "%Y-%m-%dT%H:%M:00"))
 }
