@@ -15,7 +15,6 @@ test_that("Successfully run realtime last file pipeline", {
 
   # Move prepared gating params Rdata and filter params files to params dir
   file.copy("../params.RData", param.gate.location, overwrite=T)
-  file.copy("../gating-dummy.csv", param.gate.location, overwrite=T)
   file.copy("../filter.csv", param.filter.location, overwrite=T)
 
   # Load SFL data
@@ -43,7 +42,7 @@ test_that("Successfully run realtime last file pipeline", {
 
   expect_equal(stats$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
   expect_equal(stats$n_count, c(6, 10, 44, 12, 13))
-  
+
   # Reset locations
   set.project.location(save.project)
   set.evt.location(save.evt)
