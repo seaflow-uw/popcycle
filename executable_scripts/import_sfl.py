@@ -60,7 +60,12 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
 
     # add cruise and date
     dbcolumn_to_fixed_data[CRUISE] = cruise
-    dbcolumn_to_fixed_data[DATE] = date_from_file_name(dbcolumn_to_fixed_data[FILE])
+    if "DATE" in dbcolumn_to_fixed_data:
+        # Input is an SFL converted from SDS which has a DATE column
+        pass
+    else:
+        # Input is new style SFL where date is parsed from file
+        dbcolumn_to_fixed_data[DATE] = date_from_file_name(dbcolumn_to_fixed_data[FILE])
 
     # any fields that weren't passed in should be
     for c in DB_COLUMNS:
