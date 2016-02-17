@@ -231,7 +231,7 @@ upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.
 # Args:
 #   db = sqlite3 db
 get.opp.files <- function(db = db.name) {
-  sql <- paste0("SELECT DISTINCT file from ", opp.table.name)
+  sql <- paste0("SELECT DISTINCT file from ", opp.evt.ratio.table.name)
   con <- dbConnect(SQLite(), dbname = db)
   files <- dbGetQuery(con, sql)
   dbDisconnect(con)
