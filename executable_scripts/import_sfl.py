@@ -36,11 +36,8 @@ DB_COLUMNS = ['CRUISE', 'FILE', 'DATE', 'FILE_DURATION', 'LAT', 'LON',
               'STREAM_PRESSURE', 'FLOW_RATE','EVENT_RATE']
 
 
-# takes data and header as lists, dbpath as a string
-def fix_and_insert_sfl(data, header, dbpath, cruise):
-    #if len(data) != len(header):
-    #    raise IndexError("Different number of items in data and header: h - " + str(len(header)) + ", d - " + str(len(data)))
-
+def fix_one_sfl_line(data, header, cruise):
+    """Convert one line of SFL file into tuple ready for db insert"""
     dbcolumn_to_fixed_data = {}
 
     for d, h in zip(data, header):
@@ -77,57 +74,39 @@ def fix_and_insert_sfl(data, header, dbpath, cruise):
     for c in DB_COLUMNS :
         db_tuple.append(dbcolumn_to_fixed_data[c])
 
-    # insert into sqlite
-    conn = sqlite3.connect(dbpath)
-    c = conn.cursor()
-    c.execute("insert into sfl values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(db_tuple))
-    conn.commit()
-    conn.close()
+    return tuple(db_tuple)
 
 def insert_files_bulk(sfl_files, db, cruise):
     for sfl_file in sfl_files:
         lines = open(sfl_file).readlines()
         header = lines[0].split('\t')
-        dbpath = os.path.expanduser(db)
-        for line in lines[1:] :
+        to_insert = []
+        for line in lines[1:]:
             data = line.split('\t')
-            conn = sqlite3.connect(dbpath)
-            c = conn.cursor()
-            c.execute("delete from sfl where file == '" + data[0] + "'")
-            conn.commit()
-            conn.close()
+            to_insert.append(fix_one_sfl_line(data, header, cruise))
+        insert_tuples(to_insert, db)
 
-            fix_and_insert_sfl(data, header, dbpath, cruise)
-
-def insert_last_entry(db, evt_path, cruise):
+def insert_tuples(to_insert, db):
     dbpath = os.path.expanduser(db)
-    evt_path = os.path.expanduser(evt_path)
-    latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
-    sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
-    lines = open(sfl_file).readlines()
+    conn = sqlite3.connect(dbpath)
+    c = conn.cursor()
 
-    fix_and_insert_sfl(lines[-1].split('\t'), lines[0].split('\t'), dbpath, cruise)
+    cruise_idx = DB_COLUMNS.index("CRUISE")
+    file_idx = DB_COLUMNS.index("FILE")
+    to_delete = [(x[cruise_idx], x[file_idx]) for x in to_insert]
 
-def insert_last_file(db, evt_path, cruise):
-    dbpath = os.path.expanduser(db)
-    evt_path = os.path.expanduser(evt_path)
-    latest_day = sorted([ name for name in os.listdir(evt_path) if os.path.isdir(os.path.join(evt_path, name)) ])[-1]
-    sfl_file = glob.glob(os.path.join(evt_path,latest_day) + '/*.sfl')[0]
-    insert_files_bulk([sfl_file], dbpath, cruise)
+    c.executemany("DELETE FROM sfl WHERE cruise == ? AND file == ?", to_delete)
+    conn.commit()
+
+    c.executemany("INSERT INTO sfl VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", to_insert)
+    conn.commit()
+
+    conn.close()
 
 def insert_all_files(db, evt_path, cruise):
     dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser(evt_path)
     insert_files_bulk(find_sfl_files(evt_path), dbpath, cruise)
-
-def insert_from_command_line(db, cruise):
-    dbpath = os.path.expanduser(db)
-    header = None
-    for line in sys.stdin :
-        if not header:
-            header = line.split('\t')
-        else:
-            fix_and_insert_sfl(line.split('\t'), header, dbpath, cruise)
 
 def find_sfl_files(evt_path):
     evt_path = os.path.expanduser(evt_path)
