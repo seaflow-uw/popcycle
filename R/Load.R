@@ -1,27 +1,42 @@
 .transformData <- function(integer.dataframe){
-  id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) =="pop")
-  integer.dataframe[,-c(id)] <-10^((integer.dataframe[,-c(id)]/2^16)*3.5)  
+  id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) == "pop")
+  if (length(id)) {
+    integer.dataframe[,-c(id)] <- 10^((integer.dataframe[,-c(id)]/2^16)*3.5)
+  } else {
+    # This probably looks strange and you might wonder why we don't just assign
+    # to integer.dataframe rather than integer.dataframe[, ].
+    # Exponentiating a data frame in R returns a matrix, not a data frame, so
+    # to keep integer.dataframe as a data frame we assign back into the original
+    # data frame. Otherwise we would rebind integer.dataframe as a new matrix.
+    integer.dataframe[, ] <- 10^((integer.dataframe/2^16)*3.5)
+    #integer.dataframe <- data.frame(10^((integer.dataframe/2^16)*3.5))
+  }
   return(integer.dataframe)
 }
 
 .untransformData <- function(float.dataframe){
   id <- which(colnames(float.dataframe) == "pulse_width" | colnames(float.dataframe) == "time" | colnames(float.dataframe) =="pop")
-  float.dataframe[,-c(id)] <-(log10(float.dataframe[,-c(id)])/3.5)*2^16
+  if (length(id)) {
+    float.dataframe[,-c(id)] <-(log10(float.dataframe[,-c(id)])/3.5)*2^16
+  } else {
+    float.dataframe[, ] <-(log10(float.dataframe)/3.5)*2^16
+  }
   return(float.dataframe)
 }
 
-readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADER, count.only=FALSE, transform=TRUE){ 
+readSeaflow <- function(file.name, path=evt.location, column.names=EVT.HEADER,
+                        count.only=FALSE, transform=TRUE, channel=NULL){
 
   file.path <- paste(path, file.name,sep="/")
   #if(!(substr(file.path, nchar(file.path)-2, nchar(file.path)) %in% c('opp','evt')))
   #  warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
   # reads a binary seaflow event file into memory as a dataframe
   if(!file.exists(file.path)){
-    
+
     stop(paste("The file doesn't exist;", file.path))
-    
+
   }else{
-    
+
     ## initialize dimentional parameters
     n.bytes.header <- 4
     n.bytes.EOL <- 4
@@ -30,7 +45,7 @@ readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADE
     n.extra.columns <- n.bytes.EOL / column.size  # number of 16 bit integers (2:10&0) in the EOL character
     n.int.columns <- n.columns + n.extra.columns
     n.bytes.file <- file.info(file.path)$size
-    n.rows <- ((n.bytes.file - n.bytes.header) / column.size) / n.int.columns  
+    n.rows <- ((n.bytes.file - n.bytes.header) / column.size) / n.int.columns
     n.events <- n.int.columns * n.rows
 
     # Check for empty file.  If empty return an empty data frame
@@ -40,9 +55,9 @@ readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADE
     }
 
     ## open binary file for reading
-    con <- file(description = file.path, open="rb") 
-    header <- readBin(con, integer(), n = 1, size = n.bytes.header, endian = "little")
-    header.EOL <- readBin(con, integer(), n = 1, size = n.bytes.EOL, endian = "little")
+    con <- file(description = file.path, open="rb")
+    header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
+    header.EOL <- readBin(con, "integer", n = 1, size = n.bytes.EOL, endian = "little")
 
     # Make sure the number of events stated by the file header matches the
     # number of events calculated from file size.  If not, something is wrong
@@ -58,20 +73,24 @@ readSeaflow <- function(file.name, path = evt.location, column.names = EVT.HEADE
     if(count.only){
      return(header) #return just the event count in the header
     }else{
-      
+
       ## read the actual events
-      integer.vector <- readBin(con, integer(), n = n.events, size = column.size, signed = FALSE, endian = "little")    
+      integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
       ## reformat the vector into a matrix -> dataframe
       integer.matrix <- matrix(integer.vector[1:n.events], nrow = n.rows, ncol = n.int.columns, byrow=TRUE)
       integer.dataframe <- data.frame(integer.matrix[,1:n.columns])
       ## name the columns
       names(integer.dataframe) <- c(column.names)
-      close(con) 
-      
+      close(con)
+
+      if (! is.null(channel)) {
+        integer.dataframe <- integer.dataframe[, channel, drop=FALSE]
+      }
+
       ## Transform data to LOG scale
       if(transform) integer.dataframe <- .transformData(integer.dataframe)
 
-        return (integer.dataframe)
+      return (integer.dataframe)
     }
   }
 }
@@ -101,7 +120,7 @@ writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
 
   ## construct a vector of integers from the dataframe with the EOL integers at the end of each line
   out.vect <- as.integer(unlist(t(cbind(df, EOL.double, 0))))
-  
+
   out.vect <- out.vect[1:(length(out.vect)-2)] # hack to remove the last two \r\n characters (see below)
 
   ## write it out
@@ -114,4 +133,3 @@ writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
 write.delim <- function(df, file, quote=FALSE, row.names=FALSE, sep='\t', ...){
 	write.table(df, file,  quote=quote, row.names=row.names, sep=sep, ...)
 }
-

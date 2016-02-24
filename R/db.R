@@ -1,45 +1,5 @@
 library(RSQLite)
 
-opp.to.db.opp <- function(opp, cruise.name, file.name) {
-  check.cruise.id(cruise.name)
-
-  #First, the function checks that OPP data is transformed before uploading it into the database. if not, tranform it.
-  id <- which(colnames(opp) == "pulse_width" | colnames(opp) == "time" | colnames(opp) =="pop")
-    if(!any(max(opp[,-c(id)]) < 10^3.5)){
-      opp <- .transformData(opp)
-      print("data was transformed to be consistent with popcycle.sql databse")
-    }
-
-  n <- dim(opp)[1]
-  new.columns = cbind(cruise = rep(cruise.name, n), file = rep(file.name, n), particle = 1:n)
-  return (cbind(new.columns, opp))
-}
-
-upload.opp <- function(db.opp, db = db.name) {
-  con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = opp.table.name, value = db.opp, row.names=FALSE, append=TRUE)
-  dbDisconnect(con)
-}
-
-# these delete functions should only be called when re-running analyses
-.delete.opp.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
-  sql <- paste0("DELETE FROM ", opp.table.name, " WHERE file == '",
-                file.name, "'")
-  con <- dbConnect(SQLite(), dbname = db)
-  dbGetQuery(con, sql)
-  dbDisconnect(con)
-}
-
-.delete.vct.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
-  sql <- paste0("DELETE FROM ", vct.table.name, " WHERE file == '",
-                file.name, "'")
-  con <- dbConnect(SQLite(), dbname = db)
-  dbGetQuery(con, sql)
-  dbDisconnect(con)
-}
-
 .delete.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
   file.name <- clean.file.name(file.name)
   sql <- paste0("DELETE FROM ", opp.evt.ratio.table.name, " WHERE file == '",
@@ -72,93 +32,58 @@ upload.opp <- function(db.opp, db = db.name) {
   dbDisconnect(con)
 }
 
-
-vct.to.db.vct <- function(vct, cruise.name, file.name, method.name) {
-  check.cruise.id(cruise.name)
-
-  n <- length(vct)
-  cruise = rep(cruise.name, n)
-  file = rep(file.name, n)
-  particle = 1:n
-  pop <- vct
-  method <- rep(method.name, n)
-
-  return (data.frame(cruise = cruise, file = file, particle = particle, pop = pop, method = method))
-}
-
-upload.vct <- function(db.vct, db = db.name) {
-  con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = vct.table.name, value = db.vct, row.names=FALSE, append=TRUE)
-  dbDisconnect(con)
-}
-
-get.opp.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
-  sql <- paste0("SELECT * FROM ", opp.table.name, " WHERE file == '",
-                file.name, "' ORDER BY particle")
-  con <- dbConnect(SQLite(), dbname = db)
-  opp <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  # drop cruise, file, particle columns
-  return (opp[,-c(1:4)])
-}
-
-# Return data frame of OPP data that covers the provided time range.
-#
-# If the time range specified does not fall exactly on a 3 minute boundary
-# stored in the database then the time range will be expanded to fall on a
-# 3 minute  boundary.
-#
-# Args:
-#   start.day: Start date, formatted as YYYY-MM-DD HH[:MM]
-#   end.day: End date, formatted as YYYY-MM-DD HH[:MM]
-#   pop: Only return data for this population. Should be a population name
-#     found in the VCT table. If not specified return particle data for all
-#     populations.
-#   channel: Only return data for this measurement channel. Should be a
-#     column name from OPP table. If not specified return data for all
-#     channels.
-get.opp.by.date <- function(start.time, end.time,
-                            pop=NULL, channel=NULL,
-                            db=db.name) {
+get.opp.files.by.date <- function(start.time, end.time, db=db.name) {
   date.bounds <- c(date.to.db.date(start.time), date.to.db.date(end.time))
 
   con <- dbConnect(SQLite(), dbname = db)
-  if (is.null(channel)) {
-    sql <- "SELECT
-      opp.*, "
-  } else {
-    sql <- paste0("SELECT
-      opp.", channel, ", ")
-  }
-  sql <- paste0(sql,
-    "sfl.date as time, vct.pop
+  sql <- paste0("SELECT
+    sfl.file, sfl.date
     FROM
-      sfl, opp, vct
+      sfl
     WHERE
       sfl.date >= '", date.bounds[1], "'
       AND
-      sfl.date < '", date.bounds[2], "'
-      AND
-      opp.cruise == sfl.cruise
-      AND
-      opp.file == sfl.file
-      AND
-      opp.cruise = vct.cruise
-      AND
-      opp.file = vct.file
-      AND
-      opp.particle == vct.particle"
+      sfl.date < '", date.bounds[2], "';"
   )
-  if (! is.null(pop)) {
-    sql <- paste0(sql, "
-      AND
-      vct.pop == '", pop, "'"
-    )
-  }
-  opp <- dbGetQuery(con, sql)
+  answer <- dbGetQuery(con, sql)
   dbDisconnect(con)
-  return (opp)
+  return(answer)
+}
+
+get.opp.by.file <- function(file.name, channel=NULL, opp.dir=NULL,
+                            transform=TRUE) {
+  file.name <- clean.file.name(file.name)
+  opp <- readSeaflow(file.name, opp.dir, channel=channel, transform=transform)
+  return(opp)
+}
+
+get.opp.by.date <- function(start.time, end.time, pop=NULL, channel=NULL,
+                            transform=TRUE, opp.dir=NULL, vct.dir=NULL,
+                            db=db.name) {
+  dates <- get.opp.files.by.date(start.time, end.time, db)
+  opp.reader <- function(f) {
+    opp <- get.opp.by.file.fast(f, opp.dir, channel=channel,
+                                transform=transform)
+    return(opp)
+  }
+  opps <- lapply(dates$file, opp.reader)
+  opps.bound <- rbind.fill(opps)
+
+  if (! is.null(vct.dir)) {
+    vct.reader <- function(f) {
+      vct.file <- paste0(vct.dir, "/", f, ".vct")
+      vct <- read.table(vct.file, col.names=c("pop"))
+      return(vct)
+    }
+    vcts <- lapply(dates$file, vct.reader)
+    vcts.bound <- rbind.fill(vcts)
+    opps.bound <- cbind(opps.bound, vcts.bound)
+    if (! is.null(pop)) {
+      opps.bound <- opps.bound[opps.bound$pop == pop, ]
+    }
+  }
+
+  return(opps.bound)
 }
 
 # Return a list of min and max values for each of opp channels:
@@ -203,17 +128,6 @@ get.sfl.by.date <- function(start.date, end.date, db=db.name) {
                 " AND", " date < '", date.bounds[2], "'")
   sfl <- dbGetQuery(con, sql)
   return(sfl)
-}
-
-get.vct.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
-  sql <- paste0("SELECT * FROM ", vct.table.name, " WHERE file == '",
-                file.name, "' ORDER BY particle")
-  con <- dbConnect(SQLite(), dbname = db)
-  vct <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  # drop cruise, file, particle, method columns
-  return (vct[,-c(1,2,3,5)])
 }
 
 upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.name) {
