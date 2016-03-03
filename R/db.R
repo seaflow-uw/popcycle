@@ -46,20 +46,34 @@ get.opp.stats.by.file <- function(file.name, db=db.name) {
   return(opp)
 }
 
-get.opp.stats.by.date <- function(start.date, end.date, db=db.name) {
-  date.bounds <- c(date.to.db.date(start.date), date.to.db.date(end.date))
-  sql <- paste0("SELECT
-    sfl.date, opp.*
-  FROM
-    sfl, opp
-  WHERE
-    sfl.date >= '", date.bounds[1], "'
-    AND
-    sfl.date <= '", date.bounds[2], "'
-    AND
-    sfl.cruise == opp.cruise
-    AND
-    sfl.file == opp.file")
+get.opp.stats <- function(start.date=NULL, end.date=NULL, db=db.name) {
+  sql <- "
+    SELECT
+      sfl.date, opp.*
+    FROM
+      sfl, opp
+    WHERE
+      sfl.cruise == opp.cruise
+      AND
+      sfl.file == opp.file"
+  sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
+  con <- dbConnect(SQLite(), dbname = db)
+  opp <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(opp)
+}
+
+get.vct.stats <- function(start.date=NULL, end.date=NULL, db=db.name) {
+  sql <- "
+    SELECT
+      sfl.date, vct.*
+    FROM
+      sfl, vct
+    WHERE
+      sfl.cruise == vct.cruise
+      AND
+      sfl.file == vct.file"
+  sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
   con <- dbConnect(SQLite(), dbname = db)
   opp <- dbGetQuery(con, sql)
   dbDisconnect(con)
@@ -78,10 +92,10 @@ get.vct.by.file <- function(file.name, vct.dir=NULL) {
   return(vct)
 }
 
-get.opp.by.date <- function(start.time, end.time, pop=NULL, channel=NULL,
+get.opp.by.date <- function(start.date, end.date, pop=NULL, channel=NULL,
                             transform=TRUE, opp.dir=NULL, vct.dir=NULL,
                             db=db.name) {
-  dates <- get.opp.stats.by.date(start.time, end.time, db)
+  dates <- get.opp.stats(start.date=start.date, end.date=end.date, db=db)
   opp.reader <- function(f) {
     opp <- get.opp.by.file(f, opp.dir, channel=channel, transform=transform)
     return(opp)
@@ -101,41 +115,15 @@ get.opp.by.date <- function(start.time, end.time, pop=NULL, channel=NULL,
   return(opps.bound)
 }
 
-# Return a list of min and max values for each of opp channels
-# The list contains a named member for each channel (e.g. x$fsc_small),
-# and each member is a two item vector of min and max values (e.g. c(1, 1000))
-#
-# To retrieve the min value for fsc_small from the list:
-# x$fsc_small[1]
-# To retriev ethe max value for fsc_small from the list:
-# x$ fsc_small[2]
-get.opp.channel.ranges <- function(db=db.name) {
-  con <- dbConnect(SQLite(), dbname=db)
-  minmaxes = list()
-  channels <- c("fsc_small", "fsc_big", "fsc_perp", "pe", "chl_small", "chl_big")
-  for (channel in channels) {
-    sql <- paste0("SELECT MIN(", channel, "_min) FROM opp")
-    min.answer <- dbGetQuery(con, sql)
-    sql <- paste0("SELECT MAX(", channel, "_max) FROM opp")
-    max.answer <- dbGetQuery(con, sql)
-    minmaxes[[channel]] = c(min.answer[1,1], max.answer[1,1])
-  }
-  dbDisconnect(con)
-  return(minmaxes)
-}
-
 # Get SFL rows >= start.date and <= end.date
 #
 # Args:
 #   start.date: start date in format YYYY-MM-DD HH:MM
 #   end.date:   end date in format YYYY-MM-DD HH:MM
-get.sfl.by.date <- function(start.date, end.date, db=db.name) {
-  date.bounds <- c(date.to.db.date(start.date), date.to.db.date(end.date))
-
+get.sfl <- function(start.date=NULL, end.date=NULL, db=db.name) {
+  sql <- "SELECT * FROM sfl"
+  sql <- sfl_date_where_clause(sql, start.date, end.date, append=F)
   con <- dbConnect(SQLite(), dbname = db)
-  sql <- paste0("SELECT * FROM ", sfl.table.name,
-                " WHERE date >= '", date.bounds[1], "'",
-                " AND", " date <= '", date.bounds[2], "'")
   sfl <- dbGetQuery(con, sql)
   return(sfl)
 }
@@ -195,86 +183,40 @@ get.empty.evt.files <- function(evt.list, db=db.name) {
   return(setdiff(evt.list, opp.files))
 }
 
-get.stat.table <- function(db = db.name) {
-  sql <- paste('SELECT * FROM ', stats.table.name, 'ORDER BY time ASC')
-  con <- dbConnect(SQLite(), dbname = db)
+get.stat.table <- function(db=db.name) {
+  sql <- "
+  SELECT
+    opp.cruise as cruise,
+    opp.file as file,
+    sfl.date as time,
+    sfl.lat as lat,
+    sfl.lon as lon,
+    opp.opp_evt_ratio as opp_evt_ratio,
+    sfl.flow_rate as flow_rate,
+    sfl.file_duration as file_duration,
+    vct.pop as pop,
+    vct.count as n_count,
+    vct.count / (sfl.flow_rate * (sfl.file_duration/60) * opp.opp_evt_ratio) as abundance,
+    vct.fsc_small as fsc_small,
+    vct.chl_small as chl_small,
+    vct.pe as pe
+  FROM
+    opp, vct, sfl
+  WHERE
+    opp.cruise == vct.cruise
+    AND
+    opp.file == vct.file
+    AND
+    opp.cruise == sfl.cruise
+    AND
+    opp.file == sfl.file
+  ORDER BY
+    time, pop;)"
+  con <- dbConnect(SQLite(), dbname=db)
   stats <- dbGetQuery(con, sql)
   dbDisconnect(con)
   return (stats)
 }
-
-insert.stats.for.file <- function(file.name, db = db.name) {
-  # [TODO Francois] Name of OPP, vct, sfl, opp_evt_ratio tables should be a variable too.
-  sql <- "INSERT INTO stats
-SELECT
-  opp.cruise as cruise,
-  opp.file as file,
-  sfl.date as time,
-  sfl.lat as lat,
-  sfl.lon as lon,
-  opp_evt_ratio.ratio as opp_evt_ratio,
-  sfl.flow_rate as flow_rate,
-  sfl.file_duration as file_duration,
-  vct.pop as pop,
-  count(vct.pop) as n_count,
-  count(vct.pop) / (sfl.flow_rate * (sfl.file_duration/60) * opp_evt_ratio.ratio) as abundance,
-  avg(opp.fsc_small) as fsc_small,
-  avg(opp.chl_small) as chl_small,
-  avg(pe) as pe
-FROM
-  opp, vct, sfl, opp_evt_ratio
-WHERE
-  opp.cruise == vct.cruise
-  AND
-  opp.file == vct.file
-  AND
-  opp.particle == vct.particle
-  AND
-  opp.cruise == sfl.cruise
-  AND
-  opp.file == sfl.file
-  AND
-  opp.cruise == opp_evt_ratio.cruise
-  AND
-  opp.file == opp_evt_ratio.file
-  AND
-  opp.file == 'FILE_NAME'
-GROUP BY
-  opp.cruise, opp.file, vct.pop;"
-
-  #in case there's stats in there already
-  sql.delete <- gsub('FILE_NAME', file.name, paste('DELETE FROM', stats.table.name, 'WHERE file == "FILE_NAME"'))
-  con <- dbConnect(SQLite(), dbname = db)
-  response <- dbGetQuery(con, sql.delete)
-
-  sql <- gsub('FILE_NAME', file.name, sql)
-  response <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-}
-
-
-run.stats <- function(opp.list, db=db.name){
-
-  # delete old stats entries if they exist so we keep cruise/file distinct
-  .delete.stats()
-
-  i <- 0
-  for (opp.file in opp.list) {
-
-     message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
-
-    tryCatch({
-    #   print('Updating stat')
-      insert.stats.for.file(opp.file, db=db.name)
-    }, error = function(e) {print(paste("Encountered error with file", opp.file))})
-
-    i <-  i + 1
-    flush.console()
-
-  }
-}
-
-
 
 upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
   check.cruise.id(cruise.name)
@@ -285,7 +227,6 @@ upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
                row.names=FALSE, append=TRUE)
   dbDisconnect(con)
 }
-
 
 get.cytdiv.table <- function(db = db.name) {
   sql <- "SELECT
@@ -311,31 +252,6 @@ get.cytdiv.table <- function(db = db.name) {
   cytdiv <- dbGetQuery(con, sql)
   dbDisconnect(con)
   return (cytdiv)
-}
-
-
-get.sfl.table <- function(db=db.name) {
-  sql <- paste('SELECT * FROM ', sfl.table.name, 'ORDER BY date ASC')
-  con <- dbConnect(SQLite(), dbname=db)
-  sfl <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(sfl)
-}
-
-get.opp.stats.table <- function(db=db.name) {
-  sql <- paste('SELECT * FROM opp')
-  con <- dbConnect(SQLite(), dbname=db)
-  opp <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(opp)
-}
-
-get.vct.table <- function(db=db.name) {
-  sql <- paste('SELECT * FROM vct')
-  con <- dbConnect(SQLite(), dbname=db)
-  opp <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(opp)
 }
 
 # Create a new, empty sqlite3 database using schema from original db
@@ -413,25 +329,33 @@ reset.db <- function(db.loc=db.location, parts.only=FALSE) {
   }
 }
 
-# Ensure that there is an sfl.date index in sqlite3 db
-#
-# Args:
-#   db: path to sqlite3 db file
-ensure.sfl.date.index <- function(db=db.name) {
-  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date)'"))
-}
+sfl_date_where_clause <- function(sql, start.date, end.date, append=F) {
+  if (! is.null(start.date) || ! is.null(end.date)) {
+    if (! append) {
+      sql <- paste0(sql, "
+        WHERE"
+      )
+    } else {
+      sql <- paste0(sql, "
+        AND"
+      )
+    }
 
-# Ensure that there is are per channel indexes on opp in sqlite3 db
-#
-# Args:
-#   db: path to sqlite3 db file
-ensure.opp.channel.indexes <- function(db=db.name) {
-  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppFsc_smallIndex ON opp (fsc_small)'"))
-  #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppFsc_perpIndex ON opp (fsc_perp)'"))
-  #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppFsc_bigIndex ON opp (fsc_big)'"))
-  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppPeIndex ON opp (pe)'"))
-  system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppChl_smallIndex ON opp (chl_small)'"))
-  #system(paste0("sqlite3 ", db, " 'CREATE INDEX IF NOT EXISTS oppChl_bigIndex ON opp (chl_big)'"))
+    if (! is.null(start.date)) {
+      start.date <- paste0("sfl.date >= '", date.to.db.date(start.date), "'")
+    }
+    if (! is.null(end.date)) {
+      end.date <- paste0("sfl.date <= '", date.to.db.date(end.date), "'")
+    }
+    sql <- paste0(sql, "
+      ", paste(c(start.date, end.date), collapse=" AND ")
+    )
+  }
+
+  sql <- paste0(sql, "
+    ORDER BY sfl.date ASC"
+  )
+  return(sql);
 }
 
 # Convert a date string in format YYYY-MM-DD HH:MM to format suitable for db
