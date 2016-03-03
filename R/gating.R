@@ -1,32 +1,32 @@
 
 classify.opp <- function(opp, classify.func, ...) {
   vct <- classify.func(opp, ...)
-  
+
   # SANITY CHECKS
   # dropped particles
   if (!(dim(opp)[1] == length(vct))) {
     stop('Filtering function returned incorrect number of labels.')
   }
-  
+
   # in case classify.func didn't return text
   vct <- as.character(vct)
-  
+
   return (vct)
 }
 
 
 
-## merge vct to opp if vct already exist 
+## merge vct to opp if vct already exist
 setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 
   require(splancs)
-  
+
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
-    
+
   popname <- as.character(popname)
   para.x <- as.character(para.x)
   para.y <- as.character(para.y)
-  
+
   par(mfrow=c(1,1))
   plot.gate.cytogram(opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
@@ -52,8 +52,8 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
     load(paste0(param.gate.location,"/params.RData"))
     id <- which(names(poly.log) == popname)
           if(length(id)==0){poly.log <- c(poly.log, poly.l)
-            }else{poly.log[[id]] <- poly} 
-   
+            }else{poly.log[[id]] <- poly}
+
    save(poly.log, file=paste0(param.gate.location,"/params.RData"))
   }
 
@@ -65,7 +65,7 @@ setGateParams <- function(opp, popname, para.x, para.y, override=TRUE){
 ManualGating <- function(opp){
 
   opp$pop <- "unknown"
-  
+
   params <- list.files(param.gate.location,"params.RData")
   if(length(params)==0){
     print("No gate parameters found!")
@@ -82,7 +82,7 @@ ManualGating <- function(opp){
 		colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from inout()
 		vct <- subset(df, inout(df,poly=poly, bound=TRUE, quiet=TRUE)) # subset particles based on Gate
 		opp[row.names(vct),"pop"] <- pop
-		
+
 	}
 
 	return(opp$pop)
@@ -99,39 +99,38 @@ resetGateParams <- function(param.gate.location){
 
 
 
-run.gating <- function(opp.list, db=db.name) {
-  
+run.gating <- function(opp.list, opp.dir, vct.dir, db=db.name) {
+
 if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE)) == 0) {
     stop('No gate paramters yet; no gating.')
   }
-  
+
   i <- 0
   for (opp.file in opp.list) {
-    
+
      message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
 
     tryCatch({
      # print(paste('Loading', opp.file))
-      opp <- get.opp.by.file(opp.file)
+      opp <- get.opp.by.file(opp.file, opp.dir=opp.dir,
+                             channel=c("fsc_small", "chl_small", "pe"))
   #   print(paste('Classifying', opp.file))
       vct <- classify.opp(opp, ManualGating)
+      opp$pop <- factor(vct)
       # delete old vct entries if they exist so we keep cruise/file/particle distinct
-      .delete.vct.by.file(opp.file)
+      .delete.vct.stats.by.file(opp.file)
       # store vct
    #  print('Uploading labels to the database')
-      upload.vct(vct.to.db.vct(vct, cruise.id, opp.file, 'Manual Gating'), db=db.name)
-   
+      upload.vct(opp, cruise.id, opp.file, 'Manual Gating', db=db)
+      save.vct.file(vct, opp.file, vct.dir)
+
    #print("Calculating cytometric diversity")
-       opp$pop <- vct
       df <- opp[!(opp$pop == 'beads'),]
       indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
       .delete.cytdiv.by.file(opp.file)
-       upload.cytdiv(indices,cruise.id, opp.file,db=db.name)
-       
-   #   print('Updating stat')
-      insert.stats.for.file(opp.file, db=db.name)
+       upload.cytdiv(indices, cruise.id, opp.file, db=db)
     }, error = function(e) {print(paste("Encountered error with file", opp.file))})
-    
+
     i <-  i + 1
     flush.console()
 

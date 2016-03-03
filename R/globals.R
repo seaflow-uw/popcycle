@@ -15,7 +15,7 @@ sfl.table.name <- 'sfl'
 # Data locations and cruise / instrument identifier
 project.location <- paste('~/popcycle') # Default project directory location
 evt.location <- '~/SeaFlow/datafiles/evt' # Path to the evt files for the real-time analysis
-instrument.location <- '/Volumes/SeaFlow/datafiles/evt' # Path to the evt files on the SeaFlow 
+instrument.location <- '/Volumes/SeaFlow/datafiles/evt' # Path to the evt files on the SeaFlow
 cruise.id <- NULL # Cruise name
 instrument.id <- '740'
 
@@ -26,7 +26,7 @@ instrument.id <- '740'
 ##############################################
 # Configuration variables are assigned to both the namespace and package
 # environments through the set.* funcitons below.  This exposes their
-# values to both the user and package functions by using the same names, 
+# values to both the user and package functions by using the same names,
 # e.g. log.location has the same value for both the user and the package
 # developer.  Hopefully this limits confusion.  However, it's still
 # possible for the user to assign a value to log.location in the global
@@ -47,7 +47,7 @@ set.project.location <- function(path) {
   .assign.to.envs("log.gate.location", paste(log.location, 'gates', sep='/'))
   .assign.to.envs("log.filter.location", paste(log.location, 'filter', sep='/'))
 
-  # location of parameters for filter and gating 
+  # location of parameters for filter and gating
   .assign.to.envs("param.location", paste(project.location, 'params', sep='/'))
   .assign.to.envs("param.gate.location", paste(param.location, 'gates', sep='/'))
   .assign.to.envs("param.filter.location", paste(param.location, 'filter', sep='/'))
@@ -56,7 +56,7 @@ set.project.location <- function(path) {
   .assign.to.envs("db.location", paste(project.location, 'sqlite', sep='/'))
   # name of SQLite database
   .assign.to.envs("db.name", paste(db.location, 'popcycle.db', sep="/"))
-  
+
   if (! file.exists(project.location)) {
     dir.create(project.location)
     dir.create(log.location)
@@ -68,11 +68,6 @@ set.project.location <- function(path) {
     dir.create(db.location)
     reset.db(db.location)
   }
-
-  # Create any indexes that have been added to library since last time
-  # db was loaded
-  ensure.sfl.date.index()
-  ensure.opp.channel.indexes()
 }
 
 # Configure EVT file location.
@@ -113,7 +108,7 @@ set.instrument.location <- function(instrument.loc) {
 # If package environment is not available only assign to namespace.  If the
 # binding for that symbol is locked, unlock it first then lock it after
 # assignment.
-# 
+#
 # Args:
 #   sym = a name object or character string
 #   val = the value to assign

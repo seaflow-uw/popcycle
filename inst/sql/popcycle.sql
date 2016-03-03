@@ -21,40 +21,49 @@
 --);
 
 CREATE TABLE IF NOT EXISTS opp (
-  -- First three columns are the EVT, OPP, VCT composite key
-  cruise TEXT NOT NULL,
-  file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
-  particle INTEGER NOT NULL,
-  -- Next we have the measurements. For these, see
-  -- https://github.com/fribalet/flowPhyto/blob/master/R/Globals.R and look
-  -- at version 3 of the evt header
-  time INTEGER NOT NULL,
-  pulse_width INTEGER NOT NULL,
-  D1 REAL NOT NULL,
-  D2 REAL NOT NULL,
-  fsc_small REAL NOT NULL,
-  fsc_perp REAL NOT NULL,
-  fsc_big REAL NOT NULL,
-  pe REAL NOT NULL,
-  chl_small REAL NOT NULL,
-  chl_big REAL NOT NULL,
-  PRIMARY KEY (cruise, file, particle)
+    cruise TEXT NOT NULL,
+    file TEXT NOT NULL,
+    opp_count INTEGER NOT NULL,
+    evt_count INTEGER NOT NULL,
+    opp_evt_ratio REAL NOT NULL,
+    notch1 REAL NOT NULL,
+    notch2 REAL NOT NULL,
+    offset REAL NOT NULL,
+    origin REAL NOT NULL,
+    width REAL NOT NULL,
+    fsc_small_min REAL NOT NULL,
+    fsc_small_max REAL NOT NULL,
+    fsc_small_mean REAL NOT NULL,
+    fsc_perp_min REAL NOT NULL,
+    fsc_perp_max REAL NOT NULL,
+    fsc_perp_mean REAL NOT NULL,
+    fsc_big_min REAL NOT NULL,
+    fsc_big_max REAL NOT NULL,
+    fsc_big_mean REAL NOT NULL,
+    pe_min REAL NOT NULL,
+    pe_max REAL NOT NULL,
+    pe_mean REAL NOT NULL,
+    chl_small_min REAL NOT NULL,
+    chl_small_max REAL NOT NULL,
+    chl_small_mean REAL NOT NULL,
+    chl_big_min REAL NOT NULL,
+    chl_big_max REAL NOT NULL,
+    chl_big_mean REAL NOT NULL,
+    PRIMARY KEY (cruise, file)
 );
 
 CREATE INDEX IF NOT EXISTS oppFileIndex ON opp (file);
-CREATE INDEX IF NOT EXISTS oppFsc_smallIndex ON opp (fsc_small);
-CREATE INDEX IF NOT EXISTS oppPeIndex ON opp (pe);
-CREATE INDEX IF NOT EXISTS oppChl_smallIndex ON opp (chl_small);
 
 CREATE TABLE IF NOT EXISTS vct (
-  -- First three columns are the EVT, OPP, VCT, SDS composite key
-  cruise TEXT NOT NULL,
-  file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
-  particle INTEGER NOT NULL,
-  -- Next we have the classification
-  pop TEXT NOT NULL,
-  method TEXT NOT NULL,
-  PRIMARY KEY (cruise, file, particle)
+    cruise TEXT NOT NULL,
+    file TEXT NOT NULL,
+    pop TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    method TEXT NOT NULL,
+    fsc_small REAL NOT NULL,
+    chl_small REAL NOT NULL,
+    pe REAL NOT NULL,
+    PRIMARY KEY (cruise, file, pop)
 );
 
 CREATE INDEX IF NOT EXISTS vctFileIndex ON vct (file);
@@ -79,34 +88,6 @@ CREATE TABLE IF NOT EXISTS sfl (
 );
 
 CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date);
-
-
-CREATE TABLE IF NOT EXISTS opp_evt_ratio (
-  cruise TEXT NOT NULL,
-  file TEXT NOT NULL,
-  ratio REAL,
-  PRIMARY KEY (cruise, file)
-);
-
-
-CREATE TABLE IF NOT EXISTS stats (
-  cruise TEXT NOT NULL,
-  file TEXT NOT NULL,
-  time TEXT,
-  lat REAL,
-  lon REAL,
-  opp_evt_ratio REAL,
-  flow_rate REAL,
-  file_duration REAL,
-  pop TEXT NOT NULL,
-  n_count INTEGER,
-  abundance REAL,
-  fsc_small REAL,
-  chl_small REAL,
-  pe REAL,
-  PRIMARY KEY (cruise, file, pop)
-);
-
 
 CREATE TABLE IF NOT EXISTS cytdiv (
   cruise TEXT NOT NULL,

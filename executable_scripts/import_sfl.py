@@ -4,12 +4,15 @@ Import SFl file into sqlite3 database.  Assumes FLOW RATE is a column in input
 SFL file.
 """
 
-import sqlite3
-import os
-import glob
-import re
-import sys
 from argparse import ArgumentParser
+import datetime
+import dateutil.parser
+import glob
+import os
+import re
+import sqlite3
+import sys
+
 
 DELIM = '\t'
 
@@ -55,7 +58,7 @@ def fix_one_sfl_line(data, header, cruise):
             dbcolumn_to_fixed_data[h] = d
         # else, do nothing
 
-    # add cruise and date
+    # add cruise, date, and add julian day if missing
     dbcolumn_to_fixed_data[CRUISE] = cruise
     if "DATE" in dbcolumn_to_fixed_data:
         # Input is an SFL converted from SDS which has a DATE column
@@ -63,6 +66,13 @@ def fix_one_sfl_line(data, header, cruise):
     else:
         # Input is new style SFL where date is parsed from file
         dbcolumn_to_fixed_data[DATE] = date_from_file_name(dbcolumn_to_fixed_data[FILE])
+
+    if len(dbcolumn_to_fixed_data[FILE].split("/")) == 1:
+        dbcolumn_to_fixed_data[FILE] = "/".join([
+            julian_from_file_name(dbcolumn_to_fixed_data[FILE]),
+            dbcolumn_to_fixed_data[FILE]
+        ])
+
 
     # any fields that weren't passed in should be
     for c in DB_COLUMNS:
@@ -146,6 +156,21 @@ def date_from_file_name(file_name):
         raise ValueError("Could not parse file name %s\n" % file_name)
 
     return date
+
+def julian_from_file_name(file_name):
+    """Converts a dated EVT file name to a Seaflow day of year folder name.
+
+    "2014-07-04T00-00-02+00-00" or "2014-07-04T00-00-02+0000" would return
+    "2014_185".
+
+    Args:
+        evt_filename: EVT filename, may include path information
+    """
+    iso8601 = date_from_file_name(os.path.basename(file_name))
+    dt = dateutil.parser.parse(iso8601)
+    dt_jan1 = datetime.date(dt.year, 1, 1)
+    day = dt.toordinal() - dt_jan1.toordinal() + 1
+    return "%i_%i" % (dt.year, day)
 
 
 if __name__ == "__main__":

@@ -1,81 +1,96 @@
 library(RSQLite)
 
-.delete.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
-  sql <- paste0("DELETE FROM ", opp.evt.ratio.table.name, " WHERE file == '",
-                file.name, "'")
+.delete.opp.stats.by.file <- function(file.name, db=db.name) {
+  sql <- paste0("DELETE FROM opp WHERE file == '", file.name, "'")
   con <- dbConnect(SQLite(), dbname = db)
   dbGetQuery(con, sql)
   dbDisconnect(con)
 }
 
-.delete.cytdiv.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
+.delete.vct.stats.by.file <- function(file.name, db=db.name) {
+  sql <- paste0("DELETE FROM vct WHERE file == '", file.name, "'")
+  con <- dbConnect(SQLite(), dbname = db)
+  dbGetQuery(con, sql)
+  dbDisconnect(con)
+}
+
+.delete.cytdiv.by.file <- function(file.name, db=db.name) {
   sql <- paste0("DELETE FROM ", cytdiv.table.name, " WHERE file == '",
                 file.name, "'")
-  con <- dbConnect(SQLite(), dbname = db)
+  con <- dbConnect(SQLite(), dbname=db)
   dbGetQuery(con, sql)
   dbDisconnect(con)
 }
 
-.delete.sfl <- function(db = db.name) {
+.delete.sfl <- function(db=db.name) {
   sql <- paste0("DELETE FROM ", sfl.table.name)
   con <- dbConnect(SQLite(), dbname = db)
   dbGetQuery(con, sql)
   dbDisconnect(con)
 }
 
-.delete.stats <- function(db = db.name) {
-  sql <- paste0("DELETE FROM ", stats.table.name)
+get.opp.stats.by.file <- function(file.name, db=db.name) {
+  sql <- paste0("SELECT
+    sfl.date, opp.*
+  FROM
+    sfl, opp
+  WHERE
+    opp.file == '", file.name, "'
+    AND
+    sfl.cruise == opp.cruise
+    AND
+    sfl.file == opp.file")
   con <- dbConnect(SQLite(), dbname = db)
-  dbGetQuery(con, sql)
+  opp <- dbGetQuery(con, sql)
   dbDisconnect(con)
+  return(opp)
 }
 
-get.opp.files.by.date <- function(start.time, end.time, db=db.name) {
-  date.bounds <- c(date.to.db.date(start.time), date.to.db.date(end.time))
-
-  con <- dbConnect(SQLite(), dbname = db)
+get.opp.stats.by.date <- function(start.date, end.date, db=db.name) {
+  date.bounds <- c(date.to.db.date(start.date), date.to.db.date(end.date))
   sql <- paste0("SELECT
-    sfl.file, sfl.date
-    FROM
-      sfl
-    WHERE
-      sfl.date >= '", date.bounds[1], "'
-      AND
-      sfl.date < '", date.bounds[2], "';"
-  )
-  answer <- dbGetQuery(con, sql)
+    sfl.date, opp.*
+  FROM
+    sfl, opp
+  WHERE
+    sfl.date >= '", date.bounds[1], "'
+    AND
+    sfl.date <= '", date.bounds[2], "'
+    AND
+    sfl.cruise == opp.cruise
+    AND
+    sfl.file == opp.file")
+  con <- dbConnect(SQLite(), dbname = db)
+  opp <- dbGetQuery(con, sql)
   dbDisconnect(con)
-  return(answer)
+  return(opp)
 }
 
 get.opp.by.file <- function(file.name, channel=NULL, opp.dir=NULL,
                             transform=TRUE) {
-  file.name <- clean.file.name(file.name)
   opp <- readSeaflow(file.name, opp.dir, channel=channel, transform=transform)
   return(opp)
+}
+
+get.vct.by.file <- function(file.name, vct.dir=NULL) {
+  vct.file <- paste0(vct.dir, "/", file.name, ".vct")
+  vct <- read.table(vct.file, col.names=c("pop"))
+  return(vct)
 }
 
 get.opp.by.date <- function(start.time, end.time, pop=NULL, channel=NULL,
                             transform=TRUE, opp.dir=NULL, vct.dir=NULL,
                             db=db.name) {
-  dates <- get.opp.files.by.date(start.time, end.time, db)
+  dates <- get.opp.stats.by.date(start.time, end.time, db)
   opp.reader <- function(f) {
-    opp <- get.opp.by.file.fast(f, opp.dir, channel=channel,
-                                transform=transform)
+    opp <- get.opp.by.file(f, opp.dir, channel=channel, transform=transform)
     return(opp)
   }
   opps <- lapply(dates$file, opp.reader)
   opps.bound <- rbind.fill(opps)
 
   if (! is.null(vct.dir)) {
-    vct.reader <- function(f) {
-      vct.file <- paste0(vct.dir, "/", f, ".vct")
-      vct <- read.table(vct.file, col.names=c("pop"))
-      return(vct)
-    }
-    vcts <- lapply(dates$file, vct.reader)
+    vcts <- lapply(dates$file, function(f) get.vct.by.file(f, vct.dir))
     vcts.bound <- rbind.fill(vcts)
     opps.bound <- cbind(opps.bound, vcts.bound)
     if (! is.null(pop)) {
@@ -86,8 +101,7 @@ get.opp.by.date <- function(start.time, end.time, pop=NULL, channel=NULL,
   return(opps.bound)
 }
 
-# Return a list of min and max values for each of opp channels:
-# "fsc_small", pe", "chl_small"
+# Return a list of min and max values for each of opp channels
 # The list contains a named member for each channel (e.g. x$fsc_small),
 # and each member is a two item vector of min and max values (e.g. c(1, 1000))
 #
@@ -97,16 +111,12 @@ get.opp.by.date <- function(start.time, end.time, pop=NULL, channel=NULL,
 # x$ fsc_small[2]
 get.opp.channel.ranges <- function(db=db.name) {
   con <- dbConnect(SQLite(), dbname=db)
-  # It would be nice to do all the MIN MAX calls in one query, but
-  # due to some sqlite quirks this bypasses any indexes.
-  # http://www.sqlite.org/optoverview.html#minmax
   minmaxes = list()
-  #channels <- c("fsc_small", "fsc_big", "fsc_perp", "pe", "chl_small", "chl_big")
-  channels <- c("fsc_small", "pe", "chl_small")
+  channels <- c("fsc_small", "fsc_big", "fsc_perp", "pe", "chl_small", "chl_big")
   for (channel in channels) {
-    sql <- paste0("SELECT MIN(", channel, ") FROM ", opp.table.name)
+    sql <- paste0("SELECT MIN(", channel, "_min) FROM opp")
     min.answer <- dbGetQuery(con, sql)
-    sql <- paste0("SELECT MAX(", channel, ") FROM ", opp.table.name)
+    sql <- paste0("SELECT MAX(", channel, "_max) FROM opp")
     max.answer <- dbGetQuery(con, sql)
     minmaxes[[channel]] = c(min.answer[1,1], max.answer[1,1])
   }
@@ -114,7 +124,7 @@ get.opp.channel.ranges <- function(db=db.name) {
   return(minmaxes)
 }
 
-# Get SFL rows >= start.date and < end.date
+# Get SFL rows >= start.date and <= end.date
 #
 # Args:
 #   start.date: start date in format YYYY-MM-DD HH:MM
@@ -125,86 +135,54 @@ get.sfl.by.date <- function(start.date, end.date, db=db.name) {
   con <- dbConnect(SQLite(), dbname = db)
   sql <- paste0("SELECT * FROM ", sfl.table.name,
                 " WHERE date >= '", date.bounds[1], "'",
-                " AND", " date < '", date.bounds[2], "'")
+                " AND", " date <= '", date.bounds[2], "'")
   sfl <- dbGetQuery(con, sql)
   return(sfl)
 }
 
-upload.opp.evt.ratio <- function(opp.evt.ratio, cruise.name, file.name, db = db.name) {
+upload.vct <- function(opp, cruise.name, file.name, method, db=db.name) {
   check.cruise.id(cruise.name)
 
-  con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = opp.evt.ratio.table.name,
-               value = data.frame(cruise = cruise.name, file = file.name, ratio = opp.evt.ratio),
-               row.names=FALSE, append=TRUE)
+  df <- ddply(opp, .(pop), here(summarize),
+              cruise=cruise.name, file=file.name, count=length(pop), method=method,
+              fsc_small=mean(fsc_small), chl_small=mean(chl_small), pe=mean(pe))
+  cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
+            "chl_small", "pe")
+  df.reorder <- df[cols]
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="vct", value=df.reorder, row.names=F, append=T)
   dbDisconnect(con)
+}
+
+save.vct.file <- function(vct, opp.file, vct.dir) {
+  vct.file <- paste0(vct.dir, "/", opp.file, ".vct")
+  dir.create(dirname(vct.file), showWarnings=F, recursive=T)
+  write.table(vct, vct.file, row.names=F, col.names=F, quote=F)
 }
 
 # Return a vector of distinct file values in opp table
 #
 # Args:
 #   db = sqlite3 db
-get.opp.files <- function(db = db.name) {
-  sql <- paste0("SELECT DISTINCT file from ", opp.evt.ratio.table.name)
-  con <- dbConnect(SQLite(), dbname = db)
+get.opp.files <- function(db=db.name) {
+  sql <- "SELECT DISTINCT file from opp"
+  con <- dbConnect(SQLite(), dbname=db)
   files <- dbGetQuery(con, sql)
   dbDisconnect(con)
   print(paste(length(files$file), "opp files found"))
   return(files$file)
 }
 
-# Return a vector of distinct file values in vct.table.name
+# Return a vector of distinct file values in vct table
 #
 # Args:
 #   db = sqlite3 db
-get.vct.files <- function(db = db.name) {
-  sql <- paste0("SELECT DISTINCT file from ", vct.table.name)
-  con <- dbConnect(SQLite(), dbname = db)
+get.vct.files <- function(db=db.name) {
+  sql <- "SELECT DISTINCT file from vct"
+  con <- dbConnect(SQLite(), dbname=db)
   files <- dbGetQuery(con, sql)
   dbDisconnect(con)
   return(files$file)
-}
-
-# Return a vector of distinct file values in opp.evt.ratio.table.name
-#
-# Args:
-#   db = sqlite3 db
-get.opp.evt.ratio.files <- function(db = db.name) {
-  sql <- paste0("SELECT DISTINCT file from ", opp.evt.ratio.table.name)
-  con <- dbConnect(SQLite(), dbname = db)
-  files <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(files$file)
-}
-
-get.opp.evt.ratio.by.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
-  sql <- paste0("SELECT * FROM ", opp.evt.ratio.table.name, " WHERE file == '",
-                file.name)
-  con <- dbConnect(SQLite(), dbname = db)
-  file <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(file$ratio)
-}
-
-get.opp.evt.ratio.by.date <- function(start.date, end.date, db = db.name) {
-  date.bounds <- c(date.to.db.date(start.date), date.to.db.date(end.date))
-  sql <- paste0("SELECT
-    opp_evt_ratio.file, opp_evt_ratio.ratio
-  FROM
-    sfl, opp_evt_ratio
-  WHERE
-    sfl.date >= '", date.bounds[1], "'
-    AND
-    sfl.date < '", date.bounds[2], "'
-    AND
-    sfl.cruise == opp_evt_ratio.cruise
-    AND
-    sfl.file == opp_evt_ratio.file")
-  con <- dbConnect(SQLite(), dbname = db)
-  files <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(files)
 }
 
 # Return a list of EVT files for which there is no OPP data in the database
@@ -212,12 +190,9 @@ get.opp.evt.ratio.by.date <- function(start.date, end.date, db = db.name) {
 # Args:
 #   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
 #   db = sqlite3 db
-get.empty.evt.files <- function(evt.list, db = db.name) {
+get.empty.evt.files <- function(evt.list, db=db.name) {
   opp.files <- get.opp.files(db)
-  # Make sure user provided file list has folder removed for new style file
-  # names and kept for old style names
-  clean.evt.list <- unlist(lapply(evt.list, clean.file.name))
-  return(setdiff(clean.evt.list, opp.files))
+  return(setdiff(evt.list, opp.files))
 }
 
 get.stat.table <- function(db = db.name) {
@@ -229,7 +204,6 @@ get.stat.table <- function(db = db.name) {
 }
 
 insert.stats.for.file <- function(file.name, db = db.name) {
-  file.name <- clean.file.name(file.name)
   # [TODO Francois] Name of OPP, vct, sfl, opp_evt_ratio tables should be a variable too.
   sql <- "INSERT INTO stats
 SELECT
@@ -305,7 +279,6 @@ run.stats <- function(opp.list, db=db.name){
 upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
   check.cruise.id(cruise.name)
 
-  file.name <- clean.file.name(file.name)
   con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = cytdiv.table.name,
                value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4], opp_red=indices[5]),
@@ -341,12 +314,28 @@ get.cytdiv.table <- function(db = db.name) {
 }
 
 
-get.sfl.table <- function(db = db.name) {
+get.sfl.table <- function(db=db.name) {
   sql <- paste('SELECT * FROM ', sfl.table.name, 'ORDER BY date ASC')
-  con <- dbConnect(SQLite(), dbname = db)
+  con <- dbConnect(SQLite(), dbname=db)
   sfl <- dbGetQuery(con, sql)
   dbDisconnect(con)
-  return (sfl)
+  return(sfl)
+}
+
+get.opp.stats.table <- function(db=db.name) {
+  sql <- paste('SELECT * FROM opp')
+  con <- dbConnect(SQLite(), dbname=db)
+  opp <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(opp)
+}
+
+get.vct.table <- function(db=db.name) {
+  sql <- paste('SELECT * FROM vct')
+  con <- dbConnect(SQLite(), dbname=db)
+  opp <- dbGetQuery(con, sql)
+  dbDisconnect(con)
+  return(opp)
 }
 
 # Create a new, empty sqlite3 database using schema from original db
