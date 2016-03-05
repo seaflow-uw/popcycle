@@ -1,35 +1,67 @@
-library(RSQLite)
-
-.delete.opp.stats.by.file <- function(file.name, db=db.name) {
+delete.opp.stats.by.file <- function(db, file.name) {
   sql <- paste0("DELETE FROM opp WHERE file == '", file.name, "'")
-  con <- dbConnect(SQLite(), dbname = db)
-  dbGetQuery(con, sql)
-  dbDisconnect(con)
+  sql.dbGetQuery(db, sql)
 }
 
-.delete.vct.stats.by.file <- function(file.name, db=db.name) {
+delete.vct.stats.by.file <- function(db, file.name) {
   sql <- paste0("DELETE FROM vct WHERE file == '", file.name, "'")
-  con <- dbConnect(SQLite(), dbname = db)
-  dbGetQuery(con, sql)
-  dbDisconnect(con)
+  sql.dbGetQuery(db, sql)
 }
 
-.delete.cytdiv.by.file <- function(file.name, db=db.name) {
-  sql <- paste0("DELETE FROM ", cytdiv.table.name, " WHERE file == '",
-                file.name, "'")
-  con <- dbConnect(SQLite(), dbname=db)
-  dbGetQuery(con, sql)
-  dbDisconnect(con)
+delete.cytdiv.by.file <- function(db, file.name) {
+  sql <- paste0("DELETE FROM ctydiv WHERE file == '", file.name, "'")
+  sql.dbGetQuery(db, sql)
 }
 
-.delete.sfl <- function(db=db.name) {
-  sql <- paste0("DELETE FROM ", sfl.table.name)
-  con <- dbConnect(SQLite(), dbname = db)
-  dbGetQuery(con, sql)
-  dbDisconnect(con)
+delete.gating.by.uuid <- function(db, uuid.str) {
+  sql <- paste0("DELETE FROM gating WHERE uuid == '", uuid.str, "'")
+  sql.dbGetQuery(db, sql)
 }
 
-get.opp.stats.by.file <- function(file.name, db=db.name) {
+delete.poly.by.uuid <- function(db, uuid.str) {
+  sql <- paste0("DELETE FROM poly WHERE gating_uuid == '", uuid.str, "'")
+  sql.dbGetQuery(db, sql)
+}
+
+reset.opp <- function(db) {
+  reset.table(db, "opp")
+}
+
+reset.vct <- function(db) {
+  reset.table(db, "vct")
+}
+
+reset.cytdiv <- function(db) {
+  reset.table(db, "cytdiv")
+}
+
+reset.sfl <- function(db) {
+  reset.table(db, "sfl")
+}
+
+reset.gating <- function(db) {
+  reset.table(db, "gating")
+}
+
+reset.poly <- function(db) {
+  reset.table(db, "poly")
+}
+
+reset.table <- function(db, table.name) {
+  sql <- paste0("DELETE FROM ", table.name)
+  sql.dbGetQuery(db, sql)
+}
+
+# Remove entries for all tables except gating and poly
+reset.db <- function(db) {
+  reset.opp(db)
+  reset.vct(db)
+  reset.cytdiv(db)
+  reset.sfl(db)
+}
+
+
+get.opp.stats.by.file <- function(db, file.name) {
   sql <- paste0("SELECT
     sfl.date, opp.*
   FROM
@@ -40,13 +72,11 @@ get.opp.stats.by.file <- function(file.name, db=db.name) {
     sfl.cruise == opp.cruise
     AND
     sfl.file == opp.file")
-  con <- dbConnect(SQLite(), dbname = db)
-  opp <- dbGetQuery(con, sql)
-  dbDisconnect(con)
+  opp <- sql.dbGetQuery(db, sql)
   return(opp)
 }
 
-get.opp.stats <- function(start.date=NULL, end.date=NULL, db=db.name) {
+get.opp.stats <- function(db, start.date=NULL, end.date=NULL) {
   sql <- "
     SELECT
       sfl.date, opp.*
@@ -57,13 +87,11 @@ get.opp.stats <- function(start.date=NULL, end.date=NULL, db=db.name) {
       AND
       sfl.file == opp.file"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
-  con <- dbConnect(SQLite(), dbname = db)
-  opp <- dbGetQuery(con, sql)
-  dbDisconnect(con)
+  opp <- sql.dbGetQuery(db, sql)
   return(opp)
 }
 
-get.vct.stats <- function(start.date=NULL, end.date=NULL, db=db.name) {
+get.vct.stats <- function(db, start.date=NULL, end.date=NULL) {
   sql <- "
     SELECT
       sfl.date, vct.*
@@ -74,10 +102,8 @@ get.vct.stats <- function(start.date=NULL, end.date=NULL, db=db.name) {
       AND
       sfl.file == vct.file"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
-  con <- dbConnect(SQLite(), dbname = db)
-  opp <- dbGetQuery(con, sql)
-  dbDisconnect(con)
-  return(opp)
+  vct <- sql.dbGetQuery(db, sql)
+  return(vct)
 }
 
 get.opp.by.file <- function(file.name, channel=NULL, opp.dir=NULL,
@@ -92,10 +118,9 @@ get.vct.by.file <- function(file.name, vct.dir=NULL) {
   return(vct)
 }
 
-get.opp.by.date <- function(start.date, end.date, pop=NULL, channel=NULL,
-                            transform=TRUE, opp.dir=NULL, vct.dir=NULL,
-                            db=db.name) {
-  dates <- get.opp.stats(start.date=start.date, end.date=end.date, db=db)
+get.opp.by.date <- function(db, start.date, end.date, pop=NULL, channel=NULL,
+                            transform=TRUE, opp.dir=NULL, vct.dir=NULL) {
+  dates <- get.opp.stats(db, start.date=start.date, end.date=end.date)
   opp.reader <- function(f) {
     opp <- get.opp.by.file(f, opp.dir, channel=channel, transform=transform)
     return(opp)
@@ -118,17 +143,17 @@ get.opp.by.date <- function(start.date, end.date, pop=NULL, channel=NULL,
 # Get SFL rows >= start.date and <= end.date
 #
 # Args:
+#   db: sqlite database
 #   start.date: start date in format YYYY-MM-DD HH:MM
 #   end.date:   end date in format YYYY-MM-DD HH:MM
-get.sfl <- function(start.date=NULL, end.date=NULL, db=db.name) {
+get.sfl <- function(db, start.date=NULL, end.date=NULL) {
   sql <- "SELECT * FROM sfl"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=F)
-  con <- dbConnect(SQLite(), dbname = db)
-  sfl <- dbGetQuery(con, sql)
+  sfl <- sql.dbGetQuery(db, sql)
   return(sfl)
 }
 
-upload.vct <- function(opp, cruise.name, file.name, method, db=db.name) {
+upload.vct <- function(db, opp, cruise.name, file.name, method) {
   check.cruise.id(cruise.name)
 
   df <- ddply(opp, .(pop), here(summarize),
@@ -142,6 +167,115 @@ upload.vct <- function(opp, cruise.name, file.name, method, db=db.name) {
   dbDisconnect(con)
 }
 
+upload.gating <- function(db, poly.log, new.entry=FALSE) {
+  if (new.entry) {
+    uuid.str <- UUIDgenerate()  # create primary ID for new entry
+    date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
+  } else {
+    gating.table <- get.gating.table(db)
+    if (nrow(gating.table) == 0) {
+      stop("new.entry=FALSE in upload.gating, but no gating entry to update")
+    }
+    uuid.str <- gating.table[1, "uuid"] # get primary ID for entry to be replaced
+    date.stamp <- gating.table[1, "date"]
+    delete.gating.by.uuid(db, uuid.str) # erase entry to be replaced
+  }
+
+  df <- data.frame(date=date.stamp, uuid=uuid.str,
+                   pop_order=paste(names(poly.log), collapse=","))
+
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="gating", value=df, row.names=F, append=T)
+  dbDisconnect(con)
+
+  upload.poly(db, poly.log, uuid.str)
+}
+
+upload.poly <- function(db, poly.log, uuid.str) {
+  ns <- names(poly.log)
+  df <- data.frame()
+  channels <- c("fsc_small", "chl_small", "pe", "fsc_big", "chl_big")
+
+  if (length(ns) == 0) {
+    return()
+  }
+  for (i in seq(length(ns))) {
+    p <- poly.log[[ns[i]]]
+    tmpdf <- data.frame(uuid=rep(uuid.str, nrow(p)))
+    tmpdf[, "pop"] <- ns[i]
+    for (col in channels) {
+      tmpdf[, col] <- NA
+    }
+    for (col in colnames(p)) {
+      tmpdf[, col] <- p[, col]
+    }
+    df <- rbind(df, tmpdf)
+  }
+
+  delete.poly.by.uuid(db, uuid.str)
+
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="poly", value=df, row.names=F, append=T)
+  dbDisconnect(con)
+}
+
+# Get latest gating parameters
+get.gating.params <- function(db) {
+  if (is.null(uuid)) {
+    sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
+  } else {
+    sql <- paste0("SELECT * FROM gating WHERE uuid = '", uuid, "'")
+  }
+  gating.df <- sql.dbGetQuery(db, sql)
+  poly.log <- poly.log.from.db.gating.df(db, gating.df)
+  return(poly.log)
+}
+
+# Get gating parameters by uuid
+get.gating.params.by.uuid <- function(db, uuid) {
+  sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
+  gating.df <- sql.dbGetQuery(db, sql)
+  poly.log <- poly.log.from.db.gating.df(db, gating.df)
+  return(poly.log)
+}
+
+poly.log.from.db.gating.df <- function(db, gating.df) {
+  if (nrow(gating.df) == 0) {
+    return(data.frame())
+  } else if (nrow(gating.df) > 1) {
+    stop("gating.df must contain at most one entry")
+  }
+
+  poly.log <- list()
+  pop.names <- strsplit(gating.df$pop_order, ",")[[1]]
+  channels <- c("fsc_small", "chl_small", "pe", "fsc_big", "chl_big")
+  for (i in seq(length(pop.names))) {
+    sql <- paste0("
+      SELECT * FROM poly
+      WHERE
+        gating_uuid = '", gating.df$uuid[1], "'
+        AND
+        pop = '", pop.names[i], "'"
+    )
+    pop.poly <- sql.dbGetQuery(db, sql)
+    for (c in channels) {
+      if (all(is.na(pop.poly[, c]))) {
+        pop.poly[, c] <- NULL
+      }
+    }
+    pop.poly[, "pop"] <- NULL
+    pop.poly[, "gating_uuid"] <- NULL
+    poly.log[[i]] <- as.matrix(pop.poly)
+  }
+  names(poly.log) <- pop.names
+}
+
+get.gating.table <- function(db) {
+  sql <- "SELECT * FROM gating ORDER BY date ASC"
+  gating <- sql.dbGetQuery(db, sql)
+  return(gating)
+}
+
 save.vct.file <- function(vct, opp.file, vct.dir) {
   vct.file <- paste0(vct.dir, "/", opp.file, ".vct")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
@@ -152,11 +286,9 @@ save.vct.file <- function(vct, opp.file, vct.dir) {
 #
 # Args:
 #   db = sqlite3 db
-get.opp.files <- function(db=db.name) {
+get.opp.files <- function(db) {
   sql <- "SELECT DISTINCT file from opp"
-  con <- dbConnect(SQLite(), dbname=db)
-  files <- dbGetQuery(con, sql)
-  dbDisconnect(con)
+  files <- sql.dbGetQuery(db, sql)
   print(paste(length(files$file), "opp files found"))
   return(files$file)
 }
@@ -165,11 +297,9 @@ get.opp.files <- function(db=db.name) {
 #
 # Args:
 #   db = sqlite3 db
-get.vct.files <- function(db=db.name) {
+get.vct.files <- function(db) {
   sql <- "SELECT DISTINCT file from vct"
-  con <- dbConnect(SQLite(), dbname=db)
-  files <- dbGetQuery(con, sql)
-  dbDisconnect(con)
+  files <- sql.dbGetQuery(db, sql)
   return(files$file)
 }
 
@@ -178,12 +308,12 @@ get.vct.files <- function(db=db.name) {
 # Args:
 #   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
 #   db = sqlite3 db
-get.empty.evt.files <- function(evt.list, db=db.name) {
+get.empty.evt.files <- function(db, evt.list) {
   opp.files <- get.opp.files(db)
   return(setdiff(evt.list, opp.files))
 }
 
-get.stat.table <- function(db=db.name) {
+get.stat.table <- function(db) {
   sql <- "
   SELECT
     opp.cruise as cruise,
@@ -212,13 +342,12 @@ get.stat.table <- function(db=db.name) {
     opp.file == sfl.file
   ORDER BY
     time, pop;)"
-  con <- dbConnect(SQLite(), dbname=db)
-  stats <- dbGetQuery(con, sql)
-  dbDisconnect(con)
+
+  stats <- sql.dbGetQuery(db, sql)
   return (stats)
 }
 
-upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
+upload.cytdiv <- function(db, indices, cruise.name, file.name) {
   check.cruise.id(cruise.name)
 
   con <- dbConnect(SQLite(), dbname = db)
@@ -228,7 +357,7 @@ upload.cytdiv <- function(indices, cruise.name, file.name, db = db.name) {
   dbDisconnect(con)
 }
 
-get.cytdiv.table <- function(db = db.name) {
+get.cytdiv.table <- function(db) {
   sql <- "SELECT
             sfl.cruise as cruise,
             sfl.file as file,
@@ -247,10 +376,7 @@ get.cytdiv.table <- function(db = db.name) {
             AND
             sfl.file == cytdiv.file
             ORDER BY time ASC ;"
-
-  con <- dbConnect(SQLite(), dbname = db)
-  cytdiv <- dbGetQuery(con, sql)
-  dbDisconnect(con)
+  cytdiv <- sql.dbGetQuery(db, sql)
   return (cytdiv)
 }
 
@@ -264,68 +390,6 @@ make.sqlite.db <- function(new.db.path) {
   status <- system(cmd)
   if (status > 0) {
     stop(paste("Db creation command '", cmd, "' failed with exit status ", status))
-  }
-}
-
-# Merge opp, opp.evt.ratio, vct tables from multiple sqlite dbs into target.db.
-# Erase files in src.dbs once merged.
-#
-# Args:
-#   src.dbs: paths of sqlite3 dbs to merge into target.db
-#   target.db: path of sqlite3 db to be merged into
-merge.dbs <- function(src.dbs, target.db=db.name) {
-  for (src in src.dbs) {
-    # First erase existing opp, opp.evt.ratio, and vct entries in main db for
-    # files about to be merged. Otherwise we'll get sqlite3 errors about
-    # "UNIQUE constraint failed" if filtering is being rerun for some files.
-    for (f in get.opp.files(src)) {
-      .delete.opp.by.file(f, db=db.name)
-    }
-    for (f in get.vct.files(src)) {
-      .delete.vct.by.file(f, db=db.name)
-    }
-    for (f in get.opp.evt.ratio.files(src)) {
-      .delete.opp.evt.ratio.by.file(f, db=db.name)
-    }
-
-    # Now merge src db into main db
-    merge.sql <- paste(sprintf("attach \"%s\" as incoming", src),
-                       "BEGIN",
-                       sprintf("insert into %s select * from incoming.%s",
-                               opp.table.name, opp.table.name),
-                       sprintf("insert into %s select * from incoming.%s",
-                               vct.table.name, vct.table.name),
-                       sprintf("insert into %s select * from incoming.%s",
-                               opp.evt.ratio.table.name, opp.evt.ratio.table.name),
-                       "COMMIT;", sep="; ")
-    cmd <- sprintf("sqlite3 %s '%s'", target.db, merge.sql)
-    status <- system(cmd)
-    if (status > 0) {
-      stop(paste("Db merge command '", cmd, "' failed with exit status ", status))
-    }
-    file.remove(src)
-  }
-}
-
-# Create empty sqlite db for this project. If one already exists it will be
-# overwritten. Also erase any numbered sqlite3 dbs used for parallel filtering.
-#
-# Args:
-#   db.loc: directory containing sqlite3 database(s)
-#   parts.only: only erase numbered databases (e.g. popcycle.db5) and leave
-#     main db untouched
-reset.db <- function(db.loc=db.location, parts.only=FALSE) {
-  if (parts.only) {
-    db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]+$", full.names=TRUE)
-  } else {
-    db.files <- list.files(db.loc, pattern="^popcycle\\.db[0-9]*$", full.names=TRUE)
-  }
-  for (db in db.files) {
-      file.remove(db)
-  }
-  # Create empty sqlite database
-  if (! parts.only) {
-    make.sqlite.db(paste(db.loc, "popcycle.db", sep="/"))
   }
 }
 
@@ -356,6 +420,18 @@ sfl_date_where_clause <- function(sql, start.date, end.date, append=F) {
     ORDER BY sfl.date ASC"
   )
   return(sql);
+}
+
+sql.dbGetQuery <- function(db, sql) {
+  con <- dbConnect(SQLite(), dbname=db)
+  tryCatch({
+    resp <- dbGetQuery(con, sql)
+    dbDisconnect(con)
+    return(resp)
+  }, error=function(e) {
+    dbDisconnect(con)
+    stop(e)
+  })
 }
 
 # Convert a date string in format YYYY-MM-DD HH:MM to format suitable for db

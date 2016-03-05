@@ -99,3 +99,20 @@ CREATE TABLE IF NOT EXISTS cytdiv (
   opp_red REAL,
   PRIMARY KEY (cruise, file)
 );
+
+CREATE TABLE IF NOT EXISTS gating (
+  date TEXT NOT NULL,
+  uuid TEXT NOT NULL,
+  pop_order TEXT NOT NULL,
+  PRIMARY KEY (uuid)
+);
+
+CREATE TABLE IF NOT EXISTS poly (
+  gating_uuid TEXT NOT NULL,
+  pop TEXT NOT NULL,
+  fsc_small REAL,
+  chl_small REAL,
+  pe REAL,
+  fsc_big REAL,
+  chl_big REAL
+);

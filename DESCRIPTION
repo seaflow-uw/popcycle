@@ -5,7 +5,7 @@ Date: 2015-05-24
 Author: Francois Ribalet, Chris Berthiaume, Jeremy Hyrkas
 Maintainer: Francois Ribalet <ribalet@uw.edu>
 Description: Real-time Seaflow analysis using R/SQLite.
-Depends: RSQLite, splancs, plyr, snow
+Depends: RSQLite, splancs, plyr, snow, uuid
 Suggests: plotrix, maps, mapdata, testthat
 License: GPL-2
 URL: http://seaflow.ocean.washington.edu
