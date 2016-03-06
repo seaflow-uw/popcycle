@@ -29,7 +29,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
   poly.l <- list(poly)
   names(poly.l) <- popname
 
-  poly.log <- get.gating.params(db)
+  poly.log <- get.gating.params.latest(db)
   if (nrow(poly.log) == 0 || new.entry) {
     # Start a new gating entry
     poly.log <- poly.l
@@ -38,7 +38,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
     # if gate parameters for the same population already exist, overwrite,
     # otherwise append gate parameters for new population
     poly.log[popname] <- poly.l
-    upload.gating(db, poly.log, new.entry=FALSE)
+    save.gating(db, poly.log, new.entry=FALSE)
   }
   return(poly)
 }
@@ -47,7 +47,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
 ManualGating <- function(opp, db){
   opp$pop <- "unknown"
 
-  poly.log <- get.gating.params(db)
+  poly.log <- get.gating.params.latest(db)
   if (length(poly.log) == 0) {
     stop("No gate parameters found!")
    }
@@ -70,7 +70,7 @@ ManualGating <- function(opp, db){
 
 run.gating <- function(opp.list, opp.dir, vct.dir, db) {
 
-if (length(get.gating.params(db)) == 0) {
+if (length(get.gating.params.latest(db)) == 0) {
     stop('No gate paramters yet; no gating.')
   }
 
@@ -82,7 +82,7 @@ if (length(get.gating.params(db)) == 0) {
     tryCatch({
      # print(paste('Loading', opp.file))
       opp <- get.opp.by.file(opp.file, opp.dir=opp.dir,
-                             channel=c("fsc_small", "chl_small", "pe"))
+                             channel=c("fsc_small", "fsc_perp", "pe", "chl_small"))
   #   print(paste('Classifying', opp.file))
       vct <- classify.opp(opp, ManualGating, db)
       opp$pop <- factor(vct)
@@ -90,14 +90,14 @@ if (length(get.gating.params(db)) == 0) {
       delete.vct.stats.by.file(db, opp.file)
       # store vct
    #  print('Uploading labels to the database')
-      upload.vct(db, opp, cruise.id, opp.file, 'Manual Gating')
-      save.vct.file(vct, opp.file, vct.dir)
+      save.vct.stats(db, opp, cruise.id, opp.file, 'Manual Gating')
+      save.vct.file(vct.dir, opp.file, vct)
 
    #print("Calculating cytometric diversity")
       df <- opp[!(opp$pop == 'beads'),]
       indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
       delete.cytdiv.by.file(db, opp.file)
-      upload.cytdiv(db, indices, cruise.id, opp.file)
+      save.cytdiv(db, indices, cruise.id, opp.file)
     }, error = function(e) {print(paste("Encountered error with file", opp.file))})
 
     i <-  i + 1

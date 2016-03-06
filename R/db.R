@@ -13,6 +13,11 @@ delete.cytdiv.by.file <- function(db, file.name) {
   sql.dbGetQuery(db, sql)
 }
 
+delete.filter.by.id <- function(db, id) {
+  sql <- paste0("DELETE FROM filter WHERE id == '", id, "'")
+  sql.dbGetQuery(db, sql)
+}
+
 delete.gating.by.uuid <- function(db, uuid.str) {
   sql <- paste0("DELETE FROM gating WHERE uuid == '", uuid.str, "'")
   sql.dbGetQuery(db, sql)
@@ -39,6 +44,10 @@ reset.sfl <- function(db) {
   reset.table(db, "sfl")
 }
 
+reset.filter <- function(db) {
+  reset.table(db, "filter")
+}
+
 reset.gating <- function(db) {
   reset.table(db, "gating")
 }
@@ -52,14 +61,13 @@ reset.table <- function(db, table.name) {
   sql.dbGetQuery(db, sql)
 }
 
-# Remove entries for all tables except gating and poly
+# Remove entries for all tables except filter, gating, and poly
 reset.db <- function(db) {
   reset.opp(db)
   reset.vct(db)
   reset.cytdiv(db)
   reset.sfl(db)
 }
-
 
 get.opp.stats.by.file <- function(db, file.name) {
   sql <- paste0("SELECT
@@ -153,74 +161,26 @@ get.sfl <- function(db, start.date=NULL, end.date=NULL) {
   return(sfl)
 }
 
-upload.vct <- function(db, opp, cruise.name, file.name, method) {
-  check.cruise.id(cruise.name)
-
-  df <- ddply(opp, .(pop), here(summarize),
-              cruise=cruise.name, file=file.name, count=length(pop), method=method,
-              fsc_small=mean(fsc_small), chl_small=mean(chl_small), pe=mean(pe))
-  cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
-            "chl_small", "pe")
-  df.reorder <- df[cols]
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="vct", value=df.reorder, row.names=F, append=T)
-  dbDisconnect(con)
+get.filter.params.latest <- function(db) {
+  sql <- "SELECT * FROM filter ORDER BY date DESC LIMIT 1"
+  result <- sql.dbGetQuery(db, sql)
+  return(result)
 }
 
-upload.gating <- function(db, poly.log, new.entry=FALSE) {
-  if (new.entry) {
-    uuid.str <- UUIDgenerate()  # create primary ID for new entry
-    date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
-  } else {
-    gating.table <- get.gating.table(db)
-    if (nrow(gating.table) == 0) {
-      stop("new.entry=FALSE in upload.gating, but no gating entry to update")
-    }
-    uuid.str <- gating.table[1, "uuid"] # get primary ID for entry to be replaced
-    date.stamp <- gating.table[1, "date"]
-    delete.gating.by.uuid(db, uuid.str) # erase entry to be replaced
-  }
-
-  df <- data.frame(date=date.stamp, uuid=uuid.str,
-                   pop_order=paste(names(poly.log), collapse=","))
-
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="gating", value=df, row.names=F, append=T)
-  dbDisconnect(con)
-
-  upload.poly(db, poly.log, uuid.str)
+get.filter.params.by.id <- function(db, id) {
+  sql <- paste0("SELECT * FROM filter WHERE id = ", id)
+  result <- sql.dbGetQuery(db, sql)
+  return(result)
 }
 
-upload.poly <- function(db, poly.log, uuid.str) {
-  ns <- names(poly.log)
-  df <- data.frame()
-  channels <- c("fsc_small", "chl_small", "pe", "fsc_big", "chl_big")
-
-  if (length(ns) == 0) {
-    return()
-  }
-  for (i in seq(length(ns))) {
-    p <- poly.log[[ns[i]]]
-    tmpdf <- data.frame(uuid=rep(uuid.str, nrow(p)))
-    tmpdf[, "pop"] <- ns[i]
-    for (col in channels) {
-      tmpdf[, col] <- NA
-    }
-    for (col in colnames(p)) {
-      tmpdf[, col] <- p[, col]
-    }
-    df <- rbind(df, tmpdf)
-  }
-
-  delete.poly.by.uuid(db, uuid.str)
-
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="poly", value=df, row.names=F, append=T)
-  dbDisconnect(con)
+get.filter.table <- function(db) {
+  sql <- "SELECT * FROM filter ORDER BY date ASC"
+  result <- sql.dbGetQuery(db, sql)
+  return(result)
 }
 
 # Get latest gating parameters
-get.gating.params <- function(db) {
+get.gating.params.latest <- function(db) {
   if (is.null(uuid)) {
     sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
   } else {
@@ -274,12 +234,6 @@ get.gating.table <- function(db) {
   sql <- "SELECT * FROM gating ORDER BY date ASC"
   gating <- sql.dbGetQuery(db, sql)
   return(gating)
-}
-
-save.vct.file <- function(vct, opp.file, vct.dir) {
-  vct.file <- paste0(vct.dir, "/", opp.file, ".vct")
-  dir.create(dirname(vct.file), showWarnings=F, recursive=T)
-  write.table(vct, vct.file, row.names=F, col.names=F, quote=F)
 }
 
 # Return a vector of distinct file values in opp table
@@ -347,16 +301,6 @@ get.stat.table <- function(db) {
   return (stats)
 }
 
-upload.cytdiv <- function(db, indices, cruise.name, file.name) {
-  check.cruise.id(cruise.name)
-
-  con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = cytdiv.table.name,
-               value = data.frame(cruise = cruise.name, file = file.name, N0 = indices[1], N1= indices[2], H=indices[3], J=indices[4], opp_red=indices[5]),
-               row.names=FALSE, append=TRUE)
-  dbDisconnect(con)
-}
-
 get.cytdiv.table <- function(db) {
   sql <- "SELECT
             sfl.cruise as cruise,
@@ -378,6 +322,137 @@ get.cytdiv.table <- function(db) {
             ORDER BY time ASC ;"
   cytdiv <- sql.dbGetQuery(db, sql)
   return (cytdiv)
+}
+
+save.cytdiv <- function(db, indices, cruise.name, file.name) {
+  con <- dbConnect(SQLite(), dbname = db)
+  dbWriteTable(conn = con, name = "cytdiv",
+               value = data.frame(cruise = cruise.name, file = file.name,
+                                  N0 = indices[1], N1= indices[2], H=indices[3],
+                                  J=indices[4], opp_red=indices[5]),
+               row.names=FALSE, append=TRUE)
+  dbDisconnect(con)
+}
+
+save.vct.stats <- function(db, opp, cruise.name, file.name, method) {
+  df <- ddply(opp, .(pop), here(summarize),
+              cruise=cruise.name, file=file.name, count=length(pop), method=method,
+              fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
+              chl_small=mean(chl_small), pe=mean(pe))
+  cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
+            "fsc_perp", "pe", "chl_small")
+  df.reorder <- df[cols]
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="vct", value=df.reorder, row.names=F, append=T)
+  dbDisconnect(con)
+}
+
+save.vct.file <- function(vct.dir, evt.file, vct) {
+  vct.file <- paste0(vct.dir, "/", evt.file, ".vct")
+  dir.create(dirname(vct.file), showWarnings=F, recursive=T)
+  write.table(vct, vct.file, row.names=F, col.names=F, quote=F)
+}
+
+save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params) {
+  if (nrow(opp) == 0) {
+    return
+  }
+  opp.t <- transformData(opp)
+  df <- data.frame(cruise=cruise.name, file=file.name, opp_count=nrow(opp),
+                   evt_count=evt_count, opp_evt_ratio=opp/evt_count,
+                   notch1=params$notch1, notch2=params$notch2,
+                   offset=params$offset, origin=params$origin,
+                   width=params$width,
+                   fsc_small_min=min(opp$fsc_small),
+                   fsc_small_max=max(opp$fsc_small),
+                   fsc_small_mean=mean(opp$fsc_small),
+                   fsc_perp_min=min(opp$fsc_perp),
+                   fsc_perp_max=max(opp$fsc_perp),
+                   fsc_perp_mean=mean(opp$fsc_perp),
+                   fsc_big_min=min(opp$fsc_big),
+                   fsc_big_max=max(opp$fsc_big),
+                   fsc_big_mean=mean(opp$fsc_big),
+                   pe_min=min(opp$pe),
+                   pe_max=max(opp$pe),
+                   pe_mean=mean(opp$pe),
+                   chl_small_min=min(opp$chl_small),
+                   chl_small_max=max(opp$chl_small),
+                   chl_small_mean=mean(opp$chl_small),
+                   chl_big_min=min(opp$chl_big),
+                   chl_big_max=max(opp$chl_big),
+                   chl_big_mean=mean(opp$chl_big)
+        )
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="filter", value=df, row.names=F, append=T)
+  dbDisconnect(con)
+}
+
+save.opp.file <- function(opp.dir, evt.file , opp) {
+  opp.file <- paste0(opp.dir, "/", opp.file, ".opp")
+  dir.create(dirname(opp.file), showWarnings=F, recursive=T)
+  writeSeaflow(opp, opp.file, linearize=FALSE)
+}
+
+save.filter <- function(db, notch1, notch2, offset, origin, width) {
+  date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
+  df <- data.frame(date=date.stamp, notch1=notch1, notch2=notch2, offset=offset,
+                   origin=origin, width=width)
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="filter", value=df, row.names=F, append=T)
+  dbDisconnect(con)
+}
+
+save.gating <- function(db, poly.log, new.entry=FALSE) {
+  if (new.entry) {
+    uuid.str <- UUIDgenerate()  # create primary ID for new entry
+    date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
+  } else {
+    gating.table <- get.gating.table(db)
+    if (nrow(gating.table) == 0) {
+      stop("new.entry=FALSE in upload.gating, but no gating entry to update")
+    }
+    uuid.str <- gating.table[1, "uuid"] # get primary ID for entry to be replaced
+    date.stamp <- gating.table[1, "date"]
+    delete.gating.by.uuid(db, uuid.str) # erase entry to be replaced
+  }
+
+  df <- data.frame(date=date.stamp, uuid=uuid.str,
+                   pop_order=paste(names(poly.log), collapse=","))
+
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="gating", value=df, row.names=F, append=T)
+  dbDisconnect(con)
+
+  save.poly(db, poly.log, uuid.str)
+}
+
+save.poly <- function(db, poly.log, uuid.str) {
+  ns <- names(poly.log)
+  df <- data.frame()
+  channels <- c("fsc_small", "fsc_perp", "fsc_big". "pe", "chl_small",
+                "chl_big")
+
+  if (length(ns) == 0) {
+    return()
+  }
+  for (i in seq(length(ns))) {
+    p <- poly.log[[ns[i]]]
+    tmpdf <- data.frame(uuid=rep(uuid.str, nrow(p)))
+    tmpdf[, "pop"] <- ns[i]
+    for (col in channels) {
+      tmpdf[, col] <- NA
+    }
+    for (col in colnames(p)) {
+      tmpdf[, col] <- p[, col]
+    }
+    df <- rbind(df, tmpdf)
+  }
+
+  delete.poly.by.uuid(db, uuid.str)
+
+  con <- dbConnect(SQLite(), dbname=db)
+  dbWriteTable(conn=con, name="poly", value=df, row.names=F, append=T)
+  dbDisconnect(con)
 }
 
 # Create a new, empty sqlite3 database using schema from original db
@@ -451,7 +526,8 @@ string.to.POSIXct <- function(date.string) {
   # Make POSIXct objects in GMT time zone
   date.ct <- as.POSIXct(strptime(date.string, format="%Y-%m-%d %H:%M", tz="GMT"))
   if (is.na(date.ct)) {
-    stop(paste("wrong format for date.string parameter : ", date.string, "instead of ", "%Y-%m-%d %H:%M"))
+    stop(paste("wrong format for date.string parameter : ", date.string,
+               "instead of ", "%Y-%m-%d %H:%M"))
   }
   return(date.ct)
 }
