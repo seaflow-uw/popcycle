@@ -429,7 +429,7 @@ save.gating <- function(db, poly.log, new.entry=FALSE) {
 save.poly <- function(db, poly.log, uuid.str) {
   ns <- names(poly.log)
   df <- data.frame()
-  channels <- c("fsc_small", "fsc_perp", "fsc_big". "pe", "chl_small",
+  channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
                 "chl_big")
 
   if (length(ns) == 0) {
