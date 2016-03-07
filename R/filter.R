@@ -1,41 +1,18 @@
 filter.evt <- function(evt, filter.func, ...) {
-  opp <- filter.func(evt, ...)
+  filt <- filter.func(evt, ...)
 
   # SANITY CHECKS
   # need same columns for opp
-  if (!all(names(evt) == names(opp))) {
+  if (!all(names(evt) == names(filt$opp))) {
     stop('Filtering function produced OPP with different columns')
   }
 
   # filtered all particles out?
-  if (dim(opp)[1] < 1) {
+  if (dim(filt$opp)[1] < 1) {
     stop('Filtering dropped all particles.')
   }
 
-  return (opp)
-}
-
-# set width and notch, log old parameters if they exist
-setFilterParams <- function(origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
-   #log
-  if(length(notch) == !2) {
-    stop('Notch should contains 2 values; filtering parameters not saved.')
-  }
-
-  time <- format(Sys.time(),format="%FT%H:%M:%S+00:00", tz="GMT")
-   params <- data.frame(time=time, origin=origin, width = width, notch1 = notch[1], notch2=notch[2], offset=offset)
-
-  log.file <- paste(log.filter.location, 'filter.csv', sep='/')
-
-  if (file.exists(log.file)) {
-    write.table(params, log.file, row.names = F, col.names = F, append = T, quote = F, sep=',')
-  } else {
-    write.table(params, log.file, row.names = F, col.names = T, quote=F, sep=',')
-  }
-
-  #write params
-  write.table(params, file = paste(param.filter.location, 'filter.csv', sep='/'), sep = ",",
-              quote=F, row.names=F)
+  return (filt)
 }
 
 filter.notch <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
@@ -86,7 +63,7 @@ filter.notch <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
   opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)
 
   params = list("notch1"=notch1, "notch2"=notch2, "offset"=offset,
-                "origin"=origin, "offset"=offset)
+                "origin"=origin, "width"=width)
   return(list("opp"=opp, "params"=params))
 }
 
@@ -206,14 +183,14 @@ filter.evt.files <- function(db, evt.list, evt.loc, cruise) {
       filter.evt(evt, filter.notch, origin=params$origin, width=params$width,
                  notch=c(params$notch1, params$notch2), offset=params$offset)
     }, warnings = function(err) {
-      return(data.frame())
+      return(list(opp=data.frame()))
     }, error = function(err) {
-      return(data.frame())
+      return(list(opp=data.frame()))
     })
 
     # Upload OPP data
     delete.opp.stats.by.file(db, evt.file)
-    if (nrow(res$opp) > 0) {
+    if (nrow(filt$opp) > 0) {
       save.opp.stats(db, cruise, evt.file, evt_count, filt$opp, filt$params)
       save.opp.file(opp.dir, evt.file, filt$opp)
     }

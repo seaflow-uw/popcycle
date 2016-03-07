@@ -1,15 +1,15 @@
 delete.opp.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM opp WHERE file == '", file.name, "'")
+  sql <- paste0("DELETE FROM opp WHERE file == '", remove.gz(file.name), "'")
   sql.dbGetQuery(db, sql)
 }
 
 delete.vct.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM vct WHERE file == '", file.name, "'")
+  sql <- paste0("DELETE FROM vct WHERE file == '", remove.gz(file.name), "'")
   sql.dbGetQuery(db, sql)
 }
 
 delete.cytdiv.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM ctydiv WHERE file == '", file.name, "'")
+  sql <- paste0("DELETE FROM ctydiv WHERE file == '", remove.gz(file.name), "'")
   sql.dbGetQuery(db, sql)
 }
 
@@ -75,7 +75,7 @@ get.opp.stats.by.file <- function(db, file.name) {
   FROM
     sfl, opp
   WHERE
-    opp.file == '", file.name, "'
+    opp.file == '", remove.gz(file.name), "'
     AND
     sfl.cruise == opp.cruise
     AND
@@ -84,7 +84,21 @@ get.opp.stats.by.file <- function(db, file.name) {
   return(opp)
 }
 
-get.opp.stats <- function(db, start.date=NULL, end.date=NULL) {
+get.opp.stats.table <- function(db) {
+  sql <- "
+    SELECT
+      sfl.date, opp.*
+    FROM
+      sfl, opp
+    WHERE
+      sfl.cruise == opp.cruise
+      AND
+      sfl.file == opp.file"
+  opp <- sql.dbGetQuery(db, sql)
+  return(opp)
+}
+
+get.opp.stats.by.date <- function(db, start.date=NULL, end.date=NULL) {
   sql <- "
     SELECT
       sfl.date, opp.*
@@ -99,7 +113,7 @@ get.opp.stats <- function(db, start.date=NULL, end.date=NULL) {
   return(opp)
 }
 
-get.vct.stats <- function(db, start.date=NULL, end.date=NULL) {
+get.vct.stats.by.date <- function(db, start.date=NULL, end.date=NULL) {
   sql <- "
     SELECT
       sfl.date, vct.*
@@ -114,30 +128,47 @@ get.vct.stats <- function(db, start.date=NULL, end.date=NULL) {
   return(vct)
 }
 
+get.vct.stats.table <- function(db) {
+  sql <- "
+    SELECT
+      sfl.date, vct.*
+    FROM
+      sfl, vct
+    WHERE
+      sfl.cruise == vct.cruise
+      AND
+      sfl.file == vct.file"
+  vct <- sql.dbGetQuery(db, sql)
+  return(vct)
+}
+
 get.opp.by.file <- function(file.name, channel=NULL, opp.dir=NULL,
                             transform=TRUE) {
-  opp <- readSeaflow(file.name, opp.dir, channel=channel, transform=transform)
+  # OPP files are never gzipped so it's OK to remove .gz here
+  opp.file <- paste0(remove.gz(file.name), ".opp")
+  opp <- readSeaflow(opp.file, opp.dir, channel=channel,
+                     transform=transform)
   return(opp)
 }
 
 get.vct.by.file <- function(file.name, vct.dir=NULL) {
-  vct.file <- paste0(vct.dir, "/", file.name, ".vct")
+  vct.file <- paste0(vct.dir, "/", remove.gz(file.name), ".vct")
   vct <- read.table(vct.file, col.names=c("pop"))
   return(vct)
 }
 
 get.opp.by.date <- function(db, start.date, end.date, pop=NULL, channel=NULL,
                             transform=TRUE, opp.dir=NULL, vct.dir=NULL) {
-  dates <- get.opp.stats(db, start.date=start.date, end.date=end.date)
+  opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
   opp.reader <- function(f) {
     opp <- get.opp.by.file(f, opp.dir, channel=channel, transform=transform)
     return(opp)
   }
-  opps <- lapply(dates$file, opp.reader)
+  opps <- lapply(opp.stats$file, opp.reader)
   opps.bound <- rbind.fill(opps)
 
   if (! is.null(vct.dir)) {
-    vcts <- lapply(dates$file, function(f) get.vct.by.file(f, vct.dir))
+    vcts <- lapply(opp.stats$file, function(f) get.vct.by.file(f, vct.dir))
     vcts.bound <- rbind.fill(vcts)
     opps.bound <- cbind(opps.bound, vcts.bound)
     if (! is.null(pop)) {
@@ -161,15 +192,19 @@ get.sfl <- function(db, start.date=NULL, end.date=NULL) {
   return(sfl)
 }
 
-get.filter.params.latest <- function(db) {
+get.filter.latest <- function(db) {
   sql <- "SELECT * FROM filter ORDER BY date DESC LIMIT 1"
   result <- sql.dbGetQuery(db, sql)
+  result[, "id"] <- NULL
+  result[, "date"] <- NULL
   return(result)
 }
 
-get.filter.params.by.id <- function(db, id) {
+get.filter.by.id <- function(db, id) {
   sql <- paste0("SELECT * FROM filter WHERE id = ", id)
   result <- sql.dbGetQuery(db, sql)
+  result[, "id"] <- NULL
+  result[, "date"] <- NULL
   return(result)
 }
 
@@ -180,7 +215,7 @@ get.filter.table <- function(db) {
 }
 
 # Get latest gating parameters
-get.gating.params.latest <- function(db) {
+get.gating.latest <- function(db) {
   if (is.null(uuid)) {
     sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
   } else {
@@ -192,7 +227,7 @@ get.gating.params.latest <- function(db) {
 }
 
 # Get gating parameters by uuid
-get.gating.params.by.uuid <- function(db, uuid) {
+get.gating.by.uuid <- function(db, uuid) {
   sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
   gating.df <- sql.dbGetQuery(db, sql)
   poly.log <- poly.log.from.db.gating.df(db, gating.df)
@@ -264,6 +299,7 @@ get.vct.files <- function(db) {
 #   db = sqlite3 db
 get.empty.evt.files <- function(db, evt.list) {
   opp.files <- get.opp.files(db)
+  evt.list <- unlist(lapply(evt.list, function(f) { remove.gz(f) }))
   return(setdiff(evt.list, opp.files))
 }
 
@@ -327,7 +363,7 @@ get.cytdiv.table <- function(db) {
 save.cytdiv <- function(db, indices, cruise.name, file.name) {
   con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = "cytdiv",
-               value = data.frame(cruise = cruise.name, file = file.name,
+               value = data.frame(cruise = cruise.name, file = remove.gz(file.name),
                                   N0 = indices[1], N1= indices[2], H=indices[3],
                                   J=indices[4], opp_red=indices[5]),
                row.names=FALSE, append=TRUE)
@@ -336,7 +372,8 @@ save.cytdiv <- function(db, indices, cruise.name, file.name) {
 
 save.vct.stats <- function(db, opp, cruise.name, file.name, method) {
   df <- ddply(opp, .(pop), here(summarize),
-              cruise=cruise.name, file=file.name, count=length(pop), method=method,
+              cruise=cruise.name, file=remove.gz(file.name),
+              count=length(pop), method=method,
               fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
               chl_small=mean(chl_small), pe=mean(pe))
   cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
@@ -348,7 +385,7 @@ save.vct.stats <- function(db, opp, cruise.name, file.name, method) {
 }
 
 save.vct.file <- function(vct.dir, evt.file, vct) {
-  vct.file <- paste0(vct.dir, "/", evt.file, ".vct")
+  vct.file <- paste0(vct.dir, "/", remove.gz(evt.file), ".vct")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   write.table(vct, vct.file, row.names=F, col.names=F, quote=F)
 }
@@ -357,9 +394,11 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params) {
   if (nrow(opp) == 0) {
     return
   }
-  opp.t <- transformData(opp)
-  df <- data.frame(cruise=cruise.name, file=file.name, opp_count=nrow(opp),
-                   evt_count=evt_count, opp_evt_ratio=opp/evt_count,
+  opp <- transformData(opp)
+  opp_count <- nrow(opp)
+  df <- data.frame(cruise=cruise.name, file=remove.gz(file.name),
+                   opp_count=opp_count, evt_count=evt_count,
+                   opp_evt_ratio=opp_count/evt_count,
                    notch1=params$notch1, notch2=params$notch2,
                    offset=params$offset, origin=params$origin,
                    width=params$width,
@@ -383,20 +422,21 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params) {
                    chl_big_mean=mean(opp$chl_big)
         )
   con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="filter", value=df, row.names=F, append=T)
+  dbWriteTable(conn=con, name="opp", value=df, row.names=F, append=T)
   dbDisconnect(con)
 }
 
 save.opp.file <- function(opp.dir, evt.file , opp) {
-  opp.file <- paste0(opp.dir, "/", opp.file, ".opp")
+  opp.file <- paste0(opp.dir, "/", remove.gz(evt.file), ".opp")
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
   writeSeaflow(opp, opp.file, linearize=FALSE)
 }
 
-save.filter <- function(db, notch1, notch2, offset, origin, width) {
+save.filter <- function(db, params) {
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
-  df <- data.frame(date=date.stamp, notch1=notch1, notch2=notch2, offset=offset,
-                   origin=origin, width=width)
+  df <- data.frame(id=NA, date=date.stamp, notch1=params$notch1,
+                   notch2=params$notch2, offset=params$offset,
+                   origin=params$origin, width=params$width)
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="filter", value=df, row.names=F, append=T)
   dbDisconnect(con)

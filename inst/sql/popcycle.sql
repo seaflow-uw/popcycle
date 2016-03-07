@@ -104,10 +104,10 @@ CREATE TABLE IF NOT EXISTS cytdiv (
 CREATE TABLE IF NOT EXISTS filter (
   id INTEGER PRIMARY KEY,
   date TEXT NOT NULL,
-  notch1 REAL NOT NULL,
-  notch2 REAL NOT NULL,
+  notch1 REAL,
+  notch2 REAL,
   offset REAL NOT NULL,
-  origin REAL NOT NULL,
+  origin REAL,
   width REAL NOT NULL
 );
 

@@ -44,44 +44,40 @@ readSeaflow <- function(file.name, path=evt.location, column.names=EVT.HEADER,
     n.columns <- length(column.names)
     n.extra.columns <- n.bytes.EOL / column.size  # number of 16 bit integers (2:10&0) in the EOL character
     n.int.columns <- n.columns + n.extra.columns
-    n.bytes.file <- file.info(file.path)$size
-    n.rows <- ((n.bytes.file - n.bytes.header) / column.size) / n.int.columns
-    n.events <- n.int.columns * n.rows
 
+    ## open binary file for reading
+    if (file_ext(file.path) == "gz") {
+      con <- gzfile(description = file.path, open="rb")
+    } else {
+      con <- file(description = file.path, open="rb")
+    }
+    header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
     # Check for empty file.  If empty return an empty data frame
-    if (n.bytes.file == 0) {
+    if (length(header) == 0) {
       warning(sprintf("File %s has size zero.", file.path))
       return(data.frame())
     }
-
-    ## open binary file for reading
-    con <- file(description = file.path, open="rb")
-    header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
     header.EOL <- readBin(con, "integer", n = 1, size = n.bytes.EOL, endian = "little")
 
-    # Make sure the number of events stated by the file header matches the
-    # number of events calculated from file size.  If not, something is wrong
-    # with the file and it should be ignored.  Return an empty data frame.
-    if (n.rows != header) {
-      msg <- paste("In file ", file.path, " the predicted number of rows ", n.rows,
-                   " doesn't equal the header specified number of events", sep="")
-      warning(msg)
-      close(con)
-      return(data.frame())
-    }
-
-    if(count.only){
+    if (count.only) {
      return(header) #return just the event count in the header
-    }else{
-
+    } else {
       ## read the actual events
+      n.events <- header * n.int.columns
       integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
       ## reformat the vector into a matrix -> dataframe
-      integer.matrix <- matrix(integer.vector[1:n.events], nrow = n.rows, ncol = n.int.columns, byrow=TRUE)
+      integer.matrix <- matrix(integer.vector[1:n.events], nrow = header, ncol = n.int.columns, byrow=TRUE)
       integer.dataframe <- data.frame(integer.matrix[,1:n.columns])
       ## name the columns
       names(integer.dataframe) <- c(column.names)
       close(con)
+
+      if (nrow(integer.dataframe) != header) {
+        msg <- paste("In file ", file.path, " the declared number of events ", header,
+             " doesn't equal the actual number of events", sep="")
+        warning(msg)
+        return(data.frame())
+      }
 
       if (! is.null(channel)) {
         integer.dataframe <- integer.dataframe[, channel, drop=FALSE]

@@ -29,7 +29,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
   poly.l <- list(poly)
   names(poly.l) <- popname
 
-  poly.log <- get.gating.params.latest(db)
+  poly.log <- get.gating.latest(db)
   if (nrow(poly.log) == 0 || new.entry) {
     # Start a new gating entry
     poly.log <- poly.l
@@ -47,7 +47,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
 ManualGating <- function(opp, db){
   opp$pop <- "unknown"
 
-  poly.log <- get.gating.params.latest(db)
+  poly.log <- get.gating.latest(db)
   if (length(poly.log) == 0) {
     stop("No gate parameters found!")
    }
@@ -70,7 +70,7 @@ ManualGating <- function(opp, db){
 
 run.gating <- function(opp.list, opp.dir, vct.dir, db) {
 
-if (length(get.gating.params.latest(db)) == 0) {
+if (length(get.gating.latest(db)) == 0) {
     stop('No gate paramters yet; no gating.')
   }
 
