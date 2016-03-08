@@ -150,10 +150,10 @@ DF <- NULL
 # Args:
 #   db: sqlite3 db path
 #   cruise: cruise name
-#   evt.loc: directory of evt files listed in evt.list
+#   evt.dir: directory of evt files listed in evt.list
 #   evt.list: list of EVT file paths, e.g. get.evt.list(evt.location)
 #   opp.dir: directory for opp output files
-filter.evt.files <- function(db, cruise, evt.loc, evt.list, opp.dir) {
+filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
   params <- get.filter.params.latest(db)
@@ -163,13 +163,13 @@ filter.evt.files <- function(db, cruise, evt.loc, evt.list, opp.dir) {
   }
 
   i <- 0
-  for (evt.file in evt.list) {
+  for (evt.file in unlist(lapply(evt.list, clean.file.path))) {
     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
 
     # Read EVT file
     # Return empty data frame on warning or error
     evt <- tryCatch({
-      readSeaflow(evt.file, path=evt.loc, transform=FALSE)
+      readSeaflow(evt.file, path=evt.dir, transform=FALSE)
     }, warnings = function(err) {
       return(data.frame())
     }, error = function(err) {

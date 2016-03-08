@@ -21,7 +21,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
   para.y <- as.character(para.y)
 
   par(mfrow=c(1,1))
-  plot.gate.cytogram(opp, para.x, para.y)
+  plot.gate.cytogram(db, opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
@@ -30,7 +30,7 @@ setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
   names(poly.l) <- popname
 
   poly.log <- get.gating.params.latest(db)$poly.log
-  if (nrow(poly.log) == 0 || new.entry) {
+  if (length(poly.log) == 0 || new.entry) {
     # Start a new gating entry
     poly.log <- poly.l
     save.gating.params(db, poly.log, new.entry=TRUE)
@@ -81,7 +81,7 @@ run.gating <- function(db, cruise.name, opp.dir, opp.list, vct.dir) {
 
     tryCatch({
       #print(paste('Loading', opp.file))
-      opp <- get.opp.by.file(opp.file, opp.dir=opp.dir,
+      opp <- get.opp.by.file(opp.dir, opp.file, ,
                              channel=c("fsc_small", "fsc_perp", "pe", "chl_small"))
       #print(paste('Classifying', opp.file))
       vct <- classify.opp(opp, ManualGating, db)

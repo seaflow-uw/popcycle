@@ -1,27 +1,25 @@
-plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){		
+plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
 
 	cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
-	
+
   par(pty='s')
   id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
   if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
-  else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...) 
+  else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 
 }
 
 
-plot.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
-  
-  opp <- get.opp.by.file(file.name)
+plot.cytogram.by.file <- function(opp.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small',...){
+  opp <- get.opp.by.file(opp.dir, evt.file)
   plot.cytogram(opp, para.x = para.x, para.y = para.y,...)
-
 }
 
 
 ## OPP merged with VCT
-plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small',...){		
-		
-		if(!is.null(opp$pop)){
+plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
+
+		if (!is.null(opp$pop)) {
 			par(pty='s')
       ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
       id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
@@ -35,48 +33,35 @@ plot.vct.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small',...
 		}
 }
 
-
-plot.vct.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
-  
-  vct <- get.vct.by.file(file.name)
-  opp <- get.opp.by.file(file.name)
-  opp$pop <- vct
+plot.vct.cytogram.by.file <- function(opp.dir, vct.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small',...){
+  opp <- get.opp.by.file(opp.dir, evt.file, vct.dir=vct.dir)
   plot.vct.cytogram(opp, para.x = para.x, para.y = para.y,...)
 
 }
 
-
-plot.gate.cytogram <- function(opp,para.x = 'fsc_small', para.y = 'chl_small'){
-
+plot.gate.cytogram <- function(db, opp, para.x = 'fsc_small', para.y = 'chl_small'){
   plot.cytogram(opp, para.x, para.y)
-
-     params <- list.files(param.gate.location,"params.RData")
-      if(length(params)==0){
-        print("No Gating parameters yet")
-       }else{load(paste0(param.gate.location,"/params.RData"))
-
-            for(i in 1:length(poly.log)){
-                pop <- names(poly.log[i]) # name of the population
-                poly <- poly.log[i][[1]] # Get parameters of the gate for this population
-                para <- colnames(poly)
-                    if(para[1]==para.x & para[2]==para.y){
-                      polygon(poly, lwd=3,border=i, col=NA)
-                      text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
-                      }
-              }
-       }
+	poly.log <- get.gating.params.latest(db)$poly.log
+  if (length(poly.log) == 0) {
+    stop("No gate parameters found!")
+	}
+	for (i in 1:length(poly.log)) {
+    pop <- names(poly.log[i]) # name of the population
+    poly <- poly.log[i][[1]] # Get parameters of the gate for this population
+    para <- colnames(poly)
+    if (para[1]==para.x & para[2]==para.y) {
+      polygon(poly, lwd=3,border=i, col=NA)
+      text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
+    }
+	}
 }
 
-plot.gate.cytogram.by.file <- function(file.name, para.x = 'fsc_small', para.y = 'chl_small'){
-
-  opp <- get.opp.by.file(file.name)
-
-  plot.gate.cytogram(opp,para.x = para.x, para.y = para.y)
-
+plot.gate.cytogram.by.file <- function(db, opp.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small') {
+  opp <- get.opp.by.file(db, opp.dir, evt.file)
+  plot.gate.cytogram(db, opp, para.x = para.x, para.y = para.y)
 }
 
-
-plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0){
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
 
   origin <- as.numeric(origin)
   width <- as.numeric(width)
@@ -85,35 +70,35 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
   notch2 <- as.numeric(notch[2])
   offset <- as.numeric(offset)
 
-  # linearize the LOG transformed data 
+  # linearize the LOG transformed data
    id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
     if(!any(max(evt[,c(id)]) > 10^3.5)){
-      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16  
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
    }
 
   # Correction for the difference of sensitivity between D1 and D2
     if(is.na(origin)) origin <- median(evt$D2-evt$D1)
 
- # Filtering particles detected by fsc_small 
+ # Filtering particles detected by fsc_small
     evt. <- subset(evt, fsc_small > 0)
-  
+
   # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
     aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
 
  # finding the notch
     if(is.na(notch1)){
-      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) 
-      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"]) 
+      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])
+      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
       notch1 <- fsc.max1 / (d.min1+ 10000)
         }
 
     if(is.na(notch2)){
-      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"]) 
-      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"]) 
+      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
+      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
       notch2 <- fsc.max2 / (d.min2 + 10000)
         }
-    
-   # Filtering focused particles (fsc_small > D + notch) 
+
+   # Filtering focused particles (fsc_small > D + notch)
     opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)
 
   ################
@@ -121,10 +106,10 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
   ################
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
   percent.opp <- round(100*nrow(opp)/nrow(evt),2)
-  
+
   origin1 <- origin + width*10^4
   origin2 <- origin - width*10^4
- 
+
   if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
   if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
 
@@ -144,13 +129,13 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
       mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)
       mtext(paste("Offset=", offset),side=3, line=1,font=2)
       abline(b=1/notch1, a=offset*10^4, col=2,lwd=2)
- 
+
   plot.cytogram(aligned, "fsc_small", "D2")
       mtext("Focus", side=3, line=4, font=2,col=2)
       mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)
       mtext(paste("Offset=", offset),side=3, line=1,font=2)
       abline(b=1/notch2, a=offset*10^4, col=2,lwd=2)
-  
+
   plot.cytogram(opp, "fsc_small", "pe")
       mtext("OPP", side=3, line=1, font=2)
   plot.cytogram(opp, "fsc_small","chl_small")
@@ -159,21 +144,16 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
   plot.cytogram(opp, "chl_small","pe")
       mtext("OPP", side=3, line=1, font=2)
 
-  par(def.par)      
+  par(def.par)
 
 }
 
 
 
-plot.filter.cytogram.by.file <- function(evt.location,file.name,width=0.2,notch=1, ...){
-
-    evt.list <- get.evt.list(evt.location)
-    id <- which(file.name == evt.list)
-    evt.file <- evt.list[id]
-    evt <- readSeaflow(evt.file)
-
+plot.filter.cytogram.by.file <- function(evt.dir, evt.file, width=0.2,notch=1, ...){
+  evt.file <- clean.file.path(evt.file)
+  evt <- readSeaflow(evt.file, evt.dir)
   plot.filter.cytogram(evt, notch=notch, width=width)
-
 }
 
 
@@ -186,10 +166,10 @@ plot.map <- function(stat,popname,param,...){
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
   map.type <- 'worldHires'
-  
-    xlim <- range(stat$lon, na.rm=T)        
-    ylim <- range(stat$lat, na.rm=T)   
-    
+
+    xlim <- range(stat$lon, na.rm=T)
+    ylim <- range(stat$lat, na.rm=T)
+
     if(xlim[1] < 0 & xlim[2] > 0){
         neg.lon <- subset(stat, lon < 0)
       stat[row.names(neg.lon), "long"] <- neg.lon$lon + 360
@@ -198,7 +178,7 @@ plot.map <- function(stat,popname,param,...){
       stat$lon[stat$lon < 0] <- stat$lon[stat$lon < 0] + 360
       map.type <- 'world2Hires'
         }
-  
+
   # plot the cruise track as gray line back-ground
   pop <- subset(stat, pop == popname)
   plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
@@ -209,10 +189,10 @@ plot.map <- function(stat,popname,param,...){
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
 
-    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
+    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2],
       legend=pretty(pop[,param]), rect.col=cols(100), gradient='y',align='rb',...)
-  mtext(paste(param), side=4, line=2,...)  
-  
+  mtext(paste(param), side=4, line=2,...)
+
 
 }
 
@@ -229,14 +209,14 @@ plot.cytdiv.map <- function(cytdiv,index,...){
   require(maps, quietly=T)
   require(mapdata, quietly=T)
   require(plotrix, quietly=T)
- 
+
  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
   map.type <- 'worldHires'
-  
-    xlim <- range(cytdiv$lon, na.rm=T)        
-    ylim <- range(cytdiv$lat, na.rm=T)   
-    
+
+    xlim <- range(cytdiv$lon, na.rm=T)
+    ylim <- range(cytdiv$lat, na.rm=T)
+
     if(xlim[1] < 0 & xlim[2] > 0){
         neg.lon <- subset(cytdiv, lon < 0)
       cytdiv[row.names(neg.lon), "long"] <- neg.lon$lon + 360
@@ -245,7 +225,7 @@ plot.cytdiv.map <- function(cytdiv,index,...){
       cytdiv$lon[cytdiv$lon < 0] <- cytdiv$lon[cytdiv$lon < 0] + 360
       map.type <- 'world2Hires'
         }
-  
+
   plot(cytdiv$lon, cytdiv$lat, xlim=xlim, ylim=ylim, asp=1,
             xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Latitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
   try(maps::map(map.type, fill=F, col='black',add=TRUE))
@@ -254,9 +234,9 @@ plot.cytdiv.map <- function(cytdiv,index,...){
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
 
-    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
+    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2],
       legend=pretty(cytdiv[,index]), rect.col=cols(100), gradient='y',align='rb',...)
-  mtext(paste(index), side=4, line=2,...)  
+  mtext(paste(index), side=4, line=2,...)
 
 }
 
@@ -269,19 +249,19 @@ plot.cytdiv.time <- function(cytdiv,index, ...){
 }
 
 plot.TS <- function(sfl,...){
- 
+
  require(plotrix, quietly=T)
 
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
   sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
-  
+
 par(pty='s')
 plot(sfl$ocean_tmp, sfl$salinity, col=cols(50)[cut(sfl$date,50)],pch=16,xlab=expression(paste("Temp (",degree,"C)")), ylab="Salinity (psu)",...)
     ylim <- par('usr')[c(3,4)]
     xlim <- par('usr')[c(1,2)]
-   color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2], 
+   color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2],
       legend=c("start","end"), rect.col=cols(50), gradient='y',align='rb',...)
-mtext("Time", side=4, line=2,...)  
+mtext("Time", side=4, line=2,...)
 
-  
+
 }

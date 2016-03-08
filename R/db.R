@@ -1,29 +1,29 @@
-delete.opp.stats.by.file <- function(db, evt.file) {
-  sql <- paste0("DELETE FROM opp WHERE file == '", remove.gz(evt.file), "'")
+delete.opp.stats.by.file <- function(db, file.name) {
+  sql <- paste0("DELETE FROM opp WHERE file == '", clean.file.path(file.name), "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.opp.by.file <- function(opp.dir, evt.file) {
-  opp.file <- paste0(opp.dir, "/", remove.gz(evt.file), ".opp")
+delete.opp.by.file <- function(opp.dir, file.name) {
+  opp.file <- paste0(opp.dir, "/", clean.file.path(file.name), ".opp")
   if (file.exists(opp.file)) {
     file.remove(opp.file)
   }
 }
 
-delete.vct.stats.by.file <- function(db, evt.file) {
-  sql <- paste0("DELETE FROM vct WHERE file == '", remove.gz(evt.file), "'")
+delete.vct.stats.by.file <- function(db, file.name) {
+  sql <- paste0("DELETE FROM vct WHERE file == '", clean.file.path(file.name), "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.vct.by.file <- function(vct.dir, evt.file) {
-  vct.file <- paste0(vct.dir, "/", remove.gz(evt.file), ".vct")
+delete.vct.by.file <- function(vct.dir, file.name) {
+  vct.file <- paste0(vct.dir, "/", clean.file.path(file.name), ".vct")
   if (file.exists(vct.file)) {
     file.remove(vct.file)
   }
 }
 
-delete.cytdiv.by.file <- function(db, evt.file) {
-  sql <- paste0("DELETE FROM cytdiv WHERE file == '", remove.gz(evt.file), "'")
+delete.cytdiv.by.file <- function(db, file.name) {
+  sql <- paste0("DELETE FROM cytdiv WHERE file == '", clean.file.path(file.name), "'")
   sql.dbGetQuery(db, sql)
 }
 
@@ -91,7 +91,7 @@ get.opp.stats.by.file <- function(db, file.name) {
   FROM
     sfl, opp
   WHERE
-    opp.file == '", remove.gz(file.name), "'
+    opp.file == '", clean.file.path(file.name), "'
     AND
     sfl.cruise == opp.cruise
     AND
@@ -140,7 +140,7 @@ get.vct.stats.by.file <- function(db, file.name) {
   FROM
     sfl, vct
   WHERE
-    vct.file == '", remove.gz(file.name), "'
+    vct.file == '", clean.file.path(file.name), "'
     AND
     sfl.cruise == vct.cruise
     AND
@@ -182,41 +182,43 @@ get.vct.stats.table <- function(db) {
   return(vct)
 }
 
-get.opp.by.file <- function(file.name, channel=NULL, opp.dir=NULL,
-                            transform=TRUE) {
-  # OPP files are never gzipped so it's OK to remove .gz here
-  opp.file <- paste0(remove.gz(file.name), ".opp")
-  opp <- readSeaflow(opp.file, opp.dir, channel=channel,
-                     transform=transform)
+get.opp.by.date <- function(db, opp.dir, start.date, end.date, channel=NULL,
+                            transform=TRUE, vct.dir=NULL, pop=NULL) {
+  opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
+  opp <- get.opp.by.file(opp.dir, opp.stats$file, channel=channel,
+                         transform=transform, vct.dir=vct.dir, pop=pop)
   return(opp)
 }
 
-get.vct.by.file <- function(file.name, vct.dir=NULL) {
-  vct.file <- paste0(vct.dir, "/", remove.gz(file.name), ".vct")
-  vct <- read.table(vct.file, col.names=c("pop"))
-  return(vct)
-}
-
-get.opp.by.date <- function(db, start.date, end.date, pop=NULL, channel=NULL,
-                            transform=TRUE, opp.dir=NULL, vct.dir=NULL) {
-  opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
+# file.name can be a single file path or a list of file paths. If more than
+# one file is used a concatenated opp data frame will be returned.
+get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
+                            transform=TRUE, vct.dir=NULL, pop=NULL) {
+  # OPP files are never gzipped so it's OK to remove .gz here
+  file.name.clean <- unlist(lapply(file.name, clean.file.path))
+  opp.files <- paste0(file.name.clean, ".opp")
   opp.reader <- function(f) {
-    opp <- get.opp.by.file(f, opp.dir, channel=channel, transform=transform)
+    opp <- readSeaflow(f, opp.dir, channel=channel, transform=transform)
     return(opp)
   }
-  opps <- lapply(opp.stats$file, opp.reader)
+  opps <- lapply(opp.files, opp.reader)
   opps.bound <- rbind.fill(opps)
 
   if (! is.null(vct.dir)) {
-    vcts <- lapply(opp.stats$file, function(f) get.vct.by.file(f, vct.dir))
-    vcts.bound <- rbind.fill(vcts)
-    opps.bound <- cbind(opps.bound, vcts.bound)
-    if (! is.null(pop)) {
-      opps.bound <- opps.bound[opps.bound$pop == pop, ]
-    }
+   vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f))
+   vcts.bound <- rbind.fill(vcts)
+   opps.bound <- cbind(opps.bound, vcts.bound)
+   if (! is.null(pop)) {
+     opps.bound <- opps.bound[opps.bound$pop == pop, ]
+   }
   }
-
   return(opps.bound)
+}
+
+get.vct.by.file <- function(vct.dir, file.name) {
+  vct.file <- paste0(vct.dir, "/", clean.file.path(file.name), ".vct")
+  vct <- read.table(vct.file, col.names=c("pop"))
+  return(vct)
 }
 
 get.sfl.table <- function(db) {
@@ -353,7 +355,7 @@ get.vct.files <- function(db) {
 #   db = sqlite3 db
 get.empty.evt.files <- function(db, evt.list) {
   opp.files <- get.opp.files(db)
-  evt.list <- unlist(lapply(evt.list, function(f) { remove.gz(f) }))
+  evt.list <- unlist(lapply(evt.list, function(f) { clean.file.path(f) }))
   return(setdiff(evt.list, opp.files))
 }
 
@@ -419,7 +421,7 @@ get.cytdiv.table <- function(db) {
 save.cytdiv <- function(db, indices, cruise.name, file.name) {
   con <- dbConnect(SQLite(), dbname = db)
   dbWriteTable(conn = con, name = "cytdiv",
-               value = data.frame(cruise = cruise.name, file = remove.gz(file.name),
+               value = data.frame(cruise = cruise.name, file = clean.file.path(file.name),
                                   N0 = indices[1], N1= indices[2], H=indices[3],
                                   J=indices[4], opp_red=indices[5]),
                row.names=FALSE, append=TRUE)
@@ -429,7 +431,7 @@ save.cytdiv <- function(db, indices, cruise.name, file.name) {
 save.vct.stats <- function(db, opp, cruise.name, file.name, method,
                            gating_uuid) {
   df <- ddply(opp, .(pop), here(summarize),
-              cruise=cruise.name, file=remove.gz(file.name),
+              cruise=cruise.name, file=clean.file.path(file.name),
               count=length(pop), method=method,
               fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
               chl_small=mean(chl_small), pe=mean(pe), gating_uuid=gating_uuid)
@@ -441,8 +443,8 @@ save.vct.stats <- function(db, opp, cruise.name, file.name, method,
   dbDisconnect(con)
 }
 
-save.vct.file <- function(vct, vct.dir, evt.file) {
-  vct.file <- paste0(vct.dir, "/", remove.gz(evt.file), ".vct")
+save.vct.file <- function(vct, vct.dir, file.name) {
+  vct.file <- paste0(vct.dir, "/", clean.file.path(file.name), ".vct")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   write.table(vct, vct.file, row.names=F, col.names=F, quote=F)
 }
@@ -454,7 +456,7 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
   }
   opp <- transformData(opp)
   opp_count <- nrow(opp)
-  df <- data.frame(cruise=cruise.name, file=remove.gz(file.name),
+  df <- data.frame(cruise=cruise.name, file=clean.file.path(file.name),
                    opp_count=opp_count, evt_count=evt_count,
                    opp_evt_ratio=opp_count/evt_count,
                    notch1=params$notch1, notch2=params$notch2,
@@ -485,8 +487,8 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
   dbDisconnect(con)
 }
 
-save.opp.file <- function(opp, opp.dir, evt.file) {
-  opp.file <- paste0(opp.dir, "/", remove.gz(evt.file), ".opp")
+save.opp.file <- function(opp, opp.dir, file.name) {
+  opp.file <- paste0(opp.dir, "/", clean.file.path(file.name), ".opp")
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
   writeSeaflow(opp, opp.file, linearize=FALSE)
 }
@@ -507,12 +509,12 @@ save.gating.params <- function(db, poly.log, new.entry=FALSE) {
     uuid <- UUIDgenerate()  # create primary ID for new entry
     date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
   } else {
-    gating.table <- get.gating.table(db)
-    if (nrow(gating.table) == 0) {
+    gating.df <- get.gating.params.latest(db)$row
+    if (nrow(gating.df) == 0) {
       stop("new.entry=FALSE in upload.gating, but no gating entry to update")
     }
-    uuid <- gating.table[1, "uuid"] # get primary ID for entry to be replaced
-    date.stamp <- gating.table[1, "date"]
+    uuid <- gating.df[1, "uuid"] # get primary ID for entry to be replaced
+    date.stamp <- gating.df[1, "date"]
     delete.gating.params.by.uuid(db, uuid) # erase entry to be replaced
   }
 

@@ -80,11 +80,46 @@ is.new.style.file <- function(file.name) {
   return(length(grep(regexp.new, file.name)) == 1)
 }
 
-remove.gz <- function(file.name) {
+# Convert an EVT/OPP/VCT file path to a form suitable for storage in the SQLite
+# db. Returned file path should be julian_day/EVT_file_name
+clean.file.path <- function(fpath) {
+  # Clean up any places with multiple "/"s
+  fpath <- gsub("/+", "/", fpath)
+
+  # Check for julian day directory
+  parts <- unlist(strsplit(fpath, "/"))
+  if (length(parts) < 2) {
+    stop(paste0("file path ", fpath, " must contain a julian day directory"))
+  }
+
+  file.name <- parts[length(parts)]
+  julian.day <- parts[length(parts)-1]
+
+  julian.regexp <- "^[0-9]{4}_[0-9]+$"
+  if (length(grep(julian.regexp, julian.day)) != 1) {
+    stop(paste0("Julian day directory does not match pattern YYYY_day in ", fpath))
+  }
+
+  # Get rid of any .gz extension
   if (nchar(file.name) >= 3) {
     if (substr(file.name, nchar(file.name) - 2, nchar(file.name)) == ".gz") {
-      return(substr(file.name, 1, nchar(file.name) - 3))
+      file.name <- substr(file.name, 1, nchar(file.name) - 3)
     }
   }
-  return(file.name)
+
+  # Get rid of any .opp extension
+  if (nchar(file.name) >= 4) {
+    if (substr(file.name, nchar(file.name) - 3, nchar(file.name)) == ".opp") {
+      file.name <- substr(file.name, 1, nchar(file.name) - 4)
+    }
+  }
+
+  # Get rid of any .vct extension
+  if (nchar(file.name) >= 4) {
+    if (substr(file.name, nchar(file.name) - 3, nchar(file.name)) == ".vct") {
+      file.name <- substr(file.name, 1, nchar(file.name) - 4)
+    }
+  }
+
+  return(paste(julian.day, file.name, sep="/"))
 }
