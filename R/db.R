@@ -1,30 +1,45 @@
-delete.opp.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM opp WHERE file == '", remove.gz(file.name), "'")
+delete.opp.stats.by.file <- function(db, evt.file) {
+  sql <- paste0("DELETE FROM opp WHERE file == '", remove.gz(evt.file), "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.vct.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM vct WHERE file == '", remove.gz(file.name), "'")
+delete.opp.by.file <- function(opp.dir, evt.file) {
+  opp.file <- paste0(opp.dir, "/", remove.gz(evt.file), ".opp")
+  if (file.exists(opp.file)) {
+    file.remove(opp.file)
+  }
+}
+
+delete.vct.stats.by.file <- function(db, evt.file) {
+  sql <- paste0("DELETE FROM vct WHERE file == '", remove.gz(evt.file), "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.cytdiv.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM ctydiv WHERE file == '", remove.gz(file.name), "'")
+delete.vct.by.file <- function(vct.dir, evt.file) {
+  vct.file <- paste0(vct.dir, "/", remove.gz(evt.file), ".vct")
+  if (file.exists(vct.file)) {
+    file.remove(vct.file)
+  }
+}
+
+delete.cytdiv.by.file <- function(db, evt.file) {
+  sql <- paste0("DELETE FROM cytdiv WHERE file == '", remove.gz(evt.file), "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.filter.by.id <- function(db, id) {
-  sql <- paste0("DELETE FROM filter WHERE id == '", id, "'")
+delete.filter.params.by.uuid <- function(db, uuid) {
+  sql <- paste0("DELETE FROM filter WHERE uuid == '", uuid, "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.gating.by.uuid <- function(db, uuid.str) {
-  sql <- paste0("DELETE FROM gating WHERE uuid == '", uuid.str, "'")
+delete.gating.params.by.uuid <- function(db, uuid) {
+  sql <- paste0("DELETE FROM gating WHERE uuid == '", uuid, "'")
   sql.dbGetQuery(db, sql)
+  delete.poly.by.uuid(db, uuid)
 }
 
-delete.poly.by.uuid <- function(db, uuid.str) {
-  sql <- paste0("DELETE FROM poly WHERE gating_uuid == '", uuid.str, "'")
+delete.poly.by.uuid <- function(db, uuid) {
+  sql <- paste0("DELETE FROM poly WHERE gating_uuid == '", uuid, "'")
   sql.dbGetQuery(db, sql)
 }
 
@@ -70,6 +85,7 @@ reset.db <- function(db) {
 }
 
 get.opp.stats.by.file <- function(db, file.name) {
+  check.for.populated.sfl(db)
   sql <- paste0("SELECT
     sfl.date, opp.*
   FROM
@@ -79,12 +95,14 @@ get.opp.stats.by.file <- function(db, file.name) {
     AND
     sfl.cruise == opp.cruise
     AND
-    sfl.file == opp.file")
+    sfl.file == opp.file
+  ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
 }
 
 get.opp.stats.table <- function(db) {
+  check.for.populated.sfl(db)
   sql <- "
     SELECT
       sfl.date, opp.*
@@ -93,12 +111,14 @@ get.opp.stats.table <- function(db) {
     WHERE
       sfl.cruise == opp.cruise
       AND
-      sfl.file == opp.file"
+      sfl.file == opp.file
+    ORDER BY sfl.date ASC"
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
 }
 
 get.opp.stats.by.date <- function(db, start.date=NULL, end.date=NULL) {
+  check.for.populated.sfl(db)
   sql <- "
     SELECT
       sfl.date, opp.*
@@ -113,7 +133,25 @@ get.opp.stats.by.date <- function(db, start.date=NULL, end.date=NULL) {
   return(opp)
 }
 
+get.vct.stats.by.file <- function(db, file.name) {
+  check.for.populated.sfl(db)
+  sql <- paste0("SELECT
+    sfl.date, vct.*
+  FROM
+    sfl, vct
+  WHERE
+    vct.file == '", remove.gz(file.name), "'
+    AND
+    sfl.cruise == vct.cruise
+    AND
+    sfl.file == vct.file
+  ORDER BY sfl.date ASC")
+  vct <- sql.dbGetQuery(db, sql)
+  return(vct)
+}
+
 get.vct.stats.by.date <- function(db, start.date=NULL, end.date=NULL) {
+  check.for.populated.sfl(db)
   sql <- "
     SELECT
       sfl.date, vct.*
@@ -129,6 +167,7 @@ get.vct.stats.by.date <- function(db, start.date=NULL, end.date=NULL) {
 }
 
 get.vct.stats.table <- function(db) {
+  check.for.populated.sfl(db)
   sql <- "
     SELECT
       sfl.date, vct.*
@@ -137,7 +176,8 @@ get.vct.stats.table <- function(db) {
     WHERE
       sfl.cruise == vct.cruise
       AND
-      sfl.file == vct.file"
+      sfl.file == vct.file
+    ORDER BY sfl.date ASC"
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
 }
@@ -179,32 +219,38 @@ get.opp.by.date <- function(db, start.date, end.date, pop=NULL, channel=NULL,
   return(opps.bound)
 }
 
+get.sfl.table <- function(db) {
+  # Don't check for populated SFL table here since it should be obvious
+  # if it's populated by result. Also, this would lead to infinite recursion
+  # since check.for.populated.sfl calls this function.
+  sql <- "SELECT * FROM sfl ORDER BY date ASC"
+  sfl <- sql.dbGetQuery(db, sql)
+  return(sfl)
+}
+
 # Get SFL rows >= start.date and <= end.date
 #
 # Args:
 #   db: sqlite database
 #   start.date: start date in format YYYY-MM-DD HH:MM
 #   end.date:   end date in format YYYY-MM-DD HH:MM
-get.sfl <- function(db, start.date=NULL, end.date=NULL) {
+get.sfl.by.date <- function(db, start.date, end.date) {
+  check.for.populated.sfl(db)
   sql <- "SELECT * FROM sfl"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=F)
   sfl <- sql.dbGetQuery(db, sql)
   return(sfl)
 }
 
-get.filter.latest <- function(db) {
+get.filter.params.latest <- function(db) {
   sql <- "SELECT * FROM filter ORDER BY date DESC LIMIT 1"
   result <- sql.dbGetQuery(db, sql)
-  result[, "id"] <- NULL
-  result[, "date"] <- NULL
   return(result)
 }
 
-get.filter.by.id <- function(db, id) {
-  sql <- paste0("SELECT * FROM filter WHERE id = ", id)
+get.filter.params.by.uuid <- function(db, uuid) {
+  sql <- paste0("SELECT * FROM filter WHERE uuid = ", uuid)
   result <- sql.dbGetQuery(db, sql)
-  result[, "id"] <- NULL
-  result[, "date"] <- NULL
   return(result)
 }
 
@@ -214,21 +260,21 @@ get.filter.table <- function(db) {
   return(result)
 }
 
-# Get latest gating parameters
-get.gating.latest <- function(db) {
-  if (is.null(uuid)) {
-    sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
-  } else {
-    sql <- paste0("SELECT * FROM gating WHERE uuid = '", uuid, "'")
-  }
+# Get latest gating parameters as two item named list
+#
+# list$row contains the dataframe for the latest gating table entry
+# list$poly.log contains the list of polygon coordinates for each population
+get.gating.params.latest <- function(db) {
+  sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
   gating.df <- sql.dbGetQuery(db, sql)
   poly.log <- poly.log.from.db.gating.df(db, gating.df)
-  return(poly.log)
+  answer <- list(row=gating.df, poly.log=poly.log)
+  return(answer)
 }
 
 # Get gating parameters by uuid
-get.gating.by.uuid <- function(db, uuid) {
-  sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
+get.gating.params.by.uuid <- function(db, uuid) {
+  sql <- paste0("SELECT * FROM gating WHERE uuid = '", uuid, "'")
   gating.df <- sql.dbGetQuery(db, sql)
   poly.log <- poly.log.from.db.gating.df(db, gating.df)
   return(poly.log)
@@ -243,7 +289,6 @@ poly.log.from.db.gating.df <- function(db, gating.df) {
 
   poly.log <- list()
   pop.names <- strsplit(gating.df$pop_order, ",")[[1]]
-  channels <- c("fsc_small", "chl_small", "pe", "fsc_big", "chl_big")
   for (i in seq(length(pop.names))) {
     sql <- paste0("
       SELECT * FROM poly
@@ -253,9 +298,11 @@ poly.log.from.db.gating.df <- function(db, gating.df) {
         pop = '", pop.names[i], "'"
     )
     pop.poly <- sql.dbGetQuery(db, sql)
-    for (c in channels) {
-      if (all(is.na(pop.poly[, c]))) {
-        pop.poly[, c] <- NULL
+    for (c in EVT.HEADER[5:length(EVT.HEADER)]) {
+      if (c %in% colnames(pop.poly)) {
+        if (all(is.na(pop.poly[, c]))) {
+          pop.poly[, c] <- NULL
+        }
       }
     }
     pop.poly[, "pop"] <- NULL
@@ -263,12 +310,19 @@ poly.log.from.db.gating.df <- function(db, gating.df) {
     poly.log[[i]] <- as.matrix(pop.poly)
   }
   names(poly.log) <- pop.names
+  return(poly.log)
 }
 
 get.gating.table <- function(db) {
   sql <- "SELECT * FROM gating ORDER BY date ASC"
   gating <- sql.dbGetQuery(db, sql)
   return(gating)
+}
+
+get.poly.table <- function(db) {
+  sql <- "SELECT * FROM poly ORDER BY gating_uuid, pop ASC"
+  poly <- sql.dbGetQuery(db, sql)
+  return(poly)
 }
 
 # Return a vector of distinct file values in opp table
@@ -304,6 +358,7 @@ get.empty.evt.files <- function(db, evt.list) {
 }
 
 get.stat.table <- function(db) {
+  check.for.populated.sfl(db)
   sql <- "
   SELECT
     opp.cruise as cruise,
@@ -331,13 +386,14 @@ get.stat.table <- function(db) {
     AND
     opp.file == sfl.file
   ORDER BY
-    time, pop;)"
+    time, pop ASC;)"
 
   stats <- sql.dbGetQuery(db, sql)
   return (stats)
 }
 
 get.cytdiv.table <- function(db) {
+  check.for.populated.sfl(db)
   sql <- "SELECT
             sfl.cruise as cruise,
             sfl.file as file,
@@ -370,27 +426,29 @@ save.cytdiv <- function(db, indices, cruise.name, file.name) {
   dbDisconnect(con)
 }
 
-save.vct.stats <- function(db, opp, cruise.name, file.name, method) {
+save.vct.stats <- function(db, opp, cruise.name, file.name, method,
+                           gating_uuid) {
   df <- ddply(opp, .(pop), here(summarize),
               cruise=cruise.name, file=remove.gz(file.name),
               count=length(pop), method=method,
               fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
-              chl_small=mean(chl_small), pe=mean(pe))
+              chl_small=mean(chl_small), pe=mean(pe), gating_uuid=gating_uuid)
   cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
-            "fsc_perp", "pe", "chl_small")
+            "fsc_perp", "pe", "chl_small", "gating_uuid")
   df.reorder <- df[cols]
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="vct", value=df.reorder, row.names=F, append=T)
   dbDisconnect(con)
 }
 
-save.vct.file <- function(vct.dir, evt.file, vct) {
+save.vct.file <- function(vct, vct.dir, evt.file) {
   vct.file <- paste0(vct.dir, "/", remove.gz(evt.file), ".vct")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   write.table(vct, vct.file, row.names=F, col.names=F, quote=F)
 }
 
-save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params) {
+save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
+                           filter_uuid) {
   if (nrow(opp) == 0) {
     return
   }
@@ -419,22 +477,24 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params) {
                    chl_small_mean=mean(opp$chl_small),
                    chl_big_min=min(opp$chl_big),
                    chl_big_max=max(opp$chl_big),
-                   chl_big_mean=mean(opp$chl_big)
+                   chl_big_mean=mean(opp$chl_big),
+                   filter_uuid=filter_uuid
         )
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="opp", value=df, row.names=F, append=T)
   dbDisconnect(con)
 }
 
-save.opp.file <- function(opp.dir, evt.file , opp) {
+save.opp.file <- function(opp, opp.dir, evt.file) {
   opp.file <- paste0(opp.dir, "/", remove.gz(evt.file), ".opp")
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
   writeSeaflow(opp, opp.file, linearize=FALSE)
 }
 
-save.filter <- function(db, params) {
+save.filter.params <- function(db, params) {
+  uuid <- UUIDgenerate()  # create primary ID for new entry
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
-  df <- data.frame(id=NA, date=date.stamp, notch1=params$notch1,
+  df <- data.frame(uuid=uuid, date=date.stamp, notch1=params$notch1,
                    notch2=params$notch2, offset=params$offset,
                    origin=params$origin, width=params$width)
   con <- dbConnect(SQLite(), dbname=db)
@@ -442,31 +502,31 @@ save.filter <- function(db, params) {
   dbDisconnect(con)
 }
 
-save.gating <- function(db, poly.log, new.entry=FALSE) {
+save.gating.params <- function(db, poly.log, new.entry=FALSE) {
   if (new.entry) {
-    uuid.str <- UUIDgenerate()  # create primary ID for new entry
+    uuid <- UUIDgenerate()  # create primary ID for new entry
     date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
   } else {
     gating.table <- get.gating.table(db)
     if (nrow(gating.table) == 0) {
       stop("new.entry=FALSE in upload.gating, but no gating entry to update")
     }
-    uuid.str <- gating.table[1, "uuid"] # get primary ID for entry to be replaced
+    uuid <- gating.table[1, "uuid"] # get primary ID for entry to be replaced
     date.stamp <- gating.table[1, "date"]
-    delete.gating.by.uuid(db, uuid.str) # erase entry to be replaced
+    delete.gating.params.by.uuid(db, uuid) # erase entry to be replaced
   }
 
-  df <- data.frame(date=date.stamp, uuid=uuid.str,
+  df <- data.frame(uuid=uuid, date=date.stamp,
                    pop_order=paste(names(poly.log), collapse=","))
 
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="gating", value=df, row.names=F, append=T)
   dbDisconnect(con)
 
-  save.poly(db, poly.log, uuid.str)
+  save.poly(db, poly.log, uuid)
 }
 
-save.poly <- function(db, poly.log, uuid.str) {
+save.poly <- function(db, poly.log, gating_uuid) {
   ns <- names(poly.log)
   df <- data.frame()
   channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
@@ -476,20 +536,24 @@ save.poly <- function(db, poly.log, uuid.str) {
     return()
   }
   for (i in seq(length(ns))) {
-    p <- poly.log[[ns[i]]]
-    tmpdf <- data.frame(uuid=rep(uuid.str, nrow(p)))
-    tmpdf[, "pop"] <- ns[i]
+    p <- poly.log[[ns[i]]]  # coords matrix for one population
+    # Fill in population name. This is the first field in the table and sets up
+    # the data frame to have the correct number of rows.
+    tmpdf <- data.frame(pop=rep(ns[i], nrow(p)))
     for (col in channels) {
+      # placeholder NAs for each channel
+      # doing this first ensures the channel order matches the poly table
+      # definition
       tmpdf[, col] <- NA
     }
     for (col in colnames(p)) {
-      tmpdf[, col] <- p[, col]
+      tmpdf[, col] <- p[, col]  # fill in defined channel coords
     }
     df <- rbind(df, tmpdf)
   }
+  df$gating_uuid <- gating_uuid  # last field in table
 
-  delete.poly.by.uuid(db, uuid.str)
-
+  delete.poly.by.uuid(db, gating_uuid)
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="poly", value=df, row.names=F, append=T)
   dbDisconnect(con)
@@ -535,6 +599,12 @@ sfl_date_where_clause <- function(sql, start.date, end.date, append=F) {
     ORDER BY sfl.date ASC"
   )
   return(sql);
+}
+
+check.for.populated.sfl <- function(db) {
+  if (nrow(get.sfl.table(db)) == 0) {
+    stop("SFL table is empty")
+  }
 }
 
 sql.dbGetQuery <- function(db, sql) {

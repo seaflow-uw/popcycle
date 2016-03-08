@@ -149,13 +149,14 @@ DF <- NULL
 #
 # Args:
 #   db: sqlite3 db path
-#   evt.list: list of EVT file paths, e.g. get.evt.list(evt.location)
-#   evt.loc: location of evt files listed in evt.list
 #   cruise: cruise name
-filter.evt.files <- function(db, evt.list, evt.loc, cruise) {
+#   evt.loc: directory of evt files listed in evt.list
+#   evt.list: list of EVT file paths, e.g. get.evt.list(evt.location)
+#   opp.dir: directory for opp output files
+filter.evt.files <- function(db, cruise, evt.loc, evt.list, opp.dir) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
-  params <- get.filter.latest(db)
+  params <- get.filter.params.latest(db)
 
   if (nrow(params) == 0) {
     stop("No filter parameters defined")
@@ -190,12 +191,16 @@ filter.evt.files <- function(db, evt.list, evt.loc, cruise) {
 
     # Upload OPP data
     delete.opp.stats.by.file(db, evt.file)
+    delete.opp.by.file(opp.dir, evt.file)
     if (nrow(filt$opp) > 0) {
-      save.opp.stats(db, cruise, evt.file, evt_count, filt$opp, filt$params)
-      save.opp.file(opp.dir, evt.file, filt$opp)
+      save.opp.stats(db, cruise, evt.file, evt_count, filt$opp, filt$params,
+                     params$uuid)
+      save.opp.file(filt$opp, opp.dir, evt.file)
     }
 
     i <-  i + 1
     flush.console()
   }
+  message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
+  flush.console()
 }
