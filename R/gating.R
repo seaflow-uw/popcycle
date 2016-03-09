@@ -113,7 +113,7 @@ if (length(list.files(path=param.gate.location, pattern= ".csv", full.names=TRUE
     tryCatch({
      # print(paste('Loading', opp.file))
       opp <- get.opp.by.file(opp.file, opp.dir=opp.dir,
-                             channel=c("fsc_small", "chl_small", "pe"))
+                             channel=c("fsc_small", "chl_small", "fsc_perp", "pe"))
   #   print(paste('Classifying', opp.file))
       vct <- classify.opp(opp, ManualGating)
       opp$pop <- factor(vct)
