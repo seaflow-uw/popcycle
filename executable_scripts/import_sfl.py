@@ -116,6 +116,8 @@ def insert_tuples(to_insert, db):
 def insert_all_files(db, evt_path, cruise):
     dbpath = os.path.expanduser(db)
     evt_path = os.path.expanduser(evt_path)
+    if not os.path.isdir(evt_path):
+        raise ValueError("%s is not directory or does not exist" % evt_path)
     insert_files_bulk(find_sfl_files(evt_path), dbpath, cruise)
 
 def find_sfl_files(evt_path):
