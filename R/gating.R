@@ -15,7 +15,7 @@ classify.opp <- function(opp, classify.func, ...) {
 }
 
 
-setGateParams <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
+set.gating.params <- function(db, opp, popname, para.x, para.y, new.entry=FALSE) {
   popname <- as.character(popname)
   para.x <- as.character(para.x)
   para.y <- as.character(para.y)

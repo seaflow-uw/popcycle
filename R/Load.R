@@ -24,10 +24,10 @@ untransformData <- function(float.dataframe){
   return(float.dataframe)
 }
 
-readSeaflow <- function(file.name, path=evt.location, column.names=EVT.HEADER,
+readSeaflow <- function(file.name, evt.dir, column.names=EVT.HEADER,
                         count.only=FALSE, transform=TRUE, channel=NULL){
 
-  file.path <- paste(path, file.name,sep="/")
+  file.path <- paste(evt.dir, file.name,sep="/")
   #if(!(substr(file.path, nchar(file.path)-2, nchar(file.path)) %in% c('opp','evt')))
   #  warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
   # reads a binary seaflow event file into memory as a dataframe

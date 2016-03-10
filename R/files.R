@@ -1,7 +1,7 @@
-get.evt.list <- function(evt.loc) {
-  file.list <- list.files(evt.loc, recursive=T)
+get.evt.files <- function(evt.dir) {
+  file.list <- list.files(evt.dir, recursive=T)
   if (length(file.list) == 0) {
-    print(paste("no evt files found in", evt.loc))
+    print(paste("no evt files found in", evt.dir))
     return (file.list)
   }
   # regexp to match both types of EVT files
@@ -16,18 +16,18 @@ get.evt.list <- function(evt.loc) {
   return (sort(file.list))
 }
 
-get.latest.evt.with.day <- function(evt.loc) {
-  file.list <- get.evt.list(evt.loc)
+get.latest.evt.with.day <- function(evt.dir) {
+  file.list <- get.evt.files(evt.dir)
   n <- length(file.list)
   return (file.list[n])
 }
 
-get.latest.evt <- function(evt.loc) {
-  return (basename(get.latest.evt.with.day(evt.loc)))
+get.latest.evt <- function(evt.dir) {
+  return (basename(get.latest.evt.with.day(evt.dir)))
 }
 
-files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp, evt.loc) {
-  file.list <- get.evt.list(evt.loc)
+files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp, evt.dir) {
+  file.list <- get.evt.files(evt.dir)
   start.file = paste(start.day, start.timestamp, sep='/')
   end.file = paste(end.day, end.timestamp, sep='/')
 
@@ -46,10 +46,10 @@ files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp, e
 }
 
 
-file.transfer <- function(evt.loc, instrument.loc){
+file.transfer <- function(evt.dir, instrument.dir){
 
-  last.evt <- get.latest.evt.with.day(evt.loc)
-  file.list <- list.files(instrument.loc, recursive=T)
+  last.evt <- get.latest.evt.with.day(evt.dir)
+  file.list <- list.files(instrument.dir, recursive=T)
   sfl.list <- file.list[grepl('.sfl', file.list)]
   file.list <- file.list[-length(file.list)] # remove the last file (opened file)
   file.list <- sort(file.list[!grepl('.sfl', file.list)])
@@ -58,18 +58,18 @@ file.transfer <- function(evt.loc, instrument.loc){
 
   if(length(id) == 0){
     day <- unique(dirname(file.list))
-      for(d in day) system(paste0("mkdir ",evt.loc,"/",d))
-    print(paste0("scp ",instrument.loc,"/",file.list," ", evt.loc,"/",file.list))
-    system(paste0("scp ",instrument.loc,"/",file.list," ", evt.loc,"/",file.list, collapse=";"))
-    system(paste0("scp ",instrument.loc,"/",sfl.list," ", evt.loc,"/",sfl.list, collapse=";"))
+      for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
+    print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
+    system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
+    system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
   }
   else{
     file.list <- file.list[id:length(file.list)]
     day <- unique(dirname(file.list))
-      for(d in day) system(paste0("mkdir ",evt.loc,"/",d))
-    print(paste0("scp ",instrument.loc,"/",file.list," ", evt.loc,"/",file.list))
-    system(paste0("scp ",instrument.loc,"/",file.list," ", evt.loc,"/",file.list, collapse=";"))
-    system(paste0("scp ",instrument.loc,"/",sfl.list," ", evt.loc,"/",sfl.list, collapse=";"))
+      for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
+    print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
+    system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
+    system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
   }
  }
 

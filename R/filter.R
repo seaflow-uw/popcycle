@@ -7,11 +7,6 @@ filter.evt <- function(evt, filter.func, ...) {
     stop('Filtering function produced OPP with different columns')
   }
 
-  # filtered all particles out?
-  if (dim(filt$opp)[1] < 1) {
-    stop('Filtering dropped all particles.')
-  }
-
   return (filt)
 }
 
@@ -25,7 +20,7 @@ filter.notch <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
 
   # Check for empty evt data frame.  If empty return empty opp data frame.
   if (nrow(evt) == 0) {
-    return(data.frame(c()))
+    return(list("opp"=data.frame(c())))
   }
 
   # linearize the LOG transformed data
@@ -151,7 +146,7 @@ DF <- NULL
 #   db: sqlite3 db path
 #   cruise: cruise name
 #   evt.dir: directory of evt files listed in evt.list
-#   evt.list: list of EVT file paths, e.g. get.evt.list(evt.location)
+#   evt.list: list of EVT file paths, e.g. get.evt.files(evt.location)
 #   opp.dir: directory for opp output files
 filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
   # Get notch and width to use from params file
@@ -163,7 +158,7 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
   }
 
   i <- 0
-  for (evt.file in unlist(lapply(evt.list, clean.file.path))) {
+  for (evt.file in evt.list) {
     message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
 
     # Read EVT file
@@ -171,8 +166,10 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
     evt <- tryCatch({
       readSeaflow(evt.file, path=evt.dir, transform=FALSE)
     }, warnings = function(err) {
+      print(err)
       return(data.frame())
     }, error = function(err) {
+      print(err)
       return(data.frame())
     })
 
@@ -184,8 +181,10 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
       filter.evt(evt, filter.notch, origin=params$origin, width=params$width,
                  notch=c(params$notch1, params$notch2), offset=params$offset)
     }, warnings = function(err) {
+      print(err)
       return(list(opp=data.frame()))
     }, error = function(err) {
+      print(err)
       return(list(opp=data.frame()))
     })
 

@@ -351,7 +351,7 @@ get.vct.files <- function(db) {
 # Return a list of EVT files for which there is no OPP data in the database
 #
 # Args:
-#   evt.list = list of EVT file paths, e.g. get.evt.list(evt.location)
+#   evt.list = list of EVT file paths, e.g. get.evt.files(evt.location)
 #   db = sqlite3 db
 get.empty.evt.files <- function(db, evt.list) {
   opp.files <- get.opp.files(db)
@@ -565,7 +565,7 @@ save.poly <- function(db, poly.log, gating_uuid) {
 #
 # Args:
 #   new.db.path = path to a new sqlite3 database
-make.sqlite.db <- function(new.db.path) {
+make.popcycle.db <- function(new.db.path) {
   sql.file <- paste(system.file("sql", package="popcycle"), "popcycle.sql", sep="/")
   cmd <- sprintf("sqlite3 %s < %s", new.db.path, sql.file)
   status <- system(cmd)
