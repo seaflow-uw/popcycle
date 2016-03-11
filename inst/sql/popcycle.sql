@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS opp (
     chl_big_min REAL NOT NULL,
     chl_big_max REAL NOT NULL,
     chl_big_mean REAL NOT NULL,
-    filter_uuid TEXT NOT NULL,
+    filter_id TEXT NOT NULL,
     PRIMARY KEY (cruise, file)
 );
 
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS vct (
     fsc_perp REAL NOT NULL,
     pe REAL NOT NULL,
     chl_small REAL NOT NULL,
-    gating_uuid TEXT NOT NULL,
+    gating_id TEXT NOT NULL,
     PRIMARY KEY (cruise, file, pop)
 );
 
@@ -104,21 +104,21 @@ CREATE TABLE IF NOT EXISTS cytdiv (
 );
 
 CREATE TABLE IF NOT EXISTS filter (
-  uuid TEXT NOT NULL,
+  id TEXT NOT NULL,
   date TEXT NOT NULL,
   notch1 REAL,
   notch2 REAL,
   offset REAL NOT NULL,
   origin REAL,
   width REAL NOT NULL,
-  PRIMARY KEY (uuid)
+  PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS gating (
-  uuid TEXT NOT NULL,
+  id TEXT NOT NULL,
   date TEXT NOT NULL,
   pop_order TEXT NOT NULL,
-  PRIMARY KEY (uuid)
+  PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS poly (
@@ -129,5 +129,5 @@ CREATE TABLE IF NOT EXISTS poly (
   pe REAL,
   chl_small REAL,
   chl_big REAL,
-  gating_uuid TEXT NOT NULL
+  gating_id TEXT NOT NULL
 );

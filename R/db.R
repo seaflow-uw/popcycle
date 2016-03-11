@@ -8,6 +8,9 @@ delete.opp.by.file <- function(opp.dir, file.name) {
   if (file.exists(opp.file)) {
     file.remove(opp.file)
   }
+  if (file.exists(paste0(opp.file, ".gz"))) {
+    file.remove(paste0(opp.file, ".gz"))
+  }
 }
 
 delete.vct.stats.by.file <- function(db, file.name) {
@@ -20,6 +23,9 @@ delete.vct.by.file <- function(vct.dir, file.name) {
   if (file.exists(vct.file)) {
     file.remove(vct.file)
   }
+  if (file.exists(paste0(vct.file, ".gz"))) {
+    file.remove(paste0(vct.file, ".gz"))
+  }
 }
 
 delete.cytdiv.by.file <- function(db, file.name) {
@@ -27,19 +33,19 @@ delete.cytdiv.by.file <- function(db, file.name) {
   sql.dbGetQuery(db, sql)
 }
 
-delete.filter.params.by.uuid <- function(db, uuid) {
-  sql <- paste0("DELETE FROM filter WHERE uuid == '", uuid, "'")
+delete.filter.params.by.id <- function(db, filter.id) {
+  sql <- paste0("DELETE FROM filter WHERE id == '", filter.id, "'")
   sql.dbGetQuery(db, sql)
 }
 
-delete.gating.params.by.uuid <- function(db, uuid) {
-  sql <- paste0("DELETE FROM gating WHERE uuid == '", uuid, "'")
+delete.gating.params.by.id <- function(db, gating.id) {
+  sql <- paste0("DELETE FROM gating WHERE id == '", gating.id, "'")
   sql.dbGetQuery(db, sql)
-  delete.poly.by.uuid(db, uuid)
+  delete.poly.by.id(db, gating.id)
 }
 
-delete.poly.by.uuid <- function(db, uuid) {
-  sql <- paste0("DELETE FROM poly WHERE gating_uuid == '", uuid, "'")
+delete.poly.by.id <- function(db, gating.id) {
+  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "'")
   sql.dbGetQuery(db, sql)
 }
 
@@ -198,7 +204,7 @@ get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
   file.name.clean <- unlist(lapply(file.name, clean.file.path))
   opp.files <- paste0(file.name.clean, ".opp")
   opp.reader <- function(f) {
-    opp <- readSeaflow(f, opp.dir, channel=channel, transform=transform)
+    opp <- readSeaflow(opp.dir, f, channel=channel, transform=transform)
     return(opp)
   }
   opps <- lapply(opp.files, opp.reader)
@@ -250,8 +256,8 @@ get.filter.params.latest <- function(db) {
   return(result)
 }
 
-get.filter.params.by.uuid <- function(db, uuid) {
-  sql <- paste0("SELECT * FROM filter WHERE uuid = ", uuid)
+get.filter.params.by.id <- function(db, filter.id) {
+  sql <- paste0("SELECT * FROM filter WHERE id = '", filter.id, "'")
   result <- sql.dbGetQuery(db, sql)
   return(result)
 }
@@ -274,12 +280,13 @@ get.gating.params.latest <- function(db) {
   return(answer)
 }
 
-# Get gating parameters by uuid
-get.gating.params.by.uuid <- function(db, uuid) {
-  sql <- paste0("SELECT * FROM gating WHERE uuid = '", uuid, "'")
+# Get gating parameters by id
+get.gating.params.by.id <- function(db, gating.id) {
+  sql <- paste0("SELECT * FROM gating WHERE id = '", gating.id, "'")
   gating.df <- sql.dbGetQuery(db, sql)
   poly.log <- poly.log.from.db.gating.df(db, gating.df)
-  return(poly.log)
+  answer <- list(row=gating.df, poly.log=poly.log)
+  return(answer)
 }
 
 poly.log.from.db.gating.df <- function(db, gating.df) {
@@ -295,7 +302,7 @@ poly.log.from.db.gating.df <- function(db, gating.df) {
     sql <- paste0("
       SELECT * FROM poly
       WHERE
-        gating_uuid = '", gating.df$uuid[1], "'
+        gating_id = '", gating.df$id[1], "'
         AND
         pop = '", pop.names[i], "'"
     )
@@ -308,7 +315,7 @@ poly.log.from.db.gating.df <- function(db, gating.df) {
       }
     }
     pop.poly[, "pop"] <- NULL
-    pop.poly[, "gating_uuid"] <- NULL
+    pop.poly[, "gating_id"] <- NULL
     poly.log[[i]] <- as.matrix(pop.poly)
   }
   names(poly.log) <- pop.names
@@ -322,7 +329,7 @@ get.gating.table <- function(db) {
 }
 
 get.poly.table <- function(db) {
-  sql <- "SELECT * FROM poly ORDER BY gating_uuid, pop ASC"
+  sql <- "SELECT * FROM poly ORDER BY gating_id, pop ASC"
   poly <- sql.dbGetQuery(db, sql)
   return(poly)
 }
@@ -429,14 +436,14 @@ save.cytdiv <- function(db, indices, cruise.name, file.name) {
 }
 
 save.vct.stats <- function(db, opp, cruise.name, file.name, method,
-                           gating_uuid) {
+                           gating.id) {
   df <- ddply(opp, .(pop), here(summarize),
               cruise=cruise.name, file=clean.file.path(file.name),
               count=length(pop), method=method,
               fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
-              chl_small=mean(chl_small), pe=mean(pe), gating_uuid=gating_uuid)
+              chl_small=mean(chl_small), pe=mean(pe), gating_id=gating.id)
   cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
-            "fsc_perp", "pe", "chl_small", "gating_uuid")
+            "fsc_perp", "pe", "chl_small", "gating_id")
   df.reorder <- df[cols]
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="vct", value=df.reorder, row.names=F, append=T)
@@ -450,7 +457,7 @@ save.vct.file <- function(vct, vct.dir, file.name) {
 }
 
 save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
-                           filter_uuid) {
+                           filter.id) {
   if (nrow(opp) == 0) {
     return
   }
@@ -480,7 +487,7 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
                    chl_big_min=min(opp$chl_big),
                    chl_big_max=max(opp$chl_big),
                    chl_big_mean=mean(opp$chl_big),
-                   filter_uuid=filter_uuid
+                   filter_id=filter.id
         )
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="opp", value=df, row.names=F, append=T)
@@ -494,9 +501,9 @@ save.opp.file <- function(opp, opp.dir, file.name) {
 }
 
 save.filter.params <- function(db, params) {
-  uuid <- UUIDgenerate()  # create primary ID for new entry
+  filter.id <- UUIDgenerate()  # create primary ID for new entry
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
-  df <- data.frame(uuid=uuid, date=date.stamp, notch1=params$notch1,
+  df <- data.frame(id=filter.id, date=date.stamp, notch1=params$notch1,
                    notch2=params$notch2, offset=params$offset,
                    origin=params$origin, width=params$width)
   con <- dbConnect(SQLite(), dbname=db)
@@ -504,31 +511,20 @@ save.filter.params <- function(db, params) {
   dbDisconnect(con)
 }
 
-save.gating.params <- function(db, poly.log, new.entry=FALSE) {
-  if (new.entry) {
-    uuid <- UUIDgenerate()  # create primary ID for new entry
-    date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
-  } else {
-    gating.df <- get.gating.params.latest(db)$row
-    if (nrow(gating.df) == 0) {
-      stop("new.entry=FALSE in upload.gating, but no gating entry to update")
-    }
-    uuid <- gating.df[1, "uuid"] # get primary ID for entry to be replaced
-    date.stamp <- gating.df[1, "date"]
-    delete.gating.params.by.uuid(db, uuid) # erase entry to be replaced
-  }
-
-  df <- data.frame(uuid=uuid, date=date.stamp,
+save.gating.params <- function(db, poly.log) {
+  gating.id <- UUIDgenerate()  # create primary ID for new entry
+  date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
+  df <- data.frame(id=gating.id, date=date.stamp,
                    pop_order=paste(names(poly.log), collapse=","))
 
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="gating", value=df, row.names=F, append=T)
   dbDisconnect(con)
 
-  save.poly(db, poly.log, uuid)
+  save.poly(db, poly.log, gating.id)
 }
 
-save.poly <- function(db, poly.log, gating_uuid) {
+save.poly <- function(db, poly.log, gating.id) {
   ns <- names(poly.log)
   df <- data.frame()
   channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
@@ -553,9 +549,9 @@ save.poly <- function(db, poly.log, gating_uuid) {
     }
     df <- rbind(df, tmpdf)
   }
-  df$gating_uuid <- gating_uuid  # last field in table
+  df$gating_id <- gating.id  # last field in table
 
-  delete.poly.by.uuid(db, gating_uuid)
+  delete.poly.by.id(db, gating.id)
   con <- dbConnect(SQLite(), dbname=db)
   dbWriteTable(conn=con, name="poly", value=df, row.names=F, append=T)
   dbDisconnect(con)

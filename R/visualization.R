@@ -1,12 +1,10 @@
 plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
-
 	cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
   par(pty='s')
   id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
   if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
   else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
-
 }
 
 
@@ -18,88 +16,83 @@ plot.cytogram.by.file <- function(opp.dir, evt.file, para.x = 'fsc_small', para.
 
 ## OPP merged with VCT
 plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
-
-		if (!is.null(opp$pop)) {
-			par(pty='s')
-      ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
-      id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
-      if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
-      else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
-			legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
-		}else{
-			print("No Gating parameters yet")
-			plot.cytogram(opp, para.x, para.y)
-			mtext(paste("No Gating parameters yet!"),3,line=-1,font=2)
-		}
+	if (!is.null(opp$pop)) {
+		par(pty='s')
+    ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
+    id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
+    if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
+    else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
+		legend('topleft',legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16,pt.cex=0.6,bty='n')
+	} else {
+		print("No Gating parameters yet")
+		plot.cytogram(opp, para.x, para.y)
+		mtext(paste("No Gating parameters yet!"),3,line=-1,font=2)
+	}
 }
 
 plot.vct.cytogram.by.file <- function(opp.dir, vct.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small',...){
   opp <- get.opp.by.file(opp.dir, evt.file, vct.dir=vct.dir)
   plot.vct.cytogram(opp, para.x = para.x, para.y = para.y,...)
-
 }
 
-plot.gate.cytogram <- function(db, opp, para.x = 'fsc_small', para.y = 'chl_small'){
-  plot.cytogram(opp, para.x, para.y)
-	poly.log <- get.gating.params.latest(db)$poly.log
-  if (length(poly.log) == 0) {
-    stop("No gate parameters found!")
-	}
-	for (i in 1:length(poly.log)) {
-    pop <- names(poly.log[i]) # name of the population
-    poly <- poly.log[i][[1]] # Get parameters of the gate for this population
-    para <- colnames(poly)
-    if (para[1]==para.x & para[2]==para.y) {
-      polygon(poly, lwd=3,border=i, col=NA)
-      text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
-    }
+plot.gating.cytogram <- function(opp, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
+	plot.cytogram(opp, para.x, para.y)
+	if (!is.null(poly.log)) {
+		for (i in 1:length(poly.log)) {
+	    pop <- names(poly.log[i]) # name of the population
+	    poly <- poly.log[i][[1]] # Get parameters of the gate for this population
+	    para <- colnames(poly)
+	    if (para[1]==para.x & para[2]==para.y) {
+	      polygon(poly, lwd=3,border=i, col=NA)
+	      text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
+	    }
+		}
 	}
 }
 
-plot.gate.cytogram.by.file <- function(db, opp.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small') {
-  opp <- get.opp.by.file(db, opp.dir, evt.file)
-  plot.gate.cytogram(db, opp, para.x = para.x, para.y = para.y)
+plot.gating.cytogram.by.file <- function(opp.dir, evt.file, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
+  opp <- get.opp.by.file(opp.dir, evt.file)
+  plot.gating.cytogram(opp, poly.log, para.x = para.x, para.y = para.y)
 }
 
-plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
-
+plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
   origin <- as.numeric(origin)
   width <- as.numeric(width)
 
-  notch1 <- as.numeric(notch[1])
-  notch2 <- as.numeric(notch[2])
+  notch1 <- as.numeric(notch1)
+  notch2 <- as.numeric(notch2)
   offset <- as.numeric(offset)
 
   # linearize the LOG transformed data
-   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
-    if(!any(max(evt[,c(id)]) > 10^3.5)){
-      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
-   }
+  id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
+  if (!any(max(evt[,c(id)]) > 10^3.5)) {
+    evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
+  }
 
   # Correction for the difference of sensitivity between D1 and D2
-    if(is.na(origin)) origin <- median(evt$D2-evt$D1)
+  if (is.na(origin)) origin <- median(evt$D2-evt$D1)
 
  # Filtering particles detected by fsc_small
-    evt. <- subset(evt, fsc_small > 0)
+  evt. <- subset(evt, fsc_small > 0)
 
   # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-    aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
+  aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
 
  # finding the notch
-    if(is.na(notch1)){
-      d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])
-      fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
-      notch1 <- fsc.max1 / (d.min1+ 10000)
-        }
+  if (is.na(notch1)) {
+    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])
+    fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
+    notch1 <- fsc.max1 / (d.min1+ 10000)
+  }
 
-    if(is.na(notch2)){
-      d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
-      fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
-      notch2 <- fsc.max2 / (d.min2 + 10000)
-        }
+  if (is.na(notch2)) {
+    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
+    fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
+    notch2 <- fsc.max2 / (d.min2 + 10000)
+  }
 
-   # Filtering focused particles (fsc_small > D + notch)
-    opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)
+  # Filtering focused particles (fsc_small > D + notch)
+  opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)
 
   ################
   ### PLOTTING ###
@@ -118,41 +111,40 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), off
   par(mfrow=c(2,3),pty='s')
 
   plot.cytogram(evt., "D1", "D2")
-    mtext("Alignment", side=3, line=4, font=2, col=2)
-   abline(b=1, a=origin1, col='red',lwd=2)
-   abline(b=1, a=origin2, col='red',lwd=2)
-    mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)
-    mtext(paste("Width=", width),side=3, line=1,font=2)
+  mtext("Alignment", side=3, line=4, font=2, col=2)
+  abline(b=1, a=origin1, col='red',lwd=2)
+  abline(b=1, a=origin2, col='red',lwd=2)
+  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)
+  mtext(paste("Width=", width),side=3, line=1,font=2)
 
   plot.cytogram(aligned, "fsc_small", "D1")
-      mtext("Focus", side=3, line=4, font=2,col=2)
-      mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)
-      mtext(paste("Offset=", offset),side=3, line=1,font=2)
-      abline(b=1/notch1, a=offset*10^4, col=2,lwd=2)
+  mtext("Focus", side=3, line=4, font=2,col=2)
+  mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)
+  mtext(paste("Offset=", offset),side=3, line=1,font=2)
+  abline(b=1/notch1, a=offset*10^4, col=2,lwd=2)
 
   plot.cytogram(aligned, "fsc_small", "D2")
-      mtext("Focus", side=3, line=4, font=2,col=2)
-      mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)
-      mtext(paste("Offset=", offset),side=3, line=1,font=2)
-      abline(b=1/notch2, a=offset*10^4, col=2,lwd=2)
+  mtext("Focus", side=3, line=4, font=2,col=2)
+  mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)
+  mtext(paste("Offset=", offset),side=3, line=1,font=2)
+  abline(b=1/notch2, a=offset*10^4, col=2,lwd=2)
 
   plot.cytogram(opp, "fsc_small", "pe")
-      mtext("OPP", side=3, line=1, font=2)
+  mtext("OPP", side=3, line=1, font=2)
   plot.cytogram(opp, "fsc_small","chl_small")
-      mtext("OPP", side=3, line=1, font=2)
-      mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)
+  mtext("OPP", side=3, line=1, font=2)
+  mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)
   plot.cytogram(opp, "chl_small","pe")
-      mtext("OPP", side=3, line=1, font=2)
+  mtext("OPP", side=3, line=1, font=2)
 
   par(def.par)
-
 }
 
 
 
 plot.filter.cytogram.by.file <- function(evt.dir, evt.file, width=0.2,notch=1, ...){
   evt.file <- clean.file.path(evt.file)
-  evt <- readSeaflow(evt.file, evt.dir)
+  evt <- readSeaflow(evt.dir, evt.file)
   plot.filter.cytogram(evt, notch=notch, width=width)
 }
 

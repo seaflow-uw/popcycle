@@ -10,12 +10,12 @@ filter.evt <- function(evt, filter.func, ...) {
   return (filt)
 }
 
-filter.notch <- function(evt, origin=NA, width=0.5, notch=c(NA, NA), offset=0) {
+filter.notch <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
 
   origin <- as.numeric(origin)
   width <- as.numeric(width)
-  notch1 <- as.numeric(notch[1])
-  notch2 <- as.numeric(notch[2])
+  notch1 <- as.numeric(notch1)
+  notch2 <- as.numeric(notch2)
   offset <- as.numeric(offset)
 
   # Check for empty evt data frame.  If empty return empty opp data frame.
@@ -148,12 +148,17 @@ DF <- NULL
 #   evt.dir: directory of evt files listed in evt.list
 #   evt.list: list of EVT file paths, e.g. get.evt.files(evt.location)
 #   opp.dir: directory for opp output files
-filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
+filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir,
+                             filter.id=NULL) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
-  params <- get.filter.params.latest(db)
+  if (is.null(filter.id)) {
+    filter.params <- get.filter.params.latest(db)
+  } else {
+    filter.params <- get.filter.params.by.id(db, filter.id)
+  }
 
-  if (nrow(params) == 0) {
+  if (nrow(filter.params) == 0) {
     stop("No filter parameters defined")
   }
 
@@ -164,7 +169,7 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
     # Read EVT file
     # Return empty data frame on warning or error
     evt <- tryCatch({
-      readSeaflow(evt.file, path=evt.dir, transform=FALSE)
+      readSeaflow(evt.dir, evt.file, transform=FALSE)
     }, warnings = function(err) {
       print(err)
       return(data.frame())
@@ -177,9 +182,11 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
 
     # Filter EVT to OPP
     # Return empty data frame on warning or error
-    filt <- tryCatch({
-      filter.evt(evt, filter.notch, origin=params$origin, width=params$width,
-                 notch=c(params$notch1, params$notch2), offset=params$offset)
+    result <- tryCatch({
+      filter.evt(evt, filter.notch, origin=filter.params$origin,
+                 width=filter.params$width, notch1=filter.params$notch1,
+                 notch2=filter.params$notch2, offset=filter.params$offset)
+
     }, warnings = function(err) {
       print(err)
       return(list(opp=data.frame()))
@@ -191,10 +198,10 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir) {
     # Upload OPP data
     delete.opp.stats.by.file(db, evt.file)
     delete.opp.by.file(opp.dir, evt.file)
-    if (nrow(filt$opp) > 0) {
-      save.opp.stats(db, cruise, evt.file, evt_count, filt$opp, filt$params,
-                     params$uuid)
-      save.opp.file(filt$opp, opp.dir, evt.file)
+    if (nrow(result$opp) > 0) {
+      save.opp.stats(db, cruise, evt.file, evt_count, result$opp, result$params,
+                     filter.params$id)
+      save.opp.file(result$opp, opp.dir, evt.file)
     }
 
     i <-  i + 1

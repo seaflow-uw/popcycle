@@ -24,70 +24,66 @@ untransformData <- function(float.dataframe){
   return(float.dataframe)
 }
 
-readSeaflow <- function(file.name, evt.dir, column.names=EVT.HEADER,
+readSeaflow <- function(evt.dir, file.name, column.names=EVT.HEADER,
                         count.only=FALSE, transform=TRUE, channel=NULL){
-
   file.path <- paste(evt.dir, file.name,sep="/")
-  #if(!(substr(file.path, nchar(file.path)-2, nchar(file.path)) %in% c('opp','evt')))
-  #  warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
   # reads a binary seaflow event file into memory as a dataframe
-  if(!file.exists(file.path)){
-
-    stop(paste("The file doesn't exist;", file.path))
-
-  }else{
-
-    ## initialize dimentional parameters
-    n.bytes.header <- 4
-    n.bytes.EOL <- 4
-    column.size <- 2
-    n.columns <- length(column.names)
-    n.extra.columns <- n.bytes.EOL / column.size  # number of 16 bit integers (2:10&0) in the EOL character
-    n.int.columns <- n.columns + n.extra.columns
-
-    ## open binary file for reading
-    if (file_ext(file.path) == "gz") {
-      con <- gzfile(description = file.path, open="rb")
-    } else {
-      con <- file(description = file.path, open="rb")
+  if (!file.exists(file.path)) {
+    file.path <- paste(evt.dir, paste0(file.name, ".gz"), sep="/")
+    if (!file.exists(file.path)) {
+      stop(paste("The file doesn't exist;", file.path))
     }
-    header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
-    # Check for empty file.  If empty return an empty data frame
-    if (length(header) == 0) {
-      warning(sprintf("File %s has size zero.", file.path))
+  }
+  ## initialize dimensional parameters
+  n.bytes.header <- 4
+  n.bytes.EOL <- 4
+  column.size <- 2
+  n.columns <- length(column.names)
+  n.extra.columns <- n.bytes.EOL / column.size  # number of 16 bit integers (2:10&0) in the EOL character
+  n.int.columns <- n.columns + n.extra.columns
+
+  ## open binary file for reading
+  if (file_ext(file.path) == "gz") {
+    con <- gzfile(description = file.path, open="rb")
+  } else {
+    con <- file(description = file.path, open="rb")
+  }
+  header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
+  # Check for empty file.  If empty return an empty data frame
+  if (length(header) == 0) {
+    warning(sprintf("File %s has size zero.", file.path))
+    return(data.frame())
+  }
+  header.EOL <- readBin(con, "integer", n = 1, size = n.bytes.EOL, endian = "little")
+
+  if (count.only) {
+   return(header) #return just the event count in the header
+  } else {
+    ## read the actual events
+    n.events <- header * n.int.columns
+    integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
+    ## reformat the vector into a matrix -> dataframe
+    integer.matrix <- matrix(integer.vector[1:n.events], nrow = header, ncol = n.int.columns, byrow=TRUE)
+    integer.dataframe <- data.frame(integer.matrix[,1:n.columns])
+    ## name the columns
+    names(integer.dataframe) <- c(column.names)
+    close(con)
+
+    if (nrow(integer.dataframe) != header) {
+      msg <- paste("In file ", file.path, " the declared number of events ", header,
+           " doesn't equal the actual number of events", sep="")
+      warning(msg)
       return(data.frame())
     }
-    header.EOL <- readBin(con, "integer", n = 1, size = n.bytes.EOL, endian = "little")
 
-    if (count.only) {
-     return(header) #return just the event count in the header
-    } else {
-      ## read the actual events
-      n.events <- header * n.int.columns
-      integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
-      ## reformat the vector into a matrix -> dataframe
-      integer.matrix <- matrix(integer.vector[1:n.events], nrow = header, ncol = n.int.columns, byrow=TRUE)
-      integer.dataframe <- data.frame(integer.matrix[,1:n.columns])
-      ## name the columns
-      names(integer.dataframe) <- c(column.names)
-      close(con)
-
-      if (nrow(integer.dataframe) != header) {
-        msg <- paste("In file ", file.path, " the declared number of events ", header,
-             " doesn't equal the actual number of events", sep="")
-        warning(msg)
-        return(data.frame())
-      }
-
-      if (! is.null(channel)) {
-        integer.dataframe <- integer.dataframe[, channel, drop=FALSE]
-      }
-
-      ## Transform data to LOG scale
-      if(transform) integer.dataframe <- transformData(integer.dataframe)
-
-      return (integer.dataframe)
+    if (! is.null(channel)) {
+      integer.dataframe <- integer.dataframe[, channel, drop=FALSE]
     }
+
+    ## Transform data to LOG scale
+    if(transform) integer.dataframe <- transformData(integer.dataframe)
+
+    return (integer.dataframe)
   }
 }
 
