@@ -24,14 +24,13 @@ untransformData <- function(float.dataframe){
   return(float.dataframe)
 }
 
-readSeaflow <- function(evt.dir, file.name, column.names=EVT.HEADER,
+readSeaflow <- function(path, column.names=EVT.HEADER,
                         count.only=FALSE, transform=TRUE, channel=NULL){
-  file.path <- paste(evt.dir, file.name,sep="/")
   # reads a binary seaflow event file into memory as a dataframe
-  if (!file.exists(file.path)) {
-    file.path <- paste(evt.dir, paste0(file.name, ".gz"), sep="/")
-    if (!file.exists(file.path)) {
-      stop(paste("The file doesn't exist;", file.path))
+  if (!file.exists(path)) {
+    path <- paste0(path, ".gz")
+    if (!file.exists(path)) {
+      stop(paste("The file doesn't exist;", path))
     }
   }
   ## initialize dimensional parameters
@@ -43,15 +42,15 @@ readSeaflow <- function(evt.dir, file.name, column.names=EVT.HEADER,
   n.int.columns <- n.columns + n.extra.columns
 
   ## open binary file for reading
-  if (file_ext(file.path) == "gz") {
-    con <- gzfile(description = file.path, open="rb")
+  if (file_ext(path) == "gz") {
+    con <- gzfile(description=path, open="rb")
   } else {
-    con <- file(description = file.path, open="rb")
+    con <- file(description=path, open="rb")
   }
   header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
   # Check for empty file.  If empty return an empty data frame
   if (length(header) == 0) {
-    warning(sprintf("File %s has size zero.", file.path))
+    warning(sprintf("File %s has size zero.", path))
     return(data.frame())
   }
   header.EOL <- readBin(con, "integer", n = 1, size = n.bytes.EOL, endian = "little")
@@ -70,7 +69,7 @@ readSeaflow <- function(evt.dir, file.name, column.names=EVT.HEADER,
     close(con)
 
     if (nrow(integer.dataframe) != header) {
-      msg <- paste("In file ", file.path, " the declared number of events ", header,
+      msg <- paste("In file ", path, " the declared number of events ", header,
            " doesn't equal the actual number of events", sep="")
       warning(msg)
       return(data.frame())
@@ -87,11 +86,7 @@ readSeaflow <- function(evt.dir, file.name, column.names=EVT.HEADER,
   }
 }
 
-
 writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
-  if(!all(EVT.HEADER %in% names(df)))
-    warning("attempting to read a seaflow file that doesn't have an evt or opp extension")
-
   # writes a binary seaflow event file from a dataframe in memory
 
   ## NEED TO ADD CHECK and REORDERING OF COLUMN NAMES
@@ -103,7 +98,11 @@ writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
   if(linearize)  df <- untransformData(df)
 
   ## open connection ##
-  con <- file(description = path, open="wb")
+  if (substr(path, nchar(path) - 2, nchar(path)) == ".gz") {
+    con <- gzfile(description = path, open="wb")
+  } else {
+    con <- file(description = path, open="wb")
+  }
   ## write newline ##
   writeBin(as.integer(c(nrow(df),EOL.double)), con, size = n.bytes.header, endian = "little")
 
@@ -118,10 +117,4 @@ writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
   ## write it out
   writeBin(out.vect, con, size = column.size)
   close(con)
-}
-
-
-
-write.delim <- function(df, file, quote=FALSE, row.names=FALSE, sep='\t', ...){
-	write.table(df, file,  quote=quote, row.names=row.names, sep=sep, ...)
 }

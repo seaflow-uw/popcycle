@@ -82,7 +82,7 @@ run.gating <- function(db, cruise.name, opp.dir, opp.list, vct.dir,
 
     tryCatch({
       #print(paste('Loading', opp.file))
-      opp <- get.opp.by.file(opp.dir, opp.file, ,
+      opp <- get.opp.by.file(opp.dir, opp.file,
                              channel=c("fsc_small", "fsc_perp", "pe", "chl_small"))
       #print(paste('Classifying', opp.file))
       vct <- classify.opp(opp, ManualGating, gating.params$poly.log)
@@ -93,7 +93,7 @@ run.gating <- function(db, cruise.name, opp.dir, opp.list, vct.dir,
       delete.vct.by.file(vct.dir, opp.file)
       # store vct
       #print('Uploading labels to the database')
-      save.vct.stats(db, opp, cruise.name, opp.file, 'Manual Gating',
+      save.vct.stats(db, cruise.name, opp.file, opp, 'Manual Gating',
                      gating.params$row$id)
       save.vct.file(vct, vct.dir, opp.file)
 

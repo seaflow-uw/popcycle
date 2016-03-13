@@ -169,7 +169,8 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir,
     # Read EVT file
     # Return empty data frame on warning or error
     evt <- tryCatch({
-      readSeaflow(evt.dir, evt.file, transform=FALSE)
+      path <- paste(evt.dir, evt.file, sep="/")
+      readSeaflow(path, transform=FALSE)
     }, warnings = function(err) {
       print(err)
       return(data.frame())

@@ -144,7 +144,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA
 
 plot.filter.cytogram.by.file <- function(evt.dir, evt.file, width=0.2,notch=1, ...){
   evt.file <- clean.file.path(evt.file)
-  evt <- readSeaflow(evt.dir, evt.file)
+  evt <- readSeaflow(paste(evt.dir, evt.file, sep="/"))
   plot.filter.cytogram(evt, notch=notch, width=width)
 }
 
