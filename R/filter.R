@@ -145,10 +145,10 @@ DF <- NULL
 # Args:
 #   db: sqlite3 db path
 #   cruise: cruise name
-#   evt.dir: directory of evt files listed in evt.list
-#   evt.list: list of EVT file paths, e.g. get.evt.files(evt.location)
+#   evt.dir: directory of evt files listed in evt.files
+#   evt.files: list of EVT file paths, e.g. get.evt.files(evt.location)
 #   opp.dir: directory for opp output files
-filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir,
+filter.evt.files <- function(db, cruise, evt.dir, evt.files, opp.dir,
                              filter.id=NULL) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
@@ -163,8 +163,8 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir,
   }
 
   i <- 0
-  for (evt.file in evt.list) {
-    message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
+  for (evt.file in evt.files) {
+    message(round(100*i/length(evt.files)), "% completed \r", appendLF=FALSE)
 
     # Read EVT file
     # Return empty data frame on warning or error
@@ -208,6 +208,6 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.list, opp.dir,
     i <-  i + 1
     flush.console()
   }
-  message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
+  message(round(100*i/length(evt.files)), "% completed \r", appendLF=FALSE)
   flush.console()
 }

@@ -49,31 +49,31 @@ delete.poly.by.id <- function(db, gating.id) {
   sql.dbGetQuery(db, sql)
 }
 
-reset.opp <- function(db) {
+reset.opp.stats.table <- function(db) {
   reset.table(db, "opp")
 }
 
-reset.vct <- function(db) {
+reset.vct.stats.table <- function(db) {
   reset.table(db, "vct")
 }
 
-reset.cytdiv <- function(db) {
+reset.cytdiv.table <- function(db) {
   reset.table(db, "cytdiv")
 }
 
-reset.sfl <- function(db) {
+reset.sfl.table <- function(db) {
   reset.table(db, "sfl")
 }
 
-reset.filter <- function(db) {
+reset.filter.table <- function(db) {
   reset.table(db, "filter")
 }
 
-reset.gating <- function(db) {
+reset.gating.table <- function(db) {
   reset.table(db, "gating")
 }
 
-reset.poly <- function(db) {
+reset.poly.table <- function(db) {
   reset.table(db, "poly")
 }
 
@@ -86,11 +86,18 @@ reset.table <- function(db, table.name) {
 #
 # Args:
 #   db - sqlite3 db path
+reset.db.except.params <- function(db) {
+  reset.opp.stats.table(db)
+  reset.vct.stats.table(db)
+  reset.cytdiv.table(db)
+  reset.sfl.table(db)
+}
+
 reset.db <- function(db) {
-  reset.opp(db)
-  reset.vct(db)
-  reset.cytdiv(db)
-  reset.sfl(db)
+  reset.db.except.params(db)
+  reset.filter.table(db)
+  reset.gating.table(db)
+  reset.poly.table(db)
 }
 
 # Get OPP aggregated filtered particle statistics by file

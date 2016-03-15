@@ -64,7 +64,7 @@ ManualGating <- function(opp, poly.log){
 }
 
 
-run.gating <- function(db, cruise.name, opp.dir, opp.list, vct.dir,
+run.gating <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
                        gating.id=NULL) {
   if (is.null(gating.id)) {
     gating.params <- get.gating.params.latest(db)
@@ -77,8 +77,8 @@ run.gating <- function(db, cruise.name, opp.dir, opp.list, vct.dir,
   }
 
   i <- 0
-  for (opp.file in opp.list) {
-    message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
+  for (opp.file in opp.files) {
+    message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
 
     tryCatch({
       #print(paste('Loading', opp.file))

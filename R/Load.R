@@ -35,11 +35,11 @@ readSeaflow <- function(path, column.names=EVT.HEADER,
   }
   ## initialize dimensional parameters
   n.bytes.header <- 4
-  n.bytes.EOL <- 4
+  n.bytes.padding <- 4
   column.size <- 2
-  n.columns <- length(column.names)
-  n.extra.columns <- n.bytes.EOL / column.size  # number of 16 bit integers (2:10&0) in the EOL character
-  n.int.columns <- n.columns + n.extra.columns
+  n.data.columns <- length(column.names)
+  n.extra.columns <- 2  # 2 uint16 (10 and 0) at start of each row
+  n.total.columns <- n.data.columns + n.extra.columns
 
   ## open binary file for reading
   if (file_ext(path) == "gz") {
@@ -51,19 +51,28 @@ readSeaflow <- function(path, column.names=EVT.HEADER,
   # Check for empty file.  If empty return an empty data frame
   if (length(header) == 0) {
     warning(sprintf("File %s has size zero.", path))
+    close(con)
     return(data.frame())
   }
-  header.EOL <- readBin(con, "integer", n = 1, size = n.bytes.EOL, endian = "little")
 
   if (count.only) {
    return(header) #return just the event count in the header
   } else {
     ## read the actual events
-    n.events <- header * n.int.columns
+    n.events <- header * n.total.columns
+    expected.bytes <- n.events * column.size
     integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
+    received.bytes <- length(integer.vector) * column.size
+    if (received.bytes != expected.bytes) {
+      warning(sprintf("File %s has incorrect data size. Expected %i bytes, saw %i bytes",
+                      path, expected.bytes, received.bytes))
+      close(con)
+      return(data.frame())
+    }
     ## reformat the vector into a matrix -> dataframe
-    integer.matrix <- matrix(integer.vector[1:n.events], nrow = header, ncol = n.int.columns, byrow=TRUE)
-    integer.dataframe <- data.frame(integer.matrix[,1:n.columns])
+    integer.matrix <- matrix(integer.vector, nrow = header, ncol = n.total.columns, byrow=TRUE)
+    # Convert to data frame dropping first two padding columns
+    integer.dataframe <- data.frame(integer.matrix[,(n.extra.columns+1):n.total.columns])
     ## name the columns
     names(integer.dataframe) <- c(column.names)
     close(con)
