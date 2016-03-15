@@ -303,6 +303,9 @@ get.filter.params.by.id <- function(db, filter.id) {
 get.gating.params.latest <- function(db) {
   sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
   gating.df <- sql.dbGetQuery(db, sql)
+  if (nrow(gating.df) == 0) {
+    stop("No entry found in gating table")
+  }
   answer <- get.gating.params.by.id(db, gating.df$id[1])
   return(answer)
 }
