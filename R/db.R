@@ -749,13 +749,34 @@ save.poly <- function(db, poly.log, gating.id) {
   dbDisconnect(con)
 }
 
+# Import SFL files for this cruise. SFL input may come from all SFL files found
+# in evt.dir or a single SFL file (perhaps manually edited) sfl.file.
+#
+# Args:
+#   db - sqlite3 db path
+#   popcycle.git.dir - local popcycle git repository directory
+#   cruise - cruise name
+#   evt.dir - Unfiltered EVT file directory with SFL files
+#   sfl.file - Single SFL file to import
+save.sfl <- function(db, popcycle.git.dir, cruise, evt.dir=NULL, sfl.file=NULL) {
+  if (is.null(evt.dir) && is.null(sfl.file)) {
+    stop("save.sfl requires one of evt.dir or sfl.file")
+  }
+  if ((! is.null(evt.dir)) && (! is.null(sfl.file))) {
+    stop("save.sfl can only be passed one of evt.dir or sfl.file")
+  }
+  importer <- file.path(popcycle.git.dir, "executable_scripts", "import_sfl.py")
+  cmd <- paste(importer, "-c", cruise, "-e", evt.dir, "-d", db)
+  system(cmd)
+}
+
 # Create a new, empty sqlite3 popcycle database. If a database already exists
 # it will be unaffected.
 #
 # Args:
 #    db - sqlite3 db path
 make.popcycle.db <- function(db) {
-  sql.file <- system.file("sql/popcycle.sql", package="popcycle")
+  sql.file <- system.file(file.path("sql", "popcycle.sql"), package="popcycle")
   cmd <- sprintf("sqlite3 %s < %s", db, sql.file)
   status <- system(cmd)
   if (status > 0) {
