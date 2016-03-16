@@ -4,7 +4,7 @@ delete.opp.stats.by.file <- function(db, file.name) {
 }
 
 delete.opp.by.file <- function(opp.dir, file.name) {
-  opp.file <- paste0(opp.dir, "/", clean.file.path(file.name), ".opp")
+  opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp")
   if (file.exists(opp.file)) {
     file.remove(opp.file)
   }
@@ -19,7 +19,7 @@ delete.vct.stats.by.file <- function(db, file.name) {
 }
 
 delete.vct.by.file <- function(vct.dir, file.name) {
-  vct.file <- paste0(vct.dir, "/", clean.file.path(file.name), ".vct")
+  vct.file <- paste0(file.path(vct.dir, clean.file.path(file.name)), ".vct")
   if (file.exists(vct.file)) {
     file.remove(vct.file)
   }
@@ -227,7 +227,7 @@ get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
   file.name.clean <- unlist(lapply(file.name, clean.file.path))
   opp.files <- paste0(file.name.clean, ".opp")
   opp.reader <- function(f) {
-    path <- paste(opp.dir, f, sep="/")
+    path <- file.path(opp.dir, f)
     opp <- readSeaflow(path, channel=channel, transform=transform)
     return(opp)
   }
@@ -251,7 +251,7 @@ get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
 #   vct.dir - VCT file directory
 #   file.name - EVT file name with julian day directory
 get.vct.by.file <- function(vct.dir, file.name) {
-  vct.file <- paste0(vct.dir, "/", clean.file.path(file.name), ".vct")
+  vct.file <- paste0(file.path(vct.dir, clean.file.path(file.name)), ".vct")
   if (!file.exists(vct.file)) {
     vct.file <- paste0(vct.file, ".gz")
     if (!file.exists(vct.file)) {
@@ -599,7 +599,7 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, method, gating.id) {
 #   vct.dir - Output directory for VCT files
 #   file.name - EVT file name with julian day directory
 save.vct.file <- function(vct, vct.dir, file.name) {
-  vct.file <- paste0(vct.dir, "/", clean.file.path(file.name), ".vct.gz")
+  vct.file <- paste0(file.path(vct.dir, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   con <- gzfile(vct.file, "w")
   write.table(vct, con, row.names=F, col.names=F, quote=F)
@@ -664,7 +664,7 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
 #     created.
 #   file.name - EVT file name with julian day directory
 save.opp.file <- function(opp, opp.dir, file.name) {
-  opp.file <- paste0(opp.dir, "/", clean.file.path(file.name), ".opp.gz")
+  opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
   writeSeaflow(opp, opp.file, linearize=FALSE)
 }
@@ -673,8 +673,13 @@ save.opp.file <- function(opp, opp.dir, file.name) {
 #
 # Args:
 #   db - sqlite3 db path
-#   params - named list of filter parameters
-save.filter.params <- function(db, params) {
+#   params - named list of filter parameters. Defaults to
+#     list(width=0.5, notch1=NA, notch2=NA, offset=0, origin=NA)
+save.filter.params <- function(db, params=NULL) {
+  if (is.null(params)) {
+    # Default filter parameters
+    params <- list(width=0.5, notch1=NA, notch2=NA, offset=0, origin=NA)
+  }
   filter.id <- UUIDgenerate()  # create primary ID for new entry
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
   df <- data.frame(id=filter.id, date=date.stamp, notch1=params$notch1,
@@ -750,7 +755,7 @@ save.poly <- function(db, poly.log, gating.id) {
 # Args:
 #    db - sqlite3 db path
 make.popcycle.db <- function(db) {
-  sql.file <- paste(system.file("sql", package="popcycle"), "popcycle.sql", sep="/")
+  sql.file <- system.file("sql/popcycle.sql", package="popcycle")
   cmd <- sprintf("sqlite3 %s < %s", db, sql.file)
   status <- system(cmd)
   if (status > 0) {
