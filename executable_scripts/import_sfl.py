@@ -141,13 +141,10 @@ def date_from_file_name(file_name):
 
         # Convert to a ISO 8601 date string
         datestamp, timestamp, tz = match.groups()
-        if len(tz) == 5:
-            # If the timezone string (e.g. +0000) does not have a
-            # "-" in the middle, add ":" in its place
-            tz = tz[:3] + ":" + tz[3:]
-        else:
-            # Convert middle "-" to ":"
-            tz = tz[:3] + ":" + tz[4:]
+        if len(tz) > 5:
+            # Remove middle "-" in timezone substring
+            # e.g. +00-00 or +00:00 becomes +0000
+            tz = tz[:3] + tz[4:]
         # SeaFlow EVT file names have "-"s instead of ":"s due to filesystem
         # naming rules. Fix things up to make valid time strings here
         timestamp = timestamp.replace('-', ':')
