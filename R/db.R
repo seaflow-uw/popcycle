@@ -766,7 +766,11 @@ save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL) {
   if ((! is.null(evt.dir)) && (! is.null(sfl.file))) {
     stop("save.sfl can only be passed one of evt.dir or sfl.file")
   }
-  cmd <- paste(importer, "-c", cruise, "-e", evt.dir, "-d", db)
+  if (! is.null(evt.dir)) {
+    cmd <- paste(importer, "-c", cruise, "-e", evt.dir, "-d", db)
+  } else {
+    cmd <- paste(importer, "-c", cruise, "-s", sfl.file, "-d", db)
+  }
   system(cmd)
 }
 
