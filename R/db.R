@@ -754,18 +754,18 @@ save.poly <- function(db, poly.log, gating.id) {
 #
 # Args:
 #   db - sqlite3 db path
-#   popcycle.git.dir - local popcycle git repository directory
 #   cruise - cruise name
 #   evt.dir - Unfiltered EVT file directory with SFL files
 #   sfl.file - Single SFL file to import
-save.sfl <- function(db, popcycle.git.dir, cruise, evt.dir=NULL, sfl.file=NULL) {
+save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL) {
+  importer <- system.file(file.path("scripts", "import_sfl.py"),
+                          package="popcycle")
   if (is.null(evt.dir) && is.null(sfl.file)) {
     stop("save.sfl requires one of evt.dir or sfl.file")
   }
   if ((! is.null(evt.dir)) && (! is.null(sfl.file))) {
     stop("save.sfl can only be passed one of evt.dir or sfl.file")
   }
-  importer <- file.path(popcycle.git.dir, "executable_scripts", "import_sfl.py")
   cmd <- paste(importer, "-c", cruise, "-e", evt.dir, "-d", db)
   system(cmd)
 }

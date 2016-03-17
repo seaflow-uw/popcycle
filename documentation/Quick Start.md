@@ -30,13 +30,11 @@ vct.dir <- paste0(cruise, "_vct")
 `opp.dir` is the output directory which will contain OPP files of filtered particle data.  
 `vct.dir` is the output directory which will contain VCT files of per particle population classifications
 
-Create the new popcycle SQLite3 database and populate it with cruise information from SFL files found in the EVT directory. Here we assume the local popcycle git repository is in the directory `./popcycle`.
+Create the new popcycle SQLite3 database and populate it with cruise information from SFL files found in the EVT directory.
 
 ```R
 make.popcycle.db(db)  # Create an empty popcycle SQLite3 database file
-# save.sfl uses a python script in the git repository
-popcycle.git.dir <- "./popcycle"
-save.sfl(db, popcycle.git.dir, cruise, evt.dir=evt.dir)
+save.sfl(db, cruise, evt.dir=evt.dir)
 get.sfl.table(db)  # View SFL table to confirm import
 ```
 
