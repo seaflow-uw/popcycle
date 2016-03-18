@@ -678,10 +678,10 @@ save.opp.file <- function(opp, opp.dir, file.name) {
 save.filter.params <- function(db, params=NULL) {
   if (is.null(params)) {
     # Default filter parameters
-    params <- list(width=0.5, notch1=NA, notch2=NA, offset=0, origin=NA)
+    params <- list(notch1=NA, notch2=NA, offset=0, origin=NA, width=0.5)
   }
   filter.id <- UUIDgenerate()  # create primary ID for new entry
-  date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
+  date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")
   df <- data.frame(id=filter.id, date=date.stamp, notch1=params$notch1,
                    notch2=params$notch2, offset=params$offset,
                    origin=params$origin, width=params$width)
@@ -698,7 +698,7 @@ save.filter.params <- function(db, params=NULL) {
 #    poly.log - named list of per population gating polygons
 save.gating.params <- function(db, poly.log) {
   gating.id <- UUIDgenerate()  # create primary ID for new entry
-  date.stamp <- format(Sys.time(),format="%FT%H:%M:%S+0000", tz="GMT")
+  date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")
   df <- data.frame(id=gating.id, date=date.stamp,
                    pop_order=paste(names(poly.log), collapse=","))
 

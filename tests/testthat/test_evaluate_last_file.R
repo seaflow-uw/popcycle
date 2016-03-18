@@ -1,52 +1,26 @@
 library(popcycle)
+source("helper.R")
 
 context("Realtime last file pipeline")
 
 test_that("Successfully run realtime last file pipeline", {
-  save.project <- project.location
-  save.evt <- evt.location
+  x <- setUp()
 
-  newdir <- tempdir()
-  projdir <- file.path(newdir, "project")
+  save.sfl(x$db, x$cruise, evt.dir=x$evt.dir)
+  evt.file <- get.latest.evt.with.day(x$evt.dir)
 
-  set.project.location(projdir)
-  set.evt.location("../../inst/extdata/SeaFlow/datafiles/evt")
-  set.cruise.id("test")
+  save.filter.params(x$db)
+  load("../params.RData")
+  save.gating.params(x$db, poly.log)
+  evaluate.evt(x$db, x$cruise, x$evt.dir, x$opp.dir, x$vct.dir, evt.file)
 
-  # Move prepared gating params Rdata and filter params files to params dir
-  file.copy("../params.RData", param.gate.location, overwrite=T)
-  file.copy("../filter.csv", param.filter.location, overwrite=T)
-
-  # Load SFL data
-  cmd <- paste("python",
-               "../../executable_scripts/import_sfl.py",
-               "--sfl",
-               file.path(evt.location, "2014_185", "2014-07-04T00-00-00+00-00.sfl"),
-               "--db",
-               db.name,
-               "--cruise",
-               cruise.id,
-               sep=" ")
-  status <- system(cmd)
-
-  expect_equal(status, 0)
-
-  evt.file <- get.latest.evt.with.day()
-
-  evaluate.evt(evt.file)
-
-  stats <- get.stat.table()
+  stats <- get.stat.table(x$db)
 
   print(paste0("stats$pop = c(", paste(stats$pop, collapse=" "), ")"))
   print(paste0("stats$n_count = c(", paste(stats$n_count, collapse=" "), ")"))
 
   expect_equal(stats$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
-  expect_equal(stats$n_count, c(6, 10, 44, 12, 13))
+  expect_equal(stats$n_count, c(39, 33, 206, 47, 40))
 
-  # Reset locations
-  set.project.location(save.project)
-  set.evt.location(save.evt)
-
-  # Erase temp dir
-  unlink(projdir, recursive=T)
+  tearDown(x)
 })
