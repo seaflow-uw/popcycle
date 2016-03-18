@@ -16,4 +16,4 @@ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
 sudo apt-get update
 
 # Install R for real
-sudo apt-get install r-base
+sudo apt-get install -y r-base
