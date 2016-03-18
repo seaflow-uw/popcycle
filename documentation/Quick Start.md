@@ -1,6 +1,12 @@
 ## Installation
 
-Download and install the popcycle R library
+First we need to satisfy some dependencies. Make sure Python 2.7 and **pip** is installed, then install the Python `dateutil` library.
+
+```
+pip install python-dateutil
+```
+
+Now download and install the popcycle R library
 
 ```sh
 git clone https://github.com/uwescience/popcycle
