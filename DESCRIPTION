@@ -1,11 +1,23 @@
 Package: popcycle
 Title: Popcycle: A R package for Real-time Analysis of continuous SeaFlow data
-Version: 0.2
-Date: 2015-05-24
+Version: 0.3
+Date: 2016-03-21
 Author: Francois Ribalet, Chris Berthiaume, Jeremy Hyrkas
 Maintainer: Francois Ribalet <ribalet@uw.edu>
 Description: Real-time Seaflow analysis using R/SQLite.
-Depends: RSQLite, splancs, plyr, uuid, tools
-Suggests: plotrix, maps, mapdata, testthat
+Depends:
+    RSQLite,
+    splancs,
+    plyr,
+    uuid,
+    tools
+Suggests:
+    plotrix,
+    maps,
+    mapdata,
+    testthat,
+    roxygen2
+SystemRequirements: python 2.7 with dateutil
 License: GPL-2
 URL: http://seaflow.ocean.washington.edu
+RoxygenNote: 5.0.1

@@ -21,7 +21,7 @@ test_that("Latest EVT file found correctly", {
   x <- setUp()
 
   answer <- "2014_185/2014-07-04T00-12-02+00-00"
-  expect_equal(get.latest.evt.with.day(x$evt.dir), answer)
+  expect_equal(get.latest.evt(x$evt.dir), answer)
 
   tearDown(x)
 })

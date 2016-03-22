@@ -1,5 +1,13 @@
-plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
-	cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
+#' Plot cytogram.
+#'
+#' @param opp OPP data frame.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param ... Additional parameters for densCols()
+#' @return None
+#' @export
+plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...) {
+  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
   par(pty='s')
   id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
@@ -7,14 +15,28 @@ plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
   else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 }
 
-
-plot.cytogram.by.file <- function(opp.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small',...){
-  opp <- get.opp.by.file(opp.dir, evt.file)
+#' Plot cytogram for one file.
+#'
+#' @param opp.dir OPP file directory.
+#' @param file.name File name with julian day directory.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param ... Additional parameters for densCols()
+#' @return None
+#' @export
+plot.cytogram.by.file <- function(opp.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
+  opp <- get.opp.by.file(opp.dir, file.name)
   plot.cytogram(opp, para.x = para.x, para.y = para.y,...)
 }
 
-
-## OPP merged with VCT
+#' Plot cytogram with particles colored by population.
+#'
+#' @param opp OPP data frame.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param ... Additional parameters for plot()
+#' @return None
+#' @export
 plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
 	if (!is.null(opp$pop)) {
 		par(pty='s')
@@ -30,11 +52,29 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',..
 	}
 }
 
-plot.vct.cytogram.by.file <- function(opp.dir, vct.dir, evt.file, para.x = 'fsc_small', para.y = 'chl_small',...){
-  opp <- get.opp.by.file(opp.dir, evt.file, vct.dir=vct.dir)
+#' Plot cytogram with particles colored by population for one file.
+#'
+#' @param opp.dir OPP file directory.
+#' @param vct.dir VCT file directory.
+#' @param file.name File name with julian day directory.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param ... Additional parameters for densCols()
+#' @return None
+#' @export
+plot.vct.cytogram.by.file <- function(opp.dir, vct.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
+  opp <- get.opp.by.file(opp.dir, file.name, vct.dir=vct.dir)
   plot.vct.cytogram(opp, para.x = para.x, para.y = para.y,...)
 }
 
+#' Plot cytogram with gates.
+#'
+#' @param opp OPP data frame.
+#' @param poly.log Gating polygon(s) to draw (optional)
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @return None
+#' @export
 plot.gating.cytogram <- function(opp, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
 	plot.cytogram(opp, para.x, para.y)
 	if (!is.null(poly.log)) {
@@ -50,11 +90,27 @@ plot.gating.cytogram <- function(opp, poly.log=NULL, para.x = 'fsc_small', para.
 	}
 }
 
-plot.gating.cytogram.by.file <- function(opp.dir, evt.file, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
-  opp <- get.opp.by.file(opp.dir, evt.file)
+#' Plot cytogram with gates for one file.
+#'
+#' @param opp.dir OPP file directory.
+#' @param file.name File name with julian day directory.
+#' @param poly.log Gating polygon(s) to draw (optional).
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @return None
+#' @export
+plot.gating.cytogram.by.file <- function(opp.dir, file.name, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
+  opp <- get.opp.by.file(opp.dir, file.name)
   plot.gating.cytogram(opp, poly.log, para.x = para.x, para.y = para.y)
 }
 
+#' Plot helpful cytograms for exploring filtering parameters.
+#'
+#' @param evt EVT data frame.
+#' @param origin,width,notch1,notch2,offset Filtering parameters. origin,
+#'   notch1, and notch2 will be calculated if NA.
+#' @return None
+#' @export
 plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
   origin <- as.numeric(origin)
   width <- as.numeric(width)
@@ -140,17 +196,26 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA
   par(def.par)
 }
 
-
-
-plot.filter.cytogram.by.file <- function(evt.dir, evt.file, width=0.2,notch=1, ...){
-  evt.file <- clean.file.path(evt.file)
-  evt <- readSeaflow(file.path(evt.dir, evt.file))
-  plot.filter.cytogram(evt, notch=notch, width=width)
+#' Plot helpful cytograms for exploring filtering parameters for one file.
+#'
+#' @param evt.dir EVT file directory.
+#' @param file.name File name with julian day directory.
+#' @param origin,width,notch1,notch2,offset Filtering parameters. origin,
+#'   notch1, and notch2 will be calculated if NA.
+#' @return None
+#' @export
+plot.filter.cytogram.by.file <- function(evt.dir, file.name, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
+  file.name <- clean.file.path(file.name)
+  evt <- readSeaflow(file.path(evt.dir, file.name))
+  plot.filter.cytogram(evt, origin=origin, notch1=notch1, notch2=notch2,,
+		                   width=width, offset=offset)
 }
 
-
+#' Plot cell abundances of a population on a map.
+#'
+#' @return None
+#' @export
 plot.map <- function(stat,popname,param,...){
-  ## plot cell abundances of a population on a map
   require(maps, quietly=T)
   require(mapdata, quietly=T)
   require(plotrix, quietly=T)
@@ -188,6 +253,10 @@ plot.map <- function(stat,popname,param,...){
 
 }
 
+#' plot.time
+#'
+#' @return None
+#' @export
 plot.time <- function(stat, popname,param, ...){
 
   stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
@@ -196,7 +265,10 @@ plot.time <- function(stat, popname,param, ...){
 
 }
 
-
+#' plot.cytdiv.map
+#'
+#' @return None
+#' @export
 plot.cytdiv.map <- function(cytdiv,index,...){
   require(maps, quietly=T)
   require(mapdata, quietly=T)
@@ -232,7 +304,10 @@ plot.cytdiv.map <- function(cytdiv,index,...){
 
 }
 
-
+#' plot.cytdiv.time
+#'
+#' @return None
+#' @export
 plot.cytdiv.time <- function(cytdiv,index, ...){
 
   cytdiv$time <- as.POSIXct(cytdiv$time,format="%FT%T",tz='GMT')
@@ -240,6 +315,10 @@ plot.cytdiv.time <- function(cytdiv,index, ...){
 
 }
 
+#' Temperature salinity plot.
+#'
+#' @return None
+#' @export
 plot.TS <- function(sfl,...){
 
  require(plotrix, quietly=T)
@@ -254,6 +333,4 @@ plot(sfl$ocean_tmp, sfl$salinity, col=cols(50)[cut(sfl$date,50)],pch=16,xlab=exp
    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2],
       legend=c("start","end"), rect.col=cols(50), gradient='y',align='rb',...)
 mtext("Time", side=4, line=2,...)
-
-
 }

@@ -7,7 +7,7 @@ test_that("Successfully run realtime last file pipeline", {
   x <- setUp()
 
   save.sfl(x$db, x$cruise, evt.dir=x$evt.dir)
-  evt.file <- get.latest.evt.with.day(x$evt.dir)
+  evt.file <- get.latest.evt(x$evt.dir)
 
   save.filter.params(x$db)
   load("../params.RData")

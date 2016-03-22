@@ -1,4 +1,13 @@
-
+#' Classify particles with a generic gating function.
+#'
+#' @param opp OPP data frame.
+#' @param classify.func Classifying function.
+#' @return List of per particle classifications.
+#' @examples
+#' \dontrun{
+#' vct <- classify.opp(opp, ManualGating, poly.log)
+#' }
+#' @export
 classify.opp <- function(opp, classify.func, ...) {
   vct <- classify.func(opp, ...)
 
@@ -14,7 +23,24 @@ classify.opp <- function(opp, classify.func, ...) {
   return (vct)
 }
 
-
+#' Define polygons for population gating.
+#'
+#' @param opp OPP data frame.
+#' @param popname Population name.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param poly.log Named list of gating polygon definitions. If a definition for
+#'   popname already exists it will be updated. If it doesn't exist it will be
+#'   appended to the end to the list. If poly.log is NULL a new list will be
+#'   created.
+#' @return Version of poly.log with a new polygon defintion for popname.
+#' @examples
+#' \dontrun{
+#' poly.log <- set.gating.params(opp, "beads", "fsc_small", "pe")
+#' poly.log <- set.gating.params(opp, "prochloro", "fsc_small", "chl_small",
+#'                               poly.log)
+#' }
+#' @export
 set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
   popname <- as.character(popname)
   para.x <- as.character(para.x)
@@ -40,7 +66,17 @@ set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
   return(poly.log)
 }
 
-
+#' Classify particles based on manually defined population gates.
+#'
+#' @param opp OPP data frame.
+#' @param poly.log Named list of gating polygon definitions. Particles will be
+#'   classified by population in the order they appear in poly.log.
+#' @return List of per particle classifications.
+#' @examples
+#' \dontrun{
+#' vct <- ManualGating(opp, poly.log)
+#' }
+#' @export
 ManualGating <- function(opp, poly.log){
   opp$pop <- "unknown"
 
@@ -63,9 +99,29 @@ ManualGating <- function(opp, poly.log){
 	return(opp$pop)
 }
 
-
-run.gating <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
-                       gating.id=NULL) {
+#' Classifiy particles for a list of OPP files.
+#'
+#' Classify a  list of OPP files. Save per file aggregate population statistics
+#' to SQLite3 database and save particle population definitions to text files
+#' in vct.dir.
+#'
+#' @param db SQLite3 database file path.
+#' @param cruise.name Cruise name.
+#' @param opp.dir OPP file directory.
+#' @param opp.files List of OPP files to classify. Include julian day directory.
+#' @param vct.dir VCT file output directory.
+#' @param gating.id Optionally provide the ID for gating parameters. If NULL,
+#'   the most recently saved gating parameters will be used.
+#' @return None
+#' @examples
+#' \dontrun{
+#' classify.opp.files(db, "testcruise", opp.dir, opp.files, vct.dir)
+#' classify.opp.files(db, "testcruise", opp.dir, opp.files, vct.dir,
+#'                    "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#' }
+#' @export
+classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
+                               gating.id=NULL) {
   if (is.null(gating.id)) {
     gating.params <- get.gating.params.latest(db)
   } else {

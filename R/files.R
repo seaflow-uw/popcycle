@@ -1,8 +1,17 @@
+#' Find EVT files with a recursive search down a directory tree.
+#'
+#' @param evt.dir Directory containing EVT files.
+#' @return Vector of EVT files with julian day directory.
+#' @examples
+#' \dontrun{
+#' evt.files <- get.evt.files(evt.dir)
+#' }
+#' @export
 get.evt.files <- function(evt.dir) {
   file.list <- list.files(evt.dir, recursive=T)
   if (length(file.list) == 0) {
     print(paste("no evt files found in", evt.dir))
-    return (file.list)
+    return(file.list)
   }
   # regexp to match both types of EVT files
   #   - 37.evt (old style)
@@ -12,43 +21,32 @@ get.evt.files <- function(evt.dir) {
   regexp <- "/?[0-9]+\\.evt(\\.gz)?$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}[+-][0-9]{2}-?[0-9]{2}(\\.gz)?$"
   id <- grep(regexp,file.list)
   file.list <- file.list[id]
-  print(paste(length(file.list), "evt files found"))
-  return (sort(file.list))
+  #print(paste(length(file.list), "evt files found"))
+  return(sort(unlist(lapply(file.list, clean.file.path))))
 }
 
-get.latest.evt.with.day <- function(evt.dir) {
+#' Find the most recent EVT file.
+#'
+#' @param evt.dir Directory containing EVT files.
+#' @return Most recent EVT file with julian day directory.
+#' @examples
+#' \dontrun{
+#' evt.file <- get.latest.evt(evt.dir)
+#' }
+#' @export
+get.latest.evt <- function(evt.dir) {
   file.list <- get.evt.files(evt.dir)
   n <- length(file.list)
-  return (file.list[n])
+  return(clean.file.path(file.list[n]))
 }
 
-get.latest.evt <- function(evt.dir) {
-  return (basename(get.latest.evt.with.day(evt.dir)))
-}
-
-files.in.range <- function(start.day, start.timestamp, end.day, end.timestamp, evt.dir) {
-  file.list <- get.evt.files(evt.dir)
-  start.file = paste(start.day, start.timestamp, sep='/')
-  end.file = paste(end.day, end.timestamp, sep='/')
-
-  if(!any(file.list == start.file)) {
-    stop(paste("Could not find file", start.file))
-  }
-
-  if(!any(file.list == end.file)) {
-    stop(paste("Could not find file", end.file))
-  }
-
-  start.index = which(file.list == start.file)
-  end.index = which(file.list == end.file)
-
-  return(file.list[start.index:end.index])
-}
-
-
+#' file.transfer
+#'
+#' @return None
+#' @export
 file.transfer <- function(evt.dir, instrument.dir){
 
-  last.evt <- get.latest.evt.with.day(evt.dir)
+  last.evt <- get.latest.evt(evt.dir)
   file.list <- list.files(instrument.dir, recursive=T)
   sfl.list <- file.list[grepl('.sfl', file.list)]
   file.list <- file.list[-length(file.list)] # remove the last file (opened file)
@@ -73,15 +71,18 @@ file.transfer <- function(evt.dir, instrument.dir){
   }
  }
 
-is.new.style.file <- function(file.name) {
-  # regexp to new style EVT file names
-  #   - 2014-05-15T17-07-08+0000 or 2014-07-04T00-03-02+00-00 (new style)
-  regexp.new <- "/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}\\+[0-9]{2}-?[0-9]{2}(\\.gz)?$"
-  return(length(grep(regexp.new, file.name)) == 1)
-}
-
-# Convert an EVT/OPP/VCT file path to a form suitable for storage in the SQLite
-# db. Returned file path should be julian_day/EVT_file_name
+#' Clean a file path.
+#'
+#' Convert an EVT/OPP/VCT file path to a form suitable for storage in the SQLite
+#' db. Any ".gz", ".opp", ".vct" extensions will be removed.
+#'
+#' @param fpath File path to clean.
+#' @return Modified file path as julian_day/EVT_file_name.
+#' @examples
+#' \donrun{
+#' fpath <- clean.file.path("foo/2014_185/2014-07-04T00-00-02+00-00.opp.gz")
+#' }
+#' @export
 clean.file.path <- function(fpath) {
   # Clean up any places with multiple "/"s
   fpath <- gsub("/+", "/", fpath)

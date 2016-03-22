@@ -1,3 +1,15 @@
+#' Filter EVT particles with a generic filter function.
+#'
+#' @param evt EVT data frame.
+#' @param filter.func Filtering function.
+#' @return Named list where list$params contains a list of filtering parameters
+#'   and list$opp contains OPP data frame.
+#' @examples
+#' \dontrun{
+#' filt <- filter.evt(evt, filter.notch, origin=NA, width=0.5, notch1=NA,
+#'                    notch2=NA, offset=0)
+#' }
+#' @export
 filter.evt <- function(evt, filter.func, ...) {
   filt <- filter.func(evt, ...)
 
@@ -10,6 +22,18 @@ filter.evt <- function(evt, filter.func, ...) {
   return (filt)
 }
 
+#' Filter EVT particles.
+#'
+#' @param evt EVT data frame.
+#' @param origin,width,notch1,notch2,offset Filtering parameters. origin,
+#'   notch1, and notch2 will be calculated if NA.
+#' @return Named list where list$params contains a list of filtering parameters
+#'   and list$opp contains OPP data frame.
+#' @examples
+#' \dontrun{
+#' filt <- filter.notch(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0)
+#' }
+#' @export
 filter.notch <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
 
   origin <- as.numeric(origin)
@@ -62,6 +86,9 @@ filter.notch <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset
   return(list("opp"=opp, "params"=params))
 }
 
+#' find.filter.notch
+#'
+#' @export
 find.filter.notch <- function(evt.list, origin=NA, width=0.5, notch=c(NA, NA), offset=0, do.plot=TRUE){
 
   origin <- as.numeric(origin)
@@ -139,16 +166,27 @@ DF <- NULL
   return(DF)
 }
 
-# Filter a list of EVT files, save OPP per file aggregate data to sqlite and
-# filtered particle to binary file.
-#
-# Args:
-#   db: sqlite3 db path
-#   cruise: cruise name
-#   evt.dir: directory of evt files listed in evt.files
-#   evt.files: list of EVT file paths, e.g. get.evt.files(evt.location)
-#   opp.dir: directory for opp output files
-filter.evt.files <- function(db, cruise, evt.dir, evt.files, opp.dir,
+#' Filter a list of EVT files.
+#'
+#' Filter a list of EVT files. Save OPP per file aggregate statistics to
+#' SQLite3 database and save particle data to binary files in opp.dir.
+#'
+#' @param db SQLite3 database file path.
+#' @param cruise.name Cruise name.
+#' @param evt.dir EVT file directory.
+#' @param evt.files List of EVT files to filter. Include julian day directory.
+#' @param opp.dir OPP file output directory.
+#' @param filter.id Optionally provide the ID for filter parameters. If NULL,
+#'   the most recently saved filter parameters will be used.
+#' @return None
+#' @examples
+#' \dontrun{
+#' filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir)
+#' filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir,
+#'                  "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#' }
+#' @export
+filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
                              filter.id=NULL) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
@@ -200,7 +238,7 @@ filter.evt.files <- function(db, cruise, evt.dir, evt.files, opp.dir,
     delete.opp.stats.by.file(db, evt.file)
     delete.opp.by.file(opp.dir, evt.file)
     if (nrow(result$opp) > 0) {
-      save.opp.stats(db, cruise, evt.file, evt_count, result$opp, result$params,
+      save.opp.stats(db, cruise.name, evt.file, evt_count, result$opp, result$params,
                      filter.params$id)
       save.opp.file(result$opp, opp.dir, evt.file)
     }

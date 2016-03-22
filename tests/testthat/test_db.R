@@ -85,7 +85,7 @@ test_that("Retrieve VCT stats by file", {
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
   load("../params.RData")
   save.gating.params(x$db, poly.log)
-  run.gating(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
+  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
   vct2 <- get.vct.stats.by.file(x$db, "2014_185/2014-07-04T00-03-02+00-00")
   expect_equal(vct2$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
@@ -113,7 +113,7 @@ test_that("Retrieve VCT stats by file", {
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
   load("../params.RData")
   save.gating.params(x$db, poly.log)
-  run.gating(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
+  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
   vct2 <- get.vct.stats.by.file(x$db, "2014_185/2014-07-04T00-03-02+00-00")
   expect_equal(vct2$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
@@ -129,7 +129,7 @@ test_that("Retrieve VCT stats by date", {
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
   load("../params.RData")
   save.gating.params(x$db, poly.log)
-  run.gating(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
+  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
   vct12 <- get.vct.stats.by.date(x$db, "2014-07-04 00:00", "2014-07-04 00:04")
   expect_equal(
@@ -146,17 +146,17 @@ test_that("Retrieve OPP by file", {
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
   load("../params.RData")
   save.gating.params(x$db, poly.log)
-  run.gating(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
+  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
   # Without VCT, transformed
   opp <- get.opp.by.file(x$opp.dir, get.opp.files(x$db)[1:2])
   expect_equal(nrow(opp), 749)
-  expect_true(!any(max(opp[, length(EVT.HEADER)]) > 10^3.5))
+  expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
   opp <- get.opp.by.file(x$opp.dir, get.opp.files(x$db)[1:2], transform=F)
   expect_equal(nrow(opp), 749)
-  expect_true(any(max(opp[, seq(3, length(EVT.HEADER))]) > 10^3.5))
+  expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
   # With VCT
   opp <- get.opp.by.file(x$opp.dir, get.opp.files(x$db)[1:2], vct.dir=x$vct.dir)
@@ -172,21 +172,34 @@ test_that("Retrieve OPP by date", {
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
   load("../params.RData")
   save.gating.params(x$db, poly.log)
-  run.gating(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
+  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
   # Without VCT, transformed
   opp <- get.opp.by.date(x$db, x$opp.dir, "2014-07-04 00:00", "2014-07-04 00:04")
   expect_equal(nrow(opp), 749)
-  expect_true(!any(max(opp[, length(EVT.HEADER)]) > 10^3.5))
+  expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
   opp <- get.opp.by.date(x$db, x$opp.dir, "2014-07-04 00:00", "2014-07-04 00:04",
                          transform=F)
   expect_equal(nrow(opp), 749)
-  expect_true(any(max(opp[, seq(3, length(EVT.HEADER))]) > 10^3.5))
+  expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
   # With VCT
   opp <- get.opp.by.date(x$db, x$opp.dir, "2014-07-04 00:00", "2014-07-04 00:04",
                          vct.dir=x$vct.dir)
   expect_true("pop" %in% names(opp))
+})
+
+test_that("Retrieve EVT file names by date", {
+  x <- setUp()
+
+  save.sfl(x$db, x$cruise, evt.dir=x$evt.dir)
+  evt.files <- get.evt.files.by.date(x$db, x$evt.dir, "2014-07-04 00:03", "2014-07-04 00:10")
+  answer <- c(
+    "2014_185/2014-07-04T00-03-02+00-00",
+    "2014_185/2014-07-04T00-06-02+00-00",
+    "2014_185/2014-07-04T00-09-02+00-00"
+  )
+  expect_equal(evt.files, answer)
 })
