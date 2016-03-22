@@ -26,7 +26,7 @@ Rscript setup.R
 ```
 
 ## Help
-Documentation for `popcycle` functions used in this guide can be accessed with the built-in R help system. e.g. Running the following command in R will bring up a separate doc window for the `filter.evt.files` function.
+Documentation for `popcycle` functions used in this guide can be accessed with the built-in R help system. e.g. running the following command in R will bring up a separate doc window for the `filter.evt.files` function.
 
 ```r
 ?filter.evt.files
@@ -54,18 +54,18 @@ opp.dir <- paste0(cruise, "_opp")
 vct.dir <- paste0(cruise, "_vct")
 ```
 
-`db` is the SQLite3 database file which will store aggregate statistics for OPP and VCT files as well as the filtering and gating parameters used to generate OPP and VCT data.  
-`evt.dir` is the input directory containing EVT files of raw, unfiltered particle data.  
-`opp.dir` is the output directory which will contain OPP files of filtered particle data.  
-`vct.dir` is the output directory which will contain VCT files of per particle population classifications
+`db` is the SQLite3 database file which will store aggregate statistics for **OPP** and **VCT** files as well as the filtering and gating parameters used to generate **OPP** and **VCT** data.  
+`evt.dir` is the input directory containing **EVT** files of raw, unfiltered particle data.  
+`opp.dir` is the output directory which will contain **OPP** files of filtered particle data.  
+`vct.dir` is the output directory which will contain **VCT** files of per particle population classifications
 
-Create the popcycle `SQLite3` database. If you're using a database that already exists, this step isn't necessary, but won't hurt anything either.
+Create the popcycle `SQLite3` database. If you're using a database that already exists - for example if you filtered using `filterevt.py` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project - this step isn't necessary, but won't hurt anything either.
 
 ```r
 make.popcycle.db(db)  # Create a popcycle SQLite3 database file
 ```
 
-Populate the db with cruise information from SFL files found in the EVT directory or from a single concatenated SFL file.
+For many database operations it's necessary to access the cruise information contained in SFL files, so let's load that now. We can load all SFL files found in the EVT directory or load from a single concatenated SFL file.
 
 ```r
 save.sfl(db, cruise, evt.dir=evt.dir)
@@ -93,6 +93,21 @@ For example, the first file `2014_185/2014-07-04T00-00-02+00-00.gz` would have a
 Any version of the file name can be converted to the short version used by `popcycle` functions with `clean.file.path`.
 
 ## Filtering
+
+### Fast filtering with Python
+The fastest way to filter EVT files is to use `filterevt.py` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project. This will create filtered OPP file and database output equivalent to the R code in this section, but could potentially save you hours or days of time. For example, to filter an EVT directory called `testcruise_evt` using 4 threads:
+
+```sh
+filterevt.py --evt_dir testcruise_evt --cpus 4 --cruise testcruise --db testcruise.db --opp_dir testcruise_opp
+```
+
+This will result in a new directory `testcruise_opp` with OPP files and a new database `testcruise.db` containing filter parameters and OPP aggregated statistics. For full usage information run
+
+```sh
+filterevt.py -h
+```
+
+If you go this route skip ahead to the section on Gating.
 
 ### Configure filter parameters
 Set parameters for filtration and filter raw data to create OPP. In most cases it's sufficient to use default parameters.
