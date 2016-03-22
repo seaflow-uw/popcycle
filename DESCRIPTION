@@ -15,8 +15,7 @@ Suggests:
     plotrix,
     maps,
     mapdata,
-    testthat,
-    roxygen2
+    testthat
 SystemRequirements: python 2.7 with dateutil
 License: GPL-2
 URL: http://seaflow.ocean.washington.edu

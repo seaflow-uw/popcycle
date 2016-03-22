@@ -6,4 +6,4 @@ before_install:
 - bash travis/before_install.sh
 
 script:
-- sudo -E su $USER -c 'Rscript setup.R'
+- sudo -E su $USER -c 'Rscript setup.R && Rscript tests/testthat.R'
