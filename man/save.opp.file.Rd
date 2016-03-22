@@ -4,7 +4,7 @@
 \alias{save.opp.file}
 \title{Save OPP as a gzipped LabView format binary file}
 \usage{
-save.opp.file(opp, opp.dir, file.name)
+save.opp.file(opp, opp.dir, file.name, untransform = FALSE)
 }
 \arguments{
 \item{opp}{OPP data frame of filtered particles.}
@@ -13,6 +13,8 @@ save.opp.file(opp, opp.dir, file.name)
 automatically created.}
 
 \item{file.name}{File name with julian day directory.}
+
+\item{untransform}{Convert linear data to log.}
 }
 \value{
 None

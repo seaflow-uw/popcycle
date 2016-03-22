@@ -650,10 +650,10 @@ get.sfl.table <- function(db) {
 #' @return Data frame of opp table.
 #' @examples
 #' \dontrun{
-#' opp.stats.table <- get.opp.table(db)
+#' opp.table <- get.opp.table(db)
 #' }
 #' @export
-get.opp.stats.table <- function(db) {
+get.opp.table <- function(db) {
   check.for.populated.sfl(db)
   sql <- "
     SELECT
@@ -675,10 +675,10 @@ get.opp.stats.table <- function(db) {
 #' @return Data frame of vct table.
 #' @examples
 #' \dontrun{
-#' vct.stats.table <- get.vct.table(db)
+#' vct.table <- get.vct.table(db)
 #' }
 #' @export
-get.vct.stats.table <- function(db) {
+get.vct.table <- function(db) {
   check.for.populated.sfl(db)
   sql <- "
     SELECT
@@ -1036,16 +1036,17 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
 #' @param opp.dir Output directory. Julian day sub-directories will be
 #'   automatically created.
 #' @param file.name File name with julian day directory.
+#' @param untransform Convert linear data to log.
 #' @return None
 #' @examples
 #' \dontrun{
 #' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-save.opp.file <- function(opp, opp.dir, file.name) {
+save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE) {
   opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
-  writeSeaflow(opp, opp.file, linearize=FALSE)
+  writeSeaflow(opp, opp.file, untransform=untransform)
 }
 
 #' Save filter parameters to the filter table.

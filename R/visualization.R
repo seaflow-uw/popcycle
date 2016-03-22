@@ -1,21 +1,35 @@
-#' Plot cytogram.
+#' Plot EVT or OPP cytogram.
 #'
-#' @param opp OPP data frame.
+#' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for densCols()
 #' @return None
 #' @export
-plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...) {
+plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small',...) {
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
   par(pty='s')
-  id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
-  if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(opp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
-  else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(opp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
+  id <- which(colnames(evtopp) == "fsc_small" | colnames(evtopp) == "chl_small" | colnames(evtopp) =="pe" | colnames(evtopp) =="fsc_perp")
+  if(max(evtopp[,c(id)]) > 10^3.5) plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(evtopp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
+  else plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(evtopp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 }
 
-#' Plot cytogram for one file.
+#' Plot cytogram for one EVT file.
+#'
+#' @param evt.dir EVT file directory.
+#' @param file.name File name with julian day directory.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param ... Additional parameters for densCols()
+#' @return None
+#' @export
+plot.evt.cytogram.by.file <- function(evt.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
+  evt <- readSeaflow(file.path(evt.dir, file.name))
+  plot.cytogram(evt, para.x = para.x, para.y = para.y,...)
+}
+
+#' Plot cytogram for one OPP file.
 #'
 #' @param opp.dir OPP file directory.
 #' @param file.name File name with julian day directory.
@@ -24,8 +38,15 @@ plot.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...) {
 #' @param ... Additional parameters for densCols()
 #' @return None
 #' @export
-plot.cytogram.by.file <- function(opp.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
-  opp <- get.opp.by.file(opp.dir, file.name)
+plot.opp.cytogram.by.file <- function(opp.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
+  if (endswith(file.name, ".gz")) {
+    # Remove .gz
+    file.name <- substr(file.name, 1, nchar(file.name) - nchar(".gz"))
+  }
+  if (! endswith(file.name, ".opp")) {
+    file.name <- paste0(file.name, ".opp")
+  }
+  opp <- readSeaflow(file.path(opp.dir, file.name))
   plot.cytogram(opp, para.x = para.x, para.y = para.y,...)
 }
 
@@ -207,7 +228,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA
 plot.filter.cytogram.by.file <- function(evt.dir, file.name, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
   file.name <- clean.file.path(file.name)
   evt <- readSeaflow(file.path(evt.dir, file.name))
-  plot.filter.cytogram(evt, origin=origin, notch1=notch1, notch2=notch2,,
+  plot.filter.cytogram(evt, origin=origin, notch1=notch1, notch2=notch2,
 		                   width=width, offset=offset)
 }
 

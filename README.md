@@ -131,8 +131,6 @@ Now we'll filter EVT files to create OPP data.
 
 ```r
 evt.files <- get.evt.files(evt.dir)  # Find 5 EVT files in evt.dir
-save.filter.params(db)  # Save default filter parameters
-get.filter.params.latest(db)  # Examine the parameters we just set
 # Filter particles
 filter.evt.files(db, cruise, evt.dir, evt.files, opp.dir)
 # 2 of the 5 input EVT files are invalid and will produce warning
@@ -164,11 +162,11 @@ Now we're ready to to set the gating for the different populations and classify 
 
 In this example, you are going to first gate the `beads` (this is always the first population to be gated.). Then we will gate the `Synechococcus` population (this population needs to be gated before you gate `Prochlorococcus` or `Picoeukaryote`), and finally the `Prochlorococcus` and `Picoeukaryote` populations.
 
-We'll use all three files of the example data set to configure gating parameters.
+We'll use the first file of the example data set to configure gating parameters. Note that `get.opp.by.file` can take a one file or a list of files, making it easy to use multiple OPP files to define population gates.
 
 ```r
 opp.files <- get.opp.files(db)  # 3 OPP file names
-opp <- get.opp.by.file(opp.dir, opp.files)
+opp <- get.opp.by.file(opp.dir, opp.files[1]) 
 poly.log <- set.gating.params(opp, "beads", "fsc_small", "pe")
 ```
 
@@ -263,70 +261,74 @@ Data can be plotted using a set of functions:
 1. To plot the filter steps
 
     ```r
-    set.evt.location("/path/to/evt/files")
-    evt.list <- get.evt.list()
-    evt.name <- evt.list[10] # to select to 10th evt file of the list
-    plot.filter.cytogram.by.file(evt.name,width=0.2, notch=1)
+    evt.files <- get.evt.files(evt.dir)
+    evt.name <- evt.files[2] # to select the 2nd evt file of the list
+    plot.filter.cytogram.by.file(evt.dir, evt.name)
     ```
 
-2. To plot an evt cytogram. WARNING: the number of particles in an evt file can be high (>10,000) which can be a problem for some computer. We advise to limit the disply to < 10,000 particles.
+2. To plot an evt cytogram. WARNING: the number of particles in an evt file can be high (>10,000) which can be a problem for some computers. We advise to limit the disply to < 10,000 particles.
 
     ```r
-    set.evt.location("/path/to/evt/files")
-    evt.list <- get.evt.list()
-    evt.name <- evt.list[10] # to select to 10th evt file of the list
-    evt <- readSeaflow(evt.name)
+    evt.files <- get.evt.files(evt.dir)
+    evt.name <- evt.files[2] # to select the 2nd evt file of the list
+    plot.evt.cytogram.by.file(evt.dir, evt.name)
+    
     # TO LIMIT the number of displyed particles to 10,000
-    if(nrow(evt) > 10000) evt <- evt[round(seq(1,nrow(evt), length.out=10000)),]
+    evt <- readSeaflow(file.path(evt.dir, evt.name))
+    if(nrow(evt) > 10000) evt <- evt[round(seq(1, nrow(evt), length.out=10000)),]
     plot.cytogram(evt, "fsc_small","chl_small")
     ```
 
 3. To plot an opp cytogram
 
     ```r
-    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-
     # OPTION 1: SELECT OPP data by FILES
-    opp.list <- get.opp.files()
-    opp.name <- opp.list[10] # to select the opp files (e.g., the 10th opp file in the list, corresponding to 9 minutes of data)
-    opp <- get.opp.by.file(opp.name)
-    plot.cytogram(opp, "fsc_small","chl_small)
+    opp.files <- get.opp.files(db)
+    opp.name <- opp.files[2] # to select the 2nd opp file
+    opp <- get.opp.by.file(opp.dir, opp.name)
+    plot.cytogram(opp, "fsc_small","chl_small")
     # OR DIRECTLY
-    plot.cytogram.by.file(opp.name, "fsc_small","chl_small)
+    plot.opp.cytogram.by.file(opp.dir, opp.name, "fsc_small","chl_small")
 
     # OPTION 2: SELECT OPP data by DATE
-    sfl <- get.sfl.table()
-    sfl$date <- as.POSIXct(sfl$date,format="%FT%T",tz='GMT')
-    opp <- get.opp.by.date(sfl$date[1], sfl$date[1]+60*60, pop=NULL, channel=NULL) # e.g., select 1-h of data
-    plot.cytogram(opp, "fsc_small","chl_small)
+    # e.g. select 10 min of data
+    opp <- get.opp.by.date(db, opp.dir, "2014-07-04 00:00", "2014-07-04 00:10")
+    plot.cytogram(opp, "fsc_small","chl_small")
     ```
 
 4. To plot an opp cytogram with clustered populations
 
     ```r
-    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-    opp.list <- get.opp.files()
-    opp.name <- opp.list[10] # to select the opp file (e.g., the 10th opp file in the list)
-    plot.vct.cytogram.by.file(opp.name)
+    opp.files <- get.opp.files(db)
+    opp.name <- opp.files[2] # to select the 2nd opp file
+    plot.vct.cytogram.by.file(opp.dir, vct.dir, opp.name)
     ```
 
-5. To plot aggregate statistics, e.g., cell abundance the cyanobacteria `Synechococcus` population on a map or over time
+5. To plot aggregate statistics, e.g., cell abundance the cyanobacteria `Synechococcus` population on a map or over time. Unfortunately, with our small example data set these figures are faily underwhelming.
 
     ```r
-    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-    stat <- get.stat.table() # to load the aggregate statistics
+    stat <- get.stat.table(db) # to load the aggregate statistics
     plot.map(stat, pop='synecho', param='abundance')
     plot.time(stat, pop='synecho', param='abundance')
     ```
 
-    But you can plot any parameter/population, just make sure their name match the one in the 'stat' table...
+    But you can plot any parameter/population, just make sure their name matches the one in the 'stat' table...
 
     FYI, type `colnames(stat)` to know which parameters are available in the `stat` table,  and `unique(stat$pop)` to know the name of the different populations.
 
-6. Data stored in the popcycle.db can be visualized directly in R. Here is an example to display the first 10 row of the opp table in popcycle.db
+6. Data stored in the popcycle.db can be examined directly in R. To view any table, run the corresponding `get.<table>.table(db)` function. For example
 
     ```r
-    set.project.location("/path/to/project") # e.g., "~/Cruise.id_project"
-    conn <- dbConnect(SQLite(), dbname = db.name)
-    dbGetQuery(conn, "SELECT * FROM opp LIMIT 10;")
+    get.sfl.table(db)
+    get.filter.table(db)
+    get.gating.table(db)
+    get.poly.table(db)
+    get.opp.table(db)
+    get.vct.table(db)
+    get.cytdiv.table(db)
+    
+    # stat is not actually a table, but rather the result of a joined
+    # query between the sfl, opp, and vct tables. However, for our purposes
+    # here it will be considered as a table.
+    get.stat.table(db)
     ```

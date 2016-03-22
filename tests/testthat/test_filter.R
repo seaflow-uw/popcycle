@@ -10,7 +10,7 @@ test_that("Filter EVT files", {
   save.sfl(x$db, x$cruise, x$evt.dir)
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
   filter.params <- get.filter.params.latest(x$db)
-  opp.stats <- get.opp.stats.table(x$db)
+  opp.stats <- get.opp.table(x$db)
 
   # seaflowpy code answers for opp table, columns = opp_evt_ratio to chl_big_mean
   # which are the double type columns
@@ -44,6 +44,16 @@ test_that("Filter EVT files", {
   expect_equal(opp.stats.row2, row2.answer)
   expect_equal(opp.stats.row3, row3.answer)
 
+  # Make sure written OPP files have the same number of particles as those
+  # recorded in database opp table
+  opp.files <- get.opp.files(x$db)
+  i <- 1
+  for (opp.file in opp.files) {
+    opp <- get.opp.by.file(x$opp.dir, opp.file)
+    expect_equal(opp.stats[i, "opp_count"], nrow(opp))
+    i <- i + 1
+  }
+
   tearDown(x)
 })
 
@@ -59,7 +69,7 @@ test_that("Filter EVT files with non-default parameters", {
   save.sfl(x$db, x$cruise, x$evt.dir)
   filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir,
                    filter.id=filter.params$id)
-  opp.stats <- get.opp.stats.table(x$db)
+  opp.stats <- get.opp.table(x$db)
 
   # seaflowpy code answers for opp table, columns = opp_evt_ratio to chl_big_mean
   # which are the double type columns

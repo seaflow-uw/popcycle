@@ -1,31 +1,70 @@
-transformData <- function(integer.dataframe){
-  id <- which(colnames(integer.dataframe) == "pulse_width" | colnames(integer.dataframe) == "time" | colnames(integer.dataframe) == "pop")
+#' Exponentiate SeaFlow log data
+#'
+#' SeaFlow data is stored as 3.5 decades of log data on a linear 16-bit scale.
+#' This function will exponentiate this data to a linear scale between 1 and
+#' 10^3.5.
+#'
+#' @param df Data frame returned by readSeaflow
+#' @return Exponentiated version of integer.dataframe
+#' @examples
+#' \dontrun{
+#' evt <- transformData(evt)
+#' }
+#' @export
+transformData <- function(df) {
+  id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) == "pop")
   if (length(id)) {
-    integer.dataframe[,-c(id)] <- 10^((integer.dataframe[,-c(id)]/2^16)*3.5)
+    df[,-c(id)] <- 10^((df[,-c(id)]/2^16)*3.5)
   } else {
     # This probably looks strange and you might wonder why we don't just assign
-    # to integer.dataframe rather than integer.dataframe[, ].
+    # to df rather thandf[, ].
     # Exponentiating a data frame in R returns a matrix, not a data frame, so
-    # to keep integer.dataframe as a data frame we assign back into the original
-    # data frame. Otherwise we would rebind integer.dataframe as a new matrix.
-    integer.dataframe[, ] <- 10^((integer.dataframe/2^16)*3.5)
-    #integer.dataframe <- data.frame(10^((integer.dataframe/2^16)*3.5))
+    # to keep df as a data frame we assign back into the original
+    # data frame. Otherwise we would rebind df as a new matrix instead of data
+    # frame.
+    df[, ] <- 10^((df/2^16)*3.5)
   }
-  return(integer.dataframe)
+  return(df)
 }
 
-untransformData <- function(float.dataframe){
-  id <- which(colnames(float.dataframe) == "pulse_width" | colnames(float.dataframe) == "time" | colnames(float.dataframe) =="pop")
+#' Log SeaFlow linear data
+#'
+#' Performs the reverse operation of transformData, converting exponentiated
+#' data back to its original form of log data on a 2^16 linear scale.
+#'
+#' @param df Data frame returned by readSeaflow
+#' @return Exponentiated version of df
+#' \dontrun{
+#' evt <- untransformData(evt)
+#' }
+#' @export
+untransformData <- function(df) {
+  id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
   if (length(id)) {
-    float.dataframe[,-c(id)] <-(log10(float.dataframe[,-c(id)])/3.5)*2^16
+    df[,-c(id)] <-(log10(df[,-c(id)])/3.5)*2^16
   } else {
-    float.dataframe[, ] <-(log10(float.dataframe)/3.5)*2^16
+    df[, ] <-(log10(df)/3.5)*2^16
   }
-  return(float.dataframe)
+  return(df)
 }
 
-readSeaflow <- function(path, column.names=EVT.HEADER,
-                        count.only=FALSE, transform=TRUE, channel=NULL){
+#' Read an EVT or OPP binary file.
+#'
+#' Read a SeaFlow LabView binary particle data file. This file may be gzipped.
+#'
+#' @param path Path to binary file. If this file does not exist the same
+#'   file ending with ".gz" will also be checked.
+#' @param count.only Only return the count of particles from the file header.
+#' @param transform Convert log data to linear.
+#' @param channel Only return data for channels listed here. Can be a single
+#'   channel name or a vector or channel names.
+#' @return Data frame of particle data or number of particles.
+#' @examples
+#' \dontrun{
+#' evt <- readSeaflow("foo/2014_213/2014-07-04T00-00-02+00-00.gz", channel=c("fsc_small", "pe"))
+#' }
+#' @export
+readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
   # reads a binary seaflow event file into memory as a dataframe
   if (!file.exists(path)) {
     path <- paste0(path, ".gz")
@@ -37,7 +76,7 @@ readSeaflow <- function(path, column.names=EVT.HEADER,
   n.bytes.header <- 4
   n.bytes.padding <- 4
   column.size <- 2
-  n.data.columns <- length(column.names)
+  n.data.columns <- length(EVT.HEADER)
   n.extra.columns <- 2  # 2 uint16 (10 and 0) at start of each row
   n.total.columns <- n.data.columns + n.extra.columns
 
@@ -74,7 +113,7 @@ readSeaflow <- function(path, column.names=EVT.HEADER,
     # Convert to data frame dropping first two padding columns
     integer.dataframe <- data.frame(integer.matrix[,(n.extra.columns+1):n.total.columns])
     ## name the columns
-    names(integer.dataframe) <- c(column.names)
+    names(integer.dataframe) <- c(EVT.HEADER)
     close(con)
 
     if (nrow(integer.dataframe) != header) {
@@ -95,19 +134,31 @@ readSeaflow <- function(path, column.names=EVT.HEADER,
   }
 }
 
-writeSeaflow <- function(df, path, column.names = EVT.HEADER, linearize=TRUE){
-  # writes a binary seaflow event file from a dataframe in memory
-
+#' Write an EVT or OPP binary file.
+#'
+#' Write a SeaFlow LabView binary particle data file.
+#'
+#' @param df EVT or OPP data frame.
+#' @param path Path to binary file. If this file ends with ".gz" the output
+#'   will be gzipped.
+#' @param untransform Convert linear data to log.
+#' @return None
+#' @examples
+#' \dontrun{
+#' writeSeaflow(opp, "foo/2014_213/2014-07-04T00-00-02+00-00.gz")
+#' }
+#' @export
+writeSeaflow <- function(df, path, untransform=TRUE) {
   ## NEED TO ADD CHECK and REORDERING OF COLUMN NAMES
   n.bytes.header <- 4
   column.size <- 2
   EOL.double <- 10
 
-	## UNTRANSFORM LOG-SCALED DATA (BACK TO ORIGINAL DATA)
-  if(linearize)  df <- untransformData(df)
+	## UNTRANSFORM BACK TO ORIGINAL DATA
+  if(untransform)  df <- untransformData(df)
 
   ## open connection ##
-  if (substr(path, nchar(path) - 2, nchar(path)) == ".gz") {
+  if (endswith(path, ".gz")) {
     con <- gzfile(description = path, open="wb")
   } else {
     con <- file(description = path, open="wb")
