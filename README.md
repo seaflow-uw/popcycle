@@ -107,7 +107,9 @@ This will result in a new directory `testcruise_opp` with OPP files and a new da
 filterevt.py -h
 ```
 
-If you go this route skip ahead to the section on Gating.
+To test this script with the example data used in this README, use the value saved in `evt.dir` as the `--evt_dir` argument to `filterevt.py`.
+
+If you go this route skip ahead to the section on Gating. Otherwise, continue on to learn how to filter particles in R.
 
 ### Configure filter parameters
 Set parameters for filtration and filter raw data to create OPP. In most cases it's sufficient to use default parameters.
@@ -166,7 +168,7 @@ We'll use the first file of the example data set to configure gating parameters.
 
 ```r
 opp.files <- get.opp.files(db)  # 3 OPP file names
-opp <- get.opp.by.file(opp.dir, opp.files[1]) 
+opp <- get.opp.by.file(opp.dir, opp.files[1])
 poly.log <- set.gating.params(opp, "beads", "fsc_small", "pe")
 ```
 
@@ -272,7 +274,7 @@ Data can be plotted using a set of functions:
     evt.files <- get.evt.files(evt.dir)
     evt.name <- evt.files[2] # to select the 2nd evt file of the list
     plot.evt.cytogram.by.file(evt.dir, evt.name)
-    
+
     # TO LIMIT the number of displyed particles to 10,000
     evt <- readSeaflow(file.path(evt.dir, evt.name))
     if(nrow(evt) > 10000) evt <- evt[round(seq(1, nrow(evt), length.out=10000)),]
@@ -326,7 +328,7 @@ Data can be plotted using a set of functions:
     get.opp.table(db)
     get.vct.table(db)
     get.cytdiv.table(db)
-    
+
     # stat is not actually a table, but rather the result of a joined
     # query between the sfl, opp, and vct tables. However, for our purposes
     # here it will be considered as a table.
