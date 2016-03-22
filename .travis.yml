@@ -1,9 +1,0 @@
-# In tests check INTRAVIS to see if in Travis
-env:
-- INTRAVIS=1
-
-before_install:
-- bash travis/before_install.sh
-
-script:
-- sudo -E su $USER -c 'Rscript setup.R && Rscript tests/testthat.R'

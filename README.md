@@ -1,7 +1,5 @@
 Popcycle
 ========
-![travis-ci status](https://travis-ci.org/uwescience/popcycle.svg?branch=binary_opp)
-
 The Popcycle pipeline performs 3 different analyses:
 
 1. Filtration of **O**ptimally **P**ositioned **P**articles (**OPP**)
@@ -46,12 +44,12 @@ Next, set a few variables which will define input and output file locations as w
 ```r
 cruise <- "testcruise"
 db <- paste0(cruise, ".db")
-    
+
 # For this guide we'll use an example data set that's installed
 # with popcycle, but for real analysis this path would point to
 # an EVT directory for a real cruise.
 evt.dir <- system.file("extdata/SeaFlow/datafiles/evt", package="popcycle")
-    
+
 opp.dir <- paste0(cruise, "_opp")
 vct.dir <- paste0(cruise, "_vct")
 ```
@@ -105,9 +103,9 @@ get.filter.params.latest(db)  # Examine the default parameters we just set
 ```
 
 This saves a log entry of new filter parameters. To set different parameters run `save.filter.params` again with custom parameters. Each time this function is run a new filter parameter entry is made in the database. By default the latest parameters are used for filtering, but it's possible to use a specific parameter set by filter ID.
-    
+
 To view all filter parameter entries and find filter IDs run
-    
+
 ```r
 get.filter.table(db)
 ```
@@ -115,7 +113,7 @@ get.filter.table(db)
 ### Filter particles
 
 Now we'll filter EVT files to create OPP data.
-    
+
 ```r
 evt.files <- get.evt.files(evt.dir)  # Find 5 EVT files in evt.dir
 save.filter.params(db)  # Save default filter parameters
@@ -125,7 +123,7 @@ filter.evt.files(db, cruise, evt.dir, evt.files, opp.dir)
 # 2 of the 5 input EVT files are invalid and will produce warning
 # messages here which can be ignored.
 ```
-    
+
 There should be three new OPP files of filtered particles in the `testcruise_opp` directory.
 
 ### Filtering subsets of EVT files
@@ -148,7 +146,7 @@ To get a subset of EVT files selected by date, use `get.evt.files.by.date`.
 Now we're ready to to set the gating for the different populations and classify particles.
 
 **WARNING**: The order in which you gate the different populations is very important, choose it wisely. The gating has to be performed over optimally positioned particles (OPP) only, not over an EVT file.
-    
+
 In this example, you are going to first gate the `beads` (this is always the first population to be gated.). Then we will gate the `Synechococcus` population (this population needs to be gated before you gate `Prochlorococcus` or `Picoeukaryote`), and finally the `Prochlorococcus` and `Picoeukaryote` populations.
 
 We'll use all three files of the example data set to configure gating parameters.
@@ -171,9 +169,9 @@ poly.log <- set.gating.params(opp, "synecho", "fsc_small", "pe", poly.log)
 poly.log <- set.gating.params(opp, "prochloro", "fsc_small", "chl_small", poly.log)
 poly.log <- set.gating.params(opp, "picoeuks", "fsc_small", "chl_small", poly.log)
 ```
-    
+
 Your final gating polygon might look something like this
-    
+
 ```r
 plot.gating.cytogram(opp, poly.log, "fsc_small", "pe")
 plot.gating.cytogram(opp, poly.log, "fsc_small", "chl_small")
@@ -181,21 +179,21 @@ plot.gating.cytogram(opp, poly.log, "fsc_small", "chl_small")
 
 ![gating cytogram for fsc_small versus pe](documentation/images/fsc_small-pe-gates.png?raw=true)
 ![gating cytogram for fsc_small versus chl_small](documentation/images/fsc_small-chl_small-gates.png?raw=true)
-    
+
 Now save the gating parameters to the database
-    
+
 ```r
 save.gating.params(db, poly.log)
 ```
 
 Similar to the `save.filter.params` function, `save.gating.params` saves the gating parameters and order in which the gating was performed. Every call to `save.gating.params` creates a new gating entry in the database which can be retrieved by ID. To get a summary of gating entries and find gating IDs run
-    
+
 ```r
 get.gating.table(db)
 ```
-    
+
 and to retrieve polygon parameters by ID run
-    
+
 ```r
 # Where gating.id is ID text found in a get.gating.table() data frame
 get.gating.params.by.id(db, gating.id)
@@ -207,9 +205,9 @@ To cluster the different population according to your manual gating, run:
 ```r
 classify.opp.files(db, cruise, opp.dir, opp.files, vct.dir)
 ```
-    
+
 There will be three new VCT files in `testcruise_vct` directory. We can examine classifications for all particles with `plot.vct.cytogram`.
-    
+
 ```r
 # Note: we pass vct.dir here to color particles by our new classifications
 opp <- get.opp.by.file(opp.dir, opp.files, vct.dir=vct.dir)
