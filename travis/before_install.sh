@@ -16,7 +16,7 @@ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
 sudo apt-get update
 
 # Install R for real, and sqlite3 just in case it's not available
-sudo apt-get install -y r-base sqlite3 python-pip
+sudo apt-get install -y r-base sqlite3 python-pip libssl-dev libcurl4-openssl-dev libssh2-1-dev
 
 # Install Python dateutil library
 sudo pip install python-dateutil
