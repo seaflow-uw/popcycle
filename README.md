@@ -95,19 +95,19 @@ Any version of the file name can be converted to the short version used by `popc
 ## Filtering
 
 ### Fast filtering with Python
-The fastest way to filter EVT files is to use `filterevt.py` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project. This will create filtered OPP file and database output equivalent to the R code in this section, but could potentially save you hours or days of time. For example, to filter an EVT directory called `testcruise_evt` using 4 threads:
+The fastest way to filter EVT files is to use `filterevt` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project. This will create filtered OPP file and database output equivalent to the R code in this section, but could potentially save you hours or days of time. For example, to filter an EVT directory called `testcruise_evt` using 4 threads:
 
 ```sh
-filterevt.py --evt_dir testcruise_evt --cpus 4 --cruise testcruise --db testcruise.db --opp_dir testcruise_opp
+filterevt --evt_dir testcruise_evt --cpus 4 --cruise testcruise --db testcruise.db --opp_dir testcruise_opp
 ```
 
-This will result in a new directory `testcruise_opp` with OPP files and a new database `testcruise.db` containing filter parameters and OPP aggregated statistics. For full usage information run
+This will result in a new OPP file directory `testcruise_opp` and a new database `testcruise.db` containing filter parameters and OPP aggregated statistics. For full usage information run
 
 ```sh
-filterevt.py -h
+filterevt -h
 ```
 
-To test this script with the example data used in this README, use the value saved in `evt.dir` as the `--evt_dir` argument to `filterevt.py`.
+To test this script with the example data used in this README, use the value saved in `evt.dir` as the `--evt_dir` argument to `filterevt`. For example, on my system `evt.dir` is `/Library/Frameworks/R.framework/Versions/3.2/Resources/library/popcycle/extdata/SeaFlow/datafiles/evt`.
 
 If you go this route skip ahead to the section on Gating. Otherwise, continue on to learn how to filter particles in R.
 
