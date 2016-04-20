@@ -249,3 +249,74 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
   message(round(100*i/length(evt.files)), "% completed \r", appendLF=FALSE)
   flush.console()
 }
+
+#' Filter a directory of EVT files using seaflowpy_filter
+#'
+#' Filter a list of EVT files. Save OPP per file aggregate statistics to
+#' SQLite3 database and save particle data to binary files in opp.dir.
+#'
+#' @param db SQLite3 database file path.
+#' @param cruise.name Cruise name.
+#' @param evt.dir EVT file directory.
+#' @param opp.dir OPP file output directory.
+#' @param process.count Number of processes to start for filtering.
+#' @param limit Only process up to this many files.
+#' @param resolution Progress update resolution in \%.
+#' @param origin,width,notch1,notch2,offset Filter parameters.
+#' @return None
+#' @examples
+#' \dontrun{
+#' seaflowpy_filter("testcruise.db", "testcruise", "./testcruise", "./testcruise_opp")
+#' }
+#' @export
+seaflowpy_filter <- function(db, cruise.name, evt.dir, opp.dir, process.count=1,
+                             limit=NULL, resolution=NULL, origin=NULL,
+                             width=NULL, notch1=NULL, notch2=NULL, offset=NULL) {
+
+  # First check for seaflowpy_filter in PATH
+  result <- tryCatch(
+    {
+      system2("bash", c("-lc", "'seaflowpy_filter --version'"), stdout=TRUE, stderr=TRUE)
+    },
+    warning=function(w) {
+      invisible(w)
+    },
+    error=function(e) {
+      return("system2error")
+    }
+  )
+  if (result == "system2error") {
+    warning("Could not run seaflowpy_filter")
+    return()
+  }
+
+  cmd <- paste0("'seaflowpy_filter ", '-c "', cruise.name, '" -e "',
+                evt.dir, '" -o "',  opp.dir, '" -d "', db, '"')
+  if (! is.null(process.count)) {
+    cmd <- paste0(cmd, " -p ", process.count)
+  }
+  if (! is.null(resolution)) {
+    cmd <- paste0(cmd, " -r ", resolution)
+  }
+  if (! is.null(limit)) {
+    cmd <- paste0(cmd, " -l ", limit)
+  }
+  if (! is.null(origin)) {
+    cmd <- paste0(cmd, " --origin ", origin)
+  }
+  if (! is.null(width)) {
+    cmd <- paste0(cmd, " --width ", width)
+  }
+  if (! is.null(notch1)) {
+    cmd <- paste0(cmd, " --notch1 ", notch1)
+  }
+  if (! is.null(notch2)) {
+    cmd <- paste0(cmd, " --notch2 ", notch2)
+  }
+  if (! is.null(offset)) {
+    cmd <- paste0(cmd, " --offset ", offset)
+  }
+  cmd <- paste0(cmd, "'")
+  print(cmd)
+  system2("bash", c("-lc", cmd))
+}

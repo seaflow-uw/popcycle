@@ -167,3 +167,70 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
     flush.console()
   }
 }
+
+#' Classifiy particles for a list of OPP files using seaflowpy_classify.
+#'
+#' Classify a  list of OPP files. Save per file aggregate population statistics
+#' to SQLite3 database and save particle population definitions to text files
+#' in vct.dir.
+#'
+#' @param db SQLite3 database file path.
+#' @param cruise.name Cruise name.
+#' @param opp.dir OPP file directory.
+#' @param opp.files List of OPP files to classify. Include julian day directory.
+#' @param vct.dir VCT file output directory.
+#' @param gating.id ID for gating parameters.
+#' @param process.count Number of processes to start for filtering.
+#' @param limit Only process up to this many files.
+#' @param resolution Progress update resolution in \%.
+#' @param start.file First of subset of files to classify (including julian day dir)
+#' @param end.file Last of subset of files to classify (including julian day dir)
+#' @return None
+#' @examples
+#' \dontrun{
+#' seaflowpy_classify(db, "testcruise", opp.dir, vct.dir,
+#'                    "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#' }
+#' @export
+seaflowpy_classify <- function(db, cruise.name, opp.dir, vct.dir, gating.id,
+                               process.count=1, limit=NULL, resolution=NULL,
+                               start.file=NULL, end.file=NULL) {
+  # First check for seaflowpy_classify in PATH
+  result <- tryCatch(
+   {
+     system2("bash", c("-lc", "'seaflowpy_classify --version'"), stdout=TRUE, stderr=TRUE)
+   },
+   warning=function(w) {
+     invisible(w)
+   },
+   error=function(e) {
+     return("system2error")
+   }
+  )
+  if (result == "system2error") {
+   warning("Could not run seaflowpy_classify")
+   return()
+  }
+
+  cmd <- paste0("'seaflowpy_classify ", '-c "', cruise.name, '" -o "',
+                opp.dir, '" -v "',  vct.dir, '" -d "', db, '" -g "',
+                gating.id, '"')
+  if (! is.null(process.count)) {
+    cmd <- paste0(cmd, " -p ", process.count)
+  }
+  if (! is.null(resolution)) {
+    cmd <- paste0(cmd, " -r ", resolution)
+  }
+  if (! is.null(limit)) {
+    cmd <- paste0(cmd, " -l ", limit)
+  }
+  if (! is.null(start.file)) {
+    cmd <- paste0(cmd, " -s ", start.file)
+  }
+  if (! is.null(end.file)) {
+    cmd <- paste0(cmd, " -e ", end.file)
+  }
+  cmd <- paste0(cmd, "'")
+  print(cmd)
+  system2("bash", c("-lc", cmd))
+}

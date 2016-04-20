@@ -608,7 +608,8 @@ get.poly.log.by.gating.id <- function(db, gating.id, pop.order) {
       WHERE
         gating_id = '", gating.id, "'
         AND
-        pop = '", pop.names[i], "'"
+        pop = '", pop.names[i], "'
+      ORDER BY point_order"
     )
     pop.poly <- sql.dbGetQuery(db, sql)
     for (c in EVT.HEADER[5:length(EVT.HEADER)]) {
@@ -620,6 +621,7 @@ get.poly.log.by.gating.id <- function(db, gating.id, pop.order) {
     }
     pop.poly[, "pop"] <- NULL
     pop.poly[, "gating_id"] <- NULL
+    pop.poly[, "point_order"] <- NULL
     poly.log[[i]] <- as.matrix(pop.poly)
   }
   names(poly.log) <- pop.names
@@ -734,7 +736,7 @@ get.gating.table <- function(db) {
 #' }
 #' @export
 get.poly.table <- function(db) {
-  sql <- "SELECT * FROM poly ORDER BY gating_id, pop ASC"
+  sql <- "SELECT * FROM poly ORDER BY gating_id, point_order ASC"
   poly <- sql.dbGetQuery(db, sql)
   return(poly)
 }
@@ -1139,6 +1141,7 @@ save.poly <- function(db, poly.log, gating.id) {
     }
     df <- rbind(df, tmpdf)
   }
+  df$point_order <- seq(nrow(df))  # order of polygon points and populations
   df$gating_id <- gating.id  # last field in table
 
   delete.poly.by.id(db, gating.id)

@@ -1,3 +1,3 @@
 library(testthat)
-results <- test_dir("tests/testthat", reporter="stop")
+results <- test_dir("tests/testthat")
 print(results)

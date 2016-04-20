@@ -8,7 +8,7 @@ test_that("Filter EVT files", {
   evt.files <- get.evt.files(x$evt.dir)
   save.filter.params(x$db)
   save.sfl(x$db, x$cruise, x$evt.dir)
-  filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir)
+  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
   filter.params <- get.filter.params.latest(x$db)
   opp.stats <- get.opp.table(x$db)
 
@@ -67,8 +67,8 @@ test_that("Filter EVT files with non-default parameters", {
   save.filter.params(x$db)
   save.filter.params(x$db)
   save.sfl(x$db, x$cruise, x$evt.dir)
-  filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir,
-                   filter.id=filter.params$id)
+  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir,
+                                  filter.id=filter.params$id))
   opp.stats <- get.opp.table(x$db)
 
   # seaflowpy code answers for opp table, columns = opp_evt_ratio to chl_big_mean

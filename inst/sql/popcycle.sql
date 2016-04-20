@@ -129,5 +129,6 @@ CREATE TABLE IF NOT EXISTS poly (
   pe REAL,
   chl_small REAL,
   chl_big REAL,
+  point_order INTEGER NOT NULL,
   gating_id TEXT NOT NULL
 );
