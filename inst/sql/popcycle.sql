@@ -132,3 +132,32 @@ CREATE TABLE IF NOT EXISTS poly (
   point_order INTEGER NOT NULL,
   gating_id TEXT NOT NULL
 );
+
+CREATE VIEW IF NOT EXISTS stat AS
+  SELECT
+    opp.cruise as cruise,
+    opp.file as file,
+    sfl.date as time,
+    sfl.lat as lat,
+    sfl.lon as lon,
+    opp.opp_evt_ratio as opp_evt_ratio,
+    sfl.flow_rate as flow_rate,
+    sfl.file_duration as file_duration,
+    vct.pop as pop,
+    vct.count as n_count,
+    vct.count / (sfl.flow_rate * (sfl.file_duration/60) * opp.opp_evt_ratio) as abundance,
+    vct.fsc_small as fsc_small,
+    vct.chl_small as chl_small,
+    vct.pe as pe
+  FROM
+    opp, vct, sfl
+  WHERE
+    opp.cruise == vct.cruise
+    AND
+    opp.file == vct.file
+    AND
+    opp.cruise == sfl.cruise
+    AND
+    opp.file == sfl.file
+  ORDER BY
+    cruise, time, pop ASC;

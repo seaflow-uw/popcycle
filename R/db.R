@@ -752,37 +752,9 @@ get.poly.table <- function(db) {
 #' @export
 get.stat.table <- function(db) {
   check.for.populated.sfl(db)
-  sql <- "
-  SELECT
-    opp.cruise as cruise,
-    opp.file as file,
-    sfl.date as time,
-    sfl.lat as lat,
-    sfl.lon as lon,
-    opp.opp_evt_ratio as opp_evt_ratio,
-    sfl.flow_rate as flow_rate,
-    sfl.file_duration as file_duration,
-    vct.pop as pop,
-    vct.count as n_count,
-    vct.count / (sfl.flow_rate * (sfl.file_duration/60) * opp.opp_evt_ratio) as abundance,
-    vct.fsc_small as fsc_small,
-    vct.chl_small as chl_small,
-    vct.pe as pe
-  FROM
-    opp, vct, sfl
-  WHERE
-    opp.cruise == vct.cruise
-    AND
-    opp.file == vct.file
-    AND
-    opp.cruise == sfl.cruise
-    AND
-    opp.file == sfl.file
-  ORDER BY
-    time, pop ASC;)"
-
+  sql <- "SELECT * FROM stat;"
   stats <- sql.dbGetQuery(db, sql)
-  return (stats)
+  return(stats)
 }
 
 #' Get cytometric diversity table cytdiv.
@@ -813,9 +785,9 @@ get.cytdiv.table <- function(db) {
             sfl.cruise == cytdiv.cruise
             AND
             sfl.file == cytdiv.file
-            ORDER BY time ASC ;"
+            ORDER BY time ASC;"
   cytdiv <- sql.dbGetQuery(db, sql)
-  return (cytdiv)
+  return(cytdiv)
 }
 
 #' Get names for EVT files which produced no OPP data.
