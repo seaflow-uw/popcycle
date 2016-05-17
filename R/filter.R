@@ -317,6 +317,5 @@ seaflowpy_filter <- function(db, cruise.name, evt.dir, opp.dir, process.count=1,
     cmd <- paste0(cmd, " --offset ", offset)
   }
   cmd <- paste0(cmd, "'")
-  print(cmd)
   system2("bash", c("-lc", cmd))
 }

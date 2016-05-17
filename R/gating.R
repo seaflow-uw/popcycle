@@ -231,6 +231,5 @@ seaflowpy_classify <- function(db, cruise.name, opp.dir, vct.dir, gating.id,
     cmd <- paste0(cmd, " -e ", end.file)
   }
   cmd <- paste0(cmd, "'")
-  print(cmd)
   system2("bash", c("-lc", cmd))
 }

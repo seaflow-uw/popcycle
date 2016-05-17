@@ -10,10 +10,14 @@ The metadata and aggregated statistics for each step are saved into a SQL databa
 
 
 # Installation
-First we need to satisfy some dependencies. Make sure Python 2.7 and `pip` is installed, then install the Python `dateutil` library. If you're using Anaconda then `dateutil` is already installed.
+First we need to satisfy some dependencies. Make sure Python 2.7 is installed with [Anaconda](https://www.continuum.io/downloads). Then install the `seaflowpy` Python package:
 
 ```
-pip install python-dateutil
+git clone https://github.com/armbrustlab/seaflowpy
+cd seaflowpy
+python setup.py install
+# To test your installation
+python setup.py test
 ```
 
 Now download and install the popcycle R library
@@ -95,21 +99,13 @@ Any version of the file name can be converted to the short version used by `popc
 ## Filtering
 
 ### Fast filtering with Python
-The fastest way to filter EVT files is to use `filterevt` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project. This will create filtered OPP file and database output equivalent to the R code in this section, but could potentially save you hours or days of time. For example, to filter an EVT directory called `testcruise_evt` using 4 threads:
+The fastest way to filter EVT files is to use `seaflowpy_filter` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project. This will create filtered OPP file and database output equivalent to the R code in this section, but could potentially save you hours of time. It's possible to run this script on the command-line or through the `seaflowpy_filter` wrapper function in R. For example, to filter EVT files using 4 threads:
 
-```sh
-filterevt --evt_dir testcruise_evt --cpus 4 --cruise testcruise --db testcruise.db --opp_dir testcruise_opp
+```r
+seaflowpy_filter(db, cruise, evt.dir, opp.dir, process.count=4, width=0.5, offset=0)
 ```
 
-This will result in a new OPP file directory `testcruise_opp` and a new database `testcruise.db` containing filter parameters and OPP aggregated statistics. For full usage information run
-
-```sh
-filterevt -h
-```
-
-To test this script with the example data used in this README, use the value saved in `evt.dir` as the `--evt_dir` argument to `filterevt`. For example, on my system `evt.dir` is `/Library/Frameworks/R.framework/Versions/3.2/Resources/library/popcycle/extdata/SeaFlow/datafiles/evt`.
-
-If you go this route skip ahead to the section on Gating. Otherwise, continue on to learn how to filter particles in R.
+Once this step is done it's possible to continue on to the **Gating** section. The rest of this section deals with filtering in R.
 
 ### Configure filter parameters
 Set parameters for filtration and filter raw data to create OPP. In most cases it's sufficient to use default parameters.
@@ -162,7 +158,7 @@ Now we're ready to to set the gating for the different populations and classify 
 
 **WARNING**: The order in which you gate the different populations is very important, choose it wisely. The gating has to be performed over optimally positioned particles (OPP) only, not over an EVT file.
 
-In this example, you are going to first gate the `beads` (this is always the first population to be gated.). Then we will gate the `Synechococcus` population (this population needs to be gated before you gate `Prochlorococcus` or `Picoeukaryote`), and finally the `Prochlorococcus` and `Picoeukaryote` populations.
+In this example, you are going to first gate the `beads` (this is always the first population to be gated.). Then we will gate the Synechococcus population (this population needs to be gated before you gate Prochlorococcus or Picoeukaryote), and finally the Prochlorococcus and Picoeukaryote populations.
 
 We'll use the first file of the example data set to configure gating parameters. Note that `get.opp.by.file` can take a one file or a list of files, making it easy to use multiple OPP files to define population gates.
 
@@ -201,18 +197,27 @@ Now save the gating parameters to the database
 save.gating.params(db, poly.log)
 ```
 
-Similar to the `save.filter.params` function, `save.gating.params` saves the gating parameters and order in which the gating was performed. Every call to `save.gating.params` creates a new gating entry in the database which can be retrieved by ID. To get a summary of gating entries and find gating IDs run
+Similar to the `save.filter.params` function, `save.gating.params` saves the gating parameters and order in which the gating was performed. Every call to `save.gating.params` creates a new gating entry in the database which can be retrieved by ID. To get a summary of gating entries and find gating IDs, run
 
 ```r
 get.gating.table(db)
 ```
 
-and to retrieve polygon parameters by ID run
+The output will look something like this:
+
+```
+                                    id                            date                        pop_order
+1 ce0c3309-537c-4c09-b331-d3b9fcfae5cb 2016-05-17T18:12:43.995559+0000 beads,synecho,prochloro,picoeuks
+```
+
+Now to retrieve polygon parameters by for gating ID "ce0c3309-537c-4c09-b331-d3b9fcfae5cb", run
 
 ```r
 # Where gating.id is ID text found in a get.gating.table() data frame
-get.gating.params.by.id(db, gating.id)
+gating.params <- get.gating.params.by.id(db, "ce0c3309-537c-4c09-b331-d3b9fcfae5cb")
 ```
+
+This returns a two-item named list with where `gating.params$row` shows the same summary gating entry that was retrieved by `get.gating.table(db)` for ID "ce0c3309-537c-4c09-b331-d3b9fcfae5cb", and `gating.params$poly.log` is the same `poly.log` polygon definition list that we created earlier with `set.gating.params`.
 
 ### Classify particles
 To cluster the different population according to your manual gating, run:
@@ -246,6 +251,17 @@ classify.opp.files(db, cruise, opp.dir, opp.files, vct.dir,
 ```
 
 To get a list of OPP files selected by date, use the `file` column of the data frame returned by `get.opp.stats.by.date`.
+
+### Fast classification with Python
+
+Like filtering, classification performance can be increased by using the Python package `seaflowpy`. The script `seaflowpy_classify` can be run on the command-line or through the R wrapper function of the same name. e.g. to classify using 4 threads:
+
+```r
+seaflowpy_classify(db, cruise, opp.dir, vct.dir, process.count=4,
+                   gating.id="c3a06970-3552-4c1c-a71d-f71af93f4d60")
+```
+
+To classify a subset of files the `start.file` and `end.file` parameters can be used to specify the subset of files to classify.
 
 
 ## Summary statistics
