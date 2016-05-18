@@ -50,63 +50,38 @@ dev.off()
 ##################
 ### PLOT STATS ###
 ##################
-stat <- get.stat.table()  
+stat <- get.stat.table()
 
 print("saving stat.csv")
 write.csv(stat, "~/stat.csv", row.names=FALSE, quote=FALSE)
 
-# phyto <- unique(stat$pop)
+phyto <- unique(stat$pop)
 
-# print("creating cell_conc_map.png")
-# png("~/cell_conc_map.png",width=15, height=9, unit='in', res=100)
-# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,2))
-# for(i in phyto)	try(plot.map (stat, popname=i, param='abundance'))
-# dev.off()
+print("creating cell_conc_map.png")
+png("~/cell_conc_map.png",width=15, height=9, unit='in', res=100)
+par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,2))
+for(i in phyto)	try(plot.map (stat, popname=i, param='abundance'))
+dev.off()
 
-# print("creating cell_conc_time.png")
-# png("~/cell_conc_time.png",width=15, height=9, unit='in', res=100)
-# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
-# for(i in phyto)	try(plot.time(stat, popname=i, param='abundance'))
-# dev.off()
+print("creating cell_conc_time.png")
+png("~/cell_conc_time.png",width=15, height=9, unit='in', res=100)
+par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
+for(i in phyto)	try(plot.time(stat, popname=i, param='abundance'))
+dev.off()
 
-# print("creating light_scatter.png")
-# png("~/light_scatter.png",width=15,height=9,unit='in',res=100)
-# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
-# for(i in phyto) try(plot.time(stat, popname=i, param='fsc_small'))
-# dev.off()
+print("creating light_scatter.png")
+png("~/light_scatter.png",width=15,height=9,unit='in',res=100)
+par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
+for(i in phyto) try(plot.time(stat, popname=i, param='fsc_small'))
+dev.off()
 
-# print("creating chl_small.png")
-# png("~/chl_small.png",width=15,height=9,unit='in',res=100)
-# par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
-# for(i in phyto)	try(plot.time(stat, popname=i, param='chl_small'))
-# dev.off()
-
-
-
-
-##############
-### CytDiv ###
-##############
-cytdiv <- get.cytdiv.table()
-print("saving cytdiv.csv")
-write.csv(cytdiv, "~/cytdiv.csv", row.names=FALSE, quote=FALSE)
-
-print("creating cytometric diversity.png")
-png("~/div_indices.png",width=15,height=9,unit='in',res=100)
-par(mfrow=c(2,2),mar=c(4,4,2,4), oma=c(1,1,3,3),cex=cex)
-plot.cytdiv.map(cytdiv, index="N0")
-plot.cytdiv.map(cytdiv, index="H")
-plot.cytdiv.time(cytdiv, index="N0")
-plot.cytdiv.time(cytdiv, index="H")
+print("creating chl_small.png")
+png("~/chl_small.png",width=15,height=9,unit='in',res=100)
+par(mfrow=c(ceiling(length(phyto)/2),2), cex=cex, mar=c(4,4,3,4), oma=c(1,1,1,1))
+for(i in phyto)	try(plot.time(stat, popname=i, param='chl_small'))
 dev.off()
 
 
-print("creating fluo_comp.png")
-png("~/fluo_comp.png",width=15,height=9,unit='in',res=100)
-par(mfrow=c(2,1),mar=c(4,4,2,4), oma=c(1,1,3,3),cex=cex)
-plot.cytdiv.time(cytdiv, index="bulk_red")
-plot.cytdiv.time(cytdiv, index="opp_red")
-dev.off()
 
 # ###############
 # ### TS PLOT ###
@@ -124,5 +99,3 @@ dev.off()
 
 
 print("DONE")
-
-

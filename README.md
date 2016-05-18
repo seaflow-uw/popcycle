@@ -343,7 +343,6 @@ Data can be plotted using a set of functions:
     get.poly.table(db)
     get.opp.table(db)
     get.vct.table(db)
-    get.cytdiv.table(db)
 
     # stat is not actually a table, but rather the result of a joined
     # query between the sfl, opp, and vct tables. However, for our purposes
