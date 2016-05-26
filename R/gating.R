@@ -152,12 +152,6 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
       save.vct.stats(db, cruise.name, opp.file, opp, 'Manual Gating',
                      gating.params$row$id)
       save.vct.file(vct, vct.dir, opp.file)
-
-      #print("Calculating cytometric diversity")
-      df <- opp[!(opp$pop == 'beads'),]
-      indices <- cytodiv(df, para=c("fsc_small","chl_small","pe"), Ncat=16)
-      delete.cytdiv.by.file(db, opp.file)
-      save.cytdiv(db, indices, cruise.name, opp.file)
     }, error = function(e) {
       print(paste("Encountered error with file", opp.file))
       print(e)

@@ -224,7 +224,6 @@ reset.table <- function(db, table.name) {
 reset.db.except.params <- function(db) {
   reset.opp.stats.table(db)
   reset.vct.stats.table(db)
-  reset.cytdiv.table(db)
   reset.sfl.table(db)
 }
 
@@ -816,28 +815,6 @@ get.vct.files <- function(db) {
   sql <- "SELECT DISTINCT file from vct"
   files <- sql.dbGetQuery(db, sql)
   return(files$file)
-}
-
-#' Save cytometric diversity statistics for one file to cytdiv table.
-#'
-#' @param db SQLite3 database file path.
-#' @param indices List of indices N0, N1, H, J, opp_red.
-#' @param cruise.name  Cruise name.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' save.cytdiv(db, indices, "testcruise", "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-save.cytdiv <- function(db, indices, cruise.name, file.name) {
-  con <- dbConnect(SQLite(), dbname = db)
-  dbWriteTable(conn = con, name = "cytdiv",
-               value = data.frame(cruise = cruise.name, file = clean.file.path(file.name),
-                                  N0 = indices[1], N1= indices[2], H=indices[3],
-                                  J=indices[4], opp_red=indices[5]),
-               row.names=FALSE, append=TRUE)
-  dbDisconnect(con)
 }
 
 #' Save VCT aggregate population statistics for one file to vct table.
