@@ -92,17 +92,6 @@ CREATE TABLE IF NOT EXISTS sfl (
 
 CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date);
 
-CREATE TABLE IF NOT EXISTS cytdiv (
-  cruise TEXT NOT NULL,
-  file TEXT NOT NULL,
-  N0 INTEGER,
-  N1 REAL,
-  H REAL,
-  J REAL,
-  opp_red REAL,
-  PRIMARY KEY (cruise, file)
-);
-
 CREATE TABLE IF NOT EXISTS filter (
   id TEXT NOT NULL,
   date TEXT NOT NULL,

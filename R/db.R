@@ -68,20 +68,6 @@ delete.vct.by.file <- function(vct.dir, file.name) {
   }
 }
 
-#' Delete an entry in the cytdiv table by file name.
-#'
-#' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.cytdiv.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-delete.cytdiv.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM cytdiv WHERE file == '", clean.file.path(file.name), "'")
-  sql.dbGetQuery(db, sql)
-}
 
 #' Delete DB filter parameters by ID.
 #'
@@ -159,18 +145,6 @@ reset.vct.stats.table <- function(db) {
   reset.table(db, "vct")
 }
 
-#' Delete all rows in cytdiv table.
-#'
-#' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.cytdiv.table(db)
-#' }
-#' @export
-reset.cytdiv.table <- function(db) {
-  reset.table(db, "cytdiv")
-}
 
 #' Delete all rows in sfl table.
 #'
@@ -755,39 +729,6 @@ get.stat.table <- function(db) {
   sql <- "SELECT * FROM stat;"
   stats <- sql.dbGetQuery(db, sql)
   return(stats)
-}
-
-#' Get cytometric diversity table cytdiv.
-#'
-#' @param db SQLite3 database file path.
-#' @return Data frame of cytometric diversity table.
-#' @examples
-#' \dontrun{
-#' cytdiv.table <- get.cytdiv.table(db)
-#' }
-#' @export
-get.cytdiv.table <- function(db) {
-  check.for.populated.sfl(db)
-  sql <- "SELECT
-            sfl.cruise as cruise,
-            sfl.file as file,
-            sfl.date as time,
-            sfl.lat as lat,
-            sfl.lon as lon,
-            cytdiv.N0 as N0,
-            cytdiv.N1 as N1,
-            cytdiv.H as H,
-            cytdiv.J as J,
-            cytdiv.opp_red as opp_red,
-            sfl.bulk_red as bulk_red
-           FROM sfl, cytdiv
-           WHERE
-            sfl.cruise == cytdiv.cruise
-            AND
-            sfl.file == cytdiv.file
-            ORDER BY time ASC;"
-  cytdiv <- sql.dbGetQuery(db, sql)
-  return(cytdiv)
 }
 
 #' Get names for EVT files which produced no OPP data.
