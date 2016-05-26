@@ -4,7 +4,8 @@
 \alias{save.sfl}
 \title{Import SFL files to the database.}
 \usage{
-save.sfl(db, cruise, evt.dir = NULL, sfl.file = NULL)
+save.sfl(db, cruise, evt.dir = NULL, sfl.file = NULL, gga = FALSE,
+  west = FALSE)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -14,14 +15,19 @@ save.sfl(db, cruise, evt.dir = NULL, sfl.file = NULL)
 \item{evt.dir}{EVT file directory with SFL files.}
 
 \item{sfl.file}{Single SFL file to import.}
+
+\item{gga}{lat/lon input is in GGA format. Set to TRUE to convert to decimal
+degree.}
+
+\item{west}{Some ships don't provide E/W designations for longitude. Set to
+TRUE if this is the case and all longitudes should be West (negative).}
 }
 \value{
 None
 }
 \description{
 SFL input may come from all SFL files found in the EVT directory or from a
-single SFL file. This function calls a copy of
-executable_scripts/import_sfl.py installed in the package installation tree.
+single SFL file. This function calls seaflowpy_importsfl.
 }
 \examples{
 \dontrun{

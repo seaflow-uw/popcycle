@@ -1125,13 +1125,16 @@ save.poly <- function(db, poly.log, gating.id) {
 #' Import SFL files to the database.
 #'
 #' SFL input may come from all SFL files found in the EVT directory or from a
-#' single SFL file. This function calls a copy of
-#' executable_scripts/import_sfl.py installed in the package installation tree.
+#' single SFL file. This function calls seaflowpy_importsfl.
 #'
 #' @param db SQLite3 database file path.
 #' @param cruise Cruise name.
 #' @param evt.dir EVT file directory with SFL files.
 #' @param sfl.file Single SFL file to import.
+#' @param gga lat/lon input is in GGA format. Set to TRUE to convert to decimal
+#'   degree.
+#' @param west Some ships don't provide E/W designations for longitude. Set to
+#'   TRUE if this is the case and all longitudes should be West (negative).
 #' @return None
 #' @examples
 #' \dontrun{
@@ -1139,21 +1142,46 @@ save.poly <- function(db, poly.log, gating.id) {
 #' save.sfl(db, "testcruise", sfl.file=sfl.file)
 #' }
 #' @export
-save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL) {
-  importer <- system.file(file.path("scripts", "import_sfl.py"),
-                          package="popcycle")
+save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL, gga=FALSE,
+                     west=FALSE) {
+  # First check for seaflowpy_importsfl in PATH
+  result <- tryCatch(
+    {
+      system2("bash", c("-lc", "'seaflowpy_importsfl --version'"), stdout=TRUE, stderr=TRUE)
+      },
+    warning=function(w) {
+      invisible(w)
+    },
+    error=function(e) {
+      return("system2error")
+    }
+  )
+  if (result == "system2error") {
+   warning("Could not run seaflowpy_importsfl")
+   return()
+  }
   if (is.null(evt.dir) && is.null(sfl.file)) {
     stop("save.sfl requires one of evt.dir or sfl.file")
   }
   if ((! is.null(evt.dir)) && (! is.null(sfl.file))) {
     stop("save.sfl can only be passed one of evt.dir or sfl.file")
   }
+
+  cmd <- paste0("'seaflowpy_importsfl", ' -c "', cruise, '" -d "', db, '"')
   if (! is.null(evt.dir)) {
-    cmd <- paste(importer, "-c", cruise, "-e", evt.dir, "-d", db)
+    cmd <- paste0(cmd, " -e '", evt.dir, "'")
   } else {
-    cmd <- paste(importer, "-c", cruise, "-s", sfl.file, "-d", db)
+    cmd <- paste0(cmd, " -s '", sfl.file, "'")
   }
-  system(cmd)
+
+  if (gga) {
+    cmd <- paste0(cmd, " --gga")
+  }
+  if (west) {
+    cmd <- paste0(cmd, " --west")
+  }
+  cmd <- paste0(cmd, "'")
+  system2("bash", c("-lc", cmd))
 }
 
 #' Create a new, empty sqlite3 popcycle database.
