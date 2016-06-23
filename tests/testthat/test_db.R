@@ -7,7 +7,7 @@ test_that("Load / Delete SFL", {
   x <- setUp()
 
   # Load SFL data
-  save.sfl(x$db, x$cruise, evt.dir=x$evt.dir)
+  save.sfl(x$db, x$cruise, evt.dir=x$evt.input.dir)
   sfl <- get.sfl.table(x$db)
   expect_true(nrow(sfl) == 5)
   reset.sfl.table(x$db)
@@ -66,136 +66,82 @@ test_that("Save and retrieve filter params", {
 test_that("Retrieve OPP stats by file", {
   x <- setUp()
 
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
-
-  opp2 <- get.opp.stats.by.file(x$db, "2014_185/2014-07-04T00-03-02+00-00")
-  expect_equal(opp2$opp_count, 404)
-  expect_equal(opp2$file, "2014_185/2014-07-04T00-03-02+00-00")
+  opp <- get.opp.stats.by.file(x$db.input, "2014_185/2014-07-04T00-03-02+00-00")
+  expect_equal(opp$opp_count, 366)
+  expect_equal(opp$file, "2014_185/2014-07-04T00-03-02+00-00")
 })
 
 test_that("Retrieve VCT stats by file", {
   x <- setUp()
 
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
   load("../params.RData")
   save.gating.params(x$db, poly.log)
   classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
-  vct2 <- get.vct.stats.by.file(x$db, "2014_185/2014-07-04T00-03-02+00-00")
-  expect_equal(vct2$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
-  expect_equal(vct2$count, c(45, 24, 256, 45, 34))
+  vct <- get.vct.stats.by.file(x$db.input, "2014_185/2014-07-04T00-03-02+00-00")
+  expect_equal(vct$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
+  expect_equal(vct$count, c(42, 20, 234, 43, 27))
 })
 
 test_that("Retrieve OPP stats by date", {
   x <- setUp()
 
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
-
-  opp12 <- get.opp.stats.by.date(x$db, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(opp12$file, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"))
-})
-
-test_that("Retrieve VCT stats by file", {
-  x <- setUp()
-
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
-  load("../params.RData")
-  save.gating.params(x$db, poly.log)
-  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
-
-  vct2 <- get.vct.stats.by.file(x$db, "2014_185/2014-07-04T00-03-02+00-00")
-  expect_equal(vct2$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
-  expect_equal(vct2$count, c(45, 24, 256, 45, 34))
+  opp <- get.opp.stats.by.date(x$db.input, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(opp$file, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"))
 })
 
 test_that("Retrieve VCT stats by date", {
   x <- setUp()
 
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
-  load("../params.RData")
-  save.gating.params(x$db, poly.log)
-  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
-
-  vct12 <- get.vct.stats.by.date(x$db, "2014-07-04 00:00", "2014-07-04 00:04")
+  vct <- get.vct.stats.by.date(x$db.input, "2014-07-04 00:00", "2014-07-04 00:04")
   expect_equal(
-    vct12$file,
+    vct$file,
     c(rep("2014_185/2014-07-04T00-00-02+00-00", 5), rep("2014_185/2014-07-04T00-03-02+00-00", 5))
   )
 })
 
 test_that("Retrieve OPP by file", {
   x <- setUp()
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
-  load("../params.RData")
-  save.gating.params(x$db, poly.log)
-  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
 
   # Without VCT, transformed
-  opp <- get.opp.by.file(x$opp.dir, get.opp.files(x$db)[1:2])
-  expect_equal(nrow(opp), 749)
+  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.input)[1:2])
+  expect_equal(nrow(opp), 677)
   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
-  opp <- get.opp.by.file(x$opp.dir, get.opp.files(x$db)[1:2], transform=F)
-  expect_equal(nrow(opp), 749)
+  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.input)[1:2], transform=F)
+  expect_equal(nrow(opp), 677)
   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
   # With VCT
-  opp <- get.opp.by.file(x$opp.dir, get.opp.files(x$db)[1:2], vct.dir=x$vct.dir)
+  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.input)[1:2], vct.dir=x$vct.input.dir)
   expect_true("pop" %in% names(opp))
 })
 
 test_that("Retrieve OPP by date", {
   x <- setUp()
 
-  evt.files <- get.evt.files(x$evt.dir)
-  save.filter.params(x$db)
-  save.sfl(x$db, x$cruise, x$evt.dir)
-  expect_warning(filter.evt.files(x$db, x$cruise, x$evt.dir, evt.files, x$opp.dir))
-  load("../params.RData")
-  save.gating.params(x$db, poly.log)
-  classify.opp.files(x$db, x$cruise, x$opp.dir, get.opp.files(x$db), x$vct.dir)
-
   # Without VCT, transformed
-  opp <- get.opp.by.date(x$db, x$opp.dir, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(nrow(opp), 749)
+  opp <- get.opp.by.date(x$db.input, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(nrow(opp), 677)
   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
-  opp <- get.opp.by.date(x$db, x$opp.dir, "2014-07-04 00:00", "2014-07-04 00:04",
+  opp <- get.opp.by.date(x$db.input, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:04",
                          transform=F)
-  expect_equal(nrow(opp), 749)
+  expect_equal(nrow(opp), 677)
   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
   # With VCT
-  opp <- get.opp.by.date(x$db, x$opp.dir, "2014-07-04 00:00", "2014-07-04 00:04",
-                         vct.dir=x$vct.dir)
+  opp <- get.opp.by.date(x$db.input, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:04",
+                         vct.dir=x$vct.input.dir)
   expect_true("pop" %in% names(opp))
 })
 
 test_that("Retrieve EVT file names by date", {
   x <- setUp()
 
-  save.sfl(x$db, x$cruise, evt.dir=x$evt.dir)
-  evt.files <- get.evt.files.by.date(x$db, x$evt.dir, "2014-07-04 00:03", "2014-07-04 00:10")
+  evt.files <- get.evt.files.by.date(x$db.input, x$evt.input.dir, "2014-07-04 00:03", "2014-07-04 00:10")
   answer <- c(
     "2014_185/2014-07-04T00-03-02+00-00",
     "2014_185/2014-07-04T00-06-02+00-00",
