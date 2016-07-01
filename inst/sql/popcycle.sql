@@ -23,6 +23,7 @@
 CREATE TABLE IF NOT EXISTS opp (
     cruise TEXT NOT NULL,
     file TEXT NOT NULL,
+    all_count INTEGER NOT NULL,
     opp_count INTEGER NOT NULL,
     evt_count INTEGER NOT NULL,
     opp_evt_ratio REAL NOT NULL,

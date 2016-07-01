@@ -884,7 +884,7 @@ save.vct.file <- function(vct, vct.dir, file.name) {
 #'                40000, opp, filter.params, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
 #' @export
-save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
+save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp, params,
                            filter.id) {
   if (nrow(opp) == 0) {
     return
@@ -892,7 +892,7 @@ save.opp.stats <- function(db, cruise.name, file.name, evt_count, opp, params,
   opp <- transformData(opp)
   opp_count <- nrow(opp)
   df <- data.frame(cruise=cruise.name, file=clean.file.path(file.name),
-                   opp_count=opp_count, evt_count=evt_count,
+                   all_count=all_count, opp_count=opp_count, evt_count=evt_count,
                    opp_evt_ratio=opp_count/evt_count,
                    notch1=params$notch1, notch2=params$notch2,
                    offset=params$offset, origin=params$origin,
