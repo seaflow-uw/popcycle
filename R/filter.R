@@ -416,7 +416,8 @@ seaflowpy_filter <- function(db, cruise.name, evt.dir, opp.dir, process.count=1,
   }
 
   cmd <- paste0("'seaflowpy_filter ", '-c "', cruise.name, '" -e "',
-                evt.dir, '" -o "',  opp.dir, '" -d "', db, '"')
+                normalizePath(evt.dir), '" -o "',  normalizePath(opp.dir),
+                '" -d "', normalizePath(db), '"')
   if (! is.null(process.count)) {
     cmd <- paste0(cmd, " -p ", process.count)
   }

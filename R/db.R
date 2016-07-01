@@ -1085,11 +1085,11 @@ save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL, gga=FALSE,
     stop("save.sfl can only be passed one of evt.dir or sfl.file")
   }
 
-  cmd <- paste0("'seaflowpy_importsfl", ' -c "', cruise, '" -d "', db, '"')
+  cmd <- paste0("'seaflowpy_importsfl", ' -c "', cruise, '" -d "', normalizePath(db), '"')
   if (! is.null(evt.dir)) {
-    cmd <- paste0(cmd, " -e '", evt.dir, "'")
+    cmd <- paste0(cmd, " -e '", normalizePath(evt.dir), "'")
   } else {
-    cmd <- paste0(cmd, " -s '", sfl.file, "'")
+    cmd <- paste0(cmd, " -s '", normalizePath(sfl.file), "'")
   }
 
   if (gga) {

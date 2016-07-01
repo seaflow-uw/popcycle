@@ -207,8 +207,8 @@ seaflowpy_classify <- function(db, cruise.name, opp.dir, vct.dir, gating.id,
   }
 
   cmd <- paste0("'seaflowpy_classify ", '-c "', cruise.name, '" -o "',
-                opp.dir, '" -v "',  vct.dir, '" -d "', db, '" -g "',
-                gating.id, '"')
+                normalizePath(opp.dir), '" -v "',  normalizePath(vct.dir),
+                '" -d "', normalizePath(db), '" -g "', gating.id, '"')
   if (! is.null(process.count)) {
     cmd <- paste0(cmd, " -p ", process.count)
   }
