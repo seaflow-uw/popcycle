@@ -133,7 +133,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   }
 
   # Filtering focused particles (fsc_small > D + notch)
-  opp <- subset(aligned, fsc_small > D1*notch1 - offset*10^4 & fsc_small > D2*notch2 - offset*10^4)
+  opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
 
   ################
   ### PLOTTING ###
@@ -244,7 +244,7 @@ DF <- NULL
           notch.2 <- fsc.max2 / (d.min2)
             }
 
-        opp <- subset(aligned, fsc_small > D1*notch.1 - offset*10^4 & fsc_small > D2*notch.2 - offset*10^4)
+        opp <- subset(aligned, fsc_small >= D1*notch.1 - offset*10^4 & fsc_small >= D2*notch.2 - offset*10^4)
 
       if(nrow(opp) == 0){
         print(paste("no opp found in", file))
