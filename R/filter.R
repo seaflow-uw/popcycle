@@ -201,12 +201,10 @@ plot.filter.cytogram.by.file <- function(evt.dir, file.name, origin=NA, width=0.
 #' find.filter.notch
 #'
 #' @export
-find.filter.notch <- function(evt.list, origin=NA, width=0.5, notch=c(NA, NA), offset=0, do.plot=TRUE){
+find.filter.notch <- function(evt.list, origin=NA, width=0.5, offset=0, do.plot=TRUE){
 
   origin <- as.numeric(origin)
   width <- as.numeric(width)
-  notch1 <- as.numeric(notch[1])
-  notch2 <- as.numeric(notch[2])
   offset <- as.numeric(offset)
 
 
@@ -226,23 +224,23 @@ DF <- NULL
         evt. <- subset(evt, evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1)
 
      # Correction for the difference of sensitivity between D1 and D2
-        if(is.na(origin)) origin <- median(evt.$D2-evt.$D1)
+        if(is.na(origin)){
+          origin. <- median(evt.$D2-evt.$D1)
+          }else{origin. <- origin}
 
       # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-        aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
+        aligned <- subset(evt., D2 < (D1+origin.) + width * 10^4 & (D1+origin.) < D2 + width * 10^4)
 
      # finding the notch
-        if(is.na(notch1)){
+
           d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])
           fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
-          notch.1 <- fsc.max1 / (d.min1)
-            }
+          notch.1 <- fsc.max1/d.min1
 
-        if(is.na(notch2)){
           d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
           fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
-          notch.2 <- fsc.max2 / (d.min2)
-            }
+          notch.2 <- fsc.max2/d.min2
+
 
         opp <- subset(aligned, fsc_small >= D1*notch.1 - offset*10^4 & fsc_small >= D2*notch.2 - offset*10^4)
 
@@ -252,7 +250,7 @@ DF <- NULL
         }
 
       para <- data.frame(cbind(file=file, notch1=as.numeric(round(notch.1,1)), notch2=as.numeric(round(notch.2,1)),
-                    origin=as.numeric(round(origin,1),0), fsc.max=as.numeric(round(max(opp$fsc_small))), chl.max=as.numeric(round(max(opp$chl_small))),
+                    origin=as.numeric(round(origin.,1),0), fsc.max=as.numeric(round(max(opp$fsc_small))), chl.max=as.numeric(round(max(opp$chl_small))),
                     fsc.med=as.numeric(round(median(opp$fsc_small))), chl.med=as.numeric(round(median(opp$chl_small))),
                     original=as.numeric(nrow(evt)), passed=as.numeric(nrow(opp))),stringsAsFactors = FALSE)
 
