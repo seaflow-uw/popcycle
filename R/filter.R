@@ -56,7 +56,7 @@ filter.notch <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset
   }
 
   # Filtering out noise
-  evt. <- evt[-which(evt$fsc_small == 1 & evt$D1 == 1 & evt$D2 == 1),]
+  evt. <- evt[which(evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1),]
 
   # Correction for the difference of sensitivity between D1 and D2
   if(is.na(origin))  origin <- median(evt.$D2-evt.$D1)
@@ -64,18 +64,16 @@ filter.notch <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset
   # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
   aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
 
- # finding the notch
+  # finding the notch
+  fsc.max <- max(aligned$fsc_small)
   if (is.na(notch1)) {
-
-    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) # find the best particle of the largest OPP
-    fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
-    notch1 <- fsc.max1 / d.min1
+    d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
+    notch1 <- fsc.max / d.min1
   }
 
   if (is.na(notch2)) {
-    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
-    fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
-    notch2 <- fsc.max2 / d.min2
+    d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
+    notch2 <- fsc.max / d.min2
   }
 
   # Filtering focused particles (fsc_small > D + notch)
@@ -119,20 +117,19 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
   aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
 
- # finding the notch
+  # finding the notch
+  fsc.max <- max(aligned$fsc_small)
   if (is.na(notch1)) {
-    d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"]) # find the best particle of the largest OPP
-    fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
-    notch1 <- fsc.max1 / d.min1
+    d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
+    notch1 <- fsc.max / d.min1
   }
 
   if (is.na(notch2)) {
-    d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
-    fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
-    notch2 <- fsc.max2 / d.min2
+    d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
+    notch2 <- fsc.max / d.min2
   }
 
-  # Filtering focused particles (fsc_small > D + notch)
+  # Filtering focused particles (fsc_small > D * notch)
   opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
 
   ################
@@ -221,7 +218,7 @@ DF <- NULL
       print(paste("processing ",file))
 
       # Filtering out noise
-        evt. <- subset(evt, evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1)
+        evt. <- evt[which(evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1),]
 
      # Correction for the difference of sensitivity between D1 and D2
         if(is.na(origin)){
@@ -231,18 +228,14 @@ DF <- NULL
       # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
         aligned <- subset(evt., D2 < (D1+origin.) + width * 10^4 & (D1+origin.) < D2 + width * 10^4)
 
-     # finding the notch
+      # finding the notch
+      fsc.max <- max(aligned$fsc_small)
+      d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
+      d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
+      notch1 <- fsc.max / d.min1
+      notch2 <- fsc.max / d.min2
 
-          d.min1 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D1"])
-          fsc.max1 <- max(aligned[which(aligned$D1 == d.min1),"fsc_small"])
-          notch.1 <- fsc.max1/d.min1
-
-          d.min2 <- min(aligned[which(aligned$fsc_small == max(aligned$fsc_small)),"D2"])
-          fsc.max2 <- max(aligned[which(aligned$D2 == d.min2),"fsc_small"])
-          notch.2 <- fsc.max2/d.min2
-
-
-        opp <- subset(aligned, fsc_small >= D1*notch.1 - offset*10^4 & fsc_small >= D2*notch.2 - offset*10^4)
+      opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
 
       if(nrow(opp) == 0){
         print(paste("no opp found in", file))
@@ -338,7 +331,7 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
       print(err)
       return(data.frame())
     })
-    evt. <- subset(evt, evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1)
+    evt. <- evt[which(evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1),]
     evt_count = nrow(evt.)
     all_count = nrow(evt)
 
