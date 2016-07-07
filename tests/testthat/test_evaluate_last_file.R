@@ -22,7 +22,7 @@ test_that("Successfully run realtime last file pipeline", {
   print(paste0("stats$n_count = c(", paste(stats$n_count, collapse=" "), ")"))
 
   expect_equal(stats$pop, c("beads", "picoeuk", "prochloro", "synecho", "unknown"))
-  expect_equal(stats$n_count, c(27, 15, 201, 49, 19))
+  expect_equal(stats$n_count, c(62, 20, 221, 78, 5))
 
   tearDown(x)
 })

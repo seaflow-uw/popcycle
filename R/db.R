@@ -956,7 +956,7 @@ save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE) {
 save.filter.params <- function(db, params=NULL) {
   if (is.null(params)) {
     # Default filter parameters
-    params <- list(notch1=NA, notch2=NA, offset=0, origin=NA, width=0.5)
+    params <- list(notch1=NA, notch2=NA, offset=0, origin=NA, width=1.0)
   }
   filter.id <- UUIDgenerate()  # create primary ID for new entry
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")

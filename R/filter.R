@@ -34,7 +34,7 @@ filter.evt <- function(evt, filter.func, ...) {
 #' filt <- filter.notch(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0)
 #' }
 #' @export
-filter.notch <- function(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
+filter.notch <- function(evt, origin=NA, width=1.0, notch1=NA, notch2=NA, offset=0) {
 
   origin <- as.numeric(origin)
   width <- as.numeric(width)
@@ -198,7 +198,7 @@ plot.filter.cytogram.by.file <- function(evt.dir, file.name, origin=NA, width=0.
 #' find.filter.notch
 #'
 #' @export
-find.filter.notch <- function(evt.list, origin=NA, width=0.5, offset=0, do.plot=TRUE){
+find.filter.notch <- function(evt.list, origin=NA, width=1.0, offset=0, do.plot=TRUE){
 
   origin <- as.numeric(origin)
   width <- as.numeric(width)

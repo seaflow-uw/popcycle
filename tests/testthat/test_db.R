@@ -45,10 +45,10 @@ test_that("Save and retrieve filter params", {
   x <- setUp()
 
   save.filter.params(x$db)
-  save.filter.params(x$db, list(notch1=1, notch2=3, offset=100, origin=NA, width=1.0))
+  save.filter.params(x$db, list(notch1=1, notch2=3, offset=100, origin=NA, width=1.1))
   save.filter.params(x$db, list(notch1=1, notch2=2, offset=100, origin=NA, width=1.0))
   save.filter.params(x$db, list(notch1=1, notch2=2, offset=100, origin=NA, width=1.0))
-  save.filter.params(x$db, list(notch1=1, notch2=2, offset=200, origin=NA, width=1.0))
+  save.filter.params(x$db, list(notch1=1, notch2=2, offset=200, origin=NA, width=0.5))
 
   cols <- c(3,4,5,6,7)
   oldest <- get.filter.table(x$db)[1, cols]
@@ -56,9 +56,9 @@ test_that("Save and retrieve filter params", {
   second.oldest <- get.filter.params.by.id(x$db, second.oldest$id)[1, cols]
   latest <- get.filter.params.latest(x$db)[1, cols]
 
-  expect_equal(oldest, data.frame(list(notch1=as.double(NA), notch2=as.double(NA), offset=0, origin=as.double(NA), width=0.5)))
-  expect_equal(second.oldest, data.frame(list(notch1=1, notch2=3, offset=100, origin=as.double(NA), width=1.0)))
-  expect_equal(latest, data.frame(list(notch1=1, notch2=2, offset=200, origin=as.double(NA), width=1.0)))
+  expect_equal(oldest, data.frame(list(notch1=as.double(NA), notch2=as.double(NA), offset=0, origin=as.double(NA), width=1.0)))
+  expect_equal(second.oldest, data.frame(list(notch1=1, notch2=3, offset=100, origin=as.double(NA), width=1.1)))
+  expect_equal(latest, data.frame(list(notch1=1, notch2=2, offset=200, origin=as.double(NA), width=0.5)))
 
   tearDown(x)
 })
