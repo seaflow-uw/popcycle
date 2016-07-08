@@ -141,39 +141,45 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   origin1 <- origin + width*10^4
   origin2 <- origin - width*10^4
 
-  if(nrow(evt) > 10000)  evt <- evt[round(seq(1,nrow(evt), length.out=10000)),]
+  if(nrow(evt) > 10000){
+    evt <- evt[round(seq(1,nrow(evt), length.out=10000)),]
+    evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
+      }
   if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-  par(mfrow=c(2,3),pty='s')
+  par(mfrow=c(3,2),pty='s')
 
   plot.cytogram(evt, "D1", "D2")
-  mtext("Alignment", side=3, line=4, font=2, col=2)
+  mtext("Noise", side=3, line=3, font=2, col=2)
+  draw.circle(0,0, radius=2000, border=2, lwd=2)
+  mtext("fsc_small=1 & D1=1 & D2=1", side=3, line=2, font=2)
+
+  plot.cytogram(evt., "D1", "D2")
+  mtext("Alignment", side=3, line=3, font=2, col=2)
   abline(b=1, a=origin1, col='red',lwd=2)
   abline(b=1, a=origin2, col='red',lwd=2)
   mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)
   mtext(paste("Width=", width),side=3, line=1,font=2)
 
   plot.cytogram(aligned, "fsc_small", "D1")
-  mtext("Focus", side=3, line=4, font=2,col=2)
+  mtext("Focus", side=3, line=3, font=2,col=2)
   mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)
   mtext(paste("Offset=", offset),side=3, line=1,font=2)
   abline(b=1/notch1, a=offset*10^4, col=2,lwd=2)
 
   plot.cytogram(aligned, "fsc_small", "D2")
-  mtext("Focus", side=3, line=4, font=2,col=2)
+  mtext("Focus", side=3, line=3, font=2,col=2)
   mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)
   mtext(paste("Offset=", offset),side=3, line=1,font=2)
   abline(b=1/notch2, a=offset*10^4, col=2,lwd=2)
 
   plot.cytogram(opp, "fsc_small", "pe")
-  mtext("OPP", side=3, line=1, font=2)
+  mtext("OPP", side=3, line=1, font=2, col=2)
   plot.cytogram(opp, "fsc_small","chl_small")
-  mtext("OPP", side=3, line=1, font=2)
-  mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-1.5,font=2,col=2)
-  plot.cytogram(opp, "chl_small","pe")
-  mtext("OPP", side=3, line=1, font=2)
+  mtext("OPP", side=3, line=1, font=2, col=2)
+  mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-2,font=2,col=1)
 
   par(def.par)
 }
