@@ -68,12 +68,12 @@ filter.notch <- function(evt, origin=NA, width=1.0, notch1=NA, notch2=NA, offset
   fsc.max <- max(aligned$fsc_small)
   if (is.na(notch1)) {
     d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
-    notch1 <- fsc.max / d.min1
+    notch1 <- fsc.max / (d.min1 - offset*10^4)
   }
 
   if (is.na(notch2)) {
     d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
-    notch2 <- fsc.max / d.min2
+    notch2 <- fsc.max / (d.min2 - offset*10^4)
   }
 
   # Filtering focused particles (fsc_small > D + notch)
@@ -121,12 +121,12 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   fsc.max <- max(aligned$fsc_small)
   if (is.na(notch1)) {
     d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
-    notch1 <- fsc.max / d.min1
+    notch1 <- fsc.max / (d.min1 - offset*10^4)
   }
 
   if (is.na(notch2)) {
     d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
-    notch2 <- fsc.max / d.min2
+    notch2 <- fsc.max / (d.min2 - offset*10^4)
   }
 
   # Filtering focused particles (fsc_small > D * notch)
@@ -232,8 +232,8 @@ DF <- NULL
       fsc.max <- max(aligned$fsc_small)
       d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
       d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
-      notch1 <- fsc.max / d.min1
-      notch2 <- fsc.max / d.min2
+      notch1 <- fsc.max / (d.min1 - offset*10^4)
+      notch2 <- fsc.max / (d.min2 - offset*10^4)
 
       opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
 
