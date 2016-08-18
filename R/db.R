@@ -789,14 +789,19 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' Get OPP file names.
 #'
 #' @param db SQLite3 database file path.
-#' @return List of distinct OPP file names.
+#' @return List of OPP file names based on the latest filtering
+#'   parameters or NULL if no filtering has been done.
 #' @examples
 #' \dontrun{
 #' opp.files <- get.opp.files(db)
 #' }
 #' @export
 get.opp.files <- function(db) {
-  sql <- "SELECT DISTINCT file from opp"
+  filter_id <- get.filter.params.latest(db)$id
+  if (is.null(filter_id)) {
+    return(NULL)
+  }
+  sql <- paste0("SELECT file from opp WHERE filter_id = '", filter_id, "'")
   files <- sql.dbGetQuery(db, sql)
   print(paste(length(files$file), "opp files found"))
   return(files$file)

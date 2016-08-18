@@ -120,6 +120,8 @@ CREATE VIEW IF NOT EXISTS stat AS
   FROM
     opp, vct, sfl
   WHERE
+    opp.filter_id == (select id FROM filter ORDER BY date DESC limit 1)
+    AND
     opp.cruise == vct.cruise
     AND
     opp.file == vct.file

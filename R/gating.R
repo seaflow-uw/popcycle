@@ -173,7 +173,8 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
 #' @param opp.dir OPP file directory.
 #' @param opp.files List of OPP files to classify. Include julian day directory.
 #' @param vct.dir VCT file output directory.
-#' @param gating.id ID for gating parameters.
+#' @param gating.id Optionally provide the ID for gating parameters. If NULL,
+#'   the most recently saved gating parameters will be used.
 #' @param process.count Number of processes to start for filtering.
 #' @param limit Only process up to this many files.
 #' @param resolution Progress update resolution in \%.
@@ -186,7 +187,7 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
 #'                    "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
 #' @export
-seaflowpy_classify <- function(db, cruise.name, opp.dir, vct.dir, gating.id,
+seaflowpy_classify <- function(db, cruise.name, opp.dir, vct.dir, gating.id=NULL,
                                process.count=1, limit=NULL, resolution=NULL,
                                start.file=NULL, end.file=NULL) {
   # First check for seaflowpy_classify in PATH
@@ -206,9 +207,22 @@ seaflowpy_classify <- function(db, cruise.name, opp.dir, vct.dir, gating.id,
    return()
   }
 
-  cmd <- paste0("'seaflowpy_classify ", '-c "', cruise.name, '" -o "',
-                normalizePath(opp.dir), '" -v "',  normalizePath(vct.dir),
-                '" -d "', normalizePath(db), '" -g "', gating.id, '"')
+  if (is.null(gating.id)) {
+    gating.params <- get.gating.params.latest(db)
+    gating.id <- gating.params$row$id
+  } else {
+    gating.params <- get.gating.params.by.id(db, gating.id)
+  }
+
+  if (length(gating.params$poly.log) == 0) {
+    stop('No gate paramters yet; no gating.')
+  }
+
+  cmd <- paste0("'seaflowpy_classify ", '-c "', cruise.name,
+                '" -o "', normalizePath(opp.dir),
+                '" -v "', suppressWarnings(normalizePath(vct.dir)),
+                '" -d "', normalizePath(db),
+                '" -g "', gating.id, '"')
   if (! is.null(process.count)) {
     cmd <- paste0(cmd, " -p ", process.count)
   }
