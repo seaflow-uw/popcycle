@@ -66,6 +66,44 @@ set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
   return(poly.log)
 }
 
+#' Import old popcycle gating logs.
+#'
+#' Convert a list of old popcycle CSV gating log files into a poly.log
+#' data structure identical to that produced by set.gating.params().
+#'
+#' @param csv.files CSV log files created by previous versions of popcycle
+#' @param poly.log Named list of gating polygon definitions. Existing population
+#'   gates will be updated. otherwise new ones will be appended to the list. If
+#'   poly.log is NULL a new list will be created.
+#' @return poly.log gating polygon definitions.
+#' @examples
+#' \dontrun{
+#' poly.log <- gating.csv.to.poly.log(gates.csv.files)
+#' }
+#' @export
+gating.csv.to.poly.log <- function(csv.files, poly.log=NULL) {
+  for (onefile in csv.files) {
+    # Find pop name from file name
+    parts <- strsplit(onefile, "_")[[1]]
+    last <- parts[length(parts)]  # e.g. beads.csv
+    popname <- substr(last, 1, nchar(last) - 4)
+
+    csv.poly <- read.csv(onefile)
+    csv.poly <- list(as.matrix(csv.poly))
+    names(csv.poly) <-popname
+
+    if (is.null(poly.log)) {
+      # Start a new gating entry
+      poly.log <- csv.poly
+    } else {
+      # if gate parameters for the same population already exist, overwrite,
+      # otherwise append gate parameters for new population
+      poly.log[popname] <- csv.poly
+    }
+  }
+  return(poly.log)
+}
+
 #' Classify particles based on manually defined population gates.
 #'
 #' @param opp OPP data frame.
