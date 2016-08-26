@@ -56,7 +56,7 @@ filter.notch <- function(evt, origin=NA, width=1.0, notch1=NA, notch2=NA, offset
   }
 
   # Filtering out noise
-  evt. <- evt[which(evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1),]
+  evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
 
   # Correction for the difference of sensitivity between D1 and D2
   if(is.na(origin))  origin <- median(evt.$D2-evt.$D1)
@@ -109,7 +109,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   }
 
   # Filtering out noise
-  evt. <- subset(evt, evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1)
+  evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
 
   # Correction for the difference of sensitivity between D1 and D2
   if (is.na(origin)) origin <- median(evt.$D2-evt.$D1)
@@ -137,6 +137,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   ################
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
   percent.opp <- round(100*nrow(opp)/nrow(evt.),2)
+  percent.noise <- round(100-100*nrow(evt.)/nrow(evt),0)
 
   origin1 <- origin + width*10^4
   origin2 <- origin - width*10^4
@@ -154,7 +155,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   plot.cytogram(evt, "D1", "D2")
   mtext("Noise", side=3, line=3, font=2, col=2)
   draw.circle(0,0, radius=2000, border=2, lwd=2)
-  mtext("fsc_small=1 & D1=1 & D2=1", side=3, line=2, font=2)
+  mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=2, font=2)
 
   plot.cytogram(evt., "D1", "D2")
   mtext("Alignment", side=3, line=3, font=2, col=2)
@@ -224,7 +225,7 @@ DF <- NULL
       print(paste("processing ",file))
 
       # Filtering out noise
-        evt. <- evt[which(evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1),]
+      evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
 
      # Correction for the difference of sensitivity between D1 and D2
         if(is.na(origin)){
@@ -337,7 +338,7 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
       print(err)
       return(data.frame())
     })
-    evt. <- evt[which(evt$fsc_small > 1 & evt$D1 > 1 & evt$D2 > 1),]
+    evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
     evt_count = nrow(evt.)
     all_count = nrow(evt)
 
