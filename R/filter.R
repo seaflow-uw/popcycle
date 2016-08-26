@@ -56,7 +56,7 @@ filter.notch <- function(evt, origin=NA, width=1.0, notch1=NA, notch2=NA, offset
   }
 
   # Filtering out noise
-  evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
+  evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
   # Correction for the difference of sensitivity between D1 and D2
   if(is.na(origin))  origin <- median(evt.$D2-evt.$D1)
@@ -109,7 +109,7 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   }
 
   # Filtering out noise
-  evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
+  evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
   # Correction for the difference of sensitivity between D1 and D2
   if (is.na(origin)) origin <- median(evt.$D2-evt.$D1)
@@ -225,7 +225,7 @@ DF <- NULL
       print(paste("processing ",file))
 
       # Filtering out noise
-      evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
+      evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
      # Correction for the difference of sensitivity between D1 and D2
         if(is.na(origin)){
@@ -338,9 +338,9 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
       print(err)
       return(data.frame())
     })
-    evt. <- subset(evt, fsc_small > 1 | D1 > 1 | D2 > 1)
-    evt_count = nrow(evt.)
-    all_count = nrow(evt)
+    evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
+    evt_count <- nrow(evt.)
+    all_count <- nrow(evt)
 
     # Filter EVT to OPP
     # Return empty data frame on warning or error
