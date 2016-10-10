@@ -4,7 +4,7 @@
 \alias{filter.notch}
 \title{Filter EVT particles.}
 \usage{
-filter.notch(evt, origin = NA, width = 0.5, notch1 = NA, notch2 = NA,
+filter.notch(evt, origin = NA, width = 1, notch1 = NA, notch2 = NA,
   offset = 0)
 }
 \arguments{

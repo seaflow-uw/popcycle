@@ -4,23 +4,23 @@
 \alias{save.gating.params}
 \title{Save gating parameters.}
 \usage{
-save.gating.params(db, poly.log)
+save.gating.params(db, gates.log)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
 
-\item{poly.log}{Named list of per population gating polygons.}
+\item{gates.log}{Named list of per population classification parameters.}
 }
 \value{
-None
+Database gating ID string.
 }
 \description{
-This creates an entry in the gating table and saves gating polygon
-coordinates in the poly table.
+This creates a set per population entries in the gating table and saves any
+manual gating polygon coordinates in the poly table.
 }
 \examples{
 \dontrun{
-save.gating.params(db, poly.log)
+save.gating.params(db, gates.log)
 }
 }
 

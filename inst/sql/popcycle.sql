@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS vct (
     file TEXT NOT NULL,
     pop TEXT NOT NULL,
     count INTEGER NOT NULL,
-    method TEXT NOT NULL,
     fsc_small REAL NOT NULL,
     fsc_perp REAL NOT NULL,
     pe REAL NOT NULL,
@@ -85,8 +84,18 @@ CREATE TABLE IF NOT EXISTS filter (
 CREATE TABLE IF NOT EXISTS gating (
   id TEXT NOT NULL,
   date TEXT NOT NULL,
-  pop_order TEXT NOT NULL,
-  PRIMARY KEY (id)
+  pop_order INTEGER NOT NULL,
+  pop TEXT NOT NULL,
+  method TEXT NOT NULL,
+  channel1 TEXT,
+  channel2 TEXT,
+  gate1 REAL,
+  gate2 REAL,
+  position1 INTEGER,
+  position2 INTEGER,
+  scale REAL,
+  minpe REAL,
+  PRIMARY KEY (id, pop)
 );
 
 CREATE TABLE IF NOT EXISTS poly (
@@ -129,5 +138,7 @@ CREATE VIEW IF NOT EXISTS stat AS
     opp.cruise == sfl.cruise
     AND
     opp.file == sfl.file
+    AND
+    vct.gating_id == (select id FROM gating ORDER BY date DESC limit 1)
   ORDER BY
     cruise, time, pop ASC;

@@ -4,7 +4,8 @@
 \alias{save.opp.stats}
 \title{Save OPP aggregate statistics for one file to opp table.}
 \usage{
-save.opp.stats(db, cruise.name, file.name, evt_count, opp, params, filter.id)
+save.opp.stats(db, cruise.name, file.name, all_count, evt_count, opp, params,
+  filter.id)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

@@ -131,8 +131,6 @@ Now we'll filter EVT files to create OPP data.
 evt.files <- get.evt.files(evt.dir)  # Find 5 EVT files in evt.dir
 # Filter particles
 filter.evt.files(db, cruise, evt.dir, evt.files, opp.dir)
-# 2 of the 5 input EVT files are invalid and will produce warning
-# messages here which can be ignored.
 ```
 
 There should be three new OPP files of filtered particles in the `testcruise_opp` directory.

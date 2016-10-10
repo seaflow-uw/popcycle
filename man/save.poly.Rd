@@ -4,7 +4,7 @@
 \alias{save.poly}
 \title{Save gating polygon coordinates in the poly table.}
 \usage{
-save.poly(db, poly.log, gating.id)
+save.poly(db, poly.log, popname, gating.id)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

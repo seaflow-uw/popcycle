@@ -4,8 +4,8 @@
 \alias{find.filter.notch}
 \title{find.filter.notch}
 \usage{
-find.filter.notch(evt.list, origin = NA, width = 0.5, notch = c(NA, NA),
-  offset = 0, do.plot = TRUE)
+find.filter.notch(evt.list, origin = NA, width = 1, offset = 0,
+  do.plot = TRUE)
 }
 \description{
 find.filter.notch

@@ -358,7 +358,6 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
     })
 
     # Upload OPP data
-    delete.opp.stats.by.file(db, evt.file)
     delete.opp.by.file(opp.dir, evt.file)
     if (nrow(result$opp) > 0) {
       save.opp.stats(db, cruise.name, evt.file, all_count, evt_count, result$opp, result$params,

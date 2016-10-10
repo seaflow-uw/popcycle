@@ -5,8 +5,8 @@
 \title{Filter a directory of EVT files using seaflowpy_filter}
 \usage{
 seaflowpy_filter(db, cruise.name, evt.dir, opp.dir, process.count = 1,
-  limit = NULL, resolution = NULL, origin = NULL, width = NULL,
-  notch1 = NULL, notch2 = NULL, offset = NULL)
+  twopass = FALSE, limit = NULL, resolution = NULL, origin = NULL,
+  width = NULL, notch1 = NULL, notch2 = NULL, offset = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

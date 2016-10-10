@@ -10,7 +10,8 @@ get.opp.files(db)
 \item{db}{SQLite3 database file path.}
 }
 \value{
-List of distinct OPP file names.
+List of OPP file names based on the latest filtering
+  parameters or NULL if no filtering has been done.
 }
 \description{
 Get OPP file names.

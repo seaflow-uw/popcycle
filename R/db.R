@@ -119,6 +119,24 @@ delete.poly.by.id <- function(db, gating.id) {
   sql.dbGetQuery(db, sql)
 }
 
+#' Delete DB poly parameters by gating ID and population
+#'
+#' Note: This is usually done via delete.gating.params.by.id.
+#'
+#' @param db SQLite3 database file path.
+#' @param gating.id gating_id for poly entries.
+#' @param population name
+#' @return None
+#' @examples
+#' \dontrun{
+#' delete.poly.by.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4", "beads")
+#' }
+#' @export
+delete.poly.by.id.pop <- function(db, gating.id, popname) {
+  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "' AND pop == '", popname, "'")
+  sql.dbGetQuery(db, sql)
+}
+
 #' Delete all rows in opp table.
 #'
 #' @param db SQLite3 database file path.
@@ -549,55 +567,73 @@ get.gating.params.latest <- function(db) {
 #' }
 #' @export
 get.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("SELECT * FROM gating WHERE id = '", gating.id, "'")
+  sql <- paste0("SELECT * FROM gating WHERE id = '", gating.id, "' ORDER BY pop_order ASC")
   gating.df <- sql.dbGetQuery(db, sql)
   if (nrow(gating.df) == 0) {
     stop(paste0("No entry found in gating table for ", gating.id))
   }
-  poly.log <- get.poly.log.by.gating.id(db, gating.id, gating.df$pop_order[1])
-  answer <- list(row=gating.df, poly.log=poly.log)
+
+  gates.log <- list()
+
+  for (i in seq(nrow(gating.df))) {
+    r <- gating.df[i, ]
+    if (r$method == "manual") {
+      poly.log <- get.poly.log.by.gating.id.pop(db, gating.id, r$pop)
+      gates.log[[r$pop]] <- list(method=r$method, poly=poly.log)
+    } else if (r$method == "auto") {
+      gates.log[[r$pop]] <- list(
+        method=r$method,
+        x=r$channel1,
+        y=r$channel2,
+        position=c(r$position1 == 1, r$position2 == 1),  # coerce to boolean from 1,0 integer stored in db
+        gates=c(r$gate1, r$gate2),
+        scale=r$scale,
+        min.pe=r$minpe
+      )
+    } else {
+      stop(paste0("unrecognized classification method ", r$method));
+    }
+  }
+
+  answer <- list(gating.id=gating.df[1, "id"], gates.log=gates.log)
   return(answer)
 }
 
-#' Construct a gating polygon named list for gating.id
+#' Construct a gating polygon list for gating.id pop combo
 #'
 #' @param db SQLite3 database file path.
 #' @param gating.id Foreign key to gating table.
-#' @param pop.order Comma-separated text specifying population order. This is
-#'   the pop_order field in the gating table.
+#' @param popname Population name
 #' @return List of population gating polygon coordinates.
 #' @examples
 #' \dontrun{
-#' poly.log <- get.poly.log.by.gating.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
-#'                                       "beads,prochloro,synecho")
+#' poly.log <- get.poly.log.by.gating.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
 #' @export
-get.poly.log.by.gating.id <- function(db, gating.id, pop.order) {
+get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
   poly.log <- list()
-  pop.names <- strsplit(pop.order, ",")[[1]]
-  for (i in seq(length(pop.names))) {
-    sql <- paste0("
-      SELECT * FROM poly
-      WHERE
-        gating_id = '", gating.id, "'
-        AND
-        pop = '", pop.names[i], "'
-      ORDER BY point_order"
-    )
-    pop.poly <- sql.dbGetQuery(db, sql)
-    for (c in EVT.HEADER[5:length(EVT.HEADER)]) {
-      if (c %in% colnames(pop.poly)) {
-        if (all(is.na(pop.poly[, c]))) {
-          pop.poly[, c] <- NULL
-        }
+  sql <- paste0("
+    SELECT * FROM poly
+    WHERE
+      gating_id = '", gating.id, "'
+      AND
+      pop = '", popname, "'
+    ORDER BY point_order"
+  )
+  pop.poly <- sql.dbGetQuery(db, sql)
+
+  for (c in EVT.HEADER[5:length(EVT.HEADER)]) {
+    if (c %in% colnames(pop.poly)) {
+      if (all(is.na(pop.poly[, c]))) {
+        pop.poly[, c] <- NULL
       }
     }
-    pop.poly[, "pop"] <- NULL
-    pop.poly[, "gating_id"] <- NULL
-    pop.poly[, "point_order"] <- NULL
-    poly.log[[i]] <- as.matrix(pop.poly)
   }
-  names(poly.log) <- pop.names
+  pop.poly[, "pop"] <- NULL
+  pop.poly[, "gating_id"] <- NULL
+  pop.poly[, "point_order"] <- NULL
+  poly.log <- as.matrix(pop.poly)
+
   return(poly.log)
 }
 
@@ -709,7 +745,7 @@ get.gating.table <- function(db) {
 #' }
 #' @export
 get.poly.table <- function(db) {
-  sql <- "SELECT * FROM poly ORDER BY gating_id, point_order ASC"
+  sql <- "SELECT * FROM poly ORDER BY gating_id, pop, point_order ASC"
   poly <- sql.dbGetQuery(db, sql)
   return(poly)
 }
@@ -828,27 +864,24 @@ get.vct.files <- function(db) {
 #' @param cruise.name  Cruise name.
 #' @param file.name File name with julian day directory.
 #' @param opp OPP data frame with pop column.
-#' @param method Gating method name.
 #' @param gating.id ID for entry in gating table.
 #' @return None
 #' @examples
 #' \dontrun{
 #' save.vct.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
-#'                opp, "Manual gating", "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
 #' @export
-save.vct.stats <- function(db, cruise.name, file.name, opp, method, gating.id) {
+save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
   df <- ddply(opp, .(pop), here(summarize),
               cruise=cruise.name, file=clean.file.path(file.name),
-              count=length(pop), method=method,
+              count=length(pop),
               fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
               chl_small=mean(chl_small), pe=mean(pe), gating_id=gating.id)
-  cols <- c("cruise", "file", "pop", "count", "method", "fsc_small",
+  cols <- c("cruise", "file", "pop", "count", "fsc_small",
             "fsc_perp", "pe", "chl_small", "gating_id")
   df.reorder <- df[cols]
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="vct", value=df.reorder, row.names=F, append=T)
-  dbDisconnect(con)
+  sql.dbWriteTable(db, name="vct", value=df.reorder)
 }
 
 #' Save VCT per particle population classification.
@@ -922,9 +955,7 @@ save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp
                    chl_big_mean=mean(opp$chl_big),
                    filter_id=filter.id
         )
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="opp", value=df, row.names=F, append=T)
-  dbDisconnect(con)
+  sql.dbWriteTable(db, name="opp", value=df)
 }
 
 #' Save OPP as a gzipped LabView format binary file
@@ -968,35 +999,63 @@ save.filter.params <- function(db, params=NULL) {
   df <- data.frame(id=filter.id, date=date.stamp, notch1=params$notch1,
                    notch2=params$notch2, offset=params$offset,
                    origin=params$origin, width=params$width)
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="filter", value=df, row.names=F, append=T)
-  dbDisconnect(con)
+  sql.dbWriteTable(db, name="filter", value=df)
 }
 
 #' Save gating parameters.
 #'
-#' This creates an entry in the gating table and saves gating polygon
-#' coordinates in the poly table.
+#' This creates a set per population entries in the gating table and saves any
+#' manual gating polygon coordinates in the poly table.
 #'
 #' @param db SQLite3 database file path.
-#' @param poly.log Named list of per population gating polygons.
-#' @return None
+#' @param gates.log Named list of per population classification parameters.
+#' @return Database gating ID string.
 #' @examples
 #' \dontrun{
-#' save.gating.params(db, poly.log)
+#' save.gating.params(db, gates.log)
 #' }
 #' @export
-save.gating.params <- function(db, poly.log) {
+save.gating.params <- function(db, gates.log) {
   gating.id <- UUIDgenerate()  # create primary ID for new entry
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")
-  df <- data.frame(id=gating.id, date=date.stamp,
-                   pop_order=paste(names(poly.log), collapse=","))
-
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="gating", value=df, row.names=F, append=T)
-  dbDisconnect(con)
-
-  save.poly(db, poly.log, gating.id)
+  i <- 1  # track order population classification
+  for (popname in names(gates.log)) {
+    params <- gates.log[[popname]]
+    if (params$method == "manual") {
+      df <- data.frame(
+        id=gating.id, date=date.stamp, pop_order=i, pop=popname,
+        method=params$method,
+        channel1=colnames(params$poly)[1],
+        channel2=colnames(params$poly)[2],
+        gate1=NA,
+        gate2=NA,
+        position1=NA,
+        position2=NA,
+        scale=NA,
+        minpe=NA
+      )
+      sql.dbWriteTable(db, name="gating", value=df)
+      save.poly(db, params$poly, popname, gating.id)
+    } else if (params$method == "auto") {
+      df <- data.frame(
+        id=gating.id, date=date.stamp, pop_order=i, pop=popname,
+        method=params$method,
+        channel1=params$x,
+        channel2=params$y,
+        gate1=params$gates[1],
+        gate2=params$gates[2],
+        position1=params$position[1],
+        position2=params$position[2],
+        scale=params$scale,
+        minpe=params$min.pe
+      )
+      sql.dbWriteTable(db, name="gating", value=df)
+    } else {
+      stop(paste0("unrecognized method ", params$method))
+    }
+    i <- i + 1
+  }
+  return(gating.id)
 }
 
 #' Save gating polygon coordinates in the poly table.
@@ -1011,38 +1070,28 @@ save.gating.params <- function(db, poly.log) {
 #' \dontrun{
 #' save.poly(db, poly.log, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
-save.poly <- function(db, poly.log, gating.id) {
-  ns <- names(poly.log)
+save.poly <- function(db, poly.log, popname, gating.id) {
   df <- data.frame()
   channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
                 "chl_big")
-
-  if (length(ns) == 0) {
-    return()
+  # Fill in population name. This is the first field in the table and sets up
+  # the data frame to have the correct number of rows.
+  df <- data.frame(pop=rep(popname, nrow(poly.log)))
+  for (col in channels) {
+    # placeholder NAs for each channel
+    # doing this first ensures the channel order matches the poly table
+    # definition
+    df[, col] <- NA
   }
-  for (i in seq(length(ns))) {
-    p <- poly.log[[ns[i]]]  # coords matrix for one population
-    # Fill in population name. This is the first field in the table and sets up
-    # the data frame to have the correct number of rows.
-    tmpdf <- data.frame(pop=rep(ns[i], nrow(p)))
-    for (col in channels) {
-      # placeholder NAs for each channel
-      # doing this first ensures the channel order matches the poly table
-      # definition
-      tmpdf[, col] <- NA
-    }
-    for (col in colnames(p)) {
-      tmpdf[, col] <- p[, col]  # fill in defined channel coords
-    }
-    df <- rbind(df, tmpdf)
+  for (col in colnames(poly.log)) {
+    df[, col] <- poly.log[, col]  # fill in defined channel coords
   }
-  df$point_order <- seq(nrow(df))  # order of polygon points and populations
+  df$point_order <- seq(nrow(df))  # order of polygon points for this pop
   df$gating_id <- gating.id  # last field in table
 
-  delete.poly.by.id(db, gating.id)
-  con <- dbConnect(SQLite(), dbname=db)
-  dbWriteTable(conn=con, name="poly", value=df, row.names=F, append=T)
-  dbDisconnect(con)
+  delete.poly.by.id.pop(db, gating.id, popname)
+  sql.dbWriteTable(db, name="poly", value=df)
+
 }
 
 #' Import SFL files to the database.
@@ -1196,12 +1245,34 @@ check.for.populated.sfl <- function(db) {
 #' \dontrun{
 #' sql.dbGetQuery(db, "SELECT * FROM some.table")
 #' }
+#' @export
 sql.dbGetQuery <- function(db, sql) {
   con <- dbConnect(SQLite(), dbname=db)
   tryCatch({
     resp <- dbGetQuery(con, sql)
     dbDisconnect(con)
     return(resp)
+  }, error=function(e) {
+    dbDisconnect(con)
+    stop(e)
+  })
+}
+
+#' Wrapper to run dbWriteTable and clean up connection on error.
+#'
+#' @param db SQLite3 database file path.
+#' @param name Table name.
+#' @param value Data frame to write.
+#' @examples
+#' \dontrun{
+#' sql.dbWriteTable(db, name="vct", value=df)
+#' }
+#' @export
+sql.dbWriteTable <- function(db, name, value) {
+  con <- dbConnect(SQLite(), dbname=db)
+  tryCatch({
+    dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
+    dbDisconnect(con)
   }, error=function(e) {
     dbDisconnect(con)
     stop(e)
