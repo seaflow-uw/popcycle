@@ -125,7 +125,7 @@ delete.poly.by.id <- function(db, gating.id) {
 #'
 #' @param db SQLite3 database file path.
 #' @param gating.id gating_id for poly entries.
-#' @param population name
+#' @param popname Population name
 #' @return None
 #' @examples
 #' \dontrun{
@@ -538,8 +538,9 @@ get.filter.params.by.id <- function(db, filter.id) {
 #' Get the latest gating parameters.
 #'
 #' @param db SQLite3 database file path.
-#' @return Named list where list$row is gating entry in gating table and
-#'   list$poly.log is list of polygon coordinates for each population.
+#' @return Named list where list$gates.log a recreation of original gating
+#'   created by add.manual.classification(), add.auto.classification(), and
+#'   save.gating.params()
 #' @examples
 #' \dontrun{
 #' gating.params <- get.gating.params.latest(db)
@@ -559,8 +560,9 @@ get.gating.params.latest <- function(db) {
 #'
 #' @param db SQLite3 database file path.
 #' @param gating.id ID in gating table and poly table.
-#' @return Named list where list$row is gating entry in gating table and
-#'   list$poly.log is list of polygon coordinates for each population.
+#' @return Named list where list$gates.log a recreation of original gating
+#'   created by add.manual.classification(), add.auto.classification(), and
+#'   save.gating.params()
 #' @examples
 #' \dontrun{
 #' gating.params <- get.gating.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
@@ -607,7 +609,7 @@ get.gating.params.by.id <- function(db, gating.id) {
 #' @return List of population gating polygon coordinates.
 #' @examples
 #' \dontrun{
-#' poly.log <- get.poly.log.by.gating.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#' poly.log <- get.poly.log.by.gating.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4", "beads")
 #' }
 #' @export
 get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {

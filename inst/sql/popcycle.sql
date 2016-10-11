@@ -138,7 +138,5 @@ CREATE VIEW IF NOT EXISTS stat AS
     opp.cruise == sfl.cruise
     AND
     opp.file == sfl.file
-    AND
-    vct.gating_id == (select id FROM gating ORDER BY date DESC limit 1)
   ORDER BY
     cruise, time, pop ASC;

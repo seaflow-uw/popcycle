@@ -293,6 +293,8 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
       opp <- classify.opp(opp, gating.params$gates.log)
 
       # delete old vct entries if they exist so we keep cruise/file/particle distinct
+      # There should only be one vct entry in the db for each population/file
+      # combination.
       delete.vct.stats.by.file(db, opp.file)
       delete.vct.by.file(vct.dir, opp.file)
       # store vct
