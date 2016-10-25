@@ -406,6 +406,7 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
 #' @export
 get.opp.by.date <- function(db, opp.dir, start.date, end.date, channel=NULL,
                             transform=TRUE, vct.dir=NULL, pop=NULL) {
+  if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
   opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
   opp <- get.opp.by.file(opp.dir, opp.stats$file, channel=channel,
                          transform=transform, vct.dir=vct.dir, pop=pop)
@@ -446,6 +447,8 @@ get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
   }
   opps <- lapply(opp.files, opp.reader)
   opps.bound <- rbind.fill(opps)
+
+  if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
 
   if (! is.null(vct.dir)) {
    vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f))
@@ -538,7 +541,7 @@ get.filter.params.by.id <- function(db, filter.id) {
 #' Get the latest gating parameters.
 #'
 #' @param db SQLite3 database file path.
-#' @return Named list where list$gates.log a recreation of original gating
+#' @return Named list where list$gates.log is a recreation of original gating
 #'   created by add.manual.classification(), add.auto.classification(), and
 #'   save.gating.params()
 #' @examples
@@ -878,10 +881,29 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
   df <- ddply(opp, .(pop), here(summarize),
               cruise=cruise.name, file=clean.file.path(file.name),
               count=length(pop),
-              fsc_small=mean(fsc_small), fsc_perp=mean(fsc_perp),
-              chl_small=mean(chl_small), pe=mean(pe), gating_id=gating.id)
-  cols <- c("cruise", "file", "pop", "count", "fsc_small",
-            "fsc_perp", "pe", "chl_small", "gating_id")
+              fsc_small_mean=mean(fsc_small),
+              fsc_small_min=min(fsc_small),
+              fsc_small_max=max(fsc_small),
+              chl_small_mean=mean(chl_small),
+              chl_small_min=min(chl_small),
+              chl_small_max=max(chl_small),
+              pe_mean=mean(pe),
+              pe_min=min(pe),
+              pe_max=max(pe),
+              fsc_big_mean=mean(fsc_big),
+              fsc_big_min=min(fsc_big),
+              fsc_big_max=max(fsc_big),
+              fsc_perp_mean=mean(fsc_perp),
+              fsc_perp_min=min(fsc_perp),
+              fsc_perp_max=max(fsc_perp),
+              chl_big_mean=mean(chl_big),
+              chl_big_min=min(chl_big),
+              chl_big_max=max(chl_big),
+              gating_id=gating.id)
+  cols <- c("cruise", "file","pop", "count", "fsc_small_mean","fsc_small_min","fsc_small_max",
+            "chl_small_mean", "chl_small_min","chl_small_max", "pe_mean", "pe_min","pe_max",
+            "fsc_perp_mean","fsc_perp_min","fsc_perp_max","fsc_big_mean","fsc_big_min","fsc_big_max",
+            "chl_big_mean", "chl_big_min","chl_big_max","gating_id")
   df.reorder <- df[cols]
   sql.dbWriteTable(db, name="vct", value=df.reorder)
 }
@@ -937,24 +959,24 @@ save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp
                    notch1=params$notch1, notch2=params$notch2,
                    offset=params$offset, origin=params$origin,
                    width=params$width,
+                   fsc_small_mean=mean(opp$fsc_small),
                    fsc_small_min=min(opp$fsc_small),
                    fsc_small_max=max(opp$fsc_small),
-                   fsc_small_mean=mean(opp$fsc_small),
-                   fsc_perp_min=min(opp$fsc_perp),
-                   fsc_perp_max=max(opp$fsc_perp),
-                   fsc_perp_mean=mean(opp$fsc_perp),
-                   fsc_big_min=min(opp$fsc_big),
-                   fsc_big_max=max(opp$fsc_big),
-                   fsc_big_mean=mean(opp$fsc_big),
-                   pe_min=min(opp$pe),
-                   pe_max=max(opp$pe),
-                   pe_mean=mean(opp$pe),
+                   chl_small_mean=mean(opp$chl_small),
                    chl_small_min=min(opp$chl_small),
                    chl_small_max=max(opp$chl_small),
-                   chl_small_mean=mean(opp$chl_small),
+                   pe_mean=mean(opp$pe),
+                   pe_min=min(opp$pe),
+                   pe_max=max(opp$pe),
+                   fsc_perp_mean=mean(opp$fsc_perp),
+                   fsc_perp_min=min(opp$fsc_perp),
+                   fsc_perp_max=max(opp$fsc_perp),
+                   fsc_big_mean=mean(opp$fsc_big),
+                   fsc_big_min=min(opp$fsc_big),
+                   fsc_big_max=max(opp$fsc_big),
+                   chl_big_mean=mean(opp$chl_big),
                    chl_big_min=min(opp$chl_big),
                    chl_big_max=max(opp$chl_big),
-                   chl_big_mean=mean(opp$chl_big),
                    filter_id=filter.id
         )
   sql.dbWriteTable(db, name="opp", value=df)
