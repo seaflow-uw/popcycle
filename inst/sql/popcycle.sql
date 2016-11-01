@@ -22,12 +22,6 @@ CREATE TABLE IF NOT EXISTS opp (
     fsc_perp_mean REAL NOT NULL,
     fsc_perp_min REAL NOT NULL,
     fsc_perp_max REAL NOT NULL,
-    fsc_big_mean REAL NOT NULL,
-    fsc_big_min REAL NOT NULL,
-    fsc_big_max REAL NOT NULL,
-    chl_big_mean REAL NOT NULL,
-    chl_big_min REAL NOT NULL,
-    chl_big_max REAL NOT NULL,
     filter_id TEXT NOT NULL,
     PRIMARY KEY (cruise, file, filter_id)
 );
@@ -51,12 +45,6 @@ CREATE TABLE IF NOT EXISTS vct (
     fsc_perp_mean REAL NOT NULL,
     fsc_perp_min REAL NOT NULL,
     fsc_perp_max REAL NOT NULL,
-    fsc_big_mean REAL NOT NULL,
-    fsc_big_min REAL NOT NULL,
-    fsc_big_max REAL NOT NULL,
-    chl_big_mean REAL NOT NULL,
-    chl_big_min REAL NOT NULL,
-    chl_big_max REAL NOT NULL,
     gating_id TEXT NOT NULL,
     PRIMARY KEY (cruise, file, pop, gating_id)
 );
@@ -140,9 +128,7 @@ CREATE VIEW IF NOT EXISTS stat AS
     vct.fsc_small_mean as fsc_small_mean,
     vct.chl_small_mean as chl_small_mean,
     vct.pe_mean as pe_mean,
-    vct.fsc_perp_mean as fsc_perp_mean,
-    vct.fsc_big_mean as fsc_big_mean,
-    vct.chl_big_mean as chl_big_mean
+    vct.fsc_perp_mean as fsc_perp_mean
   FROM
     opp, vct, sfl
   WHERE

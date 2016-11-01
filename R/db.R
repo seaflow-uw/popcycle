@@ -890,20 +890,13 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
               pe_mean=mean(pe),
               pe_min=min(pe),
               pe_max=max(pe),
-              fsc_big_mean=mean(fsc_big),
-              fsc_big_min=min(fsc_big),
-              fsc_big_max=max(fsc_big),
               fsc_perp_mean=mean(fsc_perp),
               fsc_perp_min=min(fsc_perp),
               fsc_perp_max=max(fsc_perp),
-              chl_big_mean=mean(chl_big),
-              chl_big_min=min(chl_big),
-              chl_big_max=max(chl_big),
               gating_id=gating.id)
   cols <- c("cruise", "file","pop", "count", "fsc_small_mean","fsc_small_min","fsc_small_max",
             "chl_small_mean", "chl_small_min","chl_small_max", "pe_mean", "pe_min","pe_max",
-            "fsc_perp_mean","fsc_perp_min","fsc_perp_max","fsc_big_mean","fsc_big_min","fsc_big_max",
-            "chl_big_mean", "chl_big_min","chl_big_max","gating_id")
+            "fsc_perp_mean","fsc_perp_min","fsc_perp_max", "gating_id")
   df.reorder <- df[cols]
   sql.dbWriteTable(db, name="vct", value=df.reorder)
 }
@@ -971,12 +964,6 @@ save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp
                    fsc_perp_mean=mean(opp$fsc_perp),
                    fsc_perp_min=min(opp$fsc_perp),
                    fsc_perp_max=max(opp$fsc_perp),
-                   fsc_big_mean=mean(opp$fsc_big),
-                   fsc_big_min=min(opp$fsc_big),
-                   fsc_big_max=max(opp$fsc_big),
-                   chl_big_mean=mean(opp$chl_big),
-                   chl_big_min=min(opp$chl_big),
-                   chl_big_max=max(opp$chl_big),
                    filter_id=filter.id
         )
   sql.dbWriteTable(db, name="opp", value=df)

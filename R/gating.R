@@ -283,7 +283,7 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
   i <- 0
   errors <- list()
   for (opp.file in opp.files) {
-    #message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
+    message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
 
     tryCatch({
       #print(paste('Loading', opp.file))
