@@ -894,7 +894,7 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
               fsc_perp_min=min(fsc_perp),
               fsc_perp_max=max(fsc_perp),
               gating_id=gating.id)
-  cols <- c("cruise", "file","pop", "count", "fsc_small_mean","fsc_small_min","fsc_small_max",
+  cols <- c("pop", "cruise", "file", "count", "fsc_small_mean","fsc_small_min","fsc_small_max",
             "chl_small_mean", "chl_small_min","chl_small_max", "pe_mean", "pe_min","pe_max",
             "fsc_perp_mean","fsc_perp_min","fsc_perp_max", "gating_id")
   df.reorder <- df[cols]
