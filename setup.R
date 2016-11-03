@@ -10,4 +10,4 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("flowDensity")
 
 library(popcycle)
-devtools::test()
+#devtools::test()
