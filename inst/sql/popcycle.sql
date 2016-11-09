@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS opp (
 CREATE INDEX IF NOT EXISTS oppFileIndex ON opp (file);
 
 CREATE TABLE IF NOT EXISTS vct (
-    pop TEXT NOT NULL,
     cruise TEXT NOT NULL,
     file TEXT NOT NULL,
+    pop TEXT NOT NULL,
     count INTEGER NOT NULL,
     fsc_small_mean REAL NOT NULL,
     fsc_small_min REAL NOT NULL,
@@ -111,6 +111,15 @@ CREATE TABLE IF NOT EXISTS poly (
   point_order INTEGER NOT NULL,
   gating_id TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS outlier (
+  cruise TEXT NOT NULL,
+  file TEXT NOT NULL,
+  flag INTEGER,
+  PRIMARY KEY (cruise, file)
+);
+
+CREATE INDEX IF NOT EXISTS outlierFileIndex ON outlier (file);
 
 CREATE VIEW IF NOT EXISTS stat AS
   SELECT

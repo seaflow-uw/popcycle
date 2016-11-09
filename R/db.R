@@ -230,6 +230,20 @@ reset.table <- function(db, table.name) {
   sql.dbGetQuery(db, sql)
 }
 
+#' Delete all rows in Outlier table.
+#'
+#' @param db SQLite3 database file path.
+#' @return None
+#' @examples
+#' \dontrun{
+#' reset.outlier.table(db)
+#' }
+#' @export
+reset.outlier.table <- function(db) {
+  reset.table(db, "outlier")
+}
+
+
 #' Remove entries for all tables except in filter, gating, and poly tables.
 #'
 #' @param db SQLite3 database file path.
@@ -243,6 +257,7 @@ reset.db.except.params <- function(db) {
   reset.opp.stats.table(db)
   reset.vct.stats.table(db)
   reset.sfl.table(db)
+  reset.outlier.table(db)
 }
 
 #' Remove entries for all tables.
@@ -764,11 +779,34 @@ get.poly.table <- function(db) {
 #' stat.table <- get.stat.table(db)
 #' }
 #' @export
-get.stat.table <- function(db) {
+get.stat.table <- function(db, flag=FALSE) {
   check.for.populated.sfl(db)
   sql <- "SELECT * FROM stat;"
   stats <- sql.dbGetQuery(db, sql)
+
+    if(flag){
+      outlier <- get.outlier.table(db)
+      if(nrow(outlier) > 0){
+        stats <- merge(stats, outlier, all.x=TRUE)
+      }else print("No flagged file found!")
+    }
+
   return(stats)
+}
+
+#' Get list of outliers.
+#'
+#' @param db SQLite3 database file path.
+#' @return Data frame.
+#' @examples
+#' \dontrun{
+#' stat.table <- get.stat.table(db)
+#' }
+#' @export
+get.outlier.table <- function(db) {
+  sql <- "SELECT * FROM outlier;"
+  outlier <- sql.dbGetQuery(db, sql)
+  return(outlier)
 }
 
 #' Get names for EVT files which produced no OPP data.
@@ -894,7 +932,7 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
               fsc_perp_min=min(fsc_perp),
               fsc_perp_max=max(fsc_perp),
               gating_id=gating.id)
-  cols <- c("pop", "cruise", "file", "count", "fsc_small_mean","fsc_small_min","fsc_small_max",
+  cols <- c("cruise", "file", "pop", "count", "fsc_small_mean","fsc_small_min","fsc_small_max",
             "chl_small_mean", "chl_small_min","chl_small_max", "pe_mean", "pe_min","pe_max",
             "fsc_perp_mean","fsc_perp_min","fsc_perp_max", "gating_id")
   df.reorder <- df[cols]
@@ -987,6 +1025,26 @@ save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE) {
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
   writeSeaflow(opp, opp.file, untransform=untransform)
 }
+
+#' Save Outliers in the database
+#'
+#' @param db SQLite3 database file path.
+#' @param cruise.name  Cruise name.
+#' @param table.name Dataframe that contains the list of files flagged as outliers
+#' @return None
+#' @examples
+#' \dontrun{
+#' save.outliers(db, cruise, table.name)
+#' }
+#' @export
+save.outliers <- function(db, cruise.name, table.name) {
+  df <- data.frame(cruise=cruise.name, file=table.name$file, flag=table.name$flag)
+  sql.dbWriteTable(db, name="outlier", value=df)
+}
+
+
+
+
 
 #' Save filter parameters to the filter table.
 #'
