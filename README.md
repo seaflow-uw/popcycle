@@ -96,9 +96,9 @@ For example, the first file `2014_185/2014-07-04T00-00-02+00-00.gz` would have a
 
 Any version of the file name can be converted to the short version used by `popcycle` functions with `clean.file.path`.
 
-## Filtering
+# Filtering
 
-### Fast filtering with Python
+## Fast filtering with Python
 The fastest way to filter EVT files is to use `seaflowpy_filter` from the [seaflowpy](https://github.com/armbrustlab/seaflowpy) project. This will create filtered OPP file and database output equivalent to the R code in this section, but could potentially save you hours of time. It's possible to run this script on the command-line or through the `seaflowpy_filter` wrapper function in R. For example, to filter EVT files using 4 threads:
 
 ```r
@@ -107,7 +107,7 @@ seaflowpy_filter(db, cruise, evt.dir, opp.dir, process.count=4, width=0.5, offse
 
 Once this step is done it's possible to continue on to the **Gating** section. The rest of this section deals with filtering in R.
 
-### Configure filter parameters
+## Configure filter parameters
 Set parameters for filtration and filter raw data to create OPP. In most cases it's sufficient to use default parameters.
 
 ```r
@@ -123,7 +123,7 @@ To view all filter parameter entries and find filter IDs run
 get.filter.table(db)
 ```
 
-### Filter particles
+## Filter particles
 
 Now we'll filter EVT files to create OPP data.
 
@@ -135,7 +135,7 @@ filter.evt.files(db, cruise, evt.dir, evt.files, opp.dir)
 
 There should be three new OPP files of filtered particles in the `testcruise_opp` directory.
 
-### Filtering subsets of EVT files
+## Filtering subsets of EVT files
 
 It is sometimes desirable to apply different filter parameters to different groups of EVT files. The filter parameters to use can be specified by the `filter.id` parameter to `filter.evt.files`.
 
@@ -149,110 +149,83 @@ filter.evt.files(db, cruise, evt.dir, evt.files, opp.dir,
 
 To get a subset of EVT files selected by date, use `get.evt.files.by.date`.
 
-## Gating
+# Gating
 
-### Configure gating parameters
-Now we're ready to to set the gating for the different populations and classify particles.
+## Configure gating parameters (written by John MacMillan)
+Now we're ready to set the gating for the different populations.
 
-**WARNING**: The order in which you gate the different populations is very important, choose it wisely. The gating has to be performed over optimally positioned particles (OPP) only, not over an EVT file.
+**WARNING**: The order in which you gate the different populations is very important, choose it wisely. The gating has to be performed over optimally positioned particles (opp) only, not over an EVT file.
 
-In this example, you are going to first gate the `beads` (this is always the first population to be gated.). Then we will gate the Synechococcus population (this population needs to be gated before you gate Prochlorococcus or Picoeukaryote), and finally the Prochlorococcus and Picoeukaryote populations.
-
-We'll use the first file of the example data set to configure gating parameters. Note that `get.opp.by.file` can take a one file or a list of files, making it easy to use multiple OPP files to define population gates.
-
+We want gating parameters that will be applicable to most `opp` files from the cruise. To optimize your chance to set the proper gating parameters, don't set the gating parameters based on one randomly chosen files. Instead, merge/combine as many files as you computer can handle. In this example, we are going to combine 20 files evenly collected during the cruise.
 ```r
-opp.files <- get.opp.files(db)  # 3 OPP file names
-opp <- get.opp.by.file(opp.dir, opp.files[1])
-poly.log <- set.gating.params(opp, "beads", "fsc_small", "pe")
+opp.list <- get.opp.files(db) # get the list of all OPP files from the cruise
+freq <- round(seq(75, length(opp.list), length.out=20))
+
+OPP <- NULL
+for (i in freq) {
+	opp.name <- opp.list[i]
+	opp <- get.opp.by.file(opp.dir, opp.name)
+	OPP <- rbind(OPP, opp)
+  }
 ```
 
-This will open an R plot for a cytogram of forward scatter versus phycoerythrin. Left click locations in the cytogram to define a polygon to classify bead particles. To close the last segment and finalize the polygon right-click a location in the cytogram, then close the plot window.
+The first population to gate is the **beads**, which are used as internal standard for the instrument. This population is always to first one to be gated. Since the bead's optical properties remain relatively stable over time, we use a manual gating method to classify the population based on `fsc_small` and `pe`.
+
+Note: This will open a R plot for a cytogram of the OPP file that consists of the appended data from the 24 `opp` files. Draw a polygon around the population (Left click to draw segment, right-click to close the segment and finalize the polygon).
+
+```r
+gate.log <- add.manual.classification(OPP, “beads”, “fsc_small”, “pe”)
+```
 
 ![gating cytogram for bead](documentation/images/beads-gate.png?raw=true)
 
-We'll follow the same process to continue to append to `poly.log`, creating gates for synechococcus, prochlorococcus, and picoeukaryotes.
+Once the polygon for the beads has been drawn, we can start setting the gates for phytoplankton population. Start by gating `Synechococcus` population based on `fsc_small` and `pe`, and then `Prochlorococcus` and `Picoeukaryote` populations based `fsc_small` and `chl_small`. Do not gate `Prochlorococcus` and `Picoeukaryote` before `Synechococcus`.
+
+Note: Since the optical properties of a particular phytoplankton population can change dramatically over time and space, so you may need to use different sets of polygon to properly gate your population of interest. If manual getting is too much trouble, we recommend the use a more automated gating approach. In the case of `Synechococcus` and `Prochlorococcus`population, we use a semi-supervized algorithm (modified from `flowDensity` package) to draw ellipse around the population using the function `add.auto.classification()`. This function breaks the cytogram plot into 4 quadrants by density.
+
+Select the quadrant that you observe the population to be with the parameter `position=c()`. Use the examples params provided for `gates`, `scale`, `min.pe`, but play around with them until you see optimal results. Make sure to append the updated classification onto the current by using the `gates.log=gates.log`.
 
 ```r
-# Note: we pass in an already existing poly.log to append new gates
-poly.log <- set.gating.params(opp, "synecho", "fsc_small", "pe", poly.log)
-poly.log <- set.gating.params(opp, "prochloro", "fsc_small", "chl_small", poly.log)
-poly.log <- set.gating.params(opp, "picoeuks", "fsc_small", "chl_small", poly.log)
+gates.log <- add.auto.classification("synecho", "fsc_small", "pe",
+                                    position=c(FALSE,TRUE), gates=c(3.0,NA),
+                                    scale=0.975, min.pe=3, gates.log=gates.log)
+
+gates.log <- add.auto.classification("prochloro", "fsc_small", "chl_small",
+                                    position=c(FALSE,TRUE), gates=c(2.0,0.5),
+                                    scale=0.95, gates.log=gates.log)
 ```
 
-Your final gating polygon might look something like this
+Once the parameters are defined for `Synechococcus` and `Prochlorococcus`population, we can use manually gate to cluster all the phytoplankton cells left, namely `Picoeukaryote` population using `manual.classification`. Don’t worry about overlapping populations inside of your polygon. Since this is the last population we are gating, all other gated population will not be included.
 
 ```r
-plot.gating.cytogram(opp, poly.log, "fsc_small", "pe")
-plot.gating.cytogram(opp, poly.log, "fsc_small", "chl_small")
+gates.log <- add.manual.classification(OPP, “picoeuk”, “fsc_small”, “chl_small”, gates.log)
 ```
 
-![gating cytogram for fsc_small versus pe](documentation/images/fsc_small-pe-gates.png?raw=true)
-![gating cytogram for fsc_small versus chl_small](documentation/images/fsc_small-chl_small-gates.png?raw=true)
-
-Now save the gating parameters to the database
+You can test your various gating parameters on the subset of files to ensure accuracy before saving the gating parameters. In this case, we will use a subset of 20 evenly distributed files and display the output of the classification on a cytogram.
 
 ```r
-save.gating.params(db, poly.log)
+opp.list <- get.opp.files(db) # get the list of all OPP files from the cruise
+freq <- round(seq(75, length(opp.list), length.out=20))
+par(mfrow=c(4,5), mar = c(1.75, 1.5, 1.5, 1.5), oma = c(0.5, 0.5, 0.5, 0.5))
+for(i in freq){
+  opp.name <- opp.list[i]
+  opp <- get.opp.by.file(opp.dir, opp.name)
+  opp <- try(classify.opp(opp, gates.log))
+  try(plot.vct.cytogram(opp, para.x="fsc_small", para.y="chl_small", main=paste(basename(opp.name))))
+  }
 ```
 
-Similar to the `save.filter.params` function, `save.gating.params` saves the gating parameters and order in which the gating was performed. Every call to `save.gating.params` creates a new gating entry in the database which can be retrieved by ID. To get a summary of gating entries and find gating IDs, run
+Once satisfied, save the gating in the `db`. Similar to the `save.filter.params` function, `save.gating.params` saves the gating parameters and order in which the gating was performed. Every call to `save.gating.params` creates a new gating entry in the database which can be retrieved by ID. Then, save the classification. (Note, when redo-doing classification, make sure to always set the gating params for “beads” first. If you skip this step, `gates.log` will not be reset, and you classification will still contain the parameters wished to be changed).
 
 ```r
-get.gating.table(db)
+gating.id <- save.gating.params(db, gates.log)
+classify.opp.files(db, cruise, opp.dir, opp.list, vct.dir, gating.id=gating.id)
 ```
 
-The output will look something like this:
 
-```
-                                    id                            date                        pop_order
-1 ce0c3309-537c-4c09-b331-d3b9fcfae5cb 2016-05-17T18:12:43.995559+0000 beads,synecho,prochloro,picoeuks
-```
+## Fast classification with Python
 
-Now to retrieve polygon parameters by for gating ID "ce0c3309-537c-4c09-b331-d3b9fcfae5cb", run
-
-```r
-# Where gating.id is ID text found in a get.gating.table() data frame
-gating.params <- get.gating.params.by.id(db, "ce0c3309-537c-4c09-b331-d3b9fcfae5cb")
-```
-
-This returns a two-item named list with where `gating.params$row` shows the same summary gating entry that was retrieved by `get.gating.table(db)` for ID "ce0c3309-537c-4c09-b331-d3b9fcfae5cb", and `gating.params$poly.log` is the same `poly.log` polygon definition list that we created earlier with `set.gating.params`.
-
-### Classify particles
-To cluster the different population according to your manual gating, run:
-
-```r
-classify.opp.files(db, cruise, opp.dir, opp.files, vct.dir)
-```
-
-There will be three new VCT files in `testcruise_vct` directory. We can examine classifications for all particles with `plot.vct.cytogram`.
-
-```r
-# Note: we pass vct.dir here to color particles by our new classifications
-opp <- get.opp.by.file(opp.dir, opp.files, vct.dir=vct.dir)
-plot.vct.cytogram(opp, "fsc_small", "pe")
-plot.vct.cytogram(opp, "fsc_small", "chl_small")
-```
-
-![VCT cytogram for fsc_small versus pe](documentation/images/fsc_small-pe-vct.png?raw=true)
-![VCT cytogram for fsc_small versus chl_small](documentation/images/fsc_small-chl_small-vct.png?raw=true)
-
-### Classify subsets of EVT files
-
-Just as in filtering, it is sometimes desirable to apply different gating parameters to different groups of OPP files. The gating parameters to use can be specified by the `gating.id` parameter to `classify.opp.files`.
-
-```r
-# If you don't want to use the latest gating parameters, pass a
-# gating ID retrieved from `get.gating.table(db)` to classify.opp.files
-# e.g.
-classify.opp.files(db, cruise, opp.dir, opp.files, vct.dir,
-                   gating.id="c3a06970-3552-4c1c-a71d-f71af93f4d60")
-```
-
-To get a list of OPP files selected by date, use the `file` column of the data frame returned by `get.opp.stats.by.date`.
-
-### Fast classification with Python
-
-Like filtering, classification performance can be increased by using the Python package `seaflowpy`. The script `seaflowpy_classify` can be run on the command-line or through the R wrapper function of the same name. e.g. to classify using 4 threads:
+Manual classification performance can be increased by using the Python package `seaflowpy`. The script `seaflowpy_classify` can be run on the command-line or through the R wrapper function of the same name. e.g. to classify using 4 threads:
 
 ```r
 seaflowpy_classify(db, cruise, opp.dir, vct.dir, process.count=4,
@@ -261,12 +234,13 @@ seaflowpy_classify(db, cruise, opp.dir, vct.dir, process.count=4,
 
 To classify a subset of files the `start.file` and `end.file` parameters can be used to specify the subset of files to classify.
 
+**WARNING** The auto-classification on `Synechococcus` and `Prochlorococcus`population requires the `flowDensity` R package, and it will NOT work in python. So use `seaflowpy_classify` for Manual gating only.
 
 ## Summary statistics
-Once clustering has finished you can view aggregate statistics for the whole cruise with
+Once clustering has finished you can obtain the aggregate statistics for the whole cruise with
 
 ```r
-get.stat.table(db)
+stat <- get.stat.table(db)
 ```
 
 
