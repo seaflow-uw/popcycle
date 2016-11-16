@@ -154,9 +154,12 @@ To get a subset of EVT files selected by date, use `get.evt.files.by.date`.
 ## Configure gating parameters (written by John MacMillan)
 Now we're ready to set the gating for the different populations.
 
-**WARNING**: The order in which you gate the different populations is very important, choose it wisely. The gating has to be performed over optimally positioned particles (opp) only, not over an EVT file.
+**WARNINGS**:
+1. The order in which you gate the different populations is very important, choose it wisely.
+2. The gating has to be performed over optimally positioned particles (opp), not over EVT files.
 
-We want gating parameters that will be applicable to most `opp` files from the cruise. To optimize your chance to set the proper gating parameters, don't set the gating parameters based on one randomly chosen files. Instead, merge/combine as many files as you computer can handle. In this example, we are going to combine 20 files evenly collected during the cruise.
+We want gating parameters that will be applicable to *most* `opp` files from the cruise. To optimize your chance of setting the proper gating parameters, do not set them based on one randomly chosen file. Instead, merge/combine as many files as you computer can handle. In this example, we are going to combine 20 files spaced evenly throughout the duration of the cruise.
+
 ```r
 opp.list <- get.opp.files(db) # get the list of all OPP files from the cruise
 freq <- round(seq(75, length(opp.list), length.out=20))
@@ -169,21 +172,29 @@ for (i in freq) {
   }
 ```
 
-The first population to gate is the **beads**, which are used as internal standard for the instrument. This population is always to first one to be gated. Since the bead's optical properties remain relatively stable over time, we use a manual gating method to classify the population based on `fsc_small` and `pe`.
+The first population to gate is *always* the **beads**, which are used as an internal standard for the instrument. Since the bead's optical properties remain relatively stable over time, we use a manual gating method to classify the population based on `fsc_small` and `pe`.
 
-Note: This will open a R plot for a cytogram of the OPP file that consists of the appended data from the 24 `opp` files. Draw a polygon around the population (Left click to draw segment, right-click to close the segment and finalize the polygon).
+Note: This will open an R plot for a cytogram of the OPP file that consists of the appended data from the 20 `opp` files. Draw a polygon around the population (Left click to draw segment, right-click to close the segment and finalize the polygon).
 
 ```r
-gate.log <- add.manual.classification(OPP, “beads”, “fsc_small”, “pe”)
+gates.log <- add.manual.classification(OPP, “beads”, “fsc_small”, “pe”)
 ```
 
 ![gating cytogram for bead](documentation/images/beads-gate.png?raw=true)
 
-Once the polygon for the beads has been drawn, we can start setting the gates for phytoplankton population. Start by gating `Synechococcus` population based on `fsc_small` and `pe`, and then `Prochlorococcus` and `Picoeukaryote` populations based `fsc_small` and `chl_small`. Do not gate `Prochlorococcus` and `Picoeukaryote` before `Synechococcus`.
+Once the polygon for the beads has been drawn, we can start setting the gates for phytoplankton population:
 
-Note: Since the optical properties of a particular phytoplankton population can change dramatically over time and space, so you may need to use different sets of polygon to properly gate your population of interest. If manual getting is too much trouble, we recommend the use a more automated gating approach. In the case of `Synechococcus` and `Prochlorococcus`population, we use a semi-supervized algorithm (modified from `flowDensity` package) to draw ellipse around the population using the function `add.auto.classification()`. This function breaks the cytogram plot into 4 quadrants by density.
+**WARNING:** The order in which you gate the different populations is very important
 
-Select the quadrant that you observe the population to be with the parameter `position=c()`. Use the examples params provided for `gates`, `scale`, `min.pe`, but play around with them until you see optimal results. Make sure to append the updated classification onto the current by using the `gates.log=gates.log`.
+1. Start by gating the `Synechococcus` population based on `fsc_small` and `pe`
+2. After that, gate the `Prochlorococcus` population based `fsc_small` and `chl_small`.
+3. Finally, gate the `Picoeukaryote` population based `fsc_small` and `chl_small`.
+
+Note: Since the optical properties of a particular phytoplankton population can change dramatically over time and space, so you may need to use different sets of polygons to properly gate your population of interest. If manual gating is too much trouble, there is a more automated gating approach:
+
+In the case of `Synechococcus` and `Prochlorococcus`population, we use a semi-supervised algorithm (modified from `flowDensity` package) to draw ellipses around the population using the function `add.auto.classification()`.
+
+This function breaks the cytogram plot into 4 quadrants by density. Using the parameter `position=c()`, select the quadrant where you observe the population. Use the examples params provided for `gates`, `scale`, and `min.pe`, but play around with them until you see optimal results. Make sure to append the updated classification onto the current by using the `gates.log=gates.log`.
 
 ```r
 gates.log <- add.auto.classification("synecho", "fsc_small", "pe",
@@ -195,7 +206,7 @@ gates.log <- add.auto.classification("prochloro", "fsc_small", "chl_small",
                                     scale=0.95, gates.log=gates.log)
 ```
 
-Once the parameters are defined for `Synechococcus` and `Prochlorococcus`population, we can use manually gate to cluster all the phytoplankton cells left, namely `Picoeukaryote` population using `manual.classification`. Don’t worry about overlapping populations inside of your polygon. Since this is the last population we are gating, all other gated population will not be included.
+Once the parameters are defined for `Synechococcus` and `Prochlorococcus`population, use manual gating to cluster all the phytoplankton cells left (namely `Picoeukaryote` population) using `manual.classification`. Don’t worry about overlapping populations inside of your polygon. Since this is the last population we are gating, all other gated population will not be included.
 
 ```r
 gates.log <- add.manual.classification(OPP, “picoeuk”, “fsc_small”, “chl_small”, gates.log)
