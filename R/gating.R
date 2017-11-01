@@ -216,6 +216,8 @@ manual.classify <- function(opp, params, popname) {
   return(opp)
 }
 
+
+
 #' @export
 auto.classify <- function(opp, params, popname) {
   library(flowCore)
@@ -308,5 +310,4 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
     i <- i + 1
     flush.console()
   }
-  #message(round(100*i/length(opp.files)), "% completed")
 }

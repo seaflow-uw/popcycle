@@ -144,3 +144,77 @@ endswith <- function(path, ending) {
   }
   return(FALSE)
 }
+
+
+
+#' Extract dawn and dusk times from a time series of PAR values
+#'
+#' Extracts the time that dawn and dusk occur from a time series consisting of PAR values (light intensity).
+#' Dawn is defined as the point where the par value goes from night -> day.
+#' Dusk is defined as the point where the par value goes from day -> night.
+#' This is useful for gating purposes for flow- cytometry.
+#' Dawn and dusk tend to represent the extrema of flourences for phytoplankton.
+#' @param x A data frame with two columns. The first column must be time values
+#'    in as.POSIXct format. The second column must be PAR values.
+#' @param cutoff An integer representing the smallest par value that is considered
+#'  daytime.
+#' @return A vector consisting of dawn and dusk time values in as.POSIXct format
+#' @examples
+#' \dontrun{
+#' par.data.csv <- system.file("extdata/par_data.csv", package="popcycle")
+#' par.data <- read.csv(par.data.csv)
+#' par.data$date <- as.POSIXct(par.data$date, format = "%FT%T", tz = "GMT")
+#' dawn.dusk.times <- get.dawn.dusk.time(par.data, 10)
+#' }
+get.dawn.dusk.time <- function(x, cutoff) {
+    # assign names to the time and par parameters
+    time <- x[,1]
+    par <- x[,2]
+
+    # We will define dawn and dusk times to occur when par goes from above 10 -> below 10,
+    # or from below 10 -> above 10
+    above <- par > cutoff
+    intersect <- which(diff(above)!=0)
+
+    # We will then make sure we are only getting points that fall within the sequential pattern
+    # of natural dusk and dawns, AKA they must be seperated by equal times
+
+    #revision <- intersect[which(diff(intersect) > mean(diff(intersect)))]
+    #dawn.dusk <- time[revision]
+
+    dawn.dusk <- time[intersect]
+    return(dawn.dusk)
+}
+
+
+
+
+#' Concatenate EVT or OPP files
+#'
+#' @param evtopp.list List of EVT or OPP files (full path required).
+#' @param n Number of rows to return.
+#' @return A dataframe with n rows.
+#' @export
+concatenate.evtopp <- function(evtopp.list, n=50000, transform=TRUE,...){
+  n <- as.numeric(n)
+  DF <- NULL
+  i <- 0
+  for (file in evtopp.list){
+        message(round(100*i/length(evtopp.list)), "% completed \r", appendLF=FALSE)
+
+        tryCatch({
+          df <- readSeaflow(file,transform=transform,...)
+          df <- df[round(seq(1,nrow(df), length.out=round(n/length(evtopp.list)))),]
+
+            if(any(is.na(df))) next
+            DF <- rbind(DF, df)
+            }, error = function(e) {
+              cat(paste0("Error with file ", file, ": ", e))
+          })
+
+          i <- i + 1
+          flush.console()
+          }
+
+      return(DF)
+}

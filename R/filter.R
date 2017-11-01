@@ -1,3 +1,143 @@
+#' Plot helpful cytograms for estimating the D1, D2 and FSC coordinates of the inflection point (corresponds to location of 1µm beads).
+#'
+#' @param evt.list EVT list.
+#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.
+#' @return D1, D2 and fsc values of presumed 1 µm beads
+#' @export
+inflection.point <- function(evt.list){
+
+  width <- 2500
+  i <- 0
+  DF <- NULL
+    for (file in evt.list){
+      message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
+
+      tryCatch({
+
+        evt <- readSeaflow(file,transform=F)
+        # Fltering aligned particles (D1 = D2)
+        aligned <- subset(evt, D2 < D1 + width & D1 < D2 + width)
+        # exclude region of tiny particles
+        df <- subset(aligned, fsc_small > 10000 & pe > 20000)
+          df <- df[round(seq(1,nrow(df), length.out=round(50000/length(evt.list)))),]
+          if(any(is.na(df))) next
+
+          DF <- rbind(DF, df)
+
+          }, error = function(e) {
+            cat(paste0("Error with file ", file, ": ", e))
+        })
+
+        i <- i + 1
+        flush.console()
+        }
+
+  def.par <- par(no.readonly = TRUE) # save default, for resetting...
+  par(mfrow=c(1,3),pty='s')
+
+  plot.cytogram(DF, "fsc_small", "pe")
+    poly.beads <- getpoly(quiet=TRUE)
+    b <- subset(DF,inout(DF[,c("fsc_small", "pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
+
+  plot.cytogram(DF, "fsc_small", "D1");points(b$fsc_small, b$D1,col=2, pch = 16, cex = 0.5)
+      polyd1 <- getpoly(quiet=TRUE)
+
+  plot.cytogram(DF, "fsc_small", "D2");points(b$fsc_small, b$D2,col=2,pch = 16, cex = 0.5)
+      polyd2 <- getpoly(quiet=TRUE)
+
+      fsc <- round(mean(c(polyd1[,1], polyd2[,1])))
+      d1 <- round(mean(polyd1[,2]))
+      d2 <- round(mean(polyd2[,2]))
+      inflection <- data.frame(fsc, d1, d2)
+
+  par(def.par)
+
+  return(inflection)
+}
+
+
+
+
+
+#' Get Notch and Offset values for Filter.notch function.
+#'
+#' @param inst Instrument serial number.
+#' @param quantile Quantile for the values of Notch and Offset (values can be 2.5, 50, 97.5).
+#' @param fsc Forward scatter value of 1 µm beads.
+#' @param d1, d2 D1 and D2 value of 1 µm beads.
+#' @return Named list where list$params contains a list of filtering parameters.
+#' @examples
+#' \dontrun{
+#' filt <- filter.params(inst, quantile)
+#' }
+#' @export
+filter.params <- function(inst, quantile, fsc, d1, d2) {
+
+
+  fsc <- as.numeric(fsc)
+  d1 <- as.numeric(d1)
+  d2 <- as.numeric(d2)
+
+  slopes <- read.csv(system.file("filter", "seaflow_filter_slopes.csv",package='popcycle'))
+
+  # Correction values for D1 and D2 to force the notch of small particles to pass by the origin (0)
+  notch.small.D1ref <- slopes[slopes$ins== inst,'notch.small.D1']
+    notch.small.D2ref <- slopes[slopes$ins== inst,'notch.small.D2']
+    correction.D1 <- round(d1 - notch.small.D1ref * fsc)
+    correction.D2 <- round(d2 - notch.small.D2ref * fsc)
+
+  if(quantile == 50){
+            notch.small.D1 <- slopes[slopes$ins== inst,'notch.small.D1']
+            notch.small.D2 <- slopes[slopes$ins== inst,'notch.small.D2']
+            notch.large.D1 <- slopes[slopes$ins== inst,'notch.large.D1']
+            notch.large.D2 <- slopes[slopes$ins== inst,'notch.large.D2']
+            intersect.small.D1 <- slopes[slopes$ins== inst,'intersect.small.D1']
+            intersect.small.D2 <- slopes[slopes$ins== inst,'intersect.small.D2']
+            intersect.large.D1 <- slopes[slopes$ins== inst,'intersect.large.D1']
+            intersect.large.D2 <- slopes[slopes$ins== inst,'intersect.large.D2']
+               }
+  if(quantile == 97.5){
+            notch.small.D1 <- slopes[slopes$ins== inst,'notch.small.D1_97.5']
+            notch.small.D2 <- slopes[slopes$ins== inst,'notch.small.D2_97.5']
+            notch.large.D1 <- slopes[slopes$ins== inst,'notch.large.D1_97.5']
+            notch.large.D2 <- slopes[slopes$ins== inst,'notch.large.D2_97.5']
+            intersect.small.D1 <- slopes[slopes$ins== inst,'intersect.small.D1_97.5']
+            intersect.small.D2 <- slopes[slopes$ins== inst,'intersect.small.D2_97.5']
+            intersect.large.D1 <- slopes[slopes$ins== inst,'intersect.large.D1_97.5']
+            intersect.large.D2 <- slopes[slopes$ins== inst,'intersect.large.D2_97.5']
+            }
+
+  if(quantile == 2.5){
+            notch.small.D1 <- slopes[slopes$ins== inst,'notch.small.D1_2.5']
+            notch.small.D2 <- slopes[slopes$ins== inst,'notch.small.D2_2.5']
+            notch.large.D1 <- slopes[slopes$ins== inst,'notch.large.D1_2.5']
+            notch.large.D2 <- slopes[slopes$ins== inst,'notch.large.D2_2.5']
+            intersect.small.D1 <- slopes[slopes$ins== inst,'intersect.small.D1_2.5']
+            intersect.small.D2 <- slopes[slopes$ins== inst,'intersect.small.D2_2.5']
+            intersect.large.D1 <- slopes[slopes$ins== inst,'intersect.large.D1_2.5']
+            intersect.large.D2 <- slopes[slopes$ins== inst,'intersect.large.D2_2.5']
+          }
+
+
+
+    if(!any(quantile == c(50,97.5,2.5))){
+      print("Accepted values for Quantile are 2.5, 50 or 97.5 only")
+      filt.params <- NULL
+        }else{
+          offset.small.D1 <- round(d1 - notch.small.D1 * fsc - correction.D1)
+          offset.small.D2 <- round(d2 - notch.small.D2 * fsc - correction.D2)
+          offset.large.D1 <- round(d1 - notch.large.D1 * fsc - correction.D1)
+          offset.large.D2 <- round(d2 - notch.large.D2 * fsc - correction.D2)
+
+          filt.params <- data.frame(cbind(notch.small.D1,notch.small.D2,notch.large.D1,notch.large.D2,
+                                          offset.small.D1,offset.small.D2,offset.large.D1,offset.large.D2))}
+
+  return(filt.params)
+}
+
+
+
+
 #' Filter EVT particles with a generic filter function.
 #'
 #' @param evt EVT data frame.
@@ -6,8 +146,8 @@
 #'   and list$opp contains OPP data frame.
 #' @examples
 #' \dontrun{
-#' filt <- filter.evt(evt, filter.notch, origin=NA, width=0.5, notch1=NA,
-#'                    notch2=NA, offset=0)
+#' filt <- filter.evt(evt, filter.notch, width=2500, notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+#'                          offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2)
 #' }
 #' @export
 filter.evt <- function(evt, filter.func, ...) {
@@ -25,22 +165,27 @@ filter.evt <- function(evt, filter.func, ...) {
 #' Filter EVT particles.
 #'
 #' @param evt EVT data frame.
-#' @param origin,width,notch1,notch2,offset Filtering parameters. origin,
-#'   notch1, and notch2 will be calculated if NA.
+#' @param width,offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.
 #' @return Named list where list$params contains a list of filtering parameters
 #'   and list$opp contains OPP data frame.
 #' @examples
 #' \dontrun{
-#' filt <- filter.notch(evt, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0)
+#' filt <- filter.notch(evt, width=2500, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2)
 #' }
 #' @export
-filter.notch <- function(evt, origin=NA, width=1.0, notch1=NA, notch2=NA, offset=0) {
-
-  origin <- as.numeric(origin)
+filter.notch <- function(evt, width=2500, notch.small.D1, notch.small.D2,
+                                          notch.large.D1, notch.large.D2,
+                                          offset.small.D1, offset.small.D2,
+                                          offset.large.D1, offset.large.D2) {
   width <- as.numeric(width)
-  notch1 <- as.numeric(notch1)
-  notch2 <- as.numeric(notch2)
-  offset <- as.numeric(offset)
+  notch.small.D1 <- as.numeric(notch.small.D1)
+  notch.small.D2 <- as.numeric(notch.small.D2)
+  notch.large.D1 <- as.numeric(notch.large.D1)
+  notch.large.D2 <- as.numeric(notch.large.D2)
+  offset.small.D1 <- as.numeric(offset.small.D1)
+  offset.small.D2 <- as.numeric(offset.small.D2)
+  offset.large.D1 <- as.numeric(offset.large.D1)
+  offset.large.D2 <- as.numeric(offset.large.D2)
 
   # Check for empty evt data frame.  If empty return empty opp data frame.
   if (nrow(evt) == 0) {
@@ -58,49 +203,40 @@ filter.notch <- function(evt, origin=NA, width=1.0, notch1=NA, notch2=NA, offset
   # Filtering out noise
   evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
-  # Correction for the difference of sensitivity between D1 and D2
-  if(is.na(origin))  origin <- median(evt.$D2-evt.$D1)
-
-  # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
-
-  # finding the notch
-  fsc.max <- max(aligned$fsc_small)
-  if (is.na(notch1)) {
-    d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
-    notch1 <- fsc.max / (d.min1 - offset*10^4)
-  }
-
-  if (is.na(notch2)) {
-    d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
-    notch2 <- fsc.max / (d.min2 - offset*10^4)
-  }
+  # Fltering aligned particles (D1 = D2)
+  aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
 
   # Filtering focused particles (fsc_small > D + notch)
-  opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
+  opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
+      D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
 
-  params = list("notch1"=notch1, "notch2"=notch2, "offset"=offset,
-                "origin"=origin, "width"=width)
+  params = list("width"=width,
+                "notch.small.D1"= notch.small.D1,"notch.small.D2"= notch.small.D2,
+                "notch.large.D1"= notch.large.D1,"notch.large.D2"= notch.large.D2,
+                "offset.small.D1"= offset.small.D1,"offset.small.D2"= offset.small.D2,
+                "offset.large.D1"= offset.large.D1,"offset.large.D2"= offset.large.D2)
   return(list("opp"=opp, "params"=params))
 }
-
 
 
 
 #' Plot helpful cytograms for exploring filtering parameters.
 #'
 #' @param evt EVT data frame.
-#' @param origin,width,notch1,notch2,offset Filtering parameters. origin,
-#'   notch1, and notch2 will be calculated if NA.
+#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2  Filtering parameters.
 #' @return None
 #' @export
-plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, offset=0) {
-  origin <- as.numeric(origin)
+plot.filter.cytogram <- function(evt, width=2500, notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+                                  offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2) {
   width <- as.numeric(width)
-
-  notch1 <- as.numeric(notch1)
-  notch2 <- as.numeric(notch2)
-  offset <- as.numeric(offset)
+  notch.small.D1 <- as.numeric(notch.small.D1)
+  notch.small.D2 <- as.numeric(notch.small.D2)
+  notch.large.D1 <- as.numeric(notch.large.D1)
+  notch.large.D2 <- as.numeric(notch.large.D2)
+  offset.small.D1 <- as.numeric(offset.small.D1)
+  offset.small.D2 <- as.numeric(offset.small.D2)
+  offset.large.D1 <- as.numeric(offset.large.D1)
+  offset.large.D2 <- as.numeric(offset.large.D2)
 
   # linearize the LOG transformed data
   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
@@ -111,26 +247,12 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   # Filtering out noise
   evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
-  # Correction for the difference of sensitivity between D1 and D2
-  if (is.na(origin)) origin <- median(evt.$D2-evt.$D1)
-
   # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-  aligned <- subset(evt., D2 < (D1+origin) + width * 10^4 & (D1+origin) < D2 + width * 10^4)
-
-  # finding the notch
-  fsc.max <- max(aligned$fsc_small)
-  if (is.na(notch1)) {
-    d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
-    notch1 <- fsc.max / (d.min1 - offset*10^4)
-  }
-
-  if (is.na(notch2)) {
-    d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
-    notch2 <- fsc.max / (d.min2 - offset*10^4)
-  }
+  aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
 
   # Filtering focused particles (fsc_small > D * notch)
-  opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
+  opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
+      D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
 
   ################
   ### PLOTTING ###
@@ -139,42 +261,34 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
   percent.opp <- round(100*nrow(opp)/nrow(evt.),2)
   percent.noise <- round(100-100*nrow(evt.)/nrow(evt),0)
 
-  origin1 <- origin + width*10^4
-  origin2 <- origin - width*10^4
-
-  if(nrow(evt) > 10000){
-    evt <- evt[round(seq(1,nrow(evt), length.out=10000)),]
-    evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
-      }
+  if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
   if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-  par(mfrow=c(3,2),pty='s')
-
-  plot.cytogram(evt, "D1", "D2")
-  mtext("Noise", side=3, line=3, font=2, col=2)
-  draw.circle(0,0, radius=2000, border=2, lwd=2)
-  mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=2, font=2)
+  par(mfrow=c(2,2),pty='s')
 
   plot.cytogram(evt., "D1", "D2")
   mtext("Alignment", side=3, line=3, font=2, col=2)
-  abline(b=1, a=origin1, col='red',lwd=2)
-  abline(b=1, a=origin2, col='red',lwd=2)
-  mtext(paste("D2 - D1=", round(origin,2)),side=3, line=2,font=2)
+  abline(b=1, a=width, col='red',lwd=2)
+  abline(b=1, a=- width, col='red',lwd=2)
+  draw.circle(0,0, radius=2000, border=2, lwd=2)
+  mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=2, font=2)
   mtext(paste("Width=", width),side=3, line=1,font=2)
 
   plot.cytogram(aligned, "fsc_small", "D1")
   mtext("Focus", side=3, line=3, font=2,col=2)
-  mtext(paste("Notch 1=", round(notch1, 2)),side=3, line=2,font=2)
+  mtext(paste("Notch=", round(notch1, 2)),side=3, line=2,font=2)
   mtext(paste("Offset=", offset),side=3, line=1,font=2)
-  abline(b=1/notch1, a=offset*10^4, col=2,lwd=2)
+  abline(b=notch.small.D1, a=offset.small.D1,col=2)
+  abline(b=notch.large.D1, a=offset.large.D1,col=3)
 
   plot.cytogram(aligned, "fsc_small", "D2")
   mtext("Focus", side=3, line=3, font=2,col=2)
-  mtext(paste("Notch 2=", round(notch2, 2)),side=3, line=2,font=2)
+  mtext(paste("Notch=", round(notch2, 2)),side=3, line=2,font=2)
   mtext(paste("Offset=", offset),side=3, line=1,font=2)
-  abline(b=1/notch2, a=offset*10^4, col=2,lwd=2)
+  abline(b=notch.small.D2, a=offset.small.D2,col=2)
+  abline(b=notch.large.D2, a=offset.large.D2,col=3)
 
   plot.cytogram(opp, "fsc_small", "pe")
   mtext("OPP", side=3, line=1, font=2, col=2)
@@ -189,102 +303,18 @@ plot.filter.cytogram <- function(evt, origin=NA, width=1, notch1=NA, notch2=NA, 
 #'
 #' @param evt.dir EVT file directory.
 #' @param file.name File name with julian day directory.
-#' @param origin,width,notch1,notch2,offset Filtering parameters. origin,
-#'   notch1, and notch2 will be calculated if NA.
+#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.
 #' @return None
 #' @export
-plot.filter.cytogram.by.file <- function(evt.dir, file.name, origin=NA, width=0.5, notch1=NA, notch2=NA, offset=0) {
+plot.filter.cytogram.by.file <- function(evt.dir, file.name, width=2500, notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+                                            offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2) {
   file.name <- clean.file.path(file.name)
   evt <- readSeaflow(file.path(evt.dir, file.name))
-  plot.filter.cytogram(evt, origin=origin, notch1=notch1, notch2=notch2,
-		                   width=width, offset=offset)
-}
-
-
-
-#' find.filter.notch
-#'
-#' @export
-find.filter.notch <- function(evt.list, origin=NA, width=1.0, offset=0, do.plot=TRUE){
-
-  origin <- as.numeric(origin)
-  width <- as.numeric(width)
-  offset <- as.numeric(offset)
-
-
-DF <- NULL
-
-   for(file in evt.list){
-      evt <- readSeaflow(file, transform=F)
-
-      if(nrow(evt) == 0){
-        print(paste("no evt found in", file))
-        next
-        }
-
-      print(paste("processing ",file))
-
-      # Filtering out noise
-      evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
-
-     # Correction for the difference of sensitivity between D1 and D2
-        if(is.na(origin)){
-          origin. <- median(evt.$D2-evt.$D1)
-          }else{origin. <- origin}
-
-      # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-        aligned <- subset(evt., D2 < (D1+origin.) + width * 10^4 & (D1+origin.) < D2 + width * 10^4)
-
-      # finding the notch
-      fsc.max <- max(aligned$fsc_small)
-      d.min1 <- min(aligned[which(aligned$fsc_small == fsc.max),"D1"]) # find the best particle of the largest OPP
-      d.min2 <- min(aligned[which(aligned$fsc_small == fsc.max),"D2"])
-      notch1 <- fsc.max / (d.min1 - offset*10^4)
-      notch2 <- fsc.max / (d.min2 - offset*10^4)
-
-      opp <- subset(aligned, fsc_small >= D1*notch1 - offset*10^4 & fsc_small >= D2*notch2 - offset*10^4)
-
-      if(nrow(opp) == 0){
-        print(paste("no opp found in", file))
-        next
-        }
-
-      para <- data.frame(cbind(file=file, notch1=as.numeric(round(notch.1,1)), notch2=as.numeric(round(notch.2,1)),
-                    origin=as.numeric(round(origin.,1),0), fsc.max=as.numeric(round(max(opp$fsc_small))), chl.max=as.numeric(round(max(opp$chl_small))),
-                    fsc.med=as.numeric(round(median(opp$fsc_small))), chl.med=as.numeric(round(median(opp$chl_small))),
-                    original=as.numeric(nrow(evt)), passed=as.numeric(nrow(opp))),stringsAsFactors = FALSE)
-
-       DF <- rbind(DF, para)
-      }
-
-
-     if(do.plot){
-    def.par <- par(no.readonly = TRUE) # save default, for resetting...
-
-      mean.notch1 <- median(as.numeric(DF$notch1), na.rm=T)
-      mean.notch2 <- median(as.numeric(DF$notch2), na.rm=T)
-
-
-    par(mfrow=c(3,1),oma=c(2,2,2,4), cex=1)
-    par(pty='s')
-    plot(DF[,c('notch1', 'notch2')], asp=1)
-      abline(b=1, a=0, col="grey", lty=2)
-    points(x=mean.notch1, y=mean.notch2, col=2, pch=3, lwd=3,cex=2)
-    mtext(paste("notch D1 =", round(mean.notch1,2)), 3, line=2)
-    mtext(paste("notch D2 =", round(mean.notch2,2)), 3, line=1)
-    par(pty='m')
-    plot(DF$notch1, 100*as.numeric(DF$passed)/as.numeric(DF$original), xlab="notch", ylab="Opp/Evt ratio (%)")
-    points(DF$notch2, 100*as.numeric(DF$passed)/as.numeric(DF$original),col=2)
-  #  plot(DF$notch1,type='o'); points(DF$notch2, col=2, type='o')
-    plot(DF$notch1, DF$fsc.max, xlab="notch", ylab="forward scatter", ylim=c(1,65500))
-    points(DF$notch2, DF$fsc.max, col=2)
-    points(DF$notch1, DF$fsc.med, pch=3)
-    points(DF$notch2, DF$fsc.med, pch=3, col=2)
-    legend("center", legend=c("max FSC notch1", "max FSC notch2", "median FSC notch1","median FSC notch2"), pch=c(1,1,3,3), col=1:2, ncol=2)
-  }
-
-  return(DF)
-
+  plot.filter.cytogram(evt, width=width,
+    notch.small.D1=offset.small.D1, notch.small.D2=offset.small.D2,
+    notch.large.D1=offset.large.D1, notch.large.D2=offset.large.D2,
+    offset.small.D1=offset.small.D1, offset.small.D2=offset.small.D2,
+    offset.large.D1=offset.large.D1, offset.large.D2=offset.large.D2)
 }
 
 
@@ -345,9 +375,11 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
     # Filter EVT to OPP
     # Return empty data frame on warning or error
     result <- tryCatch({
-      filter.evt(evt, filter.notch, origin=filter.params$origin,
-                 width=filter.params$width, notch1=filter.params$notch1,
-                 notch2=filter.params$notch2, offset=filter.params$offset)
+      filter.evt(evt, filter.notch, width=filter.params$width,
+        notch.small.D1=filter.params$notch.small.D1, notch.small.D2=filter.params$notch.small.D2,
+        notch.large.D1=filter.params$notch.large.D1, offset.large.D2=filter.params$notch.large.D2,
+        offset.small.D1=filter.params$offset.small.D1, offset.small.D2=filter.params$offset.small.D2,
+        offset.large.D1=filter.params$offset.large.D1, offset.large.D2=filter.params$offset.large.D2)
 
     }, warnings = function(err) {
       print(err)
@@ -384,7 +416,7 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
 #' @param process.count Number of processes to start for filtering.
 #' @param limit Only process up to this many files.
 #' @param resolution Progress update resolution in \%.
-#' @param origin,width,notch1,notch2,offset Filter parameters.
+#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filter parameters.
 #' @return None
 #' @examples
 #' \dontrun{
@@ -392,8 +424,11 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
 #' }
 #' @export
 seaflowpy_filter <- function(db, cruise.name, evt.dir, opp.dir, process.count=1, twopass=FALSE,
-                             limit=NULL, resolution=NULL, origin=NULL,
-                             width=NULL, notch1=NULL, notch2=NULL, offset=NULL) {
+                             limit=NULL, resolution=NULL, width=NULL,
+                             notch.small.D1=NULL, notch.small.D2=NULL,
+                             notch.large.D1=NULL, notch.large.D2=NULL,
+                             offset.small.D1=NULL, offset.small.D2=NULL,
+                             offset.large.D1=NULL, offset.large.D2=NULL){
 
   # First check for seaflowpy_filter in PATH
   result <- tryCatch(
@@ -421,27 +456,35 @@ seaflowpy_filter <- function(db, cruise.name, evt.dir, opp.dir, process.count=1,
   if (! is.null(resolution)) {
     cmd <- paste0(cmd, " -r ", resolution)
   }
-  if (twopass) {
-    cmd <- paste0(cmd, " --twopass ")
-  }
-  ## {TO_DO} if twopass = TRUE, then notch1 and notch2 must be set to NULL, else ERROR
   if (! is.null(limit)) {
     cmd <- paste0(cmd, " -l ", limit)
-  }
-  if (! is.null(origin)) {
-    cmd <- paste0(cmd, " --origin ", origin)
   }
   if (! is.null(width)) {
     cmd <- paste0(cmd, " --width ", width)
   }
-  if (! is.null(notch1)) {
-    cmd <- paste0(cmd, " --notch1 ", notch1)
+  if (! is.null(notch.small.D1)) {
+    cmd <- paste0(cmd, " --notch.small.D1 ", notch.small.D1)
   }
-  if (! is.null(notch2)) {
-    cmd <- paste0(cmd, " --notch2 ", notch2)
+  if (! is.null(notch.small.D2)) {
+    cmd <- paste0(cmd, " --notch.small.D2 ", notch.small.D2)
   }
-  if (! is.null(offset)) {
-    cmd <- paste0(cmd, " --offset ", offset)
+  if (! is.null(notch.largel.D1)) {
+    cmd <- paste0(cmd, " --notch.large.D1 ", notch.large.D1)
+  }
+  if (! is.null(notch.large.D2)) {
+    cmd <- paste0(cmd, " --notch.large.D2 ", notch.large.D2)
+  }
+  if (! is.null(offset.small.D1)) {
+    cmd <- paste0(cmd, " --offset.small.D1 ", offset.small.D1)
+  }
+  if (! is.null(offset.small.D2)) {
+    cmd <- paste0(cmd, " --offset.small.D2 ", offset.small.D2)
+  }
+  if (! is.null(offset.largel.D1)) {
+    cmd <- paste0(cmd, " --offset.large.D1 ", offset.large.D1)
+  }
+  if (! is.null(offset.large.D2)) {
+    cmd <- paste0(cmd, " --offset.large.D2 ", offset.large.D2)
   }
   cmd <- paste0(cmd, "'")
   system2("bash", c("-lc", cmd))
