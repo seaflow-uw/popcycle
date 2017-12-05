@@ -10,7 +10,7 @@
 #' @export
 delete.opp.stats.by.file <- function(db, file.name) {
   sql <- paste0("DELETE FROM opp WHERE file == '", clean.file.path(file.name), "'")
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
 }
 
 #' Delete an OPP binary file by file name.
@@ -45,7 +45,7 @@ delete.opp.by.file <- function(opp.dir, file.name) {
 #' @export
 delete.vct.stats.by.file <- function(db, file.name) {
   sql <- paste0("DELETE FROM vct WHERE file == '", clean.file.path(file.name), "'")
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
 }
 
 #' Delete a VCT text file by file name.
@@ -81,7 +81,7 @@ delete.vct.by.file <- function(vct.dir, file.name) {
 #' @export
 delete.filter.params.by.id <- function(db, filter.id) {
   sql <- paste0("DELETE FROM filter WHERE id == '", filter.id, "'")
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
 }
 
 #' Delete DB gating parameters by gating ID.
@@ -98,7 +98,7 @@ delete.filter.params.by.id <- function(db, filter.id) {
 #' @export
 delete.gating.params.by.id <- function(db, gating.id) {
   sql <- paste0("DELETE FROM gating WHERE id == '", gating.id, "'")
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
   delete.poly.by.id(db, gating.id)
 }
 
@@ -116,7 +116,7 @@ delete.gating.params.by.id <- function(db, gating.id) {
 #' @export
 delete.poly.by.id <- function(db, gating.id) {
   sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "'")
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
 }
 
 #' Delete DB poly parameters by gating ID and population
@@ -134,7 +134,7 @@ delete.poly.by.id <- function(db, gating.id) {
 #' @export
 delete.poly.by.id.pop <- function(db, gating.id, popname) {
   sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "' AND pop == '", popname, "'")
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
 }
 
 #' Delete all rows in opp table.
@@ -227,7 +227,7 @@ reset.poly.table <- function(db) {
 #' }
 reset.table <- function(db, table.name) {
   sql <- paste0("DELETE FROM ", table.name)
-  sql.dbGetQuery(db, sql)
+  sql.dbExecute(db, sql)
 }
 
 #' Delete all rows in Outlier table.
@@ -1300,6 +1300,8 @@ check.for.populated.sfl <- function(db) {
 
 #' Wrapper to run dbGetQuery and clean up connection on error.
 #'
+#' Use for SELECT statements only, otherwise use sql.dbExecute.
+#'
 #' @param db SQLite3 database file path.
 #' @param sql SQL query to run.
 #' @return Data frame returned by dbGetQuery.
@@ -1307,13 +1309,35 @@ check.for.populated.sfl <- function(db) {
 #' \dontrun{
 #' sql.dbGetQuery(db, "SELECT * FROM some.table")
 #' }
-#' @export
 sql.dbGetQuery <- function(db, sql) {
   con <- dbConnect(SQLite(), dbname=db)
   tryCatch({
     resp <- dbGetQuery(con, sql)
     dbDisconnect(con)
     return(resp)
+  }, error=function(e) {
+    dbDisconnect(con)
+    stop(e)
+  })
+}
+
+#' Wrapper to run dbExecute and clean up connection on error.
+#'
+#' Use for any statement except SELECT, in which case use sql.dbGetQuery.
+#'
+#' @param db SQLite3 database file path.
+#' @param sql SQL statement to run.
+#' @return Number of rows affected
+#' @examples
+#' \dontrun{
+#' sql.dbExecute(db, "DELETE FROM vct WHERE file == 'somefile'")
+#' }
+sql.dbExecute <- function(db, sql) {
+  con <- dbConnect(SQLite(), dbname=db)
+  tryCatch({
+    rows <- dbExecute(con, sql)
+    dbDisconnect(con)
+    return(rows)
   }, error=function(e) {
     dbDisconnect(con)
     stop(e)
