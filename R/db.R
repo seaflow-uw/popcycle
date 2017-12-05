@@ -991,29 +991,10 @@ save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp
   opp <- transformData(opp)
   opp_count <- nrow(opp)
   df <- data.frame(cruise=cruise.name, file=clean.file.path(file.name),
-                   all_count=all_count, opp_count=opp_count, evt_count=evt_count,
+                   all_count=all_count,
+                   opp_count=opp_count,
+                   evt_count=evt_count,
                    opp_evt_ratio=opp_count/evt_count,
-                   notch1=params$notch1, notch2=params$notch2,
-                   offset=params$offset, origin=params$origin,
-                   width=params$width,
-                   D1_mean=mean(D1),
-                   D1_min=min(D1),
-                   D1_max=max(D1),
-                   D2_mean=mean(D2),
-                   D2_min=min(D2),
-                   D2_max=max(D2),
-                   fsc_small_mean=mean(opp$fsc_small),
-                   fsc_small_min=min(opp$fsc_small),
-                   fsc_small_max=max(opp$fsc_small),
-                   chl_small_mean=mean(opp$chl_small),
-                   chl_small_min=min(opp$chl_small),
-                   chl_small_max=max(opp$chl_small),
-                   pe_mean=mean(opp$pe),
-                   pe_min=min(opp$pe),
-                   pe_max=max(opp$pe),
-                   fsc_perp_mean=mean(opp$fsc_perp),
-                   fsc_perp_min=min(opp$fsc_perp),
-                   fsc_perp_max=max(opp$fsc_perp),
                    filter_id=filter.id
         )
   sql.dbWriteTable(db, name="opp", value=df)
