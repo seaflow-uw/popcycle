@@ -65,14 +65,14 @@ CREATE TABLE IF NOT EXISTS filter (
   id TEXT NOT NULL,
   date TEXT NOT NULL,
   width REAL NOT NULL,
-  notch.small.D1 REAL,
-  notch.small.D2 REAL,
-  notch.large.D1 REAL,
-  notch.large.D2 REAL,
-  offset.small.D1 REAL,
-  offset.small.D2 REAL,
-  offset.large.D1 REAL,
-  offset.large.D1 REAL,
+  notch_small_D1 REAL,
+  notch_small_D2 REAL,
+  notch_large_D1 REAL,
+  notch_large_D2 REAL,
+  offset_small_D1 REAL,
+  offset_small_D2 REAL,
+  offset_large_D1 REAL,
+  offset_large_D1 REAL,
   PRIMARY KEY (id)
 );
 
