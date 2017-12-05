@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS filter (
   offset_small_D1 REAL,
   offset_small_D2 REAL,
   offset_large_D1 REAL,
-  offset_large_D1 REAL,
+  offset_large_D2 REAL,
   PRIMARY KEY (id)
 );
 
