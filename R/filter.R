@@ -55,88 +55,69 @@ inflection.point <- function(evt.list){
   return(inflection)
 }
 
-
-
-
-
 #' Get Notch and Offset values for Filter.notch function.
 #'
-#' @param inst Instrument serial number.
-#' @param quantile Quantile for the values of Notch and Offset (values can be 2.5, 50, 97.5).
-#' @param fsc Forward scatter value of 1 µm beads.
-#' @param d1, d2 D1 and D2 value of 1 µm beads.
-#' @return Named list where list$params contains a list of filtering parameters.
+#' @param inst Instrument serial number
+#' @param fsc Small forward scatter value of 1 µm beads
+#' @param d1 D1 value of 1 µm beads
+#' @param d2 D2 value of 1 µm beads
+#' @return Data frame with filtering parameters for 2.5, 50.0, 97.5 quantiles
 #' @examples
 #' \dontrun{
-#' filt <- filter.params(inst, quantile)
+#' filt <- create.filter.params(inst, fsc, d1, d2)
 #' }
 #' @export
-filter.params <- function(inst, quantile, fsc, d1, d2) {
+create.filter.params <- function(inst, fsc, d1, d2) {
+  # Rename to get correct dataframe headers
+  serial <- inst
+  beads.fsc.small <- as.numeric(fsc)
+  beads.D1 <- as.numeric(d1)
+  beads.D2 <- as.numeric(d2)
 
-
-  fsc <- as.numeric(fsc)
-  d1 <- as.numeric(d1)
-  d2 <- as.numeric(d2)
+  width <- 2500
 
   slopes <- read.csv(system.file("filter", "seaflow_filter_slopes.csv",package='popcycle'))
 
   # Correction values for D1 and D2 to force the notch of small particles to pass by the origin (0)
   notch.small.D1ref <- slopes[slopes$ins== inst,'notch.small.D1']
-    notch.small.D2ref <- slopes[slopes$ins== inst,'notch.small.D2']
-    correction.D1 <- round(d1 - notch.small.D1ref * fsc)
-    correction.D2 <- round(d2 - notch.small.D2ref * fsc)
+  notch.small.D2ref <- slopes[slopes$ins== inst,'notch.small.D2']
+  correction.D1 <- round(beads.D1 - notch.small.D1ref * beads.fsc.small)
+  correction.D2 <- round(beads.D2 - notch.small.D2ref * beads.fsc.small)
 
-  if(quantile == 50){
-            notch.small.D1 <- slopes[slopes$ins== inst,'notch.small.D1']
-            notch.small.D2 <- slopes[slopes$ins== inst,'notch.small.D2']
-            notch.large.D1 <- slopes[slopes$ins== inst,'notch.large.D1']
-            notch.large.D2 <- slopes[slopes$ins== inst,'notch.large.D2']
-            intersect.small.D1 <- slopes[slopes$ins== inst,'intersect.small.D1']
-            intersect.small.D2 <- slopes[slopes$ins== inst,'intersect.small.D2']
-            intersect.large.D1 <- slopes[slopes$ins== inst,'intersect.large.D1']
-            intersect.large.D2 <- slopes[slopes$ins== inst,'intersect.large.D2']
-               }
-  if(quantile == 97.5){
-            notch.small.D1 <- slopes[slopes$ins== inst,'notch.small.D1_97.5']
-            notch.small.D2 <- slopes[slopes$ins== inst,'notch.small.D2_97.5']
-            notch.large.D1 <- slopes[slopes$ins== inst,'notch.large.D1_97.5']
-            notch.large.D2 <- slopes[slopes$ins== inst,'notch.large.D2_97.5']
-            intersect.small.D1 <- slopes[slopes$ins== inst,'intersect.small.D1_97.5']
-            intersect.small.D2 <- slopes[slopes$ins== inst,'intersect.small.D2_97.5']
-            intersect.large.D1 <- slopes[slopes$ins== inst,'intersect.large.D1_97.5']
-            intersect.large.D2 <- slopes[slopes$ins== inst,'intersect.large.D2_97.5']
-            }
+  filter.params <- data.frame()
 
-  if(quantile == 2.5){
-            notch.small.D1 <- slopes[slopes$ins== inst,'notch.small.D1_2.5']
-            notch.small.D2 <- slopes[slopes$ins== inst,'notch.small.D2_2.5']
-            notch.large.D1 <- slopes[slopes$ins== inst,'notch.large.D1_2.5']
-            notch.large.D2 <- slopes[slopes$ins== inst,'notch.large.D2_2.5']
-            intersect.small.D1 <- slopes[slopes$ins== inst,'intersect.small.D1_2.5']
-            intersect.small.D2 <- slopes[slopes$ins== inst,'intersect.small.D2_2.5']
-            intersect.large.D1 <- slopes[slopes$ins== inst,'intersect.large.D1_2.5']
-            intersect.large.D2 <- slopes[slopes$ins== inst,'intersect.large.D2_2.5']
-          }
+  for (quantile in QUANTILES) {
+    if (quantile == 2.5) {
+      suffix <- "_2.5"
+    } else if (quantile == 97.5) {
+      suffix <- "_97.5"
+    } else if (quantile == 50.0) {
+      suffix <- ""
+    }
+    notch.small.D1 <- slopes[slopes$ins== inst, paste0('notch.small.D1', suffix)]
+    notch.small.D2 <- slopes[slopes$ins== inst, paste0('notch.small.D2', suffix)]
+    notch.large.D1 <- slopes[slopes$ins== inst, paste0('notch.large.D1', suffix)]
+    notch.large.D2 <- slopes[slopes$ins== inst, paste0('notch.large.D2', suffix)]
+    intersect.small.D1 <- slopes[slopes$ins== inst, paste0('intersect.small.D1', suffix)]
+    intersect.small.D2 <- slopes[slopes$ins== inst, paste0('intersect.small.D2', suffix)]
+    intersect.large.D1 <- slopes[slopes$ins== inst, paste0('intersect.large.D1', suffix)]
+    intersect.large.D2 <- slopes[slopes$ins== inst, paste0('intersect.large.D2', suffix)]
 
+    offset.small.D1 <- round(beads.D1 - notch.small.D1 * beads.fsc.small - correction.D1)
+    offset.small.D2 <- round(beads.D2 - notch.small.D2 * beads.fsc.small - correction.D2)
+    offset.large.D1 <- round(beads.D1 - notch.large.D1 * beads.fsc.small - correction.D1)
+    offset.large.D2 <- round(beads.D2 - notch.large.D2 * beads.fsc.small - correction.D2)
 
+    filter.params <- rbind(filter.params, cbind(serial, quantile, beads.fsc.small,
+                                                beads.D1, beads.D2, width,
+                                                notch.small.D1, notch.small.D2,
+                                                notch.large.D1, notch.large.D2,
+                                                offset.small.D1, offset.small.D2,
+                                                offset.large.D1, offset.large.D2))
+  }
 
-    if(!any(quantile == c(50,97.5,2.5))){
-      print("Accepted values for Quantile are 2.5, 50 or 97.5 only")
-      filt.params <- NULL
-        }else{
-          offset.small.D1 <- round(d1 - notch.small.D1 * fsc - correction.D1)
-          offset.small.D2 <- round(d2 - notch.small.D2 * fsc - correction.D2)
-          offset.large.D1 <- round(d1 - notch.large.D1 * fsc - correction.D1)
-          offset.large.D2 <- round(d2 - notch.large.D2 * fsc - correction.D2)
-
-          filt.params <- data.frame(cbind(notch.small.D1,notch.small.D2,notch.large.D1,notch.large.D2,
-                                          offset.small.D1,offset.small.D2,offset.large.D1,offset.large.D2))}
-
-  return(filt.params)
+  return(filter.params)
 }
-
-
-
 
 #' Filter EVT particles with a generic filter function.
 #'
@@ -146,8 +127,7 @@ filter.params <- function(inst, quantile, fsc, d1, d2) {
 #'   and list$opp contains OPP data frame.
 #' @examples
 #' \dontrun{
-#' filt <- filter.evt(evt, filter.notch, width=2500, notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
-#'                          offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2)
+#' filt <- filter.evt(evt, filter.notch, filter.params)
 #' }
 #' @export
 filter.evt <- function(evt, filter.func, ...) {
@@ -165,27 +145,27 @@ filter.evt <- function(evt, filter.func, ...) {
 #' Filter EVT particles.
 #'
 #' @param evt EVT data frame.
-#' @param width,offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.
+#' @param filter.params Filtering parameters in a one row data frame or named
+#'   list. Columns should include width, notch.small.D1, notch.small.D2,
+#'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
+#'   offset.large.D1, offset.large.D2.
 #' @return Named list where list$params contains a list of filtering parameters
 #'   and list$opp contains OPP data frame.
 #' @examples
 #' \dontrun{
-#' filt <- filter.notch(evt, width=2500, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2)
+#' filt <- filter.notch(evt, params)
 #' }
 #' @export
-filter.notch <- function(evt, width=2500, notch.small.D1, notch.small.D2,
-                                          notch.large.D1, notch.large.D2,
-                                          offset.small.D1, offset.small.D2,
-                                          offset.large.D1, offset.large.D2) {
-  width <- as.numeric(width)
-  notch.small.D1 <- as.numeric(notch.small.D1)
-  notch.small.D2 <- as.numeric(notch.small.D2)
-  notch.large.D1 <- as.numeric(notch.large.D1)
-  notch.large.D2 <- as.numeric(notch.large.D2)
-  offset.small.D1 <- as.numeric(offset.small.D1)
-  offset.small.D2 <- as.numeric(offset.small.D2)
-  offset.large.D1 <- as.numeric(offset.large.D1)
-  offset.large.D2 <- as.numeric(offset.large.D2)
+filter.notch <- function(evt, filter.params) {
+  width <- as.numeric(filter.params$width)
+  notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
+  notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
+  notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
+  notch.large.D2 <- as.numeric(filter.params$notch.large.D2)
+  offset.small.D1 <- as.numeric(filter.params$offset.small.D1)
+  offset.small.D2 <- as.numeric(filter.params$offset.small.D2)
+  offset.large.D1 <- as.numeric(filter.params$offset.large.D1)
+  offset.large.D2 <- as.numeric(filter.params$offset.large.D2)
 
   # Check for empty evt data frame.  If empty return empty opp data frame.
   if (nrow(evt) == 0) {
@@ -218,25 +198,25 @@ filter.notch <- function(evt, width=2500, notch.small.D1, notch.small.D2,
   return(list("opp"=opp, "params"=params))
 }
 
-
-
 #' Plot helpful cytograms for exploring filtering parameters.
 #'
 #' @param evt EVT data frame.
-#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2  Filtering parameters.
+#' @param filter.params Filtering parameters in a one row data frame or named
+#'   list. Columns should include width, notch.small.D1, notch.small.D2,
+#'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
+#'   offset.large.D1, offset.large.D2.
 #' @return None
 #' @export
-plot.filter.cytogram <- function(evt, width=2500, notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
-                                  offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2) {
-  width <- as.numeric(width)
-  notch.small.D1 <- as.numeric(notch.small.D1)
-  notch.small.D2 <- as.numeric(notch.small.D2)
-  notch.large.D1 <- as.numeric(notch.large.D1)
-  notch.large.D2 <- as.numeric(notch.large.D2)
-  offset.small.D1 <- as.numeric(offset.small.D1)
-  offset.small.D2 <- as.numeric(offset.small.D2)
-  offset.large.D1 <- as.numeric(offset.large.D1)
-  offset.large.D2 <- as.numeric(offset.large.D2)
+plot.filter.cytogram <- function(evt, filter.params) {
+  width <- as.numeric(filter.params$width)
+  notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
+  notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
+  notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
+  notch.large.D2 <- as.numeric(filter.params$notch.large.D2)
+  offset.small.D1 <- as.numeric(filter.params$offset.small.D1)
+  offset.small.D2 <- as.numeric(filter.params$offset.small.D2)
+  offset.large.D1 <- as.numeric(filter.params$offset.large.D1)
+  offset.large.D2 <- as.numeric(filter.params$offset.large.D2)
 
   # linearize the LOG transformed data
   id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
@@ -303,18 +283,16 @@ plot.filter.cytogram <- function(evt, width=2500, notch.small.D1, notch.small.D2
 #'
 #' @param evt.dir EVT file directory.
 #' @param file.name File name with julian day directory.
-#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.
+#' @param filter.params Filtering parameters in a one row data frame or named
+#'   list. Columns should include width, notch.small.D1, notch.small.D2,
+#'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
+#'   offset.large.D1, offset.large.D2.
 #' @return None
 #' @export
-plot.filter.cytogram.by.file <- function(evt.dir, file.name, width=2500, notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
-                                            offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2) {
+plot.filter.cytogram.by.file <- function(evt.dir, file.name, filter.params) {
   file.name <- clean.file.path(file.name)
   evt <- readSeaflow(file.path(evt.dir, file.name))
-  plot.filter.cytogram(evt, width=width,
-    notch.small.D1=offset.small.D1, notch.small.D2=offset.small.D2,
-    notch.large.D1=offset.large.D1, notch.large.D2=offset.large.D2,
-    offset.small.D1=offset.small.D1, offset.small.D2=offset.small.D2,
-    offset.large.D1=offset.large.D1, offset.large.D2=offset.large.D2)
+  plot.filter.cytogram(evt, filter.params)
 }
 
 
@@ -357,7 +335,7 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
     message(round(100*i/length(evt.files)), "% completed \r", appendLF=FALSE)
 
     # Read EVT file
-    # Return empty data frame on warning or error
+    # Create empty data frame on warning or error
     evt <- tryCatch({
       path <- file.path(evt.dir, evt.file)
       readSeaflow(path, transform=FALSE)
@@ -372,29 +350,29 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
     evt_count <- nrow(evt.)
     all_count <- nrow(evt)
 
-    # Filter EVT to OPP
-    # Return empty data frame on warning or error
-    result <- tryCatch({
-      filter.evt(evt, filter.notch, width=filter.params$width,
-        notch.small.D1=filter.params$notch.small.D1, notch.small.D2=filter.params$notch.small.D2,
-        notch.large.D1=filter.params$notch.large.D1, offset.large.D2=filter.params$notch.large.D2,
-        offset.small.D1=filter.params$offset.small.D1, offset.small.D2=filter.params$offset.small.D2,
-        offset.large.D1=filter.params$offset.large.D1, offset.large.D2=filter.params$offset.large.D2)
-
-    }, warnings = function(err) {
-      print(err)
-      return(list(opp=data.frame()))
-    }, error = function(err) {
-      print(err)
-      return(list(opp=data.frame()))
-    })
-
-    # Upload OPP data
+    # Delete all versions of this OPP file
     delete.opp.by.file(opp.dir, evt.file)
-    if (nrow(result$opp) > 0) {
-      save.opp.stats(db, cruise.name, evt.file, all_count, evt_count, result$opp, result$params,
-                     filter.params$id)
-      save.opp.file(result$opp, opp.dir, evt.file)
+
+    for (quantile in QUANTILES) {
+      p <- filter.params[filter.params$quantile == quantile, ]
+      # Filter EVT to OPP
+      # Return empty data frame on warning or error
+      result <- tryCatch({
+        filter.evt(evt, filter.notch, p)
+      }, warnings = function(err) {
+        print(err)
+        return(list(opp=data.frame()))
+      }, error = function(err) {
+        print(err)
+        return(list(opp=data.frame()))
+      })
+
+      # Save OPP data
+      if (nrow(result$opp) > 0) {
+        save.opp.stats(db, cruise.name, evt.file, all_count, evt_count,
+                       result$opp, p$id, quantile)
+        save.opp.file(result$opp, opp.dir, evt.file, quantile)
+      }
     }
 
     i <-  i + 1

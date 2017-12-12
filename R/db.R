@@ -1,4 +1,4 @@
-#' Delete an entry in the opp table by file name.
+#' Delete entries in the opp table by file name.
 #'
 #' @param db SQLite3 database file path.
 #' @param file.name File name with julian day directory.
@@ -24,12 +24,14 @@ delete.opp.stats.by.file <- function(db, file.name) {
 #' }
 #' @export
 delete.opp.by.file <- function(opp.dir, file.name) {
-  opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp")
-  if (file.exists(opp.file)) {
-    file.remove(opp.file)
-  }
-  if (file.exists(paste0(opp.file, ".gz"))) {
-    file.remove(paste0(opp.file, ".gz"))
+  for (quantile in QUANTILES) {
+    opp.file <- paste0(file.path(opp.dir, quantile, clean.file.path(file.name)), ".opp")
+    if (file.exists(opp.file)) {
+      file.remove(opp.file)
+    }
+    if (file.exists(paste0(opp.file, ".gz"))) {
+      file.remove(paste0(opp.file, ".gz"))
+    }
   }
 }
 
@@ -59,15 +61,16 @@ delete.vct.stats.by.file <- function(db, file.name) {
 #' }
 #' @export
 delete.vct.by.file <- function(vct.dir, file.name) {
-  vct.file <- paste0(file.path(vct.dir, clean.file.path(file.name)), ".vct")
-  if (file.exists(vct.file)) {
-    file.remove(vct.file)
-  }
-  if (file.exists(paste0(vct.file, ".gz"))) {
-    file.remove(paste0(vct.file, ".gz"))
+  for (quantile in QUANTILES) {
+    vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct")
+    if (file.exists(vct.file)) {
+      file.remove(vct.file)
+    }
+    if (file.exists(paste0(vct.file, ".gz"))) {
+      file.remove(paste0(vct.file, ".gz"))
+    }
   }
 }
-
 
 #' Delete DB filter parameters by ID.
 #'
@@ -394,12 +397,13 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
   return(vct)
 }
 
-#' Get OPP data frame by date.
+#' Get OPP data frame by date and quantile
 #'
 #' Requires a populated sfl table.
 #'
 #' @param db SQLite3 data file path.
 #' @param opp.dir OPP file directory.
+#' @param quantile Filtering quantile for this file
 #' @param start.date Start date in format YYYY-MM-DD HH:MM.
 #' @param end.date End date in format YYYY-MM-DD HH:MM.
 #' @param channel Channels to keep in returned data frame. Can be a single name
@@ -419,20 +423,24 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
 #'                        transform=F, vct.dir=vct.dir)
 #' }
 #' @export
-get.opp.by.date <- function(db, opp.dir, start.date, end.date, channel=NULL,
-                            transform=TRUE, vct.dir=NULL, pop=NULL) {
+get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
+                            channel=NULL, transform=TRUE, vct.dir=NULL,
+                            pop=NULL) {
   if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
   opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
-  opp <- get.opp.by.file(opp.dir, opp.stats$file, channel=channel,
+  # Filter for stats for one quantile
+  opp.stats <- opp.stats[opp.stats$quantile == quantile, ]
+  opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile, channel=channel,
                          transform=transform, vct.dir=vct.dir, pop=pop)
   return(opp)
 }
 
-#' Get OPP data frame by file.
+#' Get OPP data frame by file and quantile.
 #'
 #' @param opp.dir OPP file directory.
 #' @param file.name File name with julian day directory. Can be a single
 #'   file name or vector of file names.
+#' @param quantile Filtering quantile for this file
 #' @param channel Channels to keep in returned data frame. Can be a single name
 #'   or a vector. Choosing fewer channels can significantly speed up retrieval.
 #' @param transform Linearize OPP data.
@@ -451,12 +459,12 @@ get.opp.by.date <- function(db, opp.dir, start.date, end.date, channel=NULL,
 #'                        transform=F, vct.dir=vct.dir)
 #' }
 #' @export
-get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
+get.opp.by.file <- function(opp.dir, file.name, quantile, channel=NULL,
                             transform=TRUE, vct.dir=NULL, pop=NULL) {
   file.name.clean <- unlist(lapply(file.name, clean.file.path))
   opp.files <- paste0(file.name.clean, ".opp")
   opp.reader <- function(f) {
-    path <- file.path(opp.dir, f)
+    path <- file.path(opp.dir, quantile, f)
     opp <- readSeaflow(path, channel=channel, transform=transform)
     return(opp)
   }
@@ -466,7 +474,7 @@ get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
   if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
 
   if (! is.null(vct.dir)) {
-   vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f))
+   vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
    vcts.bound <- rbind.fill(vcts)
    opps.bound <- cbind(opps.bound, vcts.bound)
    if (! is.null(pop)) {
@@ -476,18 +484,19 @@ get.opp.by.file <- function(opp.dir, file.name, channel=NULL,
   return(opps.bound)
 }
 
-#' Get data frame of per particle population classifications by file'
+#' Get data frame of per particle population classifications by file and quantile
 #'
 #' @param vct.dir VCT file directory.
 #' @param file.name File name with julian day directory.
+#' @param quantile Filtering quantile for this file
 #' @return Data frame of per particle population classifications.
 #' @examples
 #' \dontrun{
 #' vct <- get.vct.by.file(vct.dir, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-get.vct.by.file <- function(vct.dir, file.name) {
-  vct.file <- paste0(file.path(vct.dir, clean.file.path(file.name)), ".vct")
+get.vct.by.file <- function(vct.dir, file.name, quantile) {
+  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct")
   if (!file.exists(vct.file)) {
     vct.file <- paste0(vct.file, ".gz")
     if (!file.exists(vct.file)) {
@@ -534,6 +543,9 @@ get.sfl.by.date <- function(db, start.date, end.date) {
 get.filter.params.latest <- function(db) {
   sql <- "SELECT * FROM filter ORDER BY date DESC LIMIT 1"
   result <- sql.dbGetQuery(db, sql)
+  if (nrow(result) > 0) {
+    result <- get.filter.params.by.id(db, result[1, "id"])
+  }
   return(result)
 }
 
@@ -548,8 +560,15 @@ get.filter.params.latest <- function(db) {
 #' }
 #' @export
 get.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("SELECT * FROM filter WHERE id = '", filter.id, "'")
+  sql <- paste0("SELECT * FROM filter WHERE id = '", filter.id, "' ORDER BY quantile")
   result <- sql.dbGetQuery(db, sql)
+  # DB column names have underscores due to sqlite column naming restrictions.
+  # To get this dataframe to match filter parameter column names used
+  # elsewhere in this code base and to match R variable naming style
+  # conventions, switch "_" for "." in all column names.
+  names(result) <- unlist(lapply(names(result), function(n) {
+    return(gsub("_", ".", n, fixed=T))
+  }))
   return(result)
 }
 
@@ -615,7 +634,7 @@ get.gating.params.by.id <- function(db, gating.id) {
     }
   }
 
-  answer <- list(gating.id=gating.df[1, "id"], gates.log=gates.log)
+  answer <- list(id=gating.df[1, "id"], gates.log=gates.log)
   return(answer)
 }
 
@@ -876,11 +895,12 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' }
 #' @export
 get.opp.files <- function(db) {
-  filter_id <- get.filter.params.latest(db)$id
-  if (is.null(filter_id)) {
+  filter.id <- get.filter.params.latest(db)$id
+  if (is.null(filter.id)) {
     return(NULL)
   }
-  sql <- paste0("SELECT file from opp WHERE filter_id = '", filter_id, "'")
+  filter.id <- filter.id[1]
+  sql <- paste0("SELECT DISTINCT file from opp WHERE filter_id = '", filter.id, "'")
   files <- sql.dbGetQuery(db, sql)
   print(paste(length(files$file), "opp files found"))
   return(files$file)
@@ -889,15 +909,21 @@ get.opp.files <- function(db) {
 #' Get VCT file names.
 #'
 #' @param db SQLite3 database file path.
-#' @return List of distinct VCT file names.
+#' @return List of distinct VCT file names based on the latest gating
+#'   parameters or NULL if no gating has been done.
 #' @examples
 #' \dontrun{
 #' vct.files <- get.vct.files(db)
 #' }
 #' @export
 get.vct.files <- function(db) {
-  sql <- "SELECT DISTINCT file from vct"
+  gating.id <- get.gating.params.latest(db)$id
+  if (is.null(gating.id)) {
+    return(NULL)
+  }
+  sql <- paste0("SELECT DISTINCT file from vct WHERE gating_id = '", gating.id, "'")
   files <- sql.dbGetQuery(db, sql)
+  print(paste(length(files$file), "vct files found"))
   return(files$file)
 }
 
@@ -908,14 +934,18 @@ get.vct.files <- function(db) {
 #' @param file.name File name with julian day directory.
 #' @param opp OPP data frame with pop column.
 #' @param gating.id ID for entry in gating table.
+#' @param filter.id ID for entry in filter table.
+#' @param quantile Filtering quantile for this file
 #' @return None
 #' @examples
 #' \dontrun{
 #' save.vct.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
-#'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
+#'                "0f3c89d5-b6a9-4959-95a8-dd2af73f82b9", 97.5)
 #' }
 #' @export
-save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
+save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id,
+                           filter.id, quantile) {
   df <- ddply(opp, .(pop), here(summarize),
               cruise=cruise.name, file=clean.file.path(file.name),
               count=length(pop),
@@ -937,10 +967,17 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
               fsc_perp_mean=mean(fsc_perp),
               fsc_perp_min=min(fsc_perp),
               fsc_perp_max=max(fsc_perp),
-              gating_id=gating.id)
-  cols <- c("cruise", "file", "pop", "count", "D1", "D2","fsc_small_mean","fsc_small_min","fsc_small_max",
-            "chl_small_mean", "chl_small_min","chl_small_max", "pe_mean", "pe_min","pe_max",
-            "fsc_perp_mean","fsc_perp_min","fsc_perp_max", "gating_id")
+              gating_id=gating.id,
+              filter_id=filter.id,
+              quantile=quantile)
+  cols <- c("cruise", "file", "pop", "count",
+            "D1_mean", "D1_min", "D1_max",
+            "D2_mean", "D2_min", "D2_max",
+            "fsc_small_mean", "fsc_small_min", "fsc_small_max",
+            "chl_small_mean", "chl_small_min","chl_small_max",
+            "pe_mean", "pe_min", "pe_max",
+            "fsc_perp_mean", "fsc_perp_min", "fsc_perp_max",
+            "gating_id", "filter_id", "quantile")
   df.reorder <- df[cols]
   sql.dbWriteTable(db, name="vct", value=df.reorder)
 }
@@ -952,39 +989,40 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id) {
 #' @param vct List of per particle population classifications.
 #' @param vct.dir Output directory for VCT files.
 #' @param file.name File name with julian day directory.
+#' @param quantile Filtering quantile for this file
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
 #' }
 #' @export
-save.vct.file <- function(vct, vct.dir, file.name) {
-  vct.file <- paste0(file.path(vct.dir, clean.file.path(file.name)), ".vct.gz")
+save.vct.file <- function(vct, vct.dir, file.name, quantile) {
+  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   con <- gzfile(vct.file, "w")
   write.table(vct, con, row.names=F, col.names=F, quote=F)
   close(con)
 }
 
-#' Save OPP aggregate statistics for one file to opp table.
+#' Save OPP aggregate statistics for one file/quantile combo to opp table.
 #'
 #' @param db SQLite3 database file path.
 #' @param cruise.name  Cruise name.
 #' @param file.name File name with julian day directory.
 #' @param evt_count Number of particles in EVT file.
 #' @param opp OPP data frame with pop column.
-#' @param params Named list of filter parameters, including any that were
-#'   auto-calculated for this file.
 #' @param filter.id ID for entry in filter table.
+#' @param quantile Filtering quantile for this file
 #' @return None
 #' @examples
 #' \dontrun{
 #' save.opp.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
-#'                40000, opp, filter.params, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+#'                40000, opp, filter.params,
+#'                "d3afb1ea-ad20-46cf-866d-869300fe17f4", 97.5)
 #' }
 #' @export
-save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp, params,
-                           filter.id) {
+save.opp.stats <- function(db, cruise.name, file.name, all_count,
+                           evt_count, opp, filter.id, quantile) {
   if (nrow(opp) == 0) {
     return
   }
@@ -995,8 +1033,8 @@ save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp
                    opp_count=opp_count,
                    evt_count=evt_count,
                    opp_evt_ratio=opp_count/evt_count,
-                   filter_id=filter.id
-        )
+                   filter_id=filter.id,
+                   quantile=quantile)
   sql.dbWriteTable(db, name="opp", value=df)
 }
 
@@ -1006,15 +1044,16 @@ save.opp.stats <- function(db, cruise.name, file.name, all_count, evt_count, opp
 #' @param opp.dir Output directory. Julian day sub-directories will be
 #'   automatically created.
 #' @param file.name File name with julian day directory.
+#' @param quantile Filtering quantile for this file
 #' @param untransform Convert linear data to log.
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
 #' }
 #' @export
-save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE) {
-  opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
+save.opp.file <- function(opp, opp.dir, file.name, quantile, untransform=FALSE) {
+  opp.file <- paste0(file.path(opp.dir, quantile, clean.file.path(file.name)), ".opp.gz")
   dir.create(dirname(opp.file), showWarnings=F, recursive=T)
   writeSeaflow(opp, opp.file, untransform=untransform)
 }
@@ -1035,33 +1074,50 @@ save.outliers <- function(db, cruise.name, table.name) {
   sql.dbWriteTable(db, name="outlier", value=df)
 }
 
-
-
-
-
 #' Save filter parameters to the filter table.
 #'
 #' @param db SQLite3 database file path.
-#' @param params Named list of filter parameters. Defaults to
-#'   list(width=0.5, notch1=NA, notch2=NA, offset=0, origin=NA).
-#' @return None
+#' @param beads.fsc.small Small forward scatter of 1µm beads used to determine
+#'   filter.params
+#' @param beads.D1 D1 of 1µm beads used to determine filter.params
+#' @param beads.D1 D2 of 1µm beads used to determine filter.params
+#' @param filter.params Data frame of filtering parameters returned from
+#'   create.filter.params(), one row per quantile. Columns should include:
+#'   serial, quantile, beads.fsc.small, beads.D1, beads.D2, width,
+#'   notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+#'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.
+#' @return Database filter ID string.
 #' @examples
 #' \dontrun{
-#' save.filter.params(db)
-#' save.fitter.params(db, list(notch1=.75, notch2=.5, offset=100, origin=NA, width=1.0))
+#' filter.id <- save.fitter.params(db, 1000, 2000, 3000, filter.params)
 #' }
 #' @export
-save.filter.params <- function(db, params=NULL) {
-  if (is.null(params)) {
-    # Default filter parameters
-    params <- list(notch1=NA, notch2=NA, offset=0, origin=NA, width=1.0)
-  }
-  filter.id <- UUIDgenerate()  # create primary ID for new entry
+save.filter.params <- function(db, filter.params) {
+  filter.id <- UUIDgenerate()  # create ID for new entries
   date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")
-  df <- data.frame(id=filter.id, date=date.stamp, notch1=params$notch1,
-                   notch2=params$notch2, offset=params$offset,
-                   origin=params$origin, width=params$width)
+  df <- data.frame()
+  for (quantile in filter.params$quantile) {
+    p <- filter.params[filter.params$quantile == quantile, ]
+    if (nrow(p) > 1) {
+      stop("Duplicate quantile rows found in parameters passed to save.filter.params()")
+    }
+    df <- rbind(df, cbind(id=filter.id, date=date.stamp, quantile=quantile,
+                          serial=p$serial,
+                          beads_fsc_small=p$beads.fsc.small,
+                          beads_D1=p$beads.D1,
+                          beads_D2=p$beads.D2,
+                          width=p$width,
+                          notch_small_D1=p$notch.small.D1,
+                          notch_small_D2=p$notch.small.D2,
+                          notch_large_D1=p$notch.large.D1,
+                          notch_large_D2=p$notch.large.D2,
+                          offset_small_D1=p$offset.small.D1,
+                          offset_small_D2=p$offset.small.D2,
+                          offset_large_D1=p$offset.large.D1,
+                          offset_large_D2=p$offset.large.D2))
+  }
   sql.dbWriteTable(db, name="filter", value=df)
+  return(filter.id)
 }
 
 #' Save gating parameters.

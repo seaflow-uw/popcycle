@@ -57,7 +57,7 @@ untransformData <- function(df) {
 #' @param count.only Only return the count of particles from the file header.
 #' @param transform Convert log data to linear.
 #' @param channel Only return data for channels listed here. Can be a single
-#'   channel name or a vector or channel names.
+#'   channel name or a vector of channel names.
 #' @return Data frame of particle data or number of particles.
 #' @examples
 #' \dontrun{

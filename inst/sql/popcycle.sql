@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS opp (
     evt_count INTEGER NOT NULL,
     opp_evt_ratio REAL NOT NULL,
     filter_id TEXT NOT NULL,
-    PRIMARY KEY (cruise, file, filter_id)
+    quantile REAL NOT NULL,
+    PRIMARY KEY (cruise, file, filter_id, quantile)
 );
 
 CREATE INDEX IF NOT EXISTS oppFileIndex ON opp (file);
@@ -35,7 +36,9 @@ CREATE TABLE IF NOT EXISTS vct (
     fsc_perp_min REAL NOT NULL,
     fsc_perp_max REAL NOT NULL,
     gating_id TEXT NOT NULL,
-    PRIMARY KEY (cruise, file, pop, gating_id)
+    filter_id TEXT NOT NULL,
+    quantile REAL NOT NULL,
+    PRIMARY KEY (cruise, file, pop, quantile)
 );
 
 CREATE INDEX IF NOT EXISTS vctFileIndex ON vct (file);
@@ -64,16 +67,21 @@ CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date);
 CREATE TABLE IF NOT EXISTS filter (
   id TEXT NOT NULL,
   date TEXT NOT NULL,
+  quantile REAL NOT NULL,
+  serial TEXT NOT NULL,
+  beads_fsc_small REAL NOT NULL,
+  beads_D1 REAL NOT NULL,
+  beads_D2 REAL NOT NULL,
   width REAL NOT NULL,
-  notch_small_D1 REAL,
-  notch_small_D2 REAL,
-  notch_large_D1 REAL,
-  notch_large_D2 REAL,
-  offset_small_D1 REAL,
-  offset_small_D2 REAL,
-  offset_large_D1 REAL,
-  offset_large_D2 REAL,
-  PRIMARY KEY (id)
+  notch_small_D1 REAL NOT NULL,
+  notch_small_D2 REAL NOT NULL,
+  notch_large_D1 REAL NOT NULL,
+  notch_large_D2 REAL NOT NULL,
+  offset_small_D1 REAL NOT NULL,
+  offset_small_D2 REAL NOT NULL,
+  offset_large_D1 REAL NOT NULL,
+  offset_large_D2 REAL NOT NULL,
+  PRIMARY KEY (id, quantile)
 );
 
 CREATE TABLE IF NOT EXISTS gating (

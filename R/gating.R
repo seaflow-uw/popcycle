@@ -282,27 +282,37 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
     stop('No gate paramters yet; no gating.')
   }
 
+  # Always assume the latest filter parameters are the ones used to generate
+  # the current OPP data
+  filter.id <- get.filter.params.latest(db)$id
+  if (is.null(filter.id)) {
+    stop("No entries DB filter entries")
+  }
+
   i <- 0
   errors <- list()
   for (opp.file in opp.files) {
     message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
 
-    tryCatch({
-      #print(paste('Loading', opp.file))
-      opp <- get.opp.by.file(opp.dir, opp.file,
-                             channel=c("fsc_small", "fsc_perp", "pe", "chl_small"))
-      #print(paste('Classifying', opp.file))
-      opp <- classify.opp(opp, gating.params$gates.log)
+    # delete old vct entries if they exist so we keep cruise/file/particle distinct
+    # There should only be one vct entry in the db for each population/file
+    # combination.
+    delete.vct.stats.by.file(db, opp.file)
+    delete.vct.by.file(vct.dir, opp.file)
 
-      # delete old vct entries if they exist so we keep cruise/file/particle distinct
-      # There should only be one vct entry in the db for each population/file
-      # combination.
-      delete.vct.stats.by.file(db, opp.file)
-      delete.vct.by.file(vct.dir, opp.file)
-      # store vct
-      #print('Uploading labels to the database')
-      save.vct.stats(db, cruise.name, opp.file, opp, gating.params$gating.id)
-      save.vct.file(opp$pop, vct.dir, opp.file)
+    tryCatch({
+      for (quantile in QUANTILES) {
+        #print(paste('Loading', opp.file))
+        opp <- get.opp.by.file(opp.dir, opp.file, quantile)
+        #print(paste('Classifying', opp.file))
+        opp <- classify.opp(opp, gating.params$gates.log)
+
+        # store vct
+        #print('Uploading labels to the database')
+        save.vct.stats(db, cruise.name, opp.file, opp, gating.params$id,
+                       filter.id, quantile)
+        save.vct.file(opp$pop, vct.dir, opp.file, quantile)
+      }
     }, error = function(e) {
       cat(paste0("Error with file ", opp.file, ": ", e))
     })
