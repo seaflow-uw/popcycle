@@ -5,47 +5,77 @@ context("EVT filtering")
 test_that("Filter EVT files", {
   x <- setUp()
 
-  evt.files <- get.evt.files(x$evt.input.dir)
-  save.filter.params(x$db)
   save.sfl(x$db, x$cruise, x$evt.input.dir)
+
+  inflection <- data.frame(fsc=c(33759), d1=c(19543), d2=c(19440))
+  filter.params <- create.filter.params(740, inflection$fsc, inflection$d1, inflection$d2)
+
+  filter.id <- save.filter.params(x$db, filter.params)
+
+  evt.files <- get.evt.files(x$evt.input.dir)
+
   expect_warning(filter.evt.files(x$db, x$cruise, x$evt.input.dir, evt.files, x$opp.dir))
   filter.params <- get.filter.params.latest(x$db)
   opp.stats <- get.opp.table(x$db)
 
-  # seaflowpy code answers for opp table, columns = opp_evt_ratio to chl_big_mean
-  # which are the double type columns
-  row1.str <- "0.00991785213384091,0.885080147965475,0.876434676434676,0.0,-1808.0,1.0,1.16129192513726,1166.19845288663,27.8747912697262,58.3402549599659,58.6423498778769,58.4343242286785,1.42497942517562,3.62107808977048,2.21015996021373,1.0,1318.31139316244,110.169253465082,1.30857434291842,1540.00768539102,28.3315681040607,53.3575327661354,53.64042220069,53.4696464151013"
-  row2.str <- "0.0104696305572949,1.07058823529412,1.0,0.0,-1760.0,1.0,1.0158648592744,3156.0618662238,33.894835202603,58.3402549599659,58.6856338037586,58.4411841063085,1.42497942517562,4.38251723606804,2.19345733764844,1.0,3156.0618662238,150.851237328772,1.4399522258756,1808.52375977708,32.0042709892765,53.3969159678368,53.6734135072643,53.4724400528629"
-  row1.answer <- unlist(lapply(unlist(strsplit(row1.str, ",")), as.double))
-  row2.answer <- unlist(lapply(unlist(strsplit(row2.str, ",")), as.double))
+  expect_equal(nrow(opp.stats), 6)  # 2 files, 3 quantiles each
 
-  expect_equal(opp.stats[1, "filter_id"], filter.params$id)
-  expect_equal(opp.stats[2, "filter_id"], filter.params$id)
-  expect_equal(opp.stats[1, "file"], "2014_185/2014-07-04T00-00-02+00-00")
-  expect_equal(opp.stats[2, "file"], "2014_185/2014-07-04T00-03-02+00-00")
-  expect_equal(opp.stats[1, "opp_count"], 396)
-  expect_equal(opp.stats[2, "opp_count"], 418)
-  expect_equal(opp.stats[1, "all_count"], 40000)
-  expect_equal(opp.stats[2, "all_count"], 40000)
-  expect_equal(opp.stats[1, "evt_count"], 39928)
-  expect_equal(opp.stats[2, "evt_count"], 39925)
+  # Sort by file then quantile
+  opp.stats <- opp.stats[order(opp.stats$file, opp.stats$quantile), ]
 
-  opp.stats.row1 <- unlist(opp.stats[1, 8:ncol(opp.stats)-1])
-  opp.stats.row2 <- unlist(opp.stats[2, 8:ncol(opp.stats)-1])
-  names(opp.stats.row1) <- NULL
-  names(opp.stats.row2) <- NULL
-  expect_equal(opp.stats.row1, row1.answer)
-  expect_equal(opp.stats.row2, row2.answer)
+  expect_equal(opp.stats[, "filter_id"], rep(filter.id, 6))
+  expect_equal(unique(opp.stats[, "file"]), c("2014_185/2014-07-04T00-00-02+00-00",
+                                              "2014_185/2014-07-04T00-03-02+00-00"))
+  expect_equal(unique(opp.stats[, "cruise"]), c("testcruise"))
+  expect_equal(unique(opp.stats[, "all_count"]), 40000)
+  expect_equal(unique(opp.stats[, "evt_count"]), c(39928, 39925))
+  expect_equal(opp.stats[, "opp_count"], c(423, 107, 86, 492, 182, 147))
+  expect_equal(opp.stats[, "opp_evt_ratio"], c(0.010594069, 0.002679824, 0.002153877, 0.012323106, 0.004558547, 0.003681904))
+  expect_equal(opp.stats[, "quantile"], c(2.5, 50, 97.5, 2.5, 50, 97.5))
 
   # Make sure written OPP files have the same number of particles as those
   # recorded in database opp table
   opp.files <- get.opp.files(x$db)
   i <- 1
   for (opp.file in opp.files) {
-    opp <- get.opp.by.file(x$opp.dir, opp.file)
-    expect_equal(opp.stats[i, "opp_count"], nrow(opp))
-    i <- i + 1
+    for (q in c(2.5, 50, 97.5)) {
+      opp <- get.opp.by.file(x$opp.dir, opp.file, q)
+      expect_equal(opp.stats[opp.stats$file == opp.file & opp.stats$quantile == q, "opp_count"], nrow(opp))
+    }
   }
+
+  tearDown(x)
+})
+
+test_that("Create filter parameters", {
+  x <- setUp()
+
+  inflection <- data.frame(fsc=c(33759), d1=c(19543), d2=c(19440))
+  filter.params <- create.filter.params(740, inflection$fsc, inflection$d1, inflection$d2)
+
+  headers <- c("quantile", "serial", "beads.fsc.small", "beads.D1",
+               "beads.D2", "width", "notch.small.D1", "notch.small.D2",
+               "notch.large.D1", "notch.large.D2", "offset.small.D1",
+               "offset.small.D2", "offset.large.D1", "offset.large.D2")
+  a <- data.frame(matrix(ncol = 14, nrow = 0))
+  names(a) <- headers
+
+  b <- data.frame(2.5, 740, inflection$fsc, inflection$d1, inflection$d2,
+                  2500, 0.614, 0.651, 1.183, 1.208, 1418, 1080, -17791, -17724)
+  names(b) <- headers
+  a <- rbind(a, b)
+
+  b <- data.frame(50.0, 740, inflection$fsc, inflection$d1, inflection$d2,
+                  2500, 0.656, 0.683, 1.635, 1.632, 0, 0, -33050, -32038)
+  names(b) <- headers
+  a <- rbind(a, b)
+
+  b <- data.frame(97.5, 740, inflection$fsc, inflection$d1, inflection$d2,
+                  2500, 0.698, 0.714, 2.087, 2.056, -1418, -1047, -48309, -46352)
+  names(b) <- headers
+  a <- rbind(a, b)
+
+  expect_equal(filter.params, a)
 
   tearDown(x)
 })

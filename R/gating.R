@@ -310,7 +310,7 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
         # store vct
         #print('Uploading labels to the database')
         save.vct.stats(db, cruise.name, opp.file, opp, gating.params$id,
-                       filter.id, quantile)
+                       filter.id[1], quantile)
         save.vct.file(opp$pop, vct.dir, opp.file, quantile)
       }
     }, error = function(e) {

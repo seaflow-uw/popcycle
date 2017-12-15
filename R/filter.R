@@ -85,6 +85,12 @@ create.filter.params <- function(inst, fsc, d1, d2) {
   correction.D2 <- round(beads.D2 - notch.small.D2ref * beads.fsc.small)
 
   filter.params <- data.frame()
+  headers <- c("quantile", "serial", "beads.fsc.small",
+               "beads.D1", "beads.D2", "width",
+               "notch.small.D1", "notch.small.D2",
+               "notch.large.D1", "notch.large.D2",
+               "offset.small.D1", "offset.small.D2",
+               "offset.large.D1", "offset.large.D2")
 
   for (quantile in QUANTILES) {
     if (quantile == 2.5) {
@@ -108,12 +114,15 @@ create.filter.params <- function(inst, fsc, d1, d2) {
     offset.large.D1 <- round(beads.D1 - notch.large.D1 * beads.fsc.small - correction.D1)
     offset.large.D2 <- round(beads.D2 - notch.large.D2 * beads.fsc.small - correction.D2)
 
-    filter.params <- rbind(filter.params, cbind(serial, quantile, beads.fsc.small,
-                                                beads.D1, beads.D2, width,
-                                                notch.small.D1, notch.small.D2,
-                                                notch.large.D1, notch.large.D2,
-                                                offset.small.D1, offset.small.D2,
-                                                offset.large.D1, offset.large.D2))
+    newrow <- data.frame(quantile, serial, beads.fsc.small,
+                         beads.D1, beads.D2, width,
+                         notch.small.D1, notch.small.D2,
+                         notch.large.D1, notch.large.D2,
+                         offset.small.D1, offset.small.D2,
+                         offset.large.D1, offset.large.D2,
+                         stringsAsFactors=FALSE)
+    names(newrow) <- headers
+    filter.params <- rbind(filter.params, newrow)
   }
 
   return(filter.params)
