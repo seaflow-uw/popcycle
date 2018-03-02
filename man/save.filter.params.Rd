@@ -4,24 +4,32 @@
 \alias{save.filter.params}
 \title{Save filter parameters to the filter table.}
 \usage{
-save.filter.params(db, params = NULL)
+save.filter.params(db, filter.params)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
 
-\item{params}{Named list of filter parameters. Defaults to
-list(width=0.5, notch1=NA, notch2=NA, offset=0, origin=NA).}
+\item{filter.params}{Data frame of filtering parameters returned from
+create.filter.params(), one row per quantile. Columns should include:
+serial, quantile, beads.fsc.small, beads.D1, beads.D2, width,
+notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.}
+
+\item{beads.fsc.small}{Small forward scatter of 1µm beads used to determine
+filter.params}
+
+\item{beads.D1}{D1 of 1µm beads used to determine filter.params}
+
+\item{beads.D1}{D2 of 1µm beads used to determine filter.params}
 }
 \value{
-None
+Database filter ID string.
 }
 \description{
 Save filter parameters to the filter table.
 }
 \examples{
 \dontrun{
-save.filter.params(db)
-save.fitter.params(db, list(notch1=.75, notch2=.5, offset=100, origin=NA, width=1.0))
+filter.id <- save.fitter.params(db, 1000, 2000, 3000, filter.params)
 }
 }
-

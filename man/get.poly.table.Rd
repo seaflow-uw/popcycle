@@ -20,4 +20,3 @@ Return a data frame for the poly table.
 poly.table <- get.poly.table(db)
 }
 }
-

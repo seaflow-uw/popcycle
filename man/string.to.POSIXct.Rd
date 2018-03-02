@@ -20,4 +20,3 @@ Returns a POSIXct object for a human readable date string.
 date.ct <- string.to.POSIXct("2014-01-24 13:03")
 }
 }
-

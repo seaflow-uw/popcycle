@@ -23,4 +23,3 @@ manual gating polygon coordinates in the poly table.
 save.gating.params(db, gates.log)
 }
 }
-

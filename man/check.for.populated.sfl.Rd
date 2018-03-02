@@ -20,4 +20,3 @@ Check if SFL table is populated.
 check.for.populated.sfl(db)
 }
 }
-

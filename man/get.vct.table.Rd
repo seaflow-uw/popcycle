@@ -20,4 +20,3 @@ Return a data frame for the vct table.
 vct.table <- get.vct.table(db)
 }
 }
-

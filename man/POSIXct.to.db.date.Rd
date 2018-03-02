@@ -20,4 +20,3 @@ Convert a POSIXct date objectformat suitable for popcycle db date comparison.
 db.date <- POSIXct.to.db.date(date.ct)
 }
 }
-

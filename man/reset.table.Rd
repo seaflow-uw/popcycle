@@ -22,4 +22,3 @@ Delete all rows in an arbitrary SQLite3 DB table.
 reset.table(db, "opp")
 }
 }
-

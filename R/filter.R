@@ -1,36 +1,9 @@
 #' Plot helpful cytograms for estimating the D1, D2 and FSC coordinates of the inflection point (corresponds to location of 1µm beads).
 #'
-#' @param evt.list EVT list.
-#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.
+#' @param dataframe containing EVT data.
 #' @return D1, D2 and fsc values of presumed 1 µm beads
 #' @export
-inflection.point <- function(evt.list){
-
-  width <- 2500
-  i <- 0
-  DF <- NULL
-    for (file in evt.list){
-      message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
-
-      tryCatch({
-
-        evt <- readSeaflow(file,transform=F)
-        # Fltering aligned particles (D1 = D2)
-        aligned <- subset(evt, D2 < D1 + width & D1 < D2 + width)
-        # exclude region of tiny particles
-        df <- subset(aligned, fsc_small > 10000 & pe > 20000)
-          df <- df[round(seq(1,nrow(df), length.out=round(50000/length(evt.list)))),]
-          if(any(is.na(df))) next
-
-          DF <- rbind(DF, df)
-
-          }, error = function(e) {
-            cat(paste0("Error with file ", file, ": ", e))
-        })
-
-        i <- i + 1
-        flush.console()
-        }
+inflection.point <- function(DF){
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
   par(mfrow=c(1,3),pty='s')

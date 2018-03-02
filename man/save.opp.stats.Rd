@@ -2,10 +2,10 @@
 % Please edit documentation in R/db.R
 \name{save.opp.stats}
 \alias{save.opp.stats}
-\title{Save OPP aggregate statistics for one file to opp table.}
+\title{Save OPP aggregate statistics for one file/quantile combo to opp table.}
 \usage{
-save.opp.stats(db, cruise.name, file.name, all_count, evt_count, opp, params,
-  filter.id)
+save.opp.stats(db, cruise.name, file.name, all_count, evt_count, opp, filter.id,
+  quantile)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -18,21 +18,20 @@ save.opp.stats(db, cruise.name, file.name, all_count, evt_count, opp, params,
 
 \item{opp}{OPP data frame with pop column.}
 
-\item{params}{Named list of filter parameters, including any that were
-auto-calculated for this file.}
-
 \item{filter.id}{ID for entry in filter table.}
+
+\item{quantile}{Filtering quantile for this file}
 }
 \value{
 None
 }
 \description{
-Save OPP aggregate statistics for one file to opp table.
+Save OPP aggregate statistics for one file/quantile combo to opp table.
 }
 \examples{
 \dontrun{
 save.opp.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
-               40000, opp, filter.params, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+               40000, opp, filter.params,
+               "d3afb1ea-ad20-46cf-866d-869300fe17f4", 97.5)
 }
 }
-

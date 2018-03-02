@@ -12,4 +12,3 @@ None
 \description{
 Plot cell abundances of a population on a map.
 }
-

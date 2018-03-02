@@ -25,4 +25,3 @@ Requires a populated sfl table.
 vct.stats <- get.vct.stats.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
 }
 }
-

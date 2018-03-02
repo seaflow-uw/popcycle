@@ -33,4 +33,3 @@ gates.log <- add.manual.classification(opp, "prochloro", "fsc_small", "chl_small
                                        gates.log)
 }
 }
-

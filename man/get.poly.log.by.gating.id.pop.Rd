@@ -21,7 +21,6 @@ Construct a gating polygon list for gating.id pop combo
 }
 \examples{
 \dontrun{
-poly.log <- get.poly.log.by.gating.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
+poly.log <- get.poly.log.by.gating.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4", "beads")
 }
 }
-

@@ -20,4 +20,3 @@ Delete all rows in opp table.
 reset.opp.stats.table(db)
 }
 }
-

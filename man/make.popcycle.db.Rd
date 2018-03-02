@@ -20,4 +20,3 @@ If a database already exists missing tables and indexes will be added.
 make.popcycle.db(db)
 }
 }
-

@@ -20,4 +20,3 @@ Delete all rows in vct table.
 reset.vct.stats.table(db)
 }
 }
-

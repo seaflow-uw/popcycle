@@ -29,4 +29,3 @@ sql <- sfl_date_where_class(sql, "2014-07-04 00:00", "2014-07-04 00:10",
                             append=T)
 }
 }
-

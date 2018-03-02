@@ -21,4 +21,3 @@ None
 \description{
 Plot cytogram with particles colored by population.
 }
-

@@ -2,15 +2,17 @@
 % Please edit documentation in R/db.R
 \name{get.opp.by.date}
 \alias{get.opp.by.date}
-\title{Get OPP data frame by date.}
+\title{Get OPP data frame by date and quantile}
 \usage{
-get.opp.by.date(db, opp.dir, start.date, end.date, channel = NULL,
+get.opp.by.date(db, opp.dir, quantile, start.date, end.date, channel = NULL,
   transform = TRUE, vct.dir = NULL, pop = NULL)
 }
 \arguments{
 \item{db}{SQLite3 data file path.}
 
 \item{opp.dir}{OPP file directory.}
+
+\item{quantile}{Filtering quantile for this file}
 
 \item{start.date}{Start date in format YYYY-MM-DD HH:MM.}
 
@@ -42,4 +44,3 @@ opp <- get.opp.by.date(db, opp.dir, "2014-07-04 00:00", "2014-07-04 00:10",
                        transform=F, vct.dir=vct.dir)
 }
 }
-

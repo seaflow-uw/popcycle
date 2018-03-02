@@ -22,4 +22,3 @@ Requires a populated sfl table.
 opp.stats <- get.opp.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
-

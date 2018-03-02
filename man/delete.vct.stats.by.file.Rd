@@ -22,4 +22,3 @@ Delete an entry in the vct table by file name.
 delete.vct.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
-

@@ -20,4 +20,4 @@ Suggests:
 SystemRequirements: python 2.7 with dateutil
 License: GPL-2
 URL: http://seaflow.ocean.washington.edu
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

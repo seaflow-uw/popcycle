@@ -4,7 +4,7 @@
 \alias{get.stat.table}
 \title{Get aggregate statistics data frame joining sfl, opp, and vct table entries.}
 \usage{
-get.stat.table(db)
+get.stat.table(db, flag = FALSE)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -20,4 +20,3 @@ Get aggregate statistics data frame joining sfl, opp, and vct table entries.
 stat.table <- get.stat.table(db)
 }
 }
-

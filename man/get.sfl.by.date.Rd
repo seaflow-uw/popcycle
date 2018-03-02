@@ -25,4 +25,3 @@ Get SFL rows >= start.date and <= end.date.
 sfl <- get.sfl.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
 }
 }
-

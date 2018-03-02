@@ -20,4 +20,3 @@ Get the latest filter parameters.
 filter.params <- get.filter.params.latest(db)
 }
 }
-

@@ -24,4 +24,3 @@ These entries will be linked to an entry in the gating table by gating.id.
 save.poly(db, poly.log, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }
-

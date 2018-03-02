@@ -35,4 +35,3 @@ save.sfl(db, "testcruise", evt.dir=evt.dir)
 save.sfl(db, "testcruise", sfl.file=sfl.file)
 }
 }
-

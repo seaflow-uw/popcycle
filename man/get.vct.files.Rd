@@ -10,7 +10,8 @@ get.vct.files(db)
 \item{db}{SQLite3 database file path.}
 }
 \value{
-List of distinct VCT file names.
+List of distinct VCT file names based on the latest gating
+  parameters or NULL if no gating has been done.
 }
 \description{
 Get VCT file names.
@@ -20,4 +21,3 @@ Get VCT file names.
 vct.files <- get.vct.files(db)
 }
 }
-

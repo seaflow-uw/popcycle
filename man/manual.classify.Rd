@@ -23,4 +23,3 @@ Classify particles based on manually defined population gates.
 vct <- manual.classify(opp, gates.log, "beads")
 }
 }
-

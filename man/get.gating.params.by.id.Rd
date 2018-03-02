@@ -12,8 +12,9 @@ get.gating.params.by.id(db, gating.id)
 \item{gating.id}{ID in gating table and poly table.}
 }
 \value{
-Named list where list$row is gating entry in gating table and
-  list$poly.log is list of polygon coordinates for each population.
+Named list where list$gates.log a recreation of original gating
+  created by add.manual.classification(), add.auto.classification(), and
+  save.gating.params()
 }
 \description{
 Get gating parameters by ID.
@@ -23,4 +24,3 @@ Get gating parameters by ID.
 gating.params <- get.gating.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }
-

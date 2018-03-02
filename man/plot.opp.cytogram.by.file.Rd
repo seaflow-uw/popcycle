@@ -24,4 +24,3 @@ None
 \description{
 Plot cytogram for one OPP file.
 }
-

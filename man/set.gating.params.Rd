@@ -33,4 +33,3 @@ poly.log <- set.gating.params(opp, "prochloro", "fsc_small", "chl_small",
                               poly.log)
 }
 }
-

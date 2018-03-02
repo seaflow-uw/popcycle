@@ -17,8 +17,7 @@ Convert an EVT/OPP/VCT file path to a form suitable for storage in the SQLite
 db. Any ".gz", ".opp", ".vct" extensions will be removed.
 }
 \examples{
-\\donrun{
+\dontrun{
 fpath <- clean.file.path("foo/2014_185/2014-07-04T00-00-02+00-00.opp.gz")
 }
 }
-

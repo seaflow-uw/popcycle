@@ -4,7 +4,7 @@
 \alias{save.vct.file}
 \title{Save VCT per particle population classification.}
 \usage{
-save.vct.file(vct, vct.dir, file.name)
+save.vct.file(vct, vct.dir, file.name, quantile)
 }
 \arguments{
 \item{vct}{List of per particle population classifications.}
@@ -12,6 +12,8 @@ save.vct.file(vct, vct.dir, file.name)
 \item{vct.dir}{Output directory for VCT files.}
 
 \item{file.name}{File name with julian day directory.}
+
+\item{quantile}{Filtering quantile for this file}
 }
 \value{
 None
@@ -21,7 +23,6 @@ File will be saved to vct.dir as a gzipped text file, one line per particle.
 }
 \examples{
 \dontrun{
-save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00")
+save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
 }
 }
-

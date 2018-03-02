@@ -4,14 +4,15 @@
 \alias{plot.filter.cytogram}
 \title{Plot helpful cytograms for exploring filtering parameters.}
 \usage{
-plot.filter.cytogram(evt, origin = NA, width = 1, notch1 = NA,
-  notch2 = NA, offset = 0)
+plot.filter.cytogram(evt, filter.params)
 }
 \arguments{
 \item{evt}{EVT data frame.}
 
-\item{origin, width, notch1, notch2, offset}{Filtering parameters. origin,
-notch1, and notch2 will be calculated if NA.}
+\item{filter.params}{Filtering parameters in a one row data frame or named
+list. Columns should include width, notch.small.D1, notch.small.D2,
+notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
+offset.large.D1, offset.large.D2.}
 }
 \value{
 None
@@ -19,4 +20,3 @@ None
 \description{
 Plot helpful cytograms for exploring filtering parameters.
 }
-

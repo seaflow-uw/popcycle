@@ -22,4 +22,3 @@ Get names for EVT files which produced no OPP data.
 empty.evt.files <- get.empty.evt.files(db, evt.files)
 }
 }
-

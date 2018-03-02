@@ -24,4 +24,3 @@ None
 \description{
 Plot cytogram with gates for one file.
 }
-

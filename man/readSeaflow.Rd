@@ -15,7 +15,7 @@ file ending with ".gz" will also be checked.}
 \item{transform}{Convert log data to linear.}
 
 \item{channel}{Only return data for channels listed here. Can be a single
-channel name or a vector or channel names.}
+channel name or a vector of channel names.}
 }
 \value{
 Data frame of particle data or number of particles.
@@ -28,4 +28,3 @@ Read a SeaFlow LabView binary particle data file. This file may be gzipped.
 evt <- readSeaflow("foo/2014_213/2014-07-04T00-00-02+00-00.gz", channel=c("fsc_small", "pe"))
 }
 }
-

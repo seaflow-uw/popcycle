@@ -20,4 +20,3 @@ Delete all rows in gating table.
 reset.gating.table(db)
 }
 }
-

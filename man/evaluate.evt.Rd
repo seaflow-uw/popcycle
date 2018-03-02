@@ -31,4 +31,3 @@ evaluate.evt(db, "testcruise", evt.dir, opp.dir, vct.dir,
              "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
-

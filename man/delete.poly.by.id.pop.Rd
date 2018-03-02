@@ -11,7 +11,7 @@ delete.poly.by.id.pop(db, gating.id, popname)
 
 \item{gating.id}{gating_id for poly entries.}
 
-\item{population}{name}
+\item{popname}{Population name}
 }
 \value{
 None
@@ -24,4 +24,3 @@ Note: This is usually done via delete.gating.params.by.id.
 delete.poly.by.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4", "beads")
 }
 }
-

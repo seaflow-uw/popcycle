@@ -41,4 +41,3 @@ gates.log <- add.auto.classification("prochloro", "fsc_small", "chl_small",
                                      c(FALSE,TRUE), c(2.0,NA), 0.975, gates.log)
 }
 }
-

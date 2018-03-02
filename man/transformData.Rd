@@ -22,4 +22,3 @@ This function will exponentiate this data to a linear scale between 1 and
 evt <- transformData(evt)
 }
 }
-

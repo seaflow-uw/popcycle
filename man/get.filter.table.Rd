@@ -20,4 +20,3 @@ Return a data frame for the filter table.
 filter.table <- get.filter.table(db)
 }
 }
-

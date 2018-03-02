@@ -5,8 +5,10 @@
 \title{Filter a directory of EVT files using seaflowpy_filter}
 \usage{
 seaflowpy_filter(db, cruise.name, evt.dir, opp.dir, process.count = 1,
-  twopass = FALSE, limit = NULL, resolution = NULL, origin = NULL,
-  width = NULL, notch1 = NULL, notch2 = NULL, offset = NULL)
+  twopass = FALSE, limit = NULL, resolution = NULL, width = NULL,
+  notch.small.D1 = NULL, notch.small.D2 = NULL, notch.large.D1 = NULL,
+  notch.large.D2 = NULL, offset.small.D1 = NULL, offset.small.D2 = NULL,
+  offset.large.D1 = NULL, offset.large.D2 = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -23,7 +25,7 @@ seaflowpy_filter(db, cruise.name, evt.dir, opp.dir, process.count = 1,
 
 \item{resolution}{Progress update resolution in \%.}
 
-\item{origin, width, notch1, notch2, offset}{Filter parameters.}
+\item{width, notch.small.D1, }{notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filter parameters.}
 }
 \value{
 None
@@ -37,4 +39,3 @@ SQLite3 database and save particle data to binary files in opp.dir.
 seaflowpy_filter("testcruise.db", "testcruise", "./testcruise", "./testcruise_opp")
 }
 }
-

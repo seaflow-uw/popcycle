@@ -20,4 +20,3 @@ Convert a date string to format suitable for popcycle db date comparison.
 db.date <- date.to.db.date("2014-01-24 13:03")
 }
 }
-

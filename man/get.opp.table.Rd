@@ -20,4 +20,3 @@ Return a data frame for the opp table.
 opp.table <- get.opp.table(db)
 }
 }
-

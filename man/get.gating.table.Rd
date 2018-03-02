@@ -20,4 +20,3 @@ Return a data frame for the gating table.
 gating.table <- get.gating.table(db)
 }
 }
-

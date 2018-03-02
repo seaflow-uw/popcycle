@@ -2,24 +2,25 @@
 % Please edit documentation in R/db.R
 \name{get.vct.by.file}
 \alias{get.vct.by.file}
-\title{Get data frame of per particle population classifications by file'}
+\title{Get data frame of per particle population classifications by file and quantile}
 \usage{
-get.vct.by.file(vct.dir, file.name)
+get.vct.by.file(vct.dir, file.name, quantile)
 }
 \arguments{
 \item{vct.dir}{VCT file directory.}
 
 \item{file.name}{File name with julian day directory.}
+
+\item{quantile}{Filtering quantile for this file}
 }
 \value{
 Data frame of per particle population classifications.
 }
 \description{
-Get data frame of per particle population classifications by file'
+Get data frame of per particle population classifications by file and quantile
 }
 \examples{
 \dontrun{
 vct <- get.vct.by.file(vct.dir, "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
-

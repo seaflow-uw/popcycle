@@ -20,4 +20,3 @@ Remove entries for all tables except in filter, gating, and poly tables.
 reset.db.except.params(db)
 }
 }
-

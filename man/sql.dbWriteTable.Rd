@@ -21,4 +21,3 @@ Wrapper to run dbWriteTable and clean up connection on error.
 sql.dbWriteTable(db, name="vct", value=df)
 }
 }
-

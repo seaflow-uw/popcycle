@@ -35,4 +35,3 @@ filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir,
                  "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }
-

@@ -20,4 +20,3 @@ Delete all rows in poly table.
 reset.poly.table(db)
 }
 }
-

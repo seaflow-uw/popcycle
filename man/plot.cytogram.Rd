@@ -21,4 +21,3 @@ None
 \description{
 Plot EVT or OPP cytogram.
 }
-

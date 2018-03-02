@@ -22,4 +22,3 @@ Note: This is usually done via delete.gating.params.by.id.
 delete.poly.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }
-

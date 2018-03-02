@@ -20,4 +20,3 @@ Return a data frame for the sfl table.
 sfl.table <- get.sfl.table(db)
 }
 }
-

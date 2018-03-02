@@ -2,16 +2,18 @@
 % Please edit documentation in R/db.R
 \name{get.opp.by.file}
 \alias{get.opp.by.file}
-\title{Get OPP data frame by file.}
+\title{Get OPP data frame by file and quantile.}
 \usage{
-get.opp.by.file(opp.dir, file.name, channel = NULL, transform = TRUE,
-  vct.dir = NULL, pop = NULL)
+get.opp.by.file(opp.dir, file.name, quantile, channel = NULL,
+  transform = TRUE, vct.dir = NULL, pop = NULL)
 }
 \arguments{
 \item{opp.dir}{OPP file directory.}
 
 \item{file.name}{File name with julian day directory. Can be a single
 file name or vector of file names.}
+
+\item{quantile}{Filtering quantile for this file}
 
 \item{channel}{Channels to keep in returned data frame. Can be a single name
 or a vector. Choosing fewer channels can significantly speed up retrieval.}
@@ -30,7 +32,7 @@ Data frame of OPP data for all files in file.name. If vct.dir is
   in a pop column.
 }
 \description{
-Get OPP data frame by file.
+Get OPP data frame by file and quantile.
 }
 \examples{
 \dontrun{
@@ -40,4 +42,3 @@ opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00",
                        transform=F, vct.dir=vct.dir)
 }
 }
-

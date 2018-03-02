@@ -22,4 +22,3 @@ None
 \description{
 Plot cytogram with gates.
 }
-

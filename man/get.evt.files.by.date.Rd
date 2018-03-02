@@ -26,4 +26,3 @@ Get a list of EVT files by date range.
 evt.files <- get.evt.files.by.date(db, evt.dir, "2014-07-04 00:00", "2014-07-04 00:10")
 }
 }
-

@@ -20,4 +20,3 @@ Find the most recent EVT file.
 evt.file <- get.latest.evt(evt.dir)
 }
 }
-

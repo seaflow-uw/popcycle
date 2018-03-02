@@ -22,4 +22,3 @@ Delete a VCT text file by file name.
 delete.vct.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
-

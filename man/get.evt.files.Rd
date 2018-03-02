@@ -20,4 +20,3 @@ Find EVT files with a recursive search down a directory tree.
 evt.files <- get.evt.files(evt.dir)
 }
 }
-

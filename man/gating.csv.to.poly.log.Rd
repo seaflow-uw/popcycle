@@ -25,4 +25,3 @@ data structure identical to that produced by set.gating.params().
 poly.log <- gating.csv.to.poly.log(gates.csv.files)
 }
 }
-

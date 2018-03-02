@@ -20,4 +20,3 @@ Delete all rows in sfl table.
 reset.sfl.table(db)
 }
 }
-

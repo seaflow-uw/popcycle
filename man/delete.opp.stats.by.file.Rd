@@ -2,7 +2,7 @@
 % Please edit documentation in R/db.R
 \name{delete.opp.stats.by.file}
 \alias{delete.opp.stats.by.file}
-\title{Delete an entry in the opp table by file name.}
+\title{Delete entries in the opp table by file name.}
 \usage{
 delete.opp.stats.by.file(db, file.name)
 }
@@ -15,11 +15,10 @@ delete.opp.stats.by.file(db, file.name)
 None
 }
 \description{
-Delete an entry in the opp table by file name.
+Delete entries in the opp table by file name.
 }
 \examples{
 \dontrun{
 delete.opp.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
-

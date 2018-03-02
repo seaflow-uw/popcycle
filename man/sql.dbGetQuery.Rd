@@ -15,11 +15,10 @@ sql.dbGetQuery(db, sql)
 Data frame returned by dbGetQuery.
 }
 \description{
-Wrapper to run dbGetQuery and clean up connection on error.
+Use for SELECT statements only, otherwise use sql.dbExecute.
 }
 \examples{
 \dontrun{
 sql.dbGetQuery(db, "SELECT * FROM some.table")
 }
 }
-

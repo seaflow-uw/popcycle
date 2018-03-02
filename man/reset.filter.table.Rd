@@ -20,4 +20,3 @@ Delete all rows in filter table.
 reset.filter.table(db)
 }
 }
-

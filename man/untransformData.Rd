@@ -19,4 +19,3 @@ evt <- untransformData(evt)
 Performs the reverse operation of transformData, converting exponentiated
 data back to its original form of log data on a 2^16 linear scale.
 }
-

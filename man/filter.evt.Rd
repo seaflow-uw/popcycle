@@ -20,8 +20,6 @@ Filter EVT particles with a generic filter function.
 }
 \examples{
 \dontrun{
-filt <- filter.evt(evt, filter.notch, origin=NA, width=0.5, notch1=NA,
-                   notch2=NA, offset=0)
+filt <- filter.evt(evt, filter.notch, filter.params)
 }
 }
-

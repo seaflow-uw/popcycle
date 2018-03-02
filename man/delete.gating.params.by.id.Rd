@@ -22,4 +22,3 @@ Any gating polygon entries in the poly table will also be deleted.
 delete.gating.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }
-

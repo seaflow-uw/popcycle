@@ -24,4 +24,3 @@ endswith("foo/bar.txt", ".txt") # TRUE
 endswith("foo/bar.txt", ".gz")  # FALSE
 }
 }
-

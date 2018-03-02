@@ -10,8 +10,9 @@ get.gating.params.latest(db)
 \item{db}{SQLite3 database file path.}
 }
 \value{
-Named list where list$row is gating entry in gating table and
-  list$poly.log is list of polygon coordinates for each population.
+Named list where list$gates.log is a recreation of original gating
+  created by add.manual.classification(), add.auto.classification(), and
+  save.gating.params()
 }
 \description{
 Get the latest gating parameters.
@@ -21,4 +22,3 @@ Get the latest gating parameters.
 gating.params <- get.gating.params.latest(db)
 }
 }
-
