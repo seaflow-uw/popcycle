@@ -177,7 +177,7 @@ The first population to gate is *always* the **beads**, which are used as an int
 Note: This will open an R plot for a cytogram of the OPP file that consists of the appended data from the 20 `opp` files. Draw a polygon around the population (Left click to draw segment, right-click to close the segment and finalize the polygon).
 
 ```r
-gates.log <- add.manual.classification(OPP, “beads”, “fsc_small”, “pe”)
+gates.log <- add.manual.classification(OPP, "beads", "fsc_small", "pe")
 ```
 
 ![gating cytogram for bead](documentation/images/beads-gate.png?raw=true)
@@ -209,7 +209,7 @@ gates.log <- add.auto.classification("prochloro", "fsc_small", "chl_small",
 Once the parameters are defined for `Synechococcus` and `Prochlorococcus`population, use manual gating to cluster all the phytoplankton cells left (namely `Picoeukaryote` population) using `manual.classification`. Don’t worry about overlapping populations inside of your polygon. Since this is the last population we are gating, all other gated population will not be included.
 
 ```r
-gates.log <- add.manual.classification(OPP, “picoeuk”, “fsc_small”, “chl_small”, gates.log)
+gates.log <- add.manual.classification(OPP, "picoeuk", "fsc_small", "chl_small", gates.log)
 ```
 
 You can test your various gating parameters on the subset of files to ensure accuracy before saving the gating parameters. In this case, we will use a subset of 20 evenly distributed files and display the output of the classification on a cytogram.
