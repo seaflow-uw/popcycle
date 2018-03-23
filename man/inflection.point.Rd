@@ -4,12 +4,10 @@
 \alias{inflection.point}
 \title{Plot helpful cytograms for estimating the D1, D2 and FSC coordinates of the inflection point (corresponds to location of 1µm beads).}
 \usage{
-inflection.point(evt.list)
+inflection.point(DF)
 }
 \arguments{
-\item{evt.list}{EVT list.}
-
-\item{width, notch.small.D1, }{notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filtering parameters.}
+\item{dataframe}{containing EVT data.}
 }
 \value{
 D1, D2 and fsc values of presumed 1 µm beads

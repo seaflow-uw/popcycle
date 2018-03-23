@@ -4,12 +4,15 @@
 \alias{concatenate.evtopp}
 \title{Concatenate EVT or OPP files}
 \usage{
-concatenate.evtopp(evtopp.list, n = 50000, transform = TRUE, ...)
+concatenate.evtopp(evtopp.list, n = 1e+05, min.fsc = 0, min.pe = 0,
+  min.chl = 0, transform = TRUE, ...)
 }
 \arguments{
 \item{evtopp.list}{List of EVT or OPP files (full path required).}
 
 \item{n}{Number of rows to return.}
+
+\item{min.fsc, }{min.pe, min.chl Minimum value for fsc_small, pe and chl_small respectively}
 }
 \value{
 A dataframe with n rows.
