@@ -1094,7 +1094,7 @@ save.outliers <- function(db, cruise.name, table.name) {
 #' @export
 save.filter.params <- function(db, filter.params) {
   filter.id <- UUIDgenerate()  # create ID for new entries
-  date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")
+  date.stamp <- RFC3339.now()
   df <- data.frame()
   for (quantile in filter.params$quantile) {
     p <- filter.params[filter.params$quantile == quantile, ]
@@ -1135,7 +1135,7 @@ save.filter.params <- function(db, filter.params) {
 #' @export
 save.gating.params <- function(db, gates.log) {
   gating.id <- UUIDgenerate()  # create primary ID for new entry
-  date.stamp <- format(Sys.time(),format="%FT%H:%M:%OS6+0000", tz="GMT")
+  date.stamp <- RFC3339.now()
   i <- 1  # track order population classification
   for (popname in names(gates.log)) {
     params <- gates.log[[popname]]
@@ -1461,4 +1461,15 @@ string.to.POSIXct <- function(date.string) {
 #' }
 POSIXct.to.db.date <- function(date.ct) {
   return(format(date.ct, "%Y-%m-%dT%H:%M:00"))
+}
+
+#' Get current UTC datetime as RFC3339 string suitable for entry into db
+#'
+#' @return Date text as YYYY-MM-DDTHH:MM:SS.ssssss+00:00."
+#' @examples
+#' \dontrun{
+#' datetime.str <- RFC3339.now()
+#' }
+RFC3339.now <- function() {
+  return(format(as.POSIXct(Sys.time(), tz="GMT"),format="%FT%H:%M:%OS6+00:00"))
 }

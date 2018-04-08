@@ -1,7 +1,7 @@
-library(popcycle)
-source("helper.R")
-
 context("EVT file discovery")
+library(popcycle)
+
+source("helper.R")
 
 test_that("EVT files are located correctly", {
   x <- setUp()

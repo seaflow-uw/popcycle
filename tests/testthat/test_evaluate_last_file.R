@@ -1,7 +1,7 @@
-library(popcycle)
-source("helper.R")
-
 context("Realtime last file pipeline")
+library(popcycle)
+
+source("helper.R")
 
 test_that("Successfully run realtime last file pipeline", {
   x <- setUp()

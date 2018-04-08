@@ -1,6 +1,5 @@
-library(popcycle)
-
 context("EVT filtering")
+library(popcycle)
 
 test_that("Filter EVT files", {
   x <- setUp()

@@ -1,7 +1,7 @@
-library(popcycle)
-source("helper.R")
-
 context("DB operations")
+library(popcycle)
+
+source("helper.R")
 
 test_that("Load / Delete SFL", {
   x <- setUp()
