@@ -284,9 +284,8 @@ normalization <- function(stat, spar=0.5, plot.beads=T){
 #' @export
 carbon_conversion <- function(phyto, serial="740"){
 
-
   load(system.file("cbiomass", paste0("lm_",inst),package='popcycle'))
-  phyto[,c("Qc_pg.cell","Qc_pg.cell_2.5","Qc_pg.cell_97.5")] <- predict(reg, newdata=data.frame(norm.fsc=phyto$norm.fsc),interval='predict')
+  phyto[,c("Qc_pg.cell","Qc_pg.cell_2.5","Qc_pg.cell_97.5")] <- 10^predict(reg, newdata=data.frame(norm.fsc=log10(phyto$norm.fsc)),interval='predict')
   phyto[,c("Cbiomass_ug.L","Cbiomass_ug.L_2.5","Cbiomass_ug.L_97.5")] <- phyto[,c("Qc_pg.cell","Qc_pg.cell_2.5","Qc_pg.cell_97.5")] * phyto$abundance
 
   return(phyto)
