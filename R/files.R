@@ -282,7 +282,7 @@ normalization <- function(stat, spar=0.5, plot.beads=T){
 #' @param inst Serial number of the instrument
 #' @return A dataframe with carbon cell quotas and biomass
 #' @export
-carbon_conversion <- function(phyto, serial="740"){
+carbon_conversion <- function(phyto, inst="740"){
 
   load(system.file("cbiomass", paste0("lm_",inst),package='popcycle'))
   phyto[,c("Qc_pg.cell","Qc_pg.cell_2.5","Qc_pg.cell_97.5")] <- 10^predict(reg, newdata=data.frame(norm.fsc=log10(phyto$norm.fsc)),interval='predict')
