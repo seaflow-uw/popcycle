@@ -158,7 +158,7 @@ filter.notch <- function(evt, filter.params) {
   lin <- FALSE
   id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
   if (!any(max(evt[,-c(id)]) > 10^3.5)) {
-    evt <- .untransformData(evt)
+    evt <- untransformData(evt)
     lin <- TRUE
   }
 
@@ -171,6 +171,8 @@ filter.notch <- function(evt, filter.params) {
   # Filtering focused particles (fsc_small > D + notch)
   opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
       D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
+
+      if(lin) opp <- transformData(opp)
 
   params = list("width"=width,
                 "notch.small.D1"= notch.small.D1,"notch.small.D2"= notch.small.D2,
