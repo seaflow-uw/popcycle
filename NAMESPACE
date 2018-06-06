@@ -3,6 +3,7 @@
 export(add.auto.classification)
 export(add.manual.classification)
 export(auto.classify)
+export(carbon_conversion)
 export(classify.opp)
 export(classify.opp.files)
 export(clean.file.path)

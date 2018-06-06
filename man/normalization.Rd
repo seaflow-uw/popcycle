@@ -14,7 +14,7 @@ normalization(stat, spar = 0.5, plot.beads = T)
 \item{plot.beads}{Do you want to plot beads signal over time for fsc_small, chl_small and pe? (default is TRUE)}
 }
 \value{
-A stat dataframe with normalized fsc_small, chl_small and pe values
+A dataframe with normalized fsc_small, chl_small and pe values
 }
 \description{
 Normalization by beads used as internal standard
