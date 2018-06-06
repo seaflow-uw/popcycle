@@ -6,8 +6,10 @@ setUp <- function() {
   x$tmp.dir <- file.path(tempdir(), UUIDgenerate())
   dir.create(x$tmp.dir)
   x$cruise <- "testcruise"
+  x$serial <- "740"
   # Input EVT data for tests
   x$evt.input.dir <- "../testdata/evt"
+  x$sfl.file <- file.path(x$evt.input.dir, "2014_185", "2014-07-04T00-00-00+00-00.sfl")
   # Output OPP directory for filter tests
   x$opp.dir <- file.path(x$tmp.dir, paste0(x$cruise, "_opp"))
   # Output VCT directory for gating tests

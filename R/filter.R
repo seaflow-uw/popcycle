@@ -42,7 +42,6 @@ inflection.point <- function(DF){
 #' @export
 create.filter.params <- function(inst, fsc, d1, d2) {
   # Rename to get correct dataframe headers
-  serial <- inst
   beads.fsc.small <- as.numeric(fsc)
   beads.D1 <- as.numeric(d1)
   beads.D2 <- as.numeric(d2)
@@ -58,7 +57,7 @@ create.filter.params <- function(inst, fsc, d1, d2) {
   correction.D2 <- round(beads.D2 - notch.small.D2ref * beads.fsc.small)
 
   filter.params <- data.frame()
-  headers <- c("quantile", "serial", "beads.fsc.small",
+  headers <- c("quantile", "beads.fsc.small",
                "beads.D1", "beads.D2", "width",
                "notch.small.D1", "notch.small.D2",
                "notch.large.D1", "notch.large.D2",
@@ -87,7 +86,7 @@ create.filter.params <- function(inst, fsc, d1, d2) {
     offset.large.D1 <- round(beads.D1 - notch.large.D1 * beads.fsc.small - correction.D1)
     offset.large.D2 <- round(beads.D2 - notch.large.D2 * beads.fsc.small - correction.D2)
 
-    newrow <- data.frame(quantile, serial, beads.fsc.small,
+    newrow <- data.frame(quantile, beads.fsc.small,
                          beads.D1, beads.D2, width,
                          notch.small.D1, notch.small.D2,
                          notch.large.D1, notch.large.D2,
@@ -284,7 +283,6 @@ plot.filter.cytogram.by.file <- function(evt.dir, file.name, filter.params) {
 #' SQLite3 database and save particle data to binary files in opp.dir.
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise.name Cruise name.
 #' @param evt.dir EVT file directory.
 #' @param evt.files List of EVT files to filter. Include julian day directory.
 #' @param opp.dir OPP file output directory.
@@ -293,12 +291,12 @@ plot.filter.cytogram.by.file <- function(evt.dir, file.name, filter.params) {
 #' @return None
 #' @examples
 #' \dontrun{
-#' filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir)
-#' filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir,
+#' filter.evt.files(db, evt.dir, evt.files, opp.dir)
+#' filter.evt.files(db, evt.dir, evt.files, opp.dir,
 #'                  "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
 #' @export
-filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
+filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
                              filter.id=NULL) {
   # Get notch and width to use from params file
   # Return empty data frame on warning or error
@@ -351,7 +349,7 @@ filter.evt.files <- function(db, cruise.name, evt.dir, evt.files, opp.dir,
 
       # Save OPP data
       if (nrow(result$opp) > 0) {
-        save.opp.stats(db, cruise.name, evt.file, all_count, evt_count,
+        save.opp.stats(db, evt.file, all_count, evt_count,
                        result$opp, p$id, quantile)
         save.opp.file(result$opp, opp.dir, evt.file, quantile)
       }

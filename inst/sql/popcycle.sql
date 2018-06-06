@@ -1,5 +1,10 @@
-CREATE TABLE IF NOT EXISTS opp (
+CREATE TABLE IF NOT EXISTS metadata (
     cruise TEXT NOT NULL,
+    inst TEXT NOT NULL,
+    PRIMARY KEY (cruise, inst)
+);
+
+CREATE TABLE IF NOT EXISTS opp (
     file TEXT NOT NULL,
     all_count INTEGER NOT NULL,
     opp_count INTEGER NOT NULL,
@@ -7,13 +12,12 @@ CREATE TABLE IF NOT EXISTS opp (
     opp_evt_ratio REAL NOT NULL,
     filter_id TEXT NOT NULL,
     quantile REAL NOT NULL,
-    PRIMARY KEY (cruise, file, filter_id, quantile)
+    PRIMARY KEY (file, filter_id, quantile)
 );
 
 CREATE INDEX IF NOT EXISTS oppFileIndex ON opp (file);
 
 CREATE TABLE IF NOT EXISTS vct (
-    cruise TEXT NOT NULL,
     file TEXT NOT NULL,
     pop TEXT NOT NULL,
     count INTEGER NOT NULL,
@@ -38,14 +42,12 @@ CREATE TABLE IF NOT EXISTS vct (
     gating_id TEXT NOT NULL,
     filter_id TEXT NOT NULL,
     quantile REAL NOT NULL,
-    PRIMARY KEY (cruise, file, pop, quantile)
+    PRIMARY KEY (file, pop, quantile)
 );
 
 CREATE INDEX IF NOT EXISTS vctFileIndex ON vct (file);
 
 CREATE TABLE IF NOT EXISTS sfl (
-  --First two columns are the SDS composite key
-  cruise TEXT NOT NULL,
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
   date TEXT,
   file_duration REAL,
@@ -57,9 +59,8 @@ CREATE TABLE IF NOT EXISTS sfl (
   par REAL,
   bulk_red REAL,
   stream_pressure REAL,
-  flow_rate REAL,
   event_rate REAL,
-  PRIMARY KEY (cruise, file)
+  PRIMARY KEY (file)
 );
 
 CREATE INDEX IF NOT EXISTS sflDateIndex ON sfl (date);
@@ -68,7 +69,6 @@ CREATE TABLE IF NOT EXISTS filter (
   id TEXT NOT NULL,
   date TEXT NOT NULL,
   quantile REAL NOT NULL,
-  serial TEXT NOT NULL,
   beads_fsc_small REAL NOT NULL,
   beads_D1 REAL NOT NULL,
   beads_D2 REAL NOT NULL,
@@ -114,17 +114,15 @@ CREATE TABLE IF NOT EXISTS poly (
 );
 
 CREATE TABLE IF NOT EXISTS outlier (
-  cruise TEXT NOT NULL,
   file TEXT NOT NULL,
   flag INTEGER,
-  PRIMARY KEY (cruise, file)
+  PRIMARY KEY (file)
 );
 
 CREATE INDEX IF NOT EXISTS outlierFileIndex ON outlier (file);
 
 CREATE VIEW IF NOT EXISTS stat AS
   SELECT
-    opp.cruise as cruise,
     opp.file as file,
     sfl.date as time,
     sfl.lat as lat,
@@ -150,12 +148,8 @@ CREATE VIEW IF NOT EXISTS stat AS
   WHERE
     opp.filter_id == (select id FROM filter ORDER BY date DESC limit 1)
     AND
-    opp.cruise == vct.cruise
-    AND
     opp.file == vct.file
-    AND
-    opp.cruise == sfl.cruise
     AND
     opp.file == sfl.file
   ORDER BY
-    cruise, time, pop ASC;
+    time, pop ASC;

@@ -1,7 +1,6 @@
 #' Filter and classify one EVT file.
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise.name Cruise name.
 #' @param evt.dir EVT file directory.
 #' @param opp.dir OPP file output directory.
 #' @param vct.dir VCT file output directory.
@@ -9,11 +8,11 @@
 #' @return None
 #' @examples
 #' \dontrun{
-#' evaluate.evt(db, "testcruise", evt.dir, opp.dir, vct.dir,
+#' evaluate.evt(db, evt.dir, opp.dir, vct.dir,
 #'              "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-evaluate.evt <- function(db, cruise.name, evt.dir, opp.dir, vct.dir, evt.file) {
+evaluate.evt <- function(db, evt.dir, opp.dir, vct.dir, evt.file) {
   if (length(evt.file) == 0) {
     print('No data collected yet.')
     return()
@@ -21,7 +20,7 @@ evaluate.evt <- function(db, cruise.name, evt.dir, opp.dir, vct.dir, evt.file) {
 
   print(paste('Analyzing', evt.file))
   print(paste('Filtering', evt.file))
-  filter.evt.files(db, cruise.name, evt.dir, evt.file, opp.dir)
+  filter.evt.files(db, evt.dir, evt.file, opp.dir)
   print(paste('Classifying', evt.file))
-  classify.opp.files(db, cruise.name, opp.dir, evt.file, vct.dir)
+  classify.opp.files(db, opp.dir, evt.file, vct.dir)
 }

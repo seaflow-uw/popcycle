@@ -7,7 +7,7 @@ test_that("Load / Delete SFL", {
   x <- setUp()
 
   # Load SFL data
-  save.sfl(x$db, x$cruise, evt.dir=x$evt.input.dir)
+  save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
   sfl <- get.sfl.table(x$db)
   expect_true(nrow(sfl) == 5)
   reset.sfl.table(x$db)
@@ -41,13 +41,13 @@ test_that("Retrieve OPP stats by file", {
   x <- setUp()
 
   inflection <- data.frame(fsc=c(33759), d1=c(19543), d2=c(19440))
-  filter.params <- create.filter.params("740", inflection$fsc, inflection$d1, inflection$d2)
+  filter.params <- create.filter.params(x$serial, inflection$fsc, inflection$d1, inflection$d2)
 
-  save.sfl(x$db, x$cruise, x$evt.input.dir)
+  save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
   filter.id <- save.filter.params(x$db, filter.params)
 
   evt.files <- get.evt.files(x$evt.input.dir)
-  filter.evt.files(x$db, x$cruise, x$evt.input.dir, evt.files[1], x$opp.dir)
+  filter.evt.files(x$db, x$evt.input.dir, evt.files[1], x$opp.dir)
 
   opp <- get.opp.stats.by.file(x$db, "2014_185/2014-07-04T00-00-02+00-00")
 

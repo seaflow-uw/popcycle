@@ -256,7 +256,6 @@ auto.classify <- function(opp, params, popname) {
 #' in vct.dir.
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise.name Cruise name.
 #' @param opp.dir OPP file directory.
 #' @param opp.files List of OPP files to classify. Include julian day directory.
 #' @param vct.dir VCT file output directory.
@@ -265,12 +264,12 @@ auto.classify <- function(opp, params, popname) {
 #' @return None
 #' @examples
 #' \dontrun{
-#' classify.opp.files(db, "testcruise", opp.dir, opp.files, vct.dir)
-#' classify.opp.files(db, "testcruise", opp.dir, opp.files, vct.dir,
+#' classify.opp.files(db, opp.dir, opp.files, vct.dir)
+#' classify.opp.files(db, opp.dir, opp.files, vct.dir,
 #'                    "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
 #' @export
-classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
+classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
                                gating.id=NULL) {
   if (is.null(gating.id)) {
     gating.params <- get.gating.params.latest(db)
@@ -294,7 +293,7 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
   for (opp.file in opp.files) {
     message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
 
-    # delete old vct entries if they exist so we keep cruise/file/particle distinct
+    # delete old vct entries if they exist so we keep file/particle distinct
     # There should only be one vct entry in the db for each population/file
     # combination.
     delete.vct.stats.by.file(db, opp.file)
@@ -309,7 +308,7 @@ classify.opp.files <- function(db, cruise.name, opp.dir, opp.files, vct.dir,
 
         # store vct
         #print('Uploading labels to the database')
-        save.vct.stats(db, cruise.name, opp.file, opp, gating.params$id,
+        save.vct.stats(db, opp.file, opp, gating.params$id,
                        filter.id[1], quantile)
         save.vct.file(opp$pop, vct.dir, opp.file, quantile)
       }

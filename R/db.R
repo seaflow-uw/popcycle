@@ -711,8 +711,6 @@ get.opp.table <- function(db) {
     FROM
       sfl, opp
     WHERE
-      sfl.cruise == opp.cruise
-      AND
       sfl.file == opp.file
     ORDER BY sfl.date ASC"
   opp <- sql.dbGetQuery(db, sql)
@@ -736,8 +734,6 @@ get.vct.table <- function(db) {
     FROM
       sfl, vct
     WHERE
-      sfl.cruise == vct.cruise
-      AND
       sfl.file == vct.file
     ORDER BY sfl.date ASC"
   vct <- sql.dbGetQuery(db, sql)
@@ -930,7 +926,6 @@ get.vct.files <- function(db) {
 #' Save VCT aggregate population statistics for one file to vct table.
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise.name  Cruise name.
 #' @param file.name File name with julian day directory.
 #' @param opp OPP data frame with pop column.
 #' @param gating.id ID for entry in gating table.
@@ -939,15 +934,15 @@ get.vct.files <- function(db) {
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.vct.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
+#' save.vct.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
 #'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
 #'                "0f3c89d5-b6a9-4959-95a8-dd2af73f82b9", 97.5)
 #' }
 #' @export
-save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id,
+save.vct.stats <- function(db, file.name, opp, gating.id,
                            filter.id, quantile) {
   df <- ddply(opp, .(pop), here(summarize),
-              cruise=cruise.name, file=clean.file.path(file.name),
+              file=clean.file.path(file.name),
               count=length(pop),
               D1_mean=mean(D1),
               D1_min=min(D1),
@@ -970,7 +965,7 @@ save.vct.stats <- function(db, cruise.name, file.name, opp, gating.id,
               gating_id=gating.id,
               filter_id=filter.id,
               quantile=quantile)
-  cols <- c("cruise", "file", "pop", "count",
+  cols <- c("file", "pop", "count",
             "D1_mean", "D1_min", "D1_max",
             "D2_mean", "D2_min", "D2_max",
             "fsc_small_mean", "fsc_small_min", "fsc_small_max",
@@ -1007,7 +1002,6 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise.name  Cruise name.
 #' @param file.name File name with julian day directory.
 #' @param evt_count Number of particles in EVT file.
 #' @param opp OPP data frame with pop column.
@@ -1016,19 +1010,19 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.opp.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
+#' save.opp.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
 #'                40000, opp, filter.params,
 #'                "d3afb1ea-ad20-46cf-866d-869300fe17f4", 97.5)
 #' }
 #' @export
-save.opp.stats <- function(db, cruise.name, file.name, all_count,
+save.opp.stats <- function(db, file.name, all_count,
                            evt_count, opp, filter.id, quantile) {
   if (nrow(opp) == 0) {
     return
   }
   opp <- transformData(opp)
   opp_count <- nrow(opp)
-  df <- data.frame(cruise=cruise.name, file=clean.file.path(file.name),
+  df <- data.frame(file=clean.file.path(file.name),
                    all_count=all_count,
                    opp_count=opp_count,
                    evt_count=evt_count,
@@ -1083,7 +1077,7 @@ save.outliers <- function(db, cruise.name, table.name) {
 #' @param beads.D1 D2 of 1µm beads used to determine filter.params
 #' @param filter.params Data frame of filtering parameters returned from
 #'   create.filter.params(), one row per quantile. Columns should include:
-#'   serial, quantile, beads.fsc.small, beads.D1, beads.D2, width,
+#'   quantile, beads.fsc.small, beads.D1, beads.D2, width,
 #'   notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
 #'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.
 #' @return Database filter ID string.
@@ -1102,7 +1096,6 @@ save.filter.params <- function(db, filter.params) {
       stop("Duplicate quantile rows found in parameters passed to save.filter.params()")
     }
     df <- rbind(df, cbind(id=filter.id, date=date.stamp, quantile=quantile,
-                          serial=p$serial,
                           beads_fsc_small=p$beads.fsc.small,
                           beads_D1=p$beads.D1,
                           beads_D2=p$beads.D2,
@@ -1214,31 +1207,26 @@ save.poly <- function(db, poly.log, popname, gating.id) {
 
 #' Import SFL files to the database.
 #'
-#' SFL input may come from all SFL files found in the EVT directory or from a
-#' single SFL file. This function calls seaflowpy_importsfl.
+#' This function calls seaflowpy_sfl.
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise Cruise name.
-#' @param evt.dir EVT file directory with SFL files.
+#' @param cruise Cruise name. If not provided this will attempt to be
+#'   parsed from the SFL file name (<cruise>_<serial>.sfl).
+#' @param inst Instrument serial. If not provided this will attempt to be
+#'   parsed from the SFL file name (<cruise>_<serial>.sfl).
 #' @param sfl.file Single SFL file to import.
-#' @param gga lat/lon input is in GGA format. Set to TRUE to convert to decimal
-#'   degree.
-#' @param west Some ships don't provide E/W designations for longitude. Set to
-#'   TRUE if this is the case and all longitudes should be West (negative).
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.sfl(db, "testcruise", evt.dir=evt.dir)
-#' save.sfl(db, "testcruise", sfl.file=sfl.file)
+#' save.sfl(db, sfl.file=sfl.file)
 #' }
 #' @export
-save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL, gga=FALSE,
-                     west=FALSE) {
-  # First check for seaflowpy_importsfl in PATH
+save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
+  # First check for seaflowpy_sfl in PATH
   result <- tryCatch(
     {
-      system2("bash", c("-c", "'seaflowpy_importsfl --version'"), stdout=TRUE, stderr=TRUE)
-      },
+      system2("bash", c("-c", "'seaflowpy_sfl --version'"), stdout=TRUE, stderr=TRUE)
+    },
     warning=function(w) {
       invisible(w)
     },
@@ -1247,30 +1235,23 @@ save.sfl <- function(db, cruise, evt.dir=NULL, sfl.file=NULL, gga=FALSE,
     }
   )
   if (result == "system2error") {
-   warning("Could not run seaflowpy_importsfl")
+   warning("Could not run seaflowpy_sfl")
    return()
   }
-  if (is.null(evt.dir) && is.null(sfl.file)) {
-    stop("save.sfl requires one of evt.dir or sfl.file")
-  }
-  if ((! is.null(evt.dir)) && (! is.null(sfl.file))) {
-    stop("save.sfl can only be passed one of evt.dir or sfl.file")
+  if (is.null(sfl.file)) {
+    stop("save.sfl requires sfl.file")
   }
 
-  cmd <- paste0("'seaflowpy_importsfl", ' -c "', cruise, '" -d "', normalizePath(db), '"')
-  if (! is.null(evt.dir)) {
-    cmd <- paste0(cmd, " -e '", normalizePath(evt.dir), "'")
-  } else {
-    cmd <- paste0(cmd, " -s '", normalizePath(sfl.file), "'")
+  cmd <- paste0("'seaflowpy_sfl", " db", " -d \"", normalizePath(db), "\"")
+  cmd <- paste0(cmd, " -s \"", normalizePath(sfl.file), "\"")
+  if (! is.null(cruise)) {
+    cmd <- paste0(cmd, " --cruise ", cruise)
   }
-
-  if (gga) {
-    cmd <- paste0(cmd, " --gga")
-  }
-  if (west) {
-    cmd <- paste0(cmd, " --west")
+  if (! is.null(inst)) {
+    cmd <- paste0(cmd, " --serial ", inst)
   }
   cmd <- paste0(cmd, "'")
+
   system2("bash", c("-c", cmd))
 }
 
