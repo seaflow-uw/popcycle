@@ -41,7 +41,8 @@ test_that("Retrieve OPP stats by file", {
   x <- setUp()
 
   inflection <- data.frame(fsc=c(33759), d1=c(19543), d2=c(19440))
-  filter.params <- create.filter.params(x$serial, inflection$fsc, inflection$d1, inflection$d2)
+  filter.params <- create.filter.params(x$serial, inflection$fsc, inflection$d1,
+                                        inflection$d2, x$slope.file)
 
   save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
   filter.id <- save.filter.params(x$db, filter.params)

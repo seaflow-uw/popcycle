@@ -300,8 +300,6 @@ get.opp.stats.by.file <- function(db, file.name) {
   WHERE
     opp.file == '", clean.file.path(file.name), "'
     AND
-    sfl.cruise == opp.cruise
-    AND
     sfl.file == opp.file
   ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
@@ -330,8 +328,6 @@ get.opp.stats.by.date <- function(db, start.date, end.date) {
     FROM
       sfl, opp
     WHERE
-      sfl.cruise == opp.cruise
-      AND
       sfl.file == opp.file"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
   opp <- sql.dbGetQuery(db, sql)
@@ -358,8 +354,6 @@ get.vct.stats.by.file <- function(db, file.name) {
     sfl, vct
   WHERE
     vct.file == '", clean.file.path(file.name), "'
-    AND
-    sfl.cruise == vct.cruise
     AND
     sfl.file == vct.file
   ORDER BY sfl.date ASC")
@@ -389,8 +383,6 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
     FROM
       sfl, vct
     WHERE
-      sfl.cruise == vct.cruise
-      AND
       sfl.file == vct.file"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
   vct <- sql.dbGetQuery(db, sql)
@@ -1055,16 +1047,15 @@ save.opp.file <- function(opp, opp.dir, file.name, quantile, untransform=FALSE) 
 #' Save Outliers in the database
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise.name  Cruise name.
 #' @param table.name Dataframe that contains the list of files flagged as outliers
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.outliers(db, cruise, table.name)
+#' save.outliers(db,  table.name)
 #' }
 #' @export
-save.outliers <- function(db, cruise.name, table.name) {
-  df <- data.frame(cruise=cruise.name, file=table.name$file, flag=table.name$flag)
+save.outliers <- function(db, table.name) {
+  df <- data.frame(file=table.name$file, flag=table.name$flag)
   sql.dbWriteTable(db, name="outlier", value=df)
 }
 
@@ -1225,7 +1216,7 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
   # First check for seaflowpy_sfl in PATH
   result <- tryCatch(
     {
-      system2("bash", c("-c", "'seaflowpy_sfl --version'"), stdout=TRUE, stderr=TRUE)
+      system2("bash", c("-lc", "'seaflowpy_sfl --version'"), stdout=TRUE, stderr=TRUE)
     },
     warning=function(w) {
       invisible(w)
@@ -1252,7 +1243,7 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
   }
   cmd <- paste0(cmd, "'")
 
-  system2("bash", c("-c", cmd))
+  system2("bash", c("-lc", cmd))
 }
 
 #' Create a new, empty sqlite3 popcycle database.

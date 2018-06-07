@@ -4,12 +4,10 @@
 \alias{evaluate.evt}
 \title{Filter and classify one EVT file.}
 \usage{
-evaluate.evt(db, cruise.name, evt.dir, opp.dir, vct.dir, evt.file)
+evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{cruise.name}{Cruise name.}
 
 \item{evt.dir}{EVT file directory.}
 
@@ -27,7 +25,7 @@ Filter and classify one EVT file.
 }
 \examples{
 \dontrun{
-evaluate.evt(db, "testcruise", evt.dir, opp.dir, vct.dir,
+evaluate.evt(db, evt.dir, opp.dir, vct.dir,
              "2014_185/2014-07-04T00-00-02+00-00")
 }
 }

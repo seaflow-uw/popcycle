@@ -4,12 +4,10 @@
 \alias{save.outliers}
 \title{Save Outliers in the database}
 \usage{
-save.outliers(db, cruise.name, table.name)
+save.outliers(db, table.name)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{cruise.name}{Cruise name.}
 
 \item{table.name}{Dataframe that contains the list of files flagged as outliers}
 }
@@ -21,6 +19,6 @@ Save Outliers in the database
 }
 \examples{
 \dontrun{
-save.outliers(db, cruise, table.name)
+save.outliers(db,  table.name)
 }
 }

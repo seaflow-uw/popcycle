@@ -4,13 +4,10 @@
 \alias{filter.evt.files}
 \title{Filter a list of EVT files.}
 \usage{
-filter.evt.files(db, cruise.name, evt.dir, evt.files, opp.dir,
-  filter.id = NULL)
+filter.evt.files(db, evt.dir, evt.files, opp.dir, filter.id = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{cruise.name}{Cruise name.}
 
 \item{evt.dir}{EVT file directory.}
 
@@ -30,8 +27,8 @@ SQLite3 database and save particle data to binary files in opp.dir.
 }
 \examples{
 \dontrun{
-filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir)
-filter.evt.files(db, "testcruise", evt.dir, evt.files, opp.dir,
+filter.evt.files(db, evt.dir, evt.files, opp.dir)
+filter.evt.files(db, evt.dir, evt.files, opp.dir,
                  "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }

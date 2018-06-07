@@ -8,7 +8,8 @@ setUp <- function() {
   x$cruise <- "testcruise"
   x$serial <- "740"
   # Input EVT data for tests
-  x$evt.input.dir <- "../testdata/evt"
+  x$evt.input.dir <- file.path("..", "testdata", "evt")
+  x$slope.file <- file.path("..", "testdata", "seaflow_filter_slopes.csv")
   x$sfl.file <- file.path(x$evt.input.dir, "2014_185", "2014-07-04T00-00-00+00-00.sfl")
   # Output OPP directory for filter tests
   x$opp.dir <- file.path(x$tmp.dir, paste0(x$cruise, "_opp"))

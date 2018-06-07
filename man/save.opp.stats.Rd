@@ -4,13 +4,10 @@
 \alias{save.opp.stats}
 \title{Save OPP aggregate statistics for one file/quantile combo to opp table.}
 \usage{
-save.opp.stats(db, cruise.name, file.name, all_count, evt_count, opp, filter.id,
-  quantile)
+save.opp.stats(db, file.name, all_count, evt_count, opp, filter.id, quantile)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{cruise.name}{Cruise name.}
 
 \item{file.name}{File name with julian day directory.}
 
@@ -30,7 +27,7 @@ Save OPP aggregate statistics for one file/quantile combo to opp table.
 }
 \examples{
 \dontrun{
-save.opp.stats(db, "testcruise", "2014_185/2014-07-04T00-00-02+00-00",
+save.opp.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
                40000, opp, filter.params,
                "d3afb1ea-ad20-46cf-866d-869300fe17f4", 97.5)
 }

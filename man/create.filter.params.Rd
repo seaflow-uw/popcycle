@@ -4,7 +4,7 @@
 \alias{create.filter.params}
 \title{Get Notch and Offset values for Filter.notch function.}
 \usage{
-create.filter.params(inst, fsc, d1, d2)
+create.filter.params(inst, fsc, d1, d2, slope.file = NULL)
 }
 \arguments{
 \item{inst}{Instrument serial number}
@@ -14,6 +14,9 @@ create.filter.params(inst, fsc, d1, d2)
 \item{d1}{D1 value of 1 µm beads}
 
 \item{d2}{D2 value of 1 µm beads}
+
+\item{slopes}{User-supplied filter slope CSV file, overriding the installed
+default file.}
 }
 \value{
 Data frame with filtering parameters for 2.5, 50.0, 97.5 quantiles

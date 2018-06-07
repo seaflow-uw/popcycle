@@ -34,13 +34,15 @@ inflection.point <- function(DF){
 #' @param fsc Small forward scatter value of 1 µm beads
 #' @param d1 D1 value of 1 µm beads
 #' @param d2 D2 value of 1 µm beads
+#' @param slopes User-supplied filter slope CSV file, overriding the installed
+#'   default file.
 #' @return Data frame with filtering parameters for 2.5, 50.0, 97.5 quantiles
 #' @examples
 #' \dontrun{
 #' filt <- create.filter.params(inst, fsc, d1, d2)
 #' }
 #' @export
-create.filter.params <- function(inst, fsc, d1, d2) {
+create.filter.params <- function(inst, fsc, d1, d2, slope.file=NULL) {
   # Rename to get correct dataframe headers
   beads.fsc.small <- as.numeric(fsc)
   beads.D1 <- as.numeric(d1)
@@ -48,7 +50,10 @@ create.filter.params <- function(inst, fsc, d1, d2) {
 
   width <- 2500
 
-  slopes <- read.csv(system.file("filter", "seaflow_filter_slopes.csv",package='popcycle'))
+  if (is.null(slope.file)) {
+    slope.file <- system.file("filter", "seaflow_filter_slopes.csv",package='popcycle')
+  }
+  slopes <- read.csv(slope.file)
 
   # Correction values for D1 and D2 to force the notch of small particles to pass by the origin (0)
   notch.small.D1ref <- slopes[slopes$ins== inst,'notch.small.D1']

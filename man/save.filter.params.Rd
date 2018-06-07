@@ -11,7 +11,7 @@ save.filter.params(db, filter.params)
 
 \item{filter.params}{Data frame of filtering parameters returned from
 create.filter.params(), one row per quantile. Columns should include:
-serial, quantile, beads.fsc.small, beads.D1, beads.D2, width,
+quantile, beads.fsc.small, beads.D1, beads.D2, width,
 notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
 offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.}
 

@@ -4,13 +4,10 @@
 \alias{classify.opp.files}
 \title{Classifiy particles for a list of OPP files.}
 \usage{
-classify.opp.files(db, cruise.name, opp.dir, opp.files, vct.dir,
-  gating.id = NULL)
+classify.opp.files(db, opp.dir, opp.files, vct.dir, gating.id = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{cruise.name}{Cruise name.}
 
 \item{opp.dir}{OPP file directory.}
 
@@ -31,8 +28,8 @@ in vct.dir.
 }
 \examples{
 \dontrun{
-classify.opp.files(db, "testcruise", opp.dir, opp.files, vct.dir)
-classify.opp.files(db, "testcruise", opp.dir, opp.files, vct.dir,
+classify.opp.files(db, opp.dir, opp.files, vct.dir)
+classify.opp.files(db, opp.dir, opp.files, vct.dir,
                    "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 }
 }
