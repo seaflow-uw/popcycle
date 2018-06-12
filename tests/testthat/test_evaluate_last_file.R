@@ -10,10 +10,9 @@ test_that("Successfully run realtime last file pipeline", {
   # the first file instead.
   evt.file <- get.evt.files(x$evt.input.dir)[1]
 
-  file.copy(x$db.bare.input, x$db, overwrite=T)
-  evaluate.evt(x$db, x$evt.input.dir, x$opp.dir, x$vct.dir, evt.file)
+  evaluate.evt(x$db.bare, x$evt.input.dir, x$opp.dir, x$vct.dir, evt.file)
 
-  vct <- get.vct.table(x$db)
+  vct <- get.vct.table(x$db.bare)
   vct <- vct[order(vct$pop, vct$quantile), ]
 
   print(paste0("vct$quantile = c(", paste(vct$quantile, collapse=" "), ")"))

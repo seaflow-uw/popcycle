@@ -4,26 +4,18 @@ library(popcycle)
 test_that("Filter EVT files", {
   x <- setUp()
 
-  save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
-
-  inflection <- data.frame(fsc=c(33759), d1=c(19543), d2=c(19440))
-  filter.params <- create.filter.params(x$serial, inflection$fsc, inflection$d1,
-                                        inflection$d2, x$slope.file)
-
-  filter.id <- save.filter.params(x$db, filter.params)
-
   evt.files <- get.evt.files(x$evt.input.dir)
 
-  expect_warning(filter.evt.files(x$db, x$evt.input.dir, evt.files, x$opp.dir))
-  filter.params <- get.filter.params.latest(x$db)
-  opp.stats <- get.opp.table(x$db)
+  expect_warning(filter.evt.files(x$db.bare, x$evt.input.dir, evt.files, x$opp.dir))
+  filter.params <- get.filter.params.latest(x$db.bare)
+  opp.stats <- get.opp.table(x$db.bare)
 
   expect_equal(nrow(opp.stats), 6)  # 2 files, 3 quantiles each
 
   # Sort by file then quantile
   opp.stats <- opp.stats[order(opp.stats$file, opp.stats$quantile), ]
 
-  expect_equal(opp.stats[, "filter_id"], rep(filter.id, 6))
+  expect_equal(opp.stats[, "filter_id"], rep(filter.params$id[1], 6))
   expect_equal(unique(opp.stats[, "file"]), c("2014_185/2014-07-04T00-00-02+00-00",
                                               "2014_185/2014-07-04T00-03-02+00-00"))
   expect_equal(unique(opp.stats[, "all_count"]), 40000)
@@ -34,7 +26,7 @@ test_that("Filter EVT files", {
 
   # Make sure written OPP files have the same number of particles as those
   # recorded in database opp table
-  opp.files <- get.opp.files(x$db)
+  opp.files <- get.opp.files(x$db.full)
   i <- 1
   for (opp.file in opp.files) {
     for (q in c(2.5, 50, 97.5)) {

@@ -15,19 +15,23 @@ setUp <- function() {
   x$opp.dir <- file.path(x$tmp.dir, paste0(x$cruise, "_opp"))
   # Output VCT directory for gating tests
   x$vct.dir <- file.path(x$tmp.dir, paste0(x$cruise, "_vct"))
-  # Output DB file for DB tests
+  # Empty output DB file for DB tests
   x$db <- file.path(x$tmp.dir, paste0(x$cruise, ".db"))
+  make.popcycle.db(x$db)
 
   # Below are prebuilt files for SQLite3 DB, OPP, and VCT data.
-  x$db.input <- "../testdata/testcruise.db"
+  # Copy dbs to tempdir before tests
+  file.copy("../testdata/testcruise_full.db", x$tmp.dir)
+  file.copy("../testdata/testcruise_bare.db", x$tmp.dir)
+  # Database with fixed results. May not exactly represent current filter settings,
+  # but it's here to insulate non-filtering tests from filtering changes.
+  x$db.full <- file.path(x$tmp.dir, "testcruise_full.db")
+  # Same database without opp or vct tables, but with sfl, filter, gating.
+  # Ready for filtering and gating tests
+  x$db.bare <- file.path(x$tmp.dir, "testcruise_bare.db")
   x$opp.input.dir <- "../testdata/opp"
   x$vct.input.dir <- "../testdata/vct"
 
-  # Same database without opp or vct tables, but with sfl, filter, gating.
-  # Ready for filtering and gating tests
-  x$db.bare.input <- "../testdata/testcruise_bare.db"
-
-  make.popcycle.db(x$db)
 
   return(x)
 }

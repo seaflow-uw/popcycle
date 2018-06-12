@@ -1216,7 +1216,7 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
   # First check for seaflowpy_sfl in PATH
   result <- tryCatch(
     {
-      system2("bash", c("-lc", "'seaflowpy_sfl --version'"), stdout=TRUE, stderr=TRUE)
+      system2("seaflowpy_sfl", c("--version"), stdout=TRUE, stderr=TRUE)
     },
     warning=function(w) {
       invisible(w)
@@ -1233,17 +1233,17 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
     stop("save.sfl requires sfl.file")
   }
 
-  cmd <- paste0("'seaflowpy_sfl", " db", " -d \"", normalizePath(db), "\"")
-  cmd <- paste0(cmd, " -s \"", normalizePath(sfl.file), "\"")
+  args <- c("db", "-d", normalizePath(db), "-s", normalizePath(sfl.file))
   if (! is.null(cruise)) {
-    cmd <- paste0(cmd, " --cruise ", cruise)
+    args[length(args)+1] <- "--cruise"
+    args[length(args)+1] <- cruise
   }
   if (! is.null(inst)) {
-    cmd <- paste0(cmd, " --serial ", inst)
+    args[length(args)+1] <- "--serial"
+    args[length(args)+1] <- inst
   }
-  cmd <- paste0(cmd, "'")
 
-  system2("bash", c("-lc", cmd))
+  system2("seaflowpy_sfl", args, stdout=TRUE, stderr=TRUE)
 }
 
 #' Create a new, empty sqlite3 popcycle database.
