@@ -668,6 +668,23 @@ get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
   return(poly.log)
 }
 
+
+
+#' Get instrument serial number and cruise name
+#'
+#' @param db SQLite3 database file path.
+#' @return Data frame.
+#' @examples
+#' \dontrun{
+#' meta <- get.meta(db)
+#' }
+#' @export
+get.meta <- function(db) {
+  sql <- "SELECT * FROM metadata;"
+  meta <- sql.dbGetQuery(db, sql)
+  return(meta)
+}
+
 #' Return a data frame for the sfl table.
 #'
 #' @param db SQLite3 database file path.
@@ -777,29 +794,6 @@ get.poly.table <- function(db) {
   return(poly)
 }
 
-#' Get aggregate statistics data frame joining sfl, opp, and vct table entries.
-#'
-#' @param db SQLite3 database file path.
-#' @return Data frame of aggregate statistics.
-#' @examples
-#' \dontrun{
-#' stat.table <- get.stat.table(db)
-#' }
-#' @export
-get.stat.table <- function(db, flag=FALSE) {
-  check.for.populated.sfl(db)
-  sql <- "SELECT * FROM stat;"
-  stats <- sql.dbGetQuery(db, sql)
-
-    if(flag){
-      outlier <- get.outlier.table(db)
-      if(nrow(outlier) > 0){
-        stats <- merge(stats, outlier, all.x=TRUE)
-      }else print("No flagged file found!")
-    }
-
-  return(stats)
-}
 
 #' Get list of outliers.
 #'
@@ -815,6 +809,33 @@ get.outlier.table <- function(db) {
   outlier <- sql.dbGetQuery(db, sql)
   return(outlier)
 }
+
+
+#' Get aggregate statistics data frame joining sfl, opp, and vct table entries.
+#'
+#' @param db SQLite3 database file path.
+#' @param flag with (FALSE) or without outliers (TRUE)
+#' @return Data frame of aggregate statistics.
+#' @examples
+#' \dontrun{
+#' stat.table <- get.raw.stat.table(db)
+#' }
+#' @export
+get.raw.stat.table <- function(db, flag=FALSE) {
+  check.for.populated.sfl(db)
+  sql <- "SELECT * FROM stat;"
+  stat <- sql.dbGetQuery(db, sql)
+
+    if(flag){
+      outlier <- get.outlier.table(db)
+      if(nrow(outlier) > 0){
+        stat <- merge(stat, outlier, all.x=TRUE)
+      }else print("No flagged file found!")
+    }
+
+      return(stat)
+}
+
 
 #' Get names for EVT files which produced no OPP data.
 #'
