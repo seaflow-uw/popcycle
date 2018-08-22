@@ -179,9 +179,12 @@ plot.map <- function(stat,popname,param,...){
 #' @return None
 #' @export
 plot.time <- function(stat, popname,param, ...){
+  require(plotrix, quietly=T)
 
   stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
-  pop <- subset(stat, pop == popname)
-  plot(pop$time, pop[,param], xlab="Time", ylab=paste(param),main=paste(popname),...)
+  pop <- subset(stat, population == popname)
+  if(any(colnames(stat)== paste0(param,".se"))) plotCI(pop$time, pop[,param], uiw=pop[,paste0(param,".se")], sfrac=0,xlab="Time", ylab=paste(param),main=paste(popname), scol='grey',...)
+  else plot(pop$time, pop[,param], xlab="Time", ylab=paste(param),main=paste(popname),...)
+
 
 }
