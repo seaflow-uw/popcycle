@@ -269,8 +269,17 @@ get.stat.table <- function(db, inst=NULL) {
 
   DF <- get.raw.stat.table(db)
   stat <- flowrate(DF, inst=inst)
-  stat[,c("abundance")]  <- stat[,"n_count"] / (1000*VC * stat[,"opp_evt_ratio"] * stat[,c("flow_rate")] * stat[,"file_duration"]/60)   # cells µL-1
+
+  # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
+  stat[,c("abundance")]  <- stat[,"n_count"] / (1000*VC * median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,c("flow_rate")] * stat[,"file_duration"]/60)   # cells µL-1
   stat[,c("abundance.se")]  <- stat[,c("abundance")] * stat[,c("flow_rate.se")] / stat[,c("flow_rate")]           # cells µL-1
+
+  # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
+    id <- which(stat$pop == 'prochloro')
+    if(length(id) > 0){
+      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000*VC * stat[id,"opp_evt_ratio"] * stat[id,c("flow_rate")] * stat[id,"file_duration"]/60)   # cells µL-1
+      stat[id,c("abundance.se")]  <- stat[id,c("abundance")] * stat[id,c("flow_rate.se")] / stat[id,c("flow_rate")]           # cells µL-1
+    }
 
   return(stat)
 
