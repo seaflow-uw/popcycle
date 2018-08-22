@@ -814,26 +814,18 @@ get.outlier.table <- function(db) {
 #' Get aggregate statistics data frame joining sfl, opp, and vct table entries.
 #'
 #' @param db SQLite3 database file path.
-#' @param flag with (FALSE) or without outliers (TRUE)
 #' @return Data frame of aggregate statistics.
 #' @examples
 #' \dontrun{
 #' stat.table <- get.raw.stat.table(db)
 #' }
 #' @export
-get.raw.stat.table <- function(db, flag=FALSE) {
+get.raw.stat.table <- function(db) {
   check.for.populated.sfl(db)
   sql <- "SELECT * FROM stat;"
   stat <- sql.dbGetQuery(db, sql)
 
-    if(flag){
-      outlier <- get.outlier.table(db)
-      if(nrow(outlier) > 0){
-        stat <- merge(stat, outlier, all.x=TRUE)
-      }else print("No flagged file found!")
-    }
-
-      return(stat)
+  return(stat)
 }
 
 

@@ -4,15 +4,13 @@
 \alias{get.stat.table}
 \title{Get aggregate statistics data frame along with estimates of cell abundance.}
 \usage{
-get.stat.table(db, inst = NULL, flag = FALSE)
+get.stat.table(db, inst = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
 
 \item{inst}{Instrument serial. If not provided this will attempt to be
 parsed from the SFL file name (<cruise>_<serial>.sfl).}
-
-\item{flag}{with (FALSE) or without outliers (TRUE)}
 }
 \value{
 Data frame of aggregate statistics.
@@ -22,6 +20,6 @@ Get aggregate statistics data frame along with estimates of cell abundance.
 }
 \examples{
 \dontrun{
-stats <- get.stat.table(db, inst=NULL, flag=F)
+stats <- get.stat.table(db, inst=NULL)
 }
 }

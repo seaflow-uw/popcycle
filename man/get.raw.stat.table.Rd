@@ -4,12 +4,10 @@
 \alias{get.raw.stat.table}
 \title{Get aggregate statistics data frame joining sfl, opp, and vct table entries.}
 \usage{
-get.raw.stat.table(db, flag = FALSE)
+get.raw.stat.table(db)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{flag}{with (FALSE) or without outliers (TRUE)}
 }
 \value{
 Data frame of aggregate statistics.
