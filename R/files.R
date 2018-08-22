@@ -136,6 +136,7 @@ clean.file.path <- function(fpath) {
 #' endswith("foo/bar.txt", ".txt") # TRUE
 #' endswith("foo/bar.txt", ".gz")  # FALSE
 #' }
+#' @export
 endswith <- function(path, ending) {
   psize <- nchar(path)
   esize <- nchar(ending)
@@ -231,7 +232,6 @@ concatenate.evtopp <- function(evtopp.list, n=100000, min.fsc=0, min.pe=0, min.c
 #'   parsed from the SFL file name (<cruise>_<serial>.sfl).
 #' @return A dataframe with flow rate estimates
 #' @export
-
 flowrate <- function(stat, inst=NULL){
 
   if(is.null(inst)) inst <- get.meta(db)[2]
@@ -354,7 +354,6 @@ carbon_conversion <- function(stat, inst=NULL){
 #' DF <- merge.stat(stat)
 #' }
 #' @export
-
 merge.stat <- function(stat){
 
     para <- c("abundance", "Qc","Cbiomass")
@@ -391,7 +390,6 @@ merge.stat <- function(stat){
 #' stat <- get.clean.stat.table(db, inst=NULL, spar=0.7)
 #' }
 #' @export
-
 get.clean.stat.table <- function(db, inst=NULL, spar=0.7){
 
   print("1. Getting raw data"); stat <- get.stat.table(db, inst=inst);

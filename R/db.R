@@ -228,6 +228,8 @@ reset.poly.table <- function(db) {
 #' \dontrun{
 #' reset.table(db, "opp")
 #' }
+#' @export
+
 reset.table <- function(db, table.name) {
   sql <- paste0("DELETE FROM ", table.name)
   sql.dbExecute(db, sql)
@@ -1185,6 +1187,7 @@ save.gating.params <- function(db, gates.log) {
 #' \dontrun{
 #' save.poly(db, poly.log, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
+#' @export
 save.poly <- function(db, poly.log, popname, gating.id) {
   df <- data.frame()
   channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
@@ -1296,6 +1299,7 @@ make.popcycle.db <- function(db) {
 #' sql <- sfl_date_where_class(sql, "2014-07-04 00:00", "2014-07-04 00:10",
 #'                             append=T)
 #' }
+#' @export
 sfl_date_where_clause <- function(sql, start.date, end.date, append=F) {
   if (! is.null(start.date) || ! is.null(end.date)) {
     if (! append) {
@@ -1333,6 +1337,7 @@ sfl_date_where_clause <- function(sql, start.date, end.date, append=F) {
 #' \dontrun{
 #' check.for.populated.sfl(db)
 #' }
+#' @export
 check.for.populated.sfl <- function(db) {
   if (nrow(get.sfl.table(db)) == 0) {
     stop("SFL table is empty")
@@ -1350,6 +1355,7 @@ check.for.populated.sfl <- function(db) {
 #' \dontrun{
 #' sql.dbGetQuery(db, "SELECT * FROM some.table")
 #' }
+#' @export
 sql.dbGetQuery <- function(db, sql) {
   con <- dbConnect(SQLite(), dbname=db)
   tryCatch({
@@ -1373,6 +1379,7 @@ sql.dbGetQuery <- function(db, sql) {
 #' \dontrun{
 #' sql.dbExecute(db, "DELETE FROM vct WHERE file == 'somefile'")
 #' }
+#' @export
 sql.dbExecute <- function(db, sql) {
   con <- dbConnect(SQLite(), dbname=db)
   tryCatch({
@@ -1414,6 +1421,7 @@ sql.dbWriteTable <- function(db, name, value) {
 #' \dontrun{
 #' db.date <- date.to.db.date("2014-01-24 13:03")
 #' }
+#' @export
 date.to.db.date <- function(date.string) {
   return(POSIXct.to.db.date(string.to.POSIXct(date.string)))
 }
@@ -1426,6 +1434,7 @@ date.to.db.date <- function(date.string) {
 #' \dontrun{
 #' date.ct <- string.to.POSIXct("2014-01-24 13:03")
 #' }
+#' @export
 string.to.POSIXct <- function(date.string) {
   # Make POSIXct objects in GMT time zone
   date.ct <- as.POSIXct(strptime(date.string, format="%Y-%m-%d %H:%M", tz="GMT"))
@@ -1444,6 +1453,7 @@ string.to.POSIXct <- function(date.string) {
 #' \dontrun{
 #' db.date <- POSIXct.to.db.date(date.ct)
 #' }
+#' @export
 POSIXct.to.db.date <- function(date.ct) {
   return(format(date.ct, "%Y-%m-%dT%H:%M:00"))
 }
@@ -1455,6 +1465,7 @@ POSIXct.to.db.date <- function(date.ct) {
 #' \dontrun{
 #' datetime.str <- RFC3339.now()
 #' }
+#' @export
 RFC3339.now <- function() {
   return(format(as.POSIXct(Sys.time(), tz="GMT"),format="%FT%H:%M:%OS6+00:00"))
 }

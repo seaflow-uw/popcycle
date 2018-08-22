@@ -190,6 +190,7 @@ classify.opp <- function(opp, gates.log) {
 #' @param opp OPP data frame.
 #' @param params Named list of gating parameters. Must contain a params$poly
 #'   entry with polygon definitions.
+#' @param popname Name of the population
 #' @return List of per particle classifications.
 #' @examples
 #' \dontrun{
@@ -217,7 +218,17 @@ manual.classify <- function(opp, params, popname) {
 }
 
 
-
+#' Classify particles based on semisupervized clustering method from flowDensity package.
+#'
+#' @param opp OPP data frame.
+#' @param params Named list of gating parameters. Must contain a params$poly
+#'   entry with polygon definitions.
+#' @param popname Name of the population
+#' @return List of per particle classifications.
+#' @examples
+#' \dontrun{
+#' vct <- auto.classify(opp, params, popname)
+#' }
 #' @export
 auto.classify <- function(opp, params, popname) {
   library(flowCore)
