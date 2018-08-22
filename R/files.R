@@ -393,7 +393,7 @@ merge.stat <- function(stat){
 get.clean.stat.table <- function(db, inst=NULL, spar=0.7){
 
   print("1. Getting raw data"); stat <- get.stat.table(db, inst=inst);
-  print("2. Normalizing channel values to 1 µm based"); stat <- normalization(stat, spar=spar)
+  print("2. Normalizing channel values using beads"); stat <- normalization(stat, spar=spar)
   print("3. Converting normalized light scattering to carbon"); stat <- carbon_conversion(stat, inst=inst);
   print("4. Propagating error"); stat <- merge.stat(stat)
 
