@@ -183,7 +183,7 @@ plot.time <- function(stat, popname,param, ...){
 
   stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
   pop <- subset(stat, population == popname)
-  if(any(colnames(stat)== paste0(param,".se"))) plotCI(pop$time, pop[,param], uiw=pop[,paste0(param,".se")], sfrac=0,xlab="Time", ylab=paste(param),main=paste(popname), scol='grey',...)
+  if(any(colnames(stat)== paste0(param,".sd"))) plotCI(pop$time, pop[,param], uiw=pop[,paste0(param,".sd")], sfrac=0,xlab="Time", ylab=paste(param),main=paste(popname), scol='grey',...)
   else plot(pop$time, pop[,param], xlab="Time", ylab=paste(param),main=paste(popname),...)
 
 
