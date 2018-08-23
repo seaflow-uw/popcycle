@@ -240,9 +240,9 @@ flowrate <- function(stat, inst=NULL){
     fr <- predict(reg, newdata=data.frame(measured.pressure=log10(stat$stream_pressure)),interval='predict')
 
     stat$flow_rate <- 10^fr[,"fit"] # mL min-1
-    stat$flow_rate.se <- stat$flow_rate * abs((fr[,"upr"]-fr[,"lwr"])/(2 * 1.96 * fr[,"fit"]))
+    stat$flow_rate.sd <- log(10) * stat$flow_rate * apply(fr, 1, sd) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
 
-  return(stat)
+    return(stat)
 
 }
 
@@ -267,18 +267,18 @@ get.stat.table <- function(db, inst=NULL) {
     if(inst == "751") VC <- 0.143
     if(inst == "989") VC <- 0.149
 
-  DF <- get.raw.stat.table(db)
-  stat <- flowrate(DF, inst=inst)
+  stat <- get.raw.stat.table(db)
+  stat <- flowrate(stat, inst=inst)
 
   # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
-  stat[,c("abundance")]  <- stat[,"n_count"] / (1000*VC * median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,c("flow_rate")] * stat[,"file_duration"]/60)   # cells µL-1
-  stat[,c("abundance.se")]  <- stat[,c("abundance")] * stat[,c("flow_rate.se")] / stat[,c("flow_rate")]           # cells µL-1
+  stat[,c("abundance")]  <- stat[,"n_count"] / (1000*VC * median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
+  stat[,c("abundance.sd")]  <- stat[,"abundance"] * stat[,"flow_rate.sd"] / stat[,"flow_rate"]           # cells µL-1
 
   # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
     id <- which(stat$pop == 'prochloro')
     if(length(id) > 0){
-      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000*VC * stat[id,"opp_evt_ratio"] * stat[id,c("flow_rate")] * stat[id,"file_duration"]/60)   # cells µL-1
-      stat[id,c("abundance.se")]  <- stat[id,c("abundance")] * stat[id,c("flow_rate.se")] / stat[id,c("flow_rate")]           # cells µL-1
+      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000*VC * stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
+      stat[id,c("abundance.sd")]  <- stat[id,"abundance"] * stat[id,"flow_rate.sd"] / stat[id,"flow_rate"]           # cells µL-1
     }
 
   return(stat)
@@ -337,9 +337,9 @@ carbon_conversion <- function(stat, inst=NULL){
   qc <- predict(reg, newdata=data.frame(norm.fsc=log10(stat$fsc_small)),interval='predict')
 
   stat[,"Qc"] <- 10^qc[,"fit"] * 1000        # fgC cell-1
-  stat[,"Qc.se"] <-   stat[,"Qc"] * abs((qc[,"upr"]-qc[,"lwr"])/(2*1.96 * qc[,"fit"]))   # fgC cell-1
+  stat[,"Qc.sd"] <-   log(10) * stat[,"Qc"] * apply(qc, 1, sd) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
   stat[,"Cbiomass"] <- stat[,"Qc"] * stat[,"abundance"] / 1000      # pgC L-1
-  stat[,"Cbiomass.se"] <- stat[,"Cbiomass"] * (stat[,"abundance.se"] / stat[,"abundance"] + stat[,"Qc.se"] / stat[,"Qc"]) # pgC L-1
+  stat[,"Cbiomass.sd"] <- stat[,"Cbiomass"] * sqrt((stat[,"abundance.sd"] / stat[,"abundance"])^2 + (stat[,"Qc.sd"] / stat[,"Qc"])^2) # pgC L-1
 
   return(stat)
 
@@ -358,8 +358,8 @@ merge.stat <- function(stat){
 
     para <- c("abundance", "Qc","Cbiomass")
     lwr <- upr <- stat
-      for(p in para) lwr[,p] <- stat[,p]-stat[,paste0(p,".se")]
-      for(p in para) upr[,p] <- stat[,p]+stat[,paste0(p,".se")]
+      for(p in para) lwr[,p] <- stat[,p]-stat[,paste0(p,".sd")]
+      for(p in para) upr[,p] <- stat[,p]+stat[,paste0(p,".sd")]
       df <- rbind(lwr,upr)
 
     para <- colnames(stat)[-c(1,2,13,21,23,25,27,29)]
@@ -368,10 +368,9 @@ merge.stat <- function(stat){
 
     para <- c("D1","D2","fsc_small","chl_small","pe","fsc_perp","abundance", "Qc","Cbiomass")
       df.sd <- aggregate(df[,para], by=list(time=df$time, population=df$pop), FUN=sd)[,-c(1,2)]
-      df.se <- df.sd/sqrt(6) # Calculate SE from SD
-      colnames(df.se) <- paste0(para,".se")
+      colnames(df.sd) <- paste0(para,".sd")
 
-      DF <- cbind(df.mean,df.se)
+      DF <- cbind(df.mean,df.sd)
       DF <- DF[order(DF$time),]
 
       return(DF)
