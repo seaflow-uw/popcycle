@@ -225,22 +225,25 @@ concatenate.evtopp <- function(evtopp.list, n=100000, min.fsc=0, min.pe=0, min.c
 
 
 
-#' Calculation of flow rate based on stream pressure measured by SeaFlow
+#' Calculation of flow rate based on stream pressure measured by SeaFlow and the
 #'
 #' @param dataframe that contains stream pressure measured by SeaFlow (available in SFL table and STAT table). Note that the dataframe needs to have a column named 'stream_pressure'
 #' @param inst Instrument serial. If not provided this will attempt to be
 #'   parsed from the SFL file name (<cruise>_<serial>.sfl).
 #' @return A dataframe with flow rate estimates
 #' @export
-flowrate <- function(stat, inst=NULL){
-
-  if(is.null(inst)) inst <- get.meta(db)[2]
+flowrate <- function(stat, inst=inst){
 
   load(system.file("flowrate", paste0("lm_",inst),package='popcycle'))
     fr <- predict(reg, newdata=data.frame(measured.pressure=log10(stat$stream_pressure)),interval='predict')
 
-    stat$flow_rate <- 10^fr[,"fit"] # mL min-1
-    stat$flow_rate.sd <- log(10) * stat$flow_rate * apply(fr, 1, sd) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
+    # ratio of the volume of the stream analyzed by the laser (aka, detectable region) to the whole water stream (200 µm nozzle) for that instrument
+    drr <- read.csv(system.file("flowrate", "detectable_region.csv",package='popcycle'))
+    drr.mean <- mean(drr[which(drr$seaflow_serial == inst), "detectable_region_ratio"])
+    drr.sd <- sd(drr[which(drr$seaflow_serial == inst), "detectable_region_ratio"])
+
+    stat$flow_rate <- drr.mean * 10^fr[,"fit"]  # mL min-1
+    stat$flow_rate.sd <- stat$flow_rate * sqrt((log(10) * apply(fr, 1, sd))^2 + (drr.sd /drr.mean)^2) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
 
     return(stat)
 
@@ -262,22 +265,17 @@ get.stat.table <- function(db, inst=NULL) {
 
   if(is.null(inst)) inst <- get.meta(db)[2]
 
-  # ratio of the volume of the stream analyzed by the laser (aka, detectable region) to the whole water stream (200 µm nozzle) for that instrument
-    if(inst == "740") VC <- 0.136
-    if(inst == "751") VC <- 0.143
-    if(inst == "989") VC <- 0.149
-
   stat <- get.raw.stat.table(db)
   stat <- flowrate(stat, inst=inst)
 
   # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
-  stat[,c("abundance")]  <- stat[,"n_count"] / (1000*VC * median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
+  stat[,c("abundance")]  <- stat[,"n_count"] / (1000* median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
   stat[,c("abundance.sd")]  <- stat[,"abundance"] * stat[,"flow_rate.sd"] / stat[,"flow_rate"]           # cells µL-1
 
   # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
     id <- which(stat$pop == 'prochloro')
     if(length(id) > 0){
-      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000*VC * stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
+      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
       stat[id,c("abundance.sd")]  <- stat[id,"abundance"] * stat[id,"flow_rate.sd"] / stat[id,"flow_rate"]           # cells µL-1
     }
 

@@ -55,12 +55,6 @@ create.filter.params <- function(inst, fsc, d1, d2, slope.file=NULL) {
   }
   slopes <- read.csv(slope.file)
 
-  # Correction values for D1 and D2 to force the notch of small particles to pass by the origin (0)
-  notch.small.D1ref <- slopes[slopes$ins== inst,'notch.small.D1']
-  notch.small.D2ref <- slopes[slopes$ins== inst,'notch.small.D2']
-  correction.D1 <- round(beads.D1 - notch.small.D1ref * beads.fsc.small)
-  correction.D2 <- round(beads.D2 - notch.small.D2ref * beads.fsc.small)
-
   filter.params <- data.frame()
   headers <- c("quantile", "beads.fsc.small",
                "beads.D1", "beads.D2", "width",
@@ -77,21 +71,20 @@ create.filter.params <- function(inst, fsc, d1, d2, slope.file=NULL) {
     } else if (quantile == 50.0) {
       suffix <- ""
     }
-    notch.small.D1 <- slopes[slopes$ins== inst, paste0('notch.small.D1', suffix)]
-    notch.small.D2 <- slopes[slopes$ins== inst, paste0('notch.small.D2', suffix)]
+
+    # Small particles
+    notch.small.D1 <- beads.D1/beads.fsc.small  * slopes[slopes$ins== inst, paste0('notch.small.D1', suffix)] / slopes[slopes$ins== inst, 'notch.small.D1']
+    notch.small.D2 <- beads.D2/beads.fsc.small  * slopes[slopes$ins== inst, paste0('notch.small.D2', suffix)] / slopes[slopes$ins== inst, 'notch.small.D2']
+    offset.small.D1 <- 0
+    offset.small.D2 <- 0
+  
+    # Large particles
     notch.large.D1 <- slopes[slopes$ins== inst, paste0('notch.large.D1', suffix)]
     notch.large.D2 <- slopes[slopes$ins== inst, paste0('notch.large.D2', suffix)]
-    intersect.small.D1 <- slopes[slopes$ins== inst, paste0('intersect.small.D1', suffix)]
-    intersect.small.D2 <- slopes[slopes$ins== inst, paste0('intersect.small.D2', suffix)]
-    intersect.large.D1 <- slopes[slopes$ins== inst, paste0('intersect.large.D1', suffix)]
-    intersect.large.D2 <- slopes[slopes$ins== inst, paste0('intersect.large.D2', suffix)]
+    offset.large.D1 <- round(beads.D1 - notch.large.D1 * beads.fsc.small)
+    offset.large.D2 <- round(beads.D2 - notch.large.D2 * beads.fsc.small)
 
-    offset.small.D1 <- round(beads.D1 - notch.small.D1 * beads.fsc.small - correction.D1)
-    offset.small.D2 <- round(beads.D2 - notch.small.D2 * beads.fsc.small - correction.D2)
-    offset.large.D1 <- round(beads.D1 - notch.large.D1 * beads.fsc.small - correction.D1)
-    offset.large.D2 <- round(beads.D2 - notch.large.D2 * beads.fsc.small - correction.D2)
-
-    newrow <- data.frame(quantile, beads.fsc.small,
+      newrow <- data.frame(quantile, beads.fsc.small,
                          beads.D1, beads.D2, width,
                          notch.small.D1, notch.small.D2,
                          notch.large.D1, notch.large.D2,
@@ -196,7 +189,7 @@ filter.notch <- function(evt, filter.params) {
 #' @return None
 #' @export
 plot.filter.cytogram <- function(evt, filter.params) {
-  width <- as.numeric(filter.params$width)
+  width <- 2500
   notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
   notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
   notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
@@ -234,33 +227,31 @@ plot.filter.cytogram <- function(evt, filter.params) {
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
 
-  par(mfrow=c(2,2),pty='s')
+  par(mfrow=c(2,3),pty='s')
 
   plot.cytogram(evt., "D1", "D2")
   mtext("Alignment", side=3, line=3, font=2, col=2)
   abline(b=1, a=width, col='red',lwd=2)
   abline(b=1, a=- width, col='red',lwd=2)
-  draw.circle(0,0, radius=2000, border=2, lwd=2)
+  plotrix:::draw.circle(0,0, radius=2000, border=2, lwd=2)
   mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=2, font=2)
   mtext(paste("Width=", width),side=3, line=1,font=2)
 
   plot.cytogram(aligned, "fsc_small", "D1")
   mtext("Focus", side=3, line=3, font=2,col=2)
-  mtext(paste("Notch=", round(notch1, 2)),side=3, line=2,font=2)
-  mtext(paste("Offset=", offset),side=3, line=1,font=2)
   abline(b=notch.small.D1, a=offset.small.D1,col=2)
   abline(b=notch.large.D1, a=offset.large.D1,col=3)
 
   plot.cytogram(aligned, "fsc_small", "D2")
   mtext("Focus", side=3, line=3, font=2,col=2)
-  mtext(paste("Notch=", round(notch2, 2)),side=3, line=2,font=2)
-  mtext(paste("Offset=", offset),side=3, line=1,font=2)
   abline(b=notch.small.D2, a=offset.small.D2,col=2)
   abline(b=notch.large.D2, a=offset.large.D2,col=3)
 
   plot.cytogram(opp, "fsc_small", "pe")
   mtext("OPP", side=3, line=1, font=2, col=2)
   plot.cytogram(opp, "fsc_small","chl_small")
+  mtext("OPP", side=3, line=1, font=2, col=2)
+  plot.cytogram(opp, "chl_small","pe")
   mtext("OPP", side=3, line=1, font=2, col=2)
   mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-2,font=2,col=1)
 
