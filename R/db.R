@@ -1214,7 +1214,7 @@ save.poly <- function(db, poly.log, popname, gating.id) {
 
 #' Import SFL files to the database.
 #'
-#' This function calls seaflowpy_sfl.
+#' This function calls seaflowpy sfl db.
 #'
 #' @param db SQLite3 database file path.
 #' @param cruise Cruise name. If not provided this will attempt to be
@@ -1232,7 +1232,7 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
   # First check for seaflowpy_sfl in PATH
   result <- tryCatch(
     {
-      system2("seaflowpy_sfl", c("--version"), stdout=TRUE, stderr=TRUE)
+      system2("seaflowpy", c("version"), stdout=TRUE, stderr=TRUE)
     },
     warning=function(w) {
       invisible(w)
@@ -1242,24 +1242,24 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
     }
   )
   if (result == "system2error") {
-   warning("Could not run seaflowpy_sfl")
+   warning("Could not run seaflowpy")
    return()
   }
   if (is.null(sfl.file)) {
     stop("save.sfl requires sfl.file")
   }
 
-  args <- c("db", "-d", normalizePath(db), "-s", normalizePath(sfl.file))
+  args <- c("sfl", "db", "-f", "-d", normalizePath(db), "-i", normalizePath(sfl.file))
   if (! is.null(cruise)) {
-    args[length(args)+1] <- "--cruise"
+    args[length(args)+1] <- "-c"
     args[length(args)+1] <- cruise
   }
   if (! is.null(inst)) {
-    args[length(args)+1] <- "--serial"
+    args[length(args)+1] <- "-s"
     args[length(args)+1] <- inst
   }
 
-  system2("seaflowpy_sfl", args, stdout=TRUE, stderr=TRUE)
+  system2("seaflowpy", args, stdout=TRUE, stderr=TRUE)
 }
 
 #' Create a new, empty sqlite3 popcycle database.
