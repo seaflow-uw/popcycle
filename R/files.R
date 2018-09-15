@@ -37,6 +37,9 @@ get.evt.files <- function(evt.dir) {
 get.latest.evt <- function(evt.dir) {
   file.list <- get.evt.files(evt.dir)
   n <- length(file.list)
+  if (n == 0) {
+    return(NA)
+  }
   return(clean.file.path(file.list[n]))
 }
 
@@ -54,7 +57,7 @@ file.transfer <- function(evt.dir, instrument.dir){
 
   id <- match(last.evt, file.list)
 
-  if(length(id) == 0){
+  if(is.na(id)){
     day <- unique(dirname(file.list))
       for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
     print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
@@ -266,7 +269,7 @@ get.stat.table <- function(db, inst=NULL) {
   if(is.null(inst)) inst <- get.meta(db)[2]
 
   stat <- get.raw.stat.table(db)
-  fr <- flowrate(stat, inst=inst)
+  fr <- flowrate(stat$stream_pressure, inst=inst)
 
   stat[,"flow_rate"] <- fr[,1]
   stat[,"flow_rate.sd"] <- fr[,2]
@@ -391,6 +394,8 @@ merge.stat <- function(stat){
 #' }
 #' @export
 get.clean.stat.table <- function(db, inst=NULL, spar=0.7){
+
+  if(is.null(inst)) inst <- get.meta(db)[2]
 
   print("1. Getting raw data"); stat <- get.stat.table(db, inst=inst);
   print("2. Normalizing channel values using beads"); stat <- normalization(stat, spar=spar)

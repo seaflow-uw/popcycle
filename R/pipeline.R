@@ -21,6 +21,11 @@ evaluate.evt <- function(db, evt.dir, opp.dir, vct.dir, evt.file) {
   print(paste('Analyzing', evt.file))
   print(paste('Filtering', evt.file))
   filter.evt.files(db, evt.dir, evt.file, opp.dir)
-  print(paste('Classifying', evt.file))
-  classify.opp.files(db, opp.dir, evt.file, vct.dir)
+  opp.files <- get.opp.table(db)$file
+  if (evt.file %in% opp.files) {
+    print(paste('Classifying', evt.file))
+    classify.opp.files(db, opp.dir, evt.file, vct.dir)
+  } else {
+    print(paste0('Skipping classification of ', evt.file, '. No opp present'))
+  }
 }
