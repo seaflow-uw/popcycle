@@ -77,7 +77,7 @@ create.filter.params <- function(inst, fsc, d1, d2, slope.file=NULL) {
     notch.small.D2 <- beads.D2/beads.fsc.small  * slopes[slopes$ins== inst, paste0('notch.small.D2', suffix)] / slopes[slopes$ins== inst, 'notch.small.D2']
     offset.small.D1 <- 0
     offset.small.D2 <- 0
-  
+
     # Large particles
     notch.large.D1 <- slopes[slopes$ins== inst, paste0('notch.large.D1', suffix)]
     notch.large.D2 <- slopes[slopes$ins== inst, paste0('notch.large.D2', suffix)]
@@ -346,11 +346,15 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
       })
 
       # Save OPP data
-      if (nrow(result$opp) > 0) {
-        save.opp.stats(db, evt.file, all_count, evt_count,
-                       result$opp, p$id, quantile)
-        save.opp.file(result$opp, opp.dir, evt.file, quantile)
-      }
+      tryCatch({
+        if (nrow(result$opp) > 0) {
+          save.opp.stats(db, evt.file, all_count, evt_count,
+                         result$opp, p$id, quantile)
+          save.opp.file(result$opp, opp.dir, evt.file, quantile)
+        }
+      }, error = function(e) {
+        cat(paste0("Error saving opp results to db with file ", evt.file, ": ", e))
+      })
     }
 
     i <-  i + 1
