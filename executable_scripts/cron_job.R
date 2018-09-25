@@ -29,11 +29,19 @@ id <- match(opp.list, unlist(lapply(evt.list, clean.file.path)))
 
 if (length(id) == 0) {
   for (evt.file in evt.list) {
-    evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
+    tryCatch({
+      evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
+    }, error = function(e) {
+      cat(paste0("Error evaluating file ", evt.file, ": ", e))
+    })
   }
 } else {
   for (evt.file in evt.list[-id]) {
-    evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
+    tryCatch({
+      evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
+    }, error = function(e) {
+      cat(paste0("Error evaluating file ", evt.file, ": ", e))
+    })
   }
 }
 
