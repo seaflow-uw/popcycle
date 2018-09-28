@@ -4,6 +4,7 @@
 #' @return D1, D2 and fsc values of presumed 1 µm beads
 #' @export
 inflection.point <- function(DF){
+  QUANTILES <- c(2.5, 50.0, 97.5)
 
   def.par <- par(no.readonly = TRUE) # save default, for resetting...
   par(mfrow=c(1,3),pty='s')
@@ -12,18 +13,31 @@ inflection.point <- function(DF){
     poly.beads <- getpoly(quiet=TRUE)
     b <- subset(DF,inout(DF[,c("fsc_small", "pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
 
-  plot.cytogram(DF, "fsc_small", "D1");points(b$fsc_small, b$D1,col=2, pch = 16, cex = 0.5)
+  plot.cytogram(b, "fsc_small", "D1")
       polyd1 <- getpoly(quiet=TRUE)
+      opp.d1 <- subset(b,inout(b[,c("fsc_small", "D1")],poly=polyd1, bound=TRUE, quiet=TRUE))
 
-  plot.cytogram(DF, "fsc_small", "D2");points(b$fsc_small, b$D2,col=2,pch = 16, cex = 0.5)
+  plot.cytogram(b, "fsc_small", "D2")
       polyd2 <- getpoly(quiet=TRUE)
-
-      fsc <- round(mean(c(polyd1[,1], polyd2[,1])))
-      d1 <- round(mean(polyd1[,2]))
-      d2 <- round(mean(polyd2[,2]))
-      inflection <- data.frame(fsc, d1, d2)
-
+      opp.d2 <- subset(b,inout(b[,c("fsc_small", "D2")],poly=polyd2, bound=TRUE, quiet=TRUE))
   par(def.par)
+
+      FSC <- round(summary(c(opp.d1$fsc_small, opp.d2$fsc_small)))
+      D1 <- round(summary(opp.d1$D1))
+      D2 <- round(summary(opp.d2$D2))
+
+      inflection <- data.frame()
+      for (quant in QUANTILES) {
+        if (quant == 2.5) { i <- 2; j <- 5
+        } else if (quant == 50.0) { i <- j <- 3
+        } else if (quant == 97.5) { i <- 5; j <- 2
+          }
+        fsc <- as.vector(FSC[i])
+        d1 <- as.vector(D1[j])
+        d2 <- as.vector(D2[j])
+        newrow <- data.frame(quantile=quant, fsc, d1, d2, stringsAsFactors=FALSE)
+        inflection <- rbind(inflection, newrow)
+        }
 
   return(inflection)
 }
@@ -42,13 +56,14 @@ inflection.point <- function(DF){
 #' filt <- create.filter.params(inst, fsc, d1, d2)
 #' }
 #' @export
-create.filter.params <- function(inst, fsc, d1, d2, slope.file=NULL) {
+create.filter.params <- function(inst, fsc, d1, d2, width=3000, slope.file=NULL) {
+  QUANTILES <- c(2.5, 50.0, 97.5)
+
   # Rename to get correct dataframe headers
   beads.fsc.small <- as.numeric(fsc)
   beads.D1 <- as.numeric(d1)
   beads.D2 <- as.numeric(d2)
-
-  width <- 2500
+  width <- as.numeric(width)
 
   if (is.null(slope.file)) {
     slope.file <- system.file("filter", "seaflow_filter_slopes.csv",package='popcycle')
@@ -57,35 +72,36 @@ create.filter.params <- function(inst, fsc, d1, d2, slope.file=NULL) {
 
   filter.params <- data.frame()
   headers <- c("quantile", "beads.fsc.small",
-               "beads.D1", "beads.D2", "width",
-               "notch.small.D1", "notch.small.D2",
-               "notch.large.D1", "notch.large.D2",
-               "offset.small.D1", "offset.small.D2",
-               "offset.large.D1", "offset.large.D2")
-
-  for (quantile in QUANTILES) {
-    if (quantile == 2.5) {
+                  "beads.D1", "beads.D2", "width",
+                  "notch.small.D1", "notch.small.D2",
+                  "notch.large.D1", "notch.large.D2",
+                  "offset.small.D1", "offset.small.D2",
+                  "offset.large.D1", "offset.large.D2")
+  for (quant in QUANTILES) {
+    if (quant == 2.5) {
       suffix <- "_2.5"
-    } else if (quantile == 97.5) {
+      i <- 1
+    } else if (quant == 97.5) {
       suffix <- "_97.5"
-    } else if (quantile == 50.0) {
+      i <- 3
+    } else if (quant == 50.0) {
       suffix <- ""
+      i <- 2
     }
 
     # Small particles
-    notch.small.D1 <- beads.D1/beads.fsc.small  * slopes[slopes$ins== inst, paste0('notch.small.D1', suffix)] / slopes[slopes$ins== inst, 'notch.small.D1']
-    notch.small.D2 <- beads.D2/beads.fsc.small  * slopes[slopes$ins== inst, paste0('notch.small.D2', suffix)] / slopes[slopes$ins== inst, 'notch.small.D2']
-    offset.small.D1 <- 0
-    offset.small.D2 <- 0
+    notch.small.D1 <- beads.D1[i]/beads.fsc.small[i]
+    notch.small.D2 <- beads.D2[i]/beads.fsc.small[i]
+    offset.small.D1 <- offset.small.D2 <- 0
 
     # Large particles
     notch.large.D1 <- slopes[slopes$ins== inst, paste0('notch.large.D1', suffix)]
     notch.large.D2 <- slopes[slopes$ins== inst, paste0('notch.large.D2', suffix)]
-    offset.large.D1 <- round(beads.D1 - notch.large.D1 * beads.fsc.small)
-    offset.large.D2 <- round(beads.D2 - notch.large.D2 * beads.fsc.small)
+    offset.large.D1 <- round(beads.D1[i] - notch.large.D1 * beads.fsc.small[i])
+    offset.large.D2 <- round(beads.D2[i] - notch.large.D2 * beads.fsc.small[i])
 
-      newrow <- data.frame(quantile, beads.fsc.small,
-                         beads.D1, beads.D2, width,
+      newrow <- data.frame(quant, beads.fsc.small[i],
+                         beads.D1[i], beads.D2[i], width,
                          notch.small.D1, notch.small.D2,
                          notch.large.D1, notch.large.D2,
                          offset.small.D1, offset.small.D2,
@@ -189,7 +205,7 @@ filter.notch <- function(evt, filter.params) {
 #' @return None
 #' @export
 plot.filter.cytogram <- function(evt, filter.params) {
-  width <- 2500
+  width <- as.numeric(filter.params$width)
   notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
   notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
   notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
@@ -232,24 +248,24 @@ plot.filter.cytogram <- function(evt, filter.params) {
   plot.cytogram(evt., "D1", "D2")
   mtext("Alignment", side=3, line=3, font=2, col=2)
   abline(b=1, a=width, col='red',lwd=2)
-  abline(b=1, a=- width, col='red',lwd=2)
-  plotrix:::draw.circle(0,0, radius=2000, border=2, lwd=2)
-  mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=2, font=2)
-  mtext(paste("Width=", width),side=3, line=1,font=2)
+  abline(b=1, a=-width, col='red',lwd=2)
+  mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=1,font=2)
 
   plot.cytogram(aligned, "fsc_small", "D1")
   mtext("Focus", side=3, line=3, font=2,col=2)
   abline(b=notch.small.D1, a=offset.small.D1,col=2)
   abline(b=notch.large.D1, a=offset.large.D1,col=3)
+  points(filter.params$beads.fsc.small,filter.params$beads.D1, cex=2, pch=16)
 
   plot.cytogram(aligned, "fsc_small", "D2")
   mtext("Focus", side=3, line=3, font=2,col=2)
   abline(b=notch.small.D2, a=offset.small.D2,col=2)
   abline(b=notch.large.D2, a=offset.large.D2,col=3)
+  points(filter.params$beads.fsc.small,filter.params$beads.D2, cex=2, pch=16)
 
-  plot.cytogram(opp, "fsc_small", "pe")
+  plot.cytogram(opp, "fsc_small", "pe"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
   mtext("OPP", side=3, line=1, font=2, col=2)
-  plot.cytogram(opp, "fsc_small","chl_small")
+  plot.cytogram(opp, "fsc_small","chl_small"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
   mtext("OPP", side=3, line=1, font=2, col=2)
   plot.cytogram(opp, "chl_small","pe")
   mtext("OPP", side=3, line=1, font=2, col=2)
