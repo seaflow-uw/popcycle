@@ -15,40 +15,6 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small',...
   else plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(evtopp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 }
 
-#' Plot cytogram for one EVT file.
-#'
-#' @param evt.dir EVT file directory.
-#' @param file.name File name with julian day directory.
-#' @param para.x Channel to use as x axis.
-#' @param para.y Channel to use as y axis.
-#' @param ... Additional parameters for densCols()
-#' @return None
-#' @export
-plot.evt.cytogram.by.file <- function(evt.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
-  evt <- readSeaflow(file.path(evt.dir, file.name))
-  plot.cytogram(evt, para.x = para.x, para.y = para.y,...)
-}
-
-#' Plot cytogram for one OPP file.
-#'
-#' @param opp.dir OPP file directory.
-#' @param file.name File name with julian day directory.
-#' @param para.x Channel to use as x axis.
-#' @param para.y Channel to use as y axis.
-#' @param ... Additional parameters for densCols()
-#' @return None
-#' @export
-plot.opp.cytogram.by.file <- function(opp.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
-  if (endswith(file.name, ".gz")) {
-    # Remove .gz
-    file.name <- substr(file.name, 1, nchar(file.name) - nchar(".gz"))
-  }
-  if (! endswith(file.name, ".opp")) {
-    file.name <- paste0(file.name, ".opp")
-  }
-  opp <- readSeaflow(file.path(opp.dir, file.name))
-  plot.cytogram(opp, para.x = para.x, para.y = para.y,...)
-}
 
 #' Plot cytogram with particles colored by population.
 #'
@@ -73,21 +39,6 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',..
 	}
 }
 
-
-#' Plot cytogram with particles colored by population for one file.
-#'
-#' @param opp.dir OPP file directory.
-#' @param vct.dir VCT file directory.
-#' @param file.name File name with julian day directory.
-#' @param para.x Channel to use as x axis.
-#' @param para.y Channel to use as y axis.
-#' @param ... Additional parameters for densCols()
-#' @return None
-#' @export
-plot.vct.cytogram.by.file <- function(opp.dir, vct.dir, file.name, para.x = 'fsc_small', para.y = 'chl_small',...){
-  opp <- get.opp.by.file(opp.dir, file.name, vct.dir=vct.dir)
-  plot.vct.cytogram(opp, para.x = para.x, para.y = para.y,...)
-}
 
 #' Plot cytogram with gates.
 #'
@@ -115,20 +66,6 @@ plot.gating.cytogram <- function(opp, poly.log=NULL, para.x = 'fsc_small', para.
 	    }
 		}
 	}
-}
-
-#' Plot cytogram with gates for one file.
-#'
-#' @param opp.dir OPP file directory.
-#' @param file.name File name with julian day directory.
-#' @param poly.log Gating polygon(s) to draw (optional).
-#' @param para.x Channel to use as x axis.
-#' @param para.y Channel to use as y axis.
-#' @return None
-#' @export
-plot.gating.cytogram.by.file <- function(opp.dir, file.name, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
-  opp <- get.opp.by.file(opp.dir, file.name)
-  plot.gating.cytogram(opp, poly.log, para.x = para.x, para.y = para.y)
 }
 
 
@@ -182,7 +119,7 @@ plot.time <- function(stat, popname,param, ...){
   require(plotrix, quietly=T)
 
   stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
-  pop <- subset(stat, population == popname)
+  pop <- subset(stat, pop == popname)
   if(any(colnames(stat)== paste0(param,".sd"))) plotCI(pop$time, pop[,param], uiw=pop[,paste0(param,".sd")], sfrac=0,xlab="Time", ylab=paste(param),main=paste(popname), scol='grey',...)
   else plot(pop$time, pop[,param], xlab="Time", ylab=paste(param),main=paste(popname),...)
 

@@ -297,7 +297,7 @@ get.stat.table <- function(db, inst=NULL) {
 #' @param spar smooothing parameter, the higher the more smoothing is applied.
 #' @return A dataframe with normalized D1, D2, fsc_small, chl_small, pe and fsc_perp values
 #' @export
-normalization <- function(stat, spar=0.7){
+normalization <- function(stat, spar=0.1){
 
   #check that there is beads in the table
   if(!any(unique(stat$pop) == 'beads')){
@@ -365,24 +365,26 @@ carbon_conversion <- function(stat, inst=NULL){
 merge.stat <- function(stat){
 
     para <- c("abundance", "Qc","Cbiomass")
-    lwr <- upr <- stat
+    lwr <- upr <- mid <- stat
       for(p in para) lwr[,p] <- stat[,p]-stat[,paste0(p,".sd")]
       for(p in para) upr[,p] <- stat[,p]+stat[,paste0(p,".sd")]
-      df <- rbind(lwr,upr)
+      for(p in para) mid[,p] <- stat[,p]
+      df <- rbind(lwr, mid, upr)
 
-    para <- colnames(stat)[-c(1,2,13,21,23,25,27,29)]
-      df.mean <- aggregate(df[,para], by=list(time=df$time, population=df$pop), FUN=mean)
+    para <- c("lat","lon","temp","salinity","conductivity","par","stream_pressure","file_duration","event_rate","opp_evt_ratio","n_count","D1","D2","fsc_small","chl_small","pe","fsc_perp","flow_rate","flow_rate.sd","abundance", "Qc","Cbiomass")
+      df.mean <- aggregate(df[,para], by=list(time=df$time, pop=df$pop), FUN=mean)
       df.mean$file <- stat[match(df.mean$time, stat$time),"file"]
 
     para <- c("D1","D2","fsc_small","chl_small","pe","fsc_perp","abundance", "Qc","Cbiomass")
-      df.sd <- aggregate(df[,para], by=list(time=df$time, population=df$pop), FUN=sd)[,-c(1,2)]
+      df.sd <- aggregate(df[,para], by=list(time=df$time, pop=df$pop), FUN=sd)[,-c(1,2)]
       colnames(df.sd) <- paste0(para,".sd")
 
-      DF <- cbind(df.mean,df.sd)
-      DF <- DF[order(DF$time),]
+    DF <- cbind(df.mean,df.sd)
+    DF <- DF[order(DF$time),]
 
       return(DF)
 }
+
 
 
 #' Get aggregate statistics data frame along with propagation of errors
@@ -397,7 +399,7 @@ merge.stat <- function(stat){
 #' stat <- get.clean.stat.table(db, inst=NULL, spar=0.7)
 #' }
 #' @export
-get.clean.stat.table <- function(db, inst=NULL, spar=0.7){
+get.clean.stat.table <- function(db, inst=NULL, spar=0.1){
 
   if (is.null(inst)) {
     inst <- get.inst(db)

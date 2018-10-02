@@ -4,7 +4,7 @@
 \alias{get.clean.stat.table}
 \title{Get aggregate statistics data frame along with propagation of errors}
 \usage{
-get.clean.stat.table(db, inst = NULL, spar = 0.7)
+get.clean.stat.table(db, inst = NULL, spar = 0.1)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

@@ -4,7 +4,8 @@
 \alias{create.filter.params}
 \title{Get Notch and Offset values for Filter.notch function.}
 \usage{
-create.filter.params(inst, fsc, d1, d2, slope.file = NULL)
+create.filter.params(inst, fsc, d1, d2, width = 3000,
+  slope.file = NULL)
 }
 \arguments{
 \item{inst}{Instrument serial number}
