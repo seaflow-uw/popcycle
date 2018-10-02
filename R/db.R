@@ -669,8 +669,39 @@ get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
 
   return(poly.log)
 }
+#' Get cruise name
+#'
+#' @param db SQLite3 database file path.
+#' @return Cruise name
+#' @examples
+#' \dontrun{
+#' cruise <- get.cruise(db)
+#' }
+#' @export
+get.cruise <- function(db) {
+  meta <- get.meta.table(db)
+  if (nrow(meta) == 0) {
+    stop(paste0("No cruise name found, metadata table is empty"))
+  }
+  return(meta$cruise[1])
+}
 
-
+#' Get instrument serial number
+#'
+#' @param db SQLite3 database file path.
+#' @return One serial number
+#' @examples
+#' \dontrun{
+#' inst <- get.inst(db)
+#' }
+#' @export
+get.inst <- function(db) {
+  meta <- get.meta.table(db)
+  if (nrow(meta) == 0) {
+    stop(paste0("No instrument serial found, metadata table is empty"))
+  }
+  return(meta$inst[1])
+}
 
 #' Get instrument serial number and cruise name
 #'
@@ -678,10 +709,10 @@ get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
 #' @return Data frame.
 #' @examples
 #' \dontrun{
-#' meta <- get.meta(db)
+#' meta <- get.meta.table(db)
 #' }
 #' @export
-get.meta <- function(db) {
+get.meta.table <- function(db) {
   sql <- "SELECT * FROM metadata;"
   meta <- sql.dbGetQuery(db, sql)
   return(meta)

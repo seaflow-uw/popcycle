@@ -4,8 +4,8 @@
 \alias{plot.vct.cytogram.by.file}
 \title{Plot cytogram with particles colored by population for one file.}
 \usage{
-plot.vct.cytogram.by.file(opp.dir, vct.dir, file.name, para.x = "fsc_small",
-  para.y = "chl_small", ...)
+plot.vct.cytogram.by.file(opp.dir, vct.dir, file.name,
+  para.x = "fsc_small", para.y = "chl_small", ...)
 }
 \arguments{
 \item{opp.dir}{OPP file directory.}

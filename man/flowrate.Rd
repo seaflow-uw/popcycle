@@ -2,19 +2,19 @@
 % Please edit documentation in R/files.R
 \name{flowrate}
 \alias{flowrate}
-\title{Calculation of flow rate based on stream pressure measured by SeaFlow}
+\title{Calculation of flow rate based on stream pressure measured by SeaFlow and the ratio of the detectable region}
 \usage{
-flowrate(stat, inst = NULL)
+flowrate(stream_pressure, inst = inst)
 }
 \arguments{
 \item{inst}{Instrument serial. If not provided this will attempt to be
 parsed from the SFL file name (<cruise>_<serial>.sfl).}
 
-\item{dataframe}{that contains stream pressure measured by SeaFlow (available in SFL table and STAT table). Note that the dataframe needs to have a column named 'stream_pressure'}
+\item{a}{vector that contains stream pressure measured by SeaFlow (available in SFL table and STAT table).}
 }
 \value{
 A dataframe with flow rate estimates
 }
 \description{
-Calculation of flow rate based on stream pressure measured by SeaFlow
+Calculation of flow rate based on stream pressure measured by SeaFlow and the ratio of the detectable region
 }

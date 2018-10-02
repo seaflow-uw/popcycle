@@ -4,8 +4,8 @@
 \alias{get.opp.by.date}
 \title{Get OPP data frame by date and quantile}
 \usage{
-get.opp.by.date(db, opp.dir, quantile, start.date, end.date, channel = NULL,
-  transform = TRUE, vct.dir = NULL, pop = NULL)
+get.opp.by.date(db, opp.dir, quantile, start.date, end.date,
+  channel = NULL, transform = TRUE, vct.dir = NULL, pop = NULL)
 }
 \arguments{
 \item{db}{SQLite3 data file path.}

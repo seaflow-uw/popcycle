@@ -21,7 +21,7 @@ parsed from the SFL file name (<cruise>_<serial>.sfl).}
 None
 }
 \description{
-This function calls seaflowpy_sfl.
+This function calls seaflowpy sfl db.
 }
 \examples{
 \dontrun{

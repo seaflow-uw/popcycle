@@ -6,8 +6,9 @@
 \usage{
 seaflowpy_filter(db, cruise.name, evt.dir, opp.dir, process.count = 1,
   twopass = FALSE, limit = NULL, resolution = NULL, width = NULL,
-  notch.small.D1 = NULL, notch.small.D2 = NULL, notch.large.D1 = NULL,
-  notch.large.D2 = NULL, offset.small.D1 = NULL, offset.small.D2 = NULL,
+  notch.small.D1 = NULL, notch.small.D2 = NULL,
+  notch.large.D1 = NULL, notch.large.D2 = NULL,
+  offset.small.D1 = NULL, offset.small.D2 = NULL,
   offset.large.D1 = NULL, offset.large.D2 = NULL)
 }
 \arguments{

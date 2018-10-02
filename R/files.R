@@ -266,7 +266,9 @@ flowrate <- function(stream_pressure, inst=inst){
 #' @export
 get.stat.table <- function(db, inst=NULL) {
 
-  if(is.null(inst)) inst <- get.meta(db)[2]
+  if (is.null(inst)) {
+    inst <- get.inst(db)
+  }
 
   stat <- get.raw.stat.table(db)
   fr <- flowrate(stat$stream_pressure, inst=inst)
@@ -335,7 +337,9 @@ normalization <- function(stat, spar=0.7){
 #' @export
 carbon_conversion <- function(stat, inst=NULL){
 
-  if(is.null(inst)) inst <- get.meta(db)[2]
+  if (is.null(inst)) {
+    inst <- get.inst(db)
+  }
 
   load(system.file("cbiomass", paste0("lm_",inst),package='popcycle'))
   qc <- predict(reg, newdata=data.frame(norm.fsc=log10(stat$fsc_small)),interval='predict')
@@ -395,7 +399,9 @@ merge.stat <- function(stat){
 #' @export
 get.clean.stat.table <- function(db, inst=NULL, spar=0.7){
 
-  if(is.null(inst)) inst <- get.meta(db)[2]
+  if (is.null(inst)) {
+    inst <- get.inst(db)
+  }
 
   print("1. Getting raw data"); stat <- get.stat.table(db, inst=inst);
   print("2. Normalizing channel values using beads"); stat <- normalization(stat, spar=spar)

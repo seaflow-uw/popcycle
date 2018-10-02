@@ -4,7 +4,8 @@
 \alias{save.opp.stats}
 \title{Save OPP aggregate statistics for one file/quantile combo to opp table.}
 \usage{
-save.opp.stats(db, file.name, all_count, evt_count, opp, filter.id, quantile)
+save.opp.stats(db, file.name, all_count, evt_count, opp, filter.id,
+  quantile)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

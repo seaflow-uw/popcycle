@@ -4,7 +4,8 @@
 \alias{readSeaflow}
 \title{Read an EVT or OPP binary file.}
 \usage{
-readSeaflow(path, count.only = FALSE, transform = TRUE, channel = NULL)
+readSeaflow(path, count.only = FALSE, transform = TRUE,
+  channel = NULL)
 }
 \arguments{
 \item{path}{Path to binary file. If this file does not exist the same
