@@ -245,7 +245,7 @@ auto.classify <- function(opp, params, popname) {
   if (is.null(params$min.pe) | is.na(params$min.pe)) {
    row.selection = opp$pop == "unknown"
   } else {
-   row.selection = opp$pop == "unknown" & opp$pe > params$min.pe
+   row.selection = opp$pop == "unknown" & opp[,paste(params$x)] > params$min.pe
   }
   x <- opp[row.selection, names(opp) != "pop"]
 
