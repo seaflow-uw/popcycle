@@ -34,11 +34,11 @@ opp.list <- unique(get.opp.table(db)$file)
 evt.list <- get.evt.files(evt.dir)
 # Filter out files which have already created an OPP entry or for which
 # filtering has been attempted but no OPP was produced.
-already.opp.idx <- match(opp.list, unlist(lapply(evt.list, clean.file.path)))
+already.opp.idx <- na.omit(match(opp.list, unlist(lapply(evt.list, clean.file.path))))
 if (length(already.opp.idx) != 0) {
   evt.list <- evt.list[-already.opp.idx]
 }
-already.processed.idx <- match(processed.list, unlist(lapply(evt.list, clean.file.path)))
+already.processed.idx <- na.omit(match(processed.list, unlist(lapply(evt.list, clean.file.path))))
 if (length(already.processed.idx) != 0) {
   evt.list <- evt.list[-already.processed.idx]
 }
