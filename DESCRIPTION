@@ -1,9 +1,9 @@
 Package: popcycle
-Title: Popcycle: A R package for Real-time Analysis of continuous SeaFlow data
-Version: 0.4.1
+Title: Popcycle: A R package for analysis of continuous SeaFlow data
+Version: 1.0.1
 Author: Francois Ribalet, Chris Berthiaume, Jeremy Hyrkas
 Maintainer: Francois Ribalet <ribalet@uw.edu>
-Description: Real-time Seaflow analysis using R/SQLite.
+Description: Seaflow analysis using R/SQLite.
 Depends:
     RSQLite,
     splancs,
