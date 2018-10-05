@@ -24,23 +24,13 @@ if (nrow(filter.params) == 0) {
 ############################
 ### ANALYZE LAST FILE(s) ###
 ############################
-read.attempt <- try(read.table(processed.file, header=F, colClasses="character"))
-if (inherits(read.attempt, "try-error")) {
-  processed.list <- c()
-} else {
-  processed.list <- read.attempt[,1]
-}
-opp.list <- unique(get.opp.table(db)$file)
+opp.list <- get.opp.files(db, all.files=TRUE)
 evt.list <- get.evt.files(evt.dir)
 # Filter out files which have already created an OPP entry or for which
 # filtering has been attempted but no OPP was produced.
 already.opp.idx <- na.omit(match(opp.list, unlist(lapply(evt.list, clean.file.path))))
 if (length(already.opp.idx) != 0) {
   evt.list <- evt.list[-already.opp.idx]
-}
-already.processed.idx <- na.omit(match(processed.list, unlist(lapply(evt.list, clean.file.path))))
-if (length(already.processed.idx) != 0) {
-  evt.list <- evt.list[-already.processed.idx]
 }
 for (evt.file in evt.list) {
   tryCatch({
@@ -49,11 +39,6 @@ for (evt.file in evt.list) {
     cat(paste0("Error evaluating file ", evt.file, ": ", e))
   })
 }
-
-# Save list of files we have already processed. This is a temporary kludge
-# (really!) to prevent attempting to refilter files that produce no OPP.
-# Eventually such files will be tracked in the database.
-write.table(evt.list, file=processed.file, row.names=F, col.names=F, append=T)
 
 ######################
 ### PLOT CYTOGRAMS ###

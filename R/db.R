@@ -333,6 +333,8 @@ get.opp.stats.by.date <- function(db, start.date, end.date) {
       sfl.file == opp.file"
   sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
   opp <- sql.dbGetQuery(db, sql)
+  opp.files <- get.opp.files(db)  # get opp files with particles in all quantiles
+  opp <- opp[opp$file %in% opp.files, ]
   return(opp)
 }
 
@@ -862,22 +864,6 @@ get.raw.stat.table <- function(db) {
 }
 
 
-#' Get names for EVT files which produced no OPP data.
-#'
-#' @param db SQLite3 database file path.
-#' @param evt.files list of EVT file paths, e.g. get.evt.files(evt.dir).
-#' @return List of EVT files which produced no OPP data.
-#' @examples
-#' \dontrun{
-#' empty.evt.files <- get.empty.evt.files(db, evt.files)
-#' }
-#' @export
-get.empty.evt.files <- function(db, evt.files) {
-  opp.files <- get.opp.files(db)
-  evt.files <- unlist(lapply(evt.files, function(f) { clean.file.path(f) }))
-  return(setdiff(evt.files, opp.files))
-}
-
 #' Get a list of EVT files by date range.
 #'
 #' @param db SQLite3 database file path.
@@ -918,9 +904,12 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 }
 
 
-#' Get OPP file names.
+#' Get OPP file names for data with focused particles in all quantiles.
 #'
 #' @param db SQLite3 database file path.
+#' @param all.files Return all OPP files that were considered for processing,
+#'   even entries where the raw EVT was unreadable or no focused particles made
+#'   it through filtering.
 #' @return List of OPP file names based on the latest filtering
 #'   parameters or NULL if no filtering has been done.
 #' @examples
@@ -928,15 +917,19 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' opp.files <- get.opp.files(db)
 #' }
 #' @export
-get.opp.files <- function(db) {
+get.opp.files <- function(db, all.files=FALSE) {
   filter.id <- get.filter.params.latest(db)$id
   if (is.null(filter.id)) {
     return(NULL)
   }
   filter.id <- filter.id[1]
-  sql <- paste0("SELECT DISTINCT file from opp WHERE filter_id = '", filter.id, "'")
+  if (all.files) {
+    sql <- paste0("SELECT file from opp WHERE filter_id = '", filter.id, "' GROUP BY file")
+  } else {
+    # Only return files where all quantiles produced OPP data
+    sql <- paste0("SELECT file FROM opp WHERE opp_count > 0 AND filter_id = '", filter.id, "' GROUP BY file HAVING COUNT(*) == 3")
+  }
   files <- sql.dbGetQuery(db, sql)
-  print(paste(length(files$file), "opp files found"))
   return(files$file)
 }
 
@@ -1060,11 +1053,16 @@ save.opp.stats <- function(db, file.name, all_count,
   }
   opp <- transformData(opp)
   opp_count <- nrow(opp)
+  if (evt_count == 0) {
+    opp_evt_ratio <- 0.0
+  } else {
+    opp_evt_ratio <- opp_count / evt_count
+  }
   df <- data.frame(file=clean.file.path(file.name),
                    all_count=all_count,
                    opp_count=opp_count,
                    evt_count=evt_count,
-                   opp_evt_ratio=opp_count/evt_count,
+                   opp_evt_ratio=opp_evt_ratio,
                    filter_id=filter.id,
                    quantile=quantile)
   sql.dbWriteTable(db, name="opp", value=df)
@@ -1112,8 +1110,8 @@ save.outliers <- function(db, table.name) {
 #'   filter.params
 #' @param beads.D1 D1 of 1µm beads used to determine filter.params
 #' @param beads.D1 D2 of 1µm beads used to determine filter.params
-#' @param filter.params Data frame of filtering parameters returned from
-#'   create.filter.params(), one row per quantile. Columns should include:
+#' @param filter.params Data frame of filtering parameters one row per
+#'   quantile. Columns should include:
 #'   quantile, beads.fsc.small, beads.D1, beads.D2, width,
 #'   notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
 #'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.

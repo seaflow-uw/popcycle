@@ -12,6 +12,9 @@
 #' }
 #' @export
 transformData <- function(df) {
+  if (nrow(df) == 0) {
+    return(df)
+  }
   id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) == "pop")
   if (length(id)) {
     df[,-c(id)] <- 10^((df[,-c(id)]/2^16)*3.5)
@@ -39,6 +42,9 @@ transformData <- function(df) {
 #' }
 #' @export
 untransformData <- function(df) {
+  if (nrow(df) == 0) {
+    return(df)
+  }
   id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
   if (length(id)) {
     df[,-c(id)] <-(log10(df[,-c(id)])/3.5)*2^16
