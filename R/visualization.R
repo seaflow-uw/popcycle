@@ -80,7 +80,7 @@ plot.map <- function(stat,popname,param,...){
 
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
-  map.type <- 'worldHires'
+  map.type <- 'world'
 
     xlim <- range(stat$lon, na.rm=T)
     ylim <- range(stat$lat, na.rm=T)
@@ -91,14 +91,14 @@ plot.map <- function(stat,popname,param,...){
       xlim <- c(min(stat$lon, na.rm=TRUE), max(stat$lon, na.rm=TRUE))
       stat <- stat[-which(is.na(stat$lon)),]
       stat$lon[stat$lon < 0] <- stat$lon[stat$lon < 0] + 360
-      map.type <- 'world2Hires'
+      map.type <- 'world2'
         }
 
   # plot the cruise track as gray line back-ground
   pop <- subset(stat, pop == popname)
   plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
             xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Latitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
-  try(maps::map(map.type, fill=F, col='black',add=TRUE))
+  try(maps::map(map.type, fill=T, col='darkgrey',add=TRUE))
   points(pop$lon, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop[,param],100)],...)
 
     ylim <- par('usr')[c(3,4)]
