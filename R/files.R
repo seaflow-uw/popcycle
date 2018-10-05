@@ -350,11 +350,11 @@ size_carbon_conversion <- function(stat, inst=NULL){
 
   #diameter (µm)
   stat[,"diameter"] <- 10^v$y[id.v]
-  stat[,"diameter.sd"] <-  stat[,"diameter"] * stat[,"fsc_small.sd"]/stat[,"fsc_small"]
+  stat[,"diameter.sd"] <-  stat[,"diameter"] * 0.3 # TO DO, use uncertainities in Mie prediction to calcualte diamter.sd
 
   # carbon cell quotas (fgC cell-1)
   stat[,"Qc"] <- 10^u$y[id.u] * 1000 * 2
-  stat[,"Qc.sd"] <-  stat[,"Qc"] * stat[,"fsc_small.sd"]/stat[,"fsc_small"]
+  stat[,"Qc.sd"] <-  stat[,"Qc"] * 0.3 # TO DO, use uncertainities in Mie prediction to calcualte Qc.sd
 
   # carbon biomass (pgC L-1)
   stat[,"Cbiomass"] <- stat[,"Qc"] * stat[,"abundance"] / 1000
