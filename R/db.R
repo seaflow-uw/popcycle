@@ -1491,12 +1491,16 @@ POSIXct.to.db.date <- function(date.ct) {
 
 #' Get current UTC datetime as RFC3339 string suitable for entry into db
 #'
-#' @return Date text as YYYY-MM-DDTHH:MM:SS.ssssss+00:00."
+#' @return Date text as YYYY-MM-DDTHH:MM:SS+00:00."
 #' @examples
 #' \dontrun{
 #' datetime.str <- RFC3339.now()
 #' }
 #' @export
 RFC3339.now <- function() {
-  return(format(as.POSIXct(Sys.time(), tz="GMT"),format="%FT%H:%M:%OS6+00:00"))
+  # Now in local time POSIXct
+  now.local <- Sys.time()
+  # Change timezone to UTC
+  attr(now.local, "tzone") <- "UTC"
+  return(format(now.local, format="%FT%H:%M:%S+00:00"))
 }
