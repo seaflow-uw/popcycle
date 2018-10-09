@@ -7,7 +7,7 @@
 RFC3339.now()
 }
 \value{
-Date text as YYYY-MM-DDTHH:MM:SS.ssssss+00:00."
+Date text as YYYY-MM-DDTHH:MM:SS+00:00."
 }
 \description{
 Get current UTC datetime as RFC3339 string suitable for entry into db
