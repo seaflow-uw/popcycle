@@ -283,6 +283,8 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
     delete.opp.by.file(opp.dir, evt.file)
     delete.opp.stats.by.file(db, evt.file)
 
+    quantile_opp_counts <- list(0, 0, 0)
+    qi <- 1
     for (quantile in QUANTILES) {
       p <- filter.params[filter.params$quantile == quantile, ]
       # Filter EVT to OPP
@@ -321,6 +323,15 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
         delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
         break
       }
+      # store how many focused particles there were for this quantile
+      quantile_opp_counts[qi] <- nrow(result$opp)
+      qi <- qi + 1
+    }
+
+    # If all quantiles didn't produce OPP for this EVT file, erase any OPP
+    # files that were created, but keep all DB entries
+    if (! all(quantile_opp_counts > 0)) {
+      delete.opp.by.file(opp.dir, evt.file)
     }
 
     i <-  i + 1
