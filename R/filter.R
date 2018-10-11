@@ -42,78 +42,6 @@ inflection.point <- function(DF){
   return(inflection)
 }
 
-#' Get Notch and Offset values for Filter.notch function.
-#'
-#' @param inst Instrument serial number
-#' @param fsc Small forward scatter value of 1 µm beads
-#' @param d1 D1 value of 1 µm beads
-#' @param d2 D2 value of 1 µm beads
-#' @param slopes User-supplied filter slope CSV file, overriding the installed
-#'   default file.
-#' @return Data frame with filtering parameters for 2.5, 50.0, 97.5 quantiles
-#' @examples
-#' \dontrun{
-#' filt <- create.filter.params(inst, fsc, d1, d2)
-#' }
-#' @export
-create.filter.params <- function(inst, fsc, d1, d2, width=3000, slope.file=NULL) {
-  QUANTILES <- c(2.5, 50.0, 97.5)
-
-  # Rename to get correct dataframe headers
-  beads.fsc.small <- as.numeric(fsc)
-  beads.D1 <- as.numeric(d1)
-  beads.D2 <- as.numeric(d2)
-  width <- as.numeric(width)
-
-  if (is.null(slope.file)) {
-    slope.file <- system.file("filter", "seaflow_filter_slopes.csv",package='popcycle')
-  }
-  slopes <- read.csv(slope.file)
-
-  filter.params <- data.frame()
-  headers <- c("quantile", "beads.fsc.small",
-                  "beads.D1", "beads.D2", "width",
-                  "notch.small.D1", "notch.small.D2",
-                  "notch.large.D1", "notch.large.D2",
-                  "offset.small.D1", "offset.small.D2",
-                  "offset.large.D1", "offset.large.D2")
-  for (quant in QUANTILES) {
-    if (quant == 2.5) {
-      suffix <- "_2.5"
-      i <- 1
-    } else if (quant == 97.5) {
-      suffix <- "_97.5"
-      i <- 3
-    } else if (quant == 50.0) {
-      suffix <- ""
-      i <- 2
-    }
-
-    # Small particles
-    notch.small.D1 <- beads.D1[i]/beads.fsc.small[i]
-    notch.small.D2 <- beads.D2[i]/beads.fsc.small[i]
-    offset.small.D1 <- offset.small.D2 <- 0
-
-    # Large particles
-    notch.large.D1 <- slopes[slopes$ins== inst, paste0('notch.large.D1', suffix)]
-    notch.large.D2 <- slopes[slopes$ins== inst, paste0('notch.large.D2', suffix)]
-    offset.large.D1 <- round(beads.D1[i] - notch.large.D1 * beads.fsc.small[i])
-    offset.large.D2 <- round(beads.D2[i] - notch.large.D2 * beads.fsc.small[i])
-
-      newrow <- data.frame(quant, beads.fsc.small[i],
-                         beads.D1[i], beads.D2[i], width,
-                         notch.small.D1, notch.small.D2,
-                         notch.large.D1, notch.large.D2,
-                         offset.small.D1, offset.small.D2,
-                         offset.large.D1, offset.large.D2,
-                         stringsAsFactors=FALSE)
-    names(newrow) <- headers
-    filter.params <- rbind(filter.params, newrow)
-  }
-
-  return(filter.params)
-}
-
 #' Filter EVT particles with a generic filter function.
 #'
 #' @param evt EVT data frame.
@@ -340,12 +268,20 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
       print(err)
       return(data.frame())
     })
-    evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
-    evt_count <- nrow(evt.)
-    all_count <- nrow(evt)
+
+    if (nrow(evt) > 0) {
+      # noise filter
+      evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
+      evt_count <- nrow(evt.)  # after noise filter
+      all_count <- nrow(evt)   # before noise filter
+    } else {
+      evt_count <- 0
+      all_count <- 0
+    }
 
     # Delete all versions of this OPP file
     delete.opp.by.file(opp.dir, evt.file)
+    delete.opp.stats.by.file(db, evt.file)
 
     for (quantile in QUANTILES) {
       p <- filter.params[filter.params$quantile == quantile, ]
@@ -362,15 +298,29 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
       })
 
       # Save OPP data
-      tryCatch({
+      err <- tryCatch({
+        save.opp.stats(db, evt.file, all_count, evt_count,
+                       result$opp, p$id, quantile)
+      }, error = function(e) {
+        cat(paste0("Error saving opp results to db with file ", evt.file, " for quantile ", quantile, ": ", e))
+      })
+      if (inherits(err, "error")) {
+        delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
+        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+        break
+      }
+      err <- tryCatch({
         if (nrow(result$opp) > 0) {
-          save.opp.stats(db, evt.file, all_count, evt_count,
-                         result$opp, p$id, quantile)
           save.opp.file(result$opp, opp.dir, evt.file, quantile)
         }
       }, error = function(e) {
-        cat(paste0("Error saving opp results to db with file ", evt.file, ": ", e))
+        cat(paste0("Error saving opp file ", evt.file, " for quantile ", quantile, ": ", e))
       })
+      if (inherits(err, "error")) {
+        delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
+        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+        break
+      }
     }
 
     i <-  i + 1

@@ -2,19 +2,23 @@
 % Please edit documentation in R/db.R
 \name{get.opp.files}
 \alias{get.opp.files}
-\title{Get OPP file names.}
+\title{Get OPP file names for data with focused particles in all quantiles.}
 \usage{
-get.opp.files(db)
+get.opp.files(db, all.files = FALSE)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
+
+\item{all.files}{Return all OPP files that were considered for processing,
+even entries where the raw EVT was unreadable or no focused particles made
+it through filtering.}
 }
 \value{
 List of OPP file names based on the latest filtering
   parameters or NULL if no filtering has been done.
 }
 \description{
-Get OPP file names.
+Get OPP file names for data with focused particles in all quantiles.
 }
 \examples{
 \dontrun{

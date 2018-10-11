@@ -10,7 +10,9 @@ test_that("EVT files are located correctly", {
               "2014_185/2014-07-04T00-03-02+00-00",
               "2014_185/2014-07-04T00-06-02+00-00",
               "2014_185/2014-07-04T00-09-02+00-00",
-              "2014_185/2014-07-04T00-12-02+00-00"
+              "2014_185/2014-07-04T00-12-02+00-00",
+              "2014_185/2014-07-04T00-15-02+00-00",
+              "2014_185/2014-07-04T00-17-02+00-00"
             )
   expect_equal(get.evt.files(x$evt.input.dir), sort(answer))
 
@@ -20,7 +22,7 @@ test_that("EVT files are located correctly", {
 test_that("Latest EVT file found correctly", {
   x <- setUp()
 
-  answer <- "2014_185/2014-07-04T00-12-02+00-00"
+  answer <- "2014_185/2014-07-04T00-17-02+00-00"
   expect_equal(get.latest.evt(x$evt.input.dir), answer)
 
   tearDown(x)

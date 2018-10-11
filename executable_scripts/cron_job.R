@@ -7,6 +7,7 @@ opp.dir <- file.path(Sys.getenv("RESULTSDIR"), "opp")
 vct.dir <- file.path(Sys.getenv("RESULTSDIR"), "vct")
 stat.file <- file.path(Sys.getenv("RESULTSDIR"), "sync", "stats.csv")
 sfl.file <- file.path(Sys.getenv("RESULTSDIR"), "sync", "sfl.csv")
+processed.file <- file.path(Sys.getenv("RESULTSDIR"), "already-processed.txt")
 inst <- Sys.getenv("SERIAL")
 cruise <- Sys.getenv("CRUISE")
 
@@ -23,26 +24,20 @@ if (nrow(filter.params) == 0) {
 ############################
 ### ANALYZE LAST FILE(s) ###
 ############################
-opp.list <- unique(get.opp.table(db)$file)
+opp.list <- get.opp.files(db, all.files=TRUE)
 evt.list <- get.evt.files(evt.dir)
-id <- match(opp.list, unlist(lapply(evt.list, clean.file.path)))
-
-if (length(id) == 0) {
-  for (evt.file in evt.list) {
-    tryCatch({
-      evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
-    }, error = function(e) {
-      cat(paste0("Error evaluating file ", evt.file, ": ", e))
-    })
-  }
-} else {
-  for (evt.file in evt.list[-id]) {
-    tryCatch({
-      evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
-    }, error = function(e) {
-      cat(paste0("Error evaluating file ", evt.file, ": ", e))
-    })
-  }
+# Filter out files which have already created an OPP entry or for which
+# filtering has been attempted but no OPP was produced.
+already.opp.idx <- na.omit(match(opp.list, unlist(lapply(evt.list, clean.file.path))))
+if (length(already.opp.idx) != 0) {
+  evt.list <- evt.list[-already.opp.idx]
+}
+for (evt.file in evt.list) {
+  tryCatch({
+    evaluate.evt(db, evt.dir, opp.dir, vct.dir, evt.file)
+  }, error = function(e) {
+    cat(paste0("Error evaluating file ", evt.file, ": ", e))
+  })
 }
 
 ######################

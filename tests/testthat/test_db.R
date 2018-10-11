@@ -9,7 +9,7 @@ test_that("Load / Delete SFL", {
   # Load SFL data
   save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
   sfl <- get.sfl.table(x$db)
-  expect_true(nrow(sfl) == 5)
+  expect_true(nrow(sfl) == 7)
   reset.sfl.table(x$db)
   sfl <- get.sfl.table(x$db)
   expect_true(nrow(sfl) == 0)
@@ -20,11 +20,41 @@ test_that("Load / Delete SFL", {
 test_that("Save and retrieve filter params", {
   x <- setUp()
 
-  inflection <- data.frame(fsc=c(33759), d1=c(19543), d2=c(19440))
-  filter.params1 <- create.filter.params("740", inflection$fsc, inflection$d1, inflection$d2)
-  filter.params2 <- create.filter.params("740", inflection$fsc+1, inflection$d1+1, inflection$d2+1)
+  filter.params1 <- data.frame(
+    quantile=50.0,
+    beads.fsc.small=1,
+    beads.D1=2,
+    beads.D2=3,
+    width=4,
+    notch.small.D1=5,
+    notch.small.D2=6,
+    notch.large.D1=7,
+    notch.large.D2=8,
+    offset.small.D1=9,
+    offset.small.D2=10,
+    offset.large.D1=11,
+    offset.large.D2=12,
+    stringsAsFactors=FALSE
+  )
+  filter.params2 <- data.frame(
+    quantile=2.5,
+    beads.fsc.small=10,
+    beads.D1=20,
+    beads.D2=30,
+    width=40,
+    notch.small.D1=50,
+    notch.small.D2=60,
+    notch.large.D1=70,
+    notch.large.D2=80,
+    offset.small.D1=90,
+    offset.small.D2=100,
+    offset.large.D1=110,
+    offset.large.D2=120,
+    stringsAsFactors=FALSE
+  )
 
   id1 <- save.filter.params(x$db, filter.params1)
+  Sys.sleep(2)  # filter timestamp has resolution of seconds
   id2 <- save.filter.params(x$db, filter.params2)
 
   latest <- get.filter.params.latest(x$db)
