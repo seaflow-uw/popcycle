@@ -1048,9 +1048,6 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' @export
 save.opp.stats <- function(db, file.name, all_count,
                            evt_count, opp, filter.id, quantile) {
-  if (nrow(opp) == 0) {
-    return
-  }
   opp <- transformData(opp)
   opp_count <- nrow(opp)
   if (evt_count == 0) {

@@ -268,6 +268,7 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
       print(err)
       return(data.frame())
     })
+
     if (nrow(evt) > 0) {
       # noise filter
       evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
@@ -280,6 +281,7 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
 
     # Delete all versions of this OPP file
     delete.opp.by.file(opp.dir, evt.file)
+    delete.opp.stats.by.file(db, evt.file)
 
     for (quantile in QUANTILES) {
       p <- filter.params[filter.params$quantile == quantile, ]
@@ -296,20 +298,29 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
       })
 
       # Save OPP data
-      tryCatch({
+      err <- tryCatch({
         save.opp.stats(db, evt.file, all_count, evt_count,
                        result$opp, p$id, quantile)
       }, error = function(e) {
-        cat(paste0("Error saving opp results to db with file ", evt.file, ": ", e))
+        cat(paste0("Error saving opp results to db with file ", evt.file, " for quantile ", quantile, ": ", e))
       })
-      tryCatch({
+      if (inherits(err, "error")) {
+        delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
+        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+        break
+      }
+      err <- tryCatch({
         if (nrow(result$opp) > 0) {
           save.opp.file(result$opp, opp.dir, evt.file, quantile)
         }
       }, error = function(e) {
-        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
-        cat(paste0("Error saving opp file ", evt.file, ": ", e))
+        cat(paste0("Error saving opp file ", evt.file, " for quantile ", quantile, ": ", e))
       })
+      if (inherits(err, "error")) {
+        delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
+        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+        break
+      }
     }
 
     i <-  i + 1
