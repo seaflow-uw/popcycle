@@ -8,6 +8,9 @@ vct.dir <- file.path(Sys.getenv("RESULTSDIR"), "vct")
 stat.file <- file.path(Sys.getenv("RESULTSDIR"), "sync", "stats.csv")
 sfl.file <- file.path(Sys.getenv("RESULTSDIR"), "sync", "sfl.csv")
 processed.file <- file.path(Sys.getenv("RESULTSDIR"), "already-processed.txt")
+plot.vct.file <- file.path(Sys.getenv("RESULTSDIR"), "vct.cytogram.png")
+plot.gate.file <- file.path(Sys.getenv("RESULTSDIR"), "gate.cytogram.png")
+
 inst <- Sys.getenv("SERIAL")
 cruise <- Sys.getenv("CRUISE")
 
@@ -49,7 +52,7 @@ last.file <- tail[opp.list,1]
 opp <- try(get.opp.by.file(opp.dir, last.file, quantile=50, vct.dir=vct.dir))
 
 print("creating vct.cytogram.png")
-png("vct.cytogram.png",width=15,height=9,unit='in',res=100)
+png(plot.vct.file,width=15,height=9,unit='in',res=100)
 par(mfrow=c(1,2),cex=cex)
 plot.vct.cytogram(opp, "fsc_small","chl_small")
 plot.vct.cytogram(opp, "fsc_small","pe")
@@ -59,7 +62,7 @@ dev.off()
 gating.log <- get.gating.params.latest(db)$gates.log
 
 print("creating gate.cytogram.png")
-png("gate.cytogram.png",width=15,height=9,unit='in',res=100)
+png(plot.gate.file,width=15,height=9,unit='in',res=100)
 par(mfrow=c(1,2),cex=cex)
 plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="chl_small")
 plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="pe")
