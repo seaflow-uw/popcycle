@@ -4,24 +4,17 @@
 \alias{get.clean.stat.table}
 \title{Get aggregate statistics data frame along with propagation of errors}
 \usage{
-get.clean.stat.table(db, inst = NULL, spar = 0.1)
+get.clean.stat.table(db, inst = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
 
 \item{inst}{Instrument serial. If not provided this will attempt to be
 parsed from the SFL file name (<cruise>_<serial>.sfl).}
-
-\item{spar}{smooothing parameter, the higher the more smoothing is applied.}
 }
 \value{
 Data frame of aggregate statistics.
 }
 \description{
 Get aggregate statistics data frame along with propagation of errors
-}
-\examples{
-\dontrun{
-stat <- get.clean.stat.table(db, inst=NULL, spar=0.7)
-}
 }

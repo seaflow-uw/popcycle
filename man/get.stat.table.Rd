@@ -18,8 +18,3 @@ Data frame of aggregate statistics.
 \description{
 Get aggregate statistics data frame along with estimates of cell abundance.
 }
-\examples{
-\dontrun{
-stats <- get.stat.table(db, inst=NULL)
-}
-}
