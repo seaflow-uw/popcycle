@@ -310,10 +310,13 @@ normalization <- function(stat, channel="fsc_small", norm=NULL){
             }else{
         beads <- subset(stat, pop=='beads' & quantile == 2.5)
         norm <- median(beads[,channel])
+        norm.sd <- sd(beads[,channel])
+
       }
     }
 
   stat[,paste0("norm.",channel)] <- stat[,channel] / norm
+  stat[,paste0("norm.",channel,".sd")] <- stat[,paste0("norm.",channel)] * norm.sd / norm
 
 return(stat)
 
@@ -347,11 +350,11 @@ size_carbon_conversion <- function(stat, inst=NULL){
 
   #diameter (µm)
   stat[,"diameter"] <- 10^v$y[id.v]
-  stat[,"diameter.sd"] <-  stat[,"diameter"] * 0.3 # TO DO, use uncertainities in Mie prediction to calcualte diamter.sd
+  stat[,"diameter.sd"] <-  stat[,"diameter"] * stat[,"norm.fsc_small.sd"] / stat[,"norm.fsc_small"] # TO DO, use uncertainities in Mie prediction to calcualte diamter.sd
 
   # carbon cell quotas (fgC cell-1)
   stat[,"Qc"] <- 2* 10^u$y[id.u] * 1000
-  stat[,"Qc.sd"] <-  stat[,"Qc"] * 0.3 # TO DO, use uncertainities in Mie prediction to calcualte Qc.sd
+  stat[,"Qc.sd"] <-  stat[,"Qc"] * stat[,"norm.fsc_small.sd"] / stat[,"norm.fsc_small"] # TO DO, use uncertainities in Mie prediction to calcualte Qc.sd
 
   # carbon biomass (pgC L-1)
   stat[,"Cbiomass"] <- stat[,"Qc"] * stat[,"abundance"] / 1000
@@ -371,7 +374,7 @@ size_carbon_conversion <- function(stat, inst=NULL){
 #' @export
 merge.stat <- function(stat){
 
-    para <- c("abundance", "diameter","Qc","Cbiomass")
+    para <- c("abundance", "norm.fsc_small" ,"diameter","Qc","Cbiomass")
     lwr <- upr <- mid <- stat
       for(p in para) lwr[,p] <- stat[,p]-stat[,paste0(p,".sd")]
       for(p in para) upr[,p] <- stat[,p]+stat[,paste0(p,".sd")]
