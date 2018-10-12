@@ -43,33 +43,33 @@ for (evt.file in evt.list) {
 ######################
 ### PLOT CYTOGRAMS ###
 ######################
-# cex=1.4
-#
-# last.file <- get.latest.evt()
-# opp <- get.opp.by.file(last.file)
-# vct <- get.vct.by.file(last.file)
-# opp$pop <- vct
-#
-# print("creating vct.cytogram.png")
-# png("~/vct.cytogram.png",width=15,height=9,unit='in',res=100)
-# par(mfrow=c(1,2),cex=cex)
-# plot.vct.cytogram(opp, "fsc_small","chl_small")
-# plot.vct.cytogram(opp, "fsc_small","pe")
-# mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
-# dev.off()
-#
-# print("creating gate.cytogram.png")
-# png("~/gate.cytogram.png",width=15,height=9,unit='in',res=100)
-# par(mfrow=c(1,2),cex=cex)
-# plot.gate.cytogram(opp, "fsc_small","chl_small")
-# plot.gate.cytogram(opp, "fsc_small","pe")
-# mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
-# dev.off()
-#
-#
-# ##################
-# ### PLOT STATS ###
-# ##################
+cex=1.4
+
+last.file <- tail[opp.list,1]
+opp <- try(get.opp.by.file(opp.dir, last.file, quantile=50, vct.dir=vct.dir))
+
+print("creating vct.cytogram.png")
+png("vct.cytogram.png",width=15,height=9,unit='in',res=100)
+par(mfrow=c(1,2),cex=cex)
+plot.vct.cytogram(opp, "fsc_small","chl_small")
+plot.vct.cytogram(opp, "fsc_small","pe")
+mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
+dev.off()
+
+gating.log <- get.gating.params.latest(db)$gates.log
+
+print("creating gate.cytogram.png")
+png("gate.cytogram.png",width=15,height=9,unit='in',res=100)
+par(mfrow=c(1,2),cex=cex)
+plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="chl_small")
+plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="pe")
+mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
+dev.off()
+
+
+##################
+### PLOT STATS ###
+##################
 stat <- get.stat.table(db)
 sfl <- get.sfl.table(db)
 print("saving stat.csv")

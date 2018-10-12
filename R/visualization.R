@@ -48,17 +48,17 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',..
 #' @param para.y Channel to use as y axis.
 #' @return None
 #' @export
-plot.gating.cytogram <- function(opp, poly.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
+plot.gating.cytogram <- function(opp, gating.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
 	plot.cytogram(opp, para.x, para.y)
-	if (!is.null(poly.log)) {
-		for (i in 1:length(poly.log)) {
-      method <- poly.log[[i]]$method
+	if (!is.null(gating.log)) {
+		for (i in 1:length(gating.log)) {
+      method <- gating.log[[i]]$method
       if (method != "manual") {
         next
       }
 
-	    pop <- names(poly.log[i]) # name of the population
-	    poly <- poly.log[[i]]$poly # Get parameters of the gate for this population
+	    pop <- names(gating.log[i]) # name of the population
+	    poly <- gating.log[[i]]$poly # Get parameters of the gate for this population
 	    para <- colnames(poly)
 	    if (para[1]==para.x & para[2]==para.y) {
 	      polygon(poly, lwd=3,border=i, col=NA)
