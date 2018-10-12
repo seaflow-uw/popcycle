@@ -24,6 +24,7 @@ if (nrow(filter.params) == 0) {
 ############################
 ### ANALYZE LAST FILE(s) ###
 ############################
+# test
 read.attempt <- try(read.table(processed.file, header=F, colClasses="character"))
 if (inherits(read.attempt, "try-error")) {
   processed.list <- c()
