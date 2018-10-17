@@ -338,27 +338,36 @@ size.carbon.conversion <- function(stat, inst=NULL){
 #' @return Data frame of aggregate statistics.
 #' @export
 combine.quantile <- function(stat){
+  para1 <- c("abundance", "norm.fsc_small" ,"diameter","Qc","Cbiomass")
+  lwr <- upr <- mid <- stat
 
-    para1 <- c("abundance", "norm.fsc_small" ,"diameter","Qc","Cbiomass")
-    lwr <- upr <- mid <- stat
-      for(p in para1) lwr[,p] <- stat[,p]-stat[,paste0(p,".sd")]
-      for(p in para1) upr[,p] <- stat[,p]+stat[,paste0(p,".sd")]
-      for(p in para1) mid[,p] <- stat[,p]
-      df <- rbind(lwr, mid, upr)
+  for (p in para1) {
+    lwr[,p] <- stat[,p] - stat[,paste0(p,".sd")]
+  }
+  for (p in para1) {
+    upr[,p] <- stat[,p] + stat[,paste0(p,".sd")]
+  }
+  for (p in para1) {
+    mid[,p] <- stat[,p]
+  }
+  df <- setDT(rbind(lwr, mid, upr))
 
-    para2 <- c("lat","lon","temp","salinity","conductivity","par","stream_pressure","file_duration","event_rate","opp_evt_ratio","n_count","D1","D2","fsc_small","chl_small","pe","fsc_perp","flow_rate","abundance","norm.fsc_small", "diameter","Qc","Cbiomass")
-      df.mean <- aggregate(df[,para2], by=list(time=df$time, pop=df$pop), FUN=mean)
-      df.mean$file <- stat[match(df.mean$time, stat$time),"file"]
+  para2 <- c("lat","lon","temp","salinity","conductivity","par","stream_pressure","file_duration","event_rate","opp_evt_ratio","n_count","D1","D2","fsc_small","chl_small","pe","fsc_perp","flow_rate","abundance","norm.fsc_small", "diameter","Qc","Cbiomass")
+  df.mean <- df[, lapply(.SD, mean), keyby=.(time, pop), .SDcols=para2]
+  df.mean$file <- stat[match(df.mean$time, stat$time),"file"]
+  setDF(df.mean)
 
-    para3 <- c("D1","D2","fsc_small","chl_small","pe","fsc_perp","abundance","norm.fsc_small","diameter", "Qc","Cbiomass")
-      df.sd <- aggregate(df[,para3], by=list(time=df$time, pop=df$pop), FUN=sd)[,-c(1,2)]
-      colnames(df.sd) <- paste0(para3,".sd")
+  para3 <- c("D1","D2","fsc_small","chl_small","pe","fsc_perp","abundance","norm.fsc_small","diameter", "Qc","Cbiomass")
+  df.sd <- df[, lapply(.SD, sd), keyby=.(time, pop), .SDcols=para3][,-c(1,2)]
+  setDF(df.sd)
+  colnames(df.sd) <- paste0(para3,".sd")
 
-    stat <- data.frame(cbind(df.mean,df.sd))
-    stat <- stat[order(stat$time),]
+  stat <- data.frame(cbind(df.mean, df.sd))
+  stat <- stat[order(stat$time),]
 
-    return(stat)
+  return(stat)
 }
+
 
 
 
