@@ -350,7 +350,7 @@ combine.quantile <- function(stat){
   for (p in para1) {
     mid[,p] <- stat[,p]
   }
-  df <- setDT(rbind(lwr, mid, upr))
+  df <- data.table(rbind(lwr, mid, upr))
 
   para2 <- c("lat","lon","temp","salinity","conductivity","par","stream_pressure","file_duration","event_rate","opp_evt_ratio","n_count","D1","D2","fsc_small","chl_small","pe","fsc_perp","flow_rate","abundance","norm.fsc_small", "diameter","Qc","Cbiomass")
   df.mean <- df[, lapply(.SD, mean), keyby=.(time, pop), .SDcols=para2]
