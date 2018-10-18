@@ -4,7 +4,8 @@
 \alias{plot.vct.cytogram}
 \title{Plot cytogram with particles colored by population.}
 \usage{
-plot.vct.cytogram(opp, para.x = "fsc_small", para.y = "chl_small", ...)
+plot.vct.cytogram(opp, para.x = "fsc_small", para.y = "chl_small",
+  min.count = 300, ...)
 }
 \arguments{
 \item{opp}{OPP data frame.}
@@ -12,6 +13,8 @@ plot.vct.cytogram(opp, para.x = "fsc_small", para.y = "chl_small", ...)
 \item{para.x}{Channel to use as x axis.}
 
 \item{para.y}{Channel to use as y axis.}
+
+\item{min.count}{Minimum number of particles for drawing contour lines.}
 
 \item{...}{Additional parameters for plot()}
 }
