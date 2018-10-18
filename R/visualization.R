@@ -21,20 +21,40 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small',...
 #' @param opp OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
+#' @param min.count Minimum number of particles for drawing contour lines.
 #' @param ... Additional parameters for plot()
 #' @return None
 #' @export
-plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small',...){
-	if (!is.null(opp$pop)) {
+plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...){
+  require(scales, quietly=T)
+  require(flowViz, quietly=T)
+
+  if (!is.null(opp$pop)) {
+    popu <- c('unknown','picoeuk','croco','prochloro','synecho','beads')
+    color <- c('grey','seagreen3','darkorchid','skyblue3','orange','red3')
+    for(i in 1:length(popu)) opp[which(opp$pop==popu[i]),'col'] <- color[i]
+
 		par(pty='s')
-    ## TODO[francois] Order OPP by frequency (most abundant pop plotted first, least abundant pop plotted last)
-    id <- which(colnames(opp) == "fsc_small" | colnames(opp) == "chl_small" | colnames(opp) =="pe" | colnames(opp) =="fsc_perp")
-      if(max(opp[,c(id)]) > 10^3.5) plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), xlim=c(0,2^16), ylim=c(0,2^16),...)
-      else plot(opp[,c(para.x, para.y)], pch=16, cex=0.3, col = as.numeric(as.factor(opp$pop)), log='xy', xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
-    legend('topleft', legend=(unique(opp$pop)), col=unique(as.numeric(as.factor(opp$pop))), pch=16, pt.cex=0.6, bty='n')
+        d <- log(mean(par("pin")))
+        plot(opp[,c(para.x, para.y)], cex=d, pch=16, col = alpha(opp$col,0.4), log='xy', xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
+          par(new=T)
+          plot(1,1,pch=NA, xaxt='n', yaxt='n', xlim=log10(c(1,10^3.5)), ylim=log10(c(1,10^3.5)), xlab=NA, ylab=NA, bty='n')
+
+
+        for(i in c('prochloro','synecho')){
+          df <- subset(opp, pop==i)
+            if(nrow(df) < min.count) next
+          c <- rgb2hsv(col2rgb(df$col))
+          cols <- rainbow(10,s=c[2], v=c[3],start=c[1], alpha=0.1)
+          df.f <- flowFrame(as.matrix(log10(df[,c(para.x, para.y)])))
+          contour(df.f,fill=alpha('white',0.5), col='grey', grid.size=c(30,30),  add=T)
+          contour(df.f,fill=cols, col=cols, grid.size=c(30,30), add=T)
+        }
+
+    legend('topleft', legend=(unique(opp$pop)), col=unique(opp$col), pch=16, pt.cex=0.6, bty='n')
     } else {
 		print("No Gating parameters yet")
-		plot.cytogram(opp, para.x, para.y)
+		plot.cytogram(opp, para.x, para.y, ...)
 		mtext(paste("No Gating parameters yet!"), 3, line=-1, font=2)
 	}
 }

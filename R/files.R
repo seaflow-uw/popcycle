@@ -395,6 +395,7 @@ get.clean.stat.table <- function(db, inst=NULL){
 
   outlier <- get.outlier.table(db)
   stat <- merge(stat, outlier, all.x=TRUE)
+  stat <- stat[order(stat$time),]
 
   return(stat)
 }
