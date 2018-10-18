@@ -167,23 +167,8 @@ gating.csv.to.poly.log <- function(csv.files, poly.log=NULL) {
   return(poly.log)
 }
 
-#' @export
-classify.opp <- function(opp, gates.log) {
-  for (popname in names(gates.log)) {
-    params <- gates.log[[popname]]
-    if (params$method == "manual") {
-      opp <- manual.classify(opp, params, popname)
-    } else if (params$method == "auto") {
-      opp <- auto.classify(opp, params, popname)
-    } else {
-      stop(paste0("unrecognized classification method in classify.opp ", params$method))
-    }
-  }
-  if (! is.null(opp$pop)) {
-    opp$pop <- factor(opp$pop)
-  }
-  return(opp)
-}
+
+
 
 #' Classify particles based on manually defined population gates.
 #'
@@ -260,7 +245,37 @@ auto.classify <- function(opp, params, popname) {
   return(opp)
 }
 
-#' Classifiy particles for a list of OPP files.
+#' Classify particles from an OPP dataframe.
+#'
+#' Classify particles from an OPP dataframe using a gating scheme provided by gates.log.
+#'
+#' @param opp SQLite3 database file path.
+#' @param gates.log A gating scheme from the function 'add.manual.classification()' or 'add.auto.classification()'
+#' @return List of per particle classifications
+#' @examples
+#' \dontrun{
+#' opp <- classify.opp(opp, gates.log)
+#' }
+#' @export
+classify.opp <- function(opp, gates.log) {
+  for (popname in names(gates.log)) {
+    params <- gates.log[[popname]]
+    if (params$method == "manual") {
+      opp <- manual.classify(opp, params, popname)
+    } else if (params$method == "auto") {
+      opp <- auto.classify(opp, params, popname)
+    } else {
+      stop(paste0("unrecognized classification method in classify.opp ", params$method))
+    }
+  }
+  if (! is.null(opp$pop)) {
+    opp$pop <- factor(opp$pop)
+  }
+  return(opp)
+}
+
+
+#' Classify particles for a list of OPP files.
 #'
 #' Classify a  list of OPP files. Save per file aggregate population statistics
 #' to SQLite3 database and save particle population definitions to text files
