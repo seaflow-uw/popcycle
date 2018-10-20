@@ -4,8 +4,7 @@
 \alias{plot.vct.cytogram}
 \title{Plot cytogram with particles colored by population.}
 \usage{
-plot.vct.cytogram(opp, para.x = "fsc_small", para.y = "chl_small",
-  min.count = 300, ...)
+plot.vct.cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...)
 }
 \arguments{
 \item{opp}{OPP data frame.}

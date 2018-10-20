@@ -465,13 +465,13 @@ get.opp.by.file <- function(opp.dir, file.name, quantile, channel=NULL,
     return(opp)
   }
   opps <- lapply(opp.files, opp.reader)
-  opps.bound <- rbind.fill(opps)
+  opps.bound <- dplyr::bind_rows(opps)
 
   if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
 
   if (! is.null(vct.dir)) {
    vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
-   vcts.bound <- rbind.fill(vcts)
+   vcts.bound <- dplyr::bind_rows(vcts)
    opps.bound <- cbind(opps.bound, vcts.bound)
    if (! is.null(pop)) {
      opps.bound <- opps.bound[opps.bound$pop == pop, ]
@@ -499,7 +499,7 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
       stop(paste("No VCT file for ", file.name))
     }
   }
-  if (file_ext(vct.file) == "gz") {
+  if (tools::file_ext(vct.file) == "gz") {
     con <- gzfile(description=vct.file)
   } else {
     con <- file(description=vct.file)
@@ -969,33 +969,37 @@ get.vct.files <- function(db) {
 #'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
 #'                "0f3c89d5-b6a9-4959-95a8-dd2af73f82b9", 97.5)
 #' }
+#' @importFrom dplyr %>%
 #' @export
 save.vct.stats <- function(db, file.name, opp, gating.id,
                            filter.id, quantile) {
-  df <- ddply(opp, .(pop), here(summarize),
-              file=clean.file.path(file.name),
-              count=length(pop),
-              D1_mean=mean(D1),
-              D1_min=min(D1),
-              D1_max=max(D1),
-              D2_mean=mean(D2),
-              D2_min=min(D2),
-              D2_max=max(D2),
-              fsc_small_mean=mean(fsc_small),
-              fsc_small_min=min(fsc_small),
-              fsc_small_max=max(fsc_small),
-              chl_small_mean=mean(chl_small),
-              chl_small_min=min(chl_small),
-              chl_small_max=max(chl_small),
-              pe_mean=mean(pe),
-              pe_min=min(pe),
-              pe_max=max(pe),
-              fsc_perp_mean=mean(fsc_perp),
-              fsc_perp_min=min(fsc_perp),
-              fsc_perp_max=max(fsc_perp),
-              gating_id=gating.id,
-              filter_id=filter.id,
-              quantile=quantile)
+  df <- opp %>%
+    dplyr::group_by(pop) %>%
+    dplyr::summarise(
+      file=clean.file.path(file.name),
+      count=dplyr::n(),
+      D1_mean=mean(D1),
+      D1_min=min(D1),
+      D1_max=max(D1),
+      D2_mean=mean(D2),
+      D2_min=min(D2),
+      D2_max=max(D2),
+      fsc_small_mean=mean(fsc_small),
+      fsc_small_min=min(fsc_small),
+      fsc_small_max=max(fsc_small),
+      chl_small_mean=mean(chl_small),
+      chl_small_min=min(chl_small),
+      chl_small_max=max(chl_small),
+      pe_mean=mean(pe),
+      pe_min=min(pe),
+      pe_max=max(pe),
+      fsc_perp_mean=mean(fsc_perp),
+      fsc_perp_min=min(fsc_perp),
+      fsc_perp_max=max(fsc_perp),
+      gating_id=gating.id,
+      filter_id=filter.id,
+      quantile=quantile
+    )
   cols <- c("file", "pop", "count",
             "D1_mean", "D1_min", "D1_max",
             "D2_mean", "D2_min", "D2_max",
@@ -1004,7 +1008,7 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
             "pe_mean", "pe_min", "pe_max",
             "fsc_perp_mean", "fsc_perp_min", "fsc_perp_max",
             "gating_id", "filter_id", "quantile")
-  df.reorder <- df[cols]
+  df.reorder <- as.data.frame(df)[cols]
   sql.dbWriteTable(db, name="vct", value=df.reorder)
 }
 
@@ -1119,7 +1123,7 @@ save.outliers <- function(db, table.name) {
 #' }
 #' @export
 save.filter.params <- function(db, filter.params) {
-  filter.id <- UUIDgenerate()  # create ID for new entries
+  filter.id <- uuid::UUIDgenerate()  # create ID for new entries
   date.stamp <- RFC3339.now()
   df <- data.frame()
   for (quantile in filter.params$quantile) {
@@ -1159,7 +1163,7 @@ save.filter.params <- function(db, filter.params) {
 #' }
 #' @export
 save.gating.params <- function(db, gates.log) {
-  gating.id <- UUIDgenerate()  # create primary ID for new entry
+  gating.id <- uuid::UUIDgenerate()  # create primary ID for new entry
   date.stamp <- RFC3339.now()
   i <- 1  # track order population classification
   for (popname in names(gates.log)) {
@@ -1383,13 +1387,13 @@ check.for.populated.sfl <- function(db) {
 #' }
 #' @export
 sql.dbGetQuery <- function(db, sql) {
-  con <- dbConnect(SQLite(), dbname=db)
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
-    resp <- dbGetQuery(con, sql)
-    dbDisconnect(con)
+    resp <- DBI::dbGetQuery(con, sql)
+    DBI::dbDisconnect(con)
     return(resp)
   }, error=function(e) {
-    dbDisconnect(con)
+    DBI::dbDisconnect(con)
     stop(e)
   })
 }
@@ -1407,13 +1411,13 @@ sql.dbGetQuery <- function(db, sql) {
 #' }
 #' @export
 sql.dbExecute <- function(db, sql) {
-  con <- dbConnect(SQLite(), dbname=db)
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
-    rows <- dbExecute(con, sql)
-    dbDisconnect(con)
+    rows <- DBI::dbExecute(con, sql)
+    DBI::dbDisconnect(con)
     return(rows)
   }, error=function(e) {
-    dbDisconnect(con)
+    DBI::dbDisconnect(con)
     stop(e)
   })
 }
@@ -1429,12 +1433,12 @@ sql.dbExecute <- function(db, sql) {
 #' }
 #' @export
 sql.dbWriteTable <- function(db, name, value) {
-  con <- dbConnect(SQLite(), dbname=db)
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
-    dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
-    dbDisconnect(con)
+    DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
+    DBI::dbDisconnect(con)
   }, error=function(e) {
-    dbDisconnect(con)
+    DBI::dbDisconnect(con)
     stop(e)
   })
 }

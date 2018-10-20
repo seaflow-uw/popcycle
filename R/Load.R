@@ -87,7 +87,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
   n.total.columns <- n.data.columns + n.extra.columns
 
   ## open binary file for reading
-  if (file_ext(path) == "gz") {
+  if (tools::file_ext(path) == "gz") {
     con <- gzfile(description=path, open="rb")
   } else {
     con <- file(description=path, open="rb")

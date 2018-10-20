@@ -4,8 +4,7 @@
 \alias{plot.gating.cytogram}
 \title{Plot cytogram with gates.}
 \usage{
-plot.gating.cytogram(opp, gating.log = NULL, para.x = "fsc_small",
-  para.y = "chl_small")
+plot.gating.cytogram(opp, gating.log=NULL, para.x = 'fsc_small', para.y = 'chl_small')
 }
 \arguments{
 \item{opp}{OPP data frame.}

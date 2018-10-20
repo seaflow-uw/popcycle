@@ -4,7 +4,7 @@
 \alias{filter.evt.files}
 \title{Filter a list of EVT files.}
 \usage{
-filter.evt.files(db, evt.dir, evt.files, opp.dir, filter.id = NULL)
+filter.evt.files(db, evt.dir, evt.files, opp.dir, filter.id=NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

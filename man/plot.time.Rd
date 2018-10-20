@@ -4,7 +4,7 @@
 \alias{plot.time}
 \title{plot.time}
 \usage{
-plot.time(stat, popname, param, ...)
+plot.time(stat, popname,param, ...)
 }
 \value{
 None

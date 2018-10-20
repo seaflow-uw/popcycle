@@ -32,7 +32,6 @@ setUp <- function() {
   x$opp.input.dir <- "../testdata/opp"
   x$vct.input.dir <- "../testdata/vct"
 
-
   return(x)
 }
 

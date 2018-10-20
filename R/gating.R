@@ -210,8 +210,8 @@ manual.classify <- function(opp, params, popname) {
   para <- colnames(poly)  # channels
   df <- opp[opp$pop=="unknown", para]
 
-  colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from inout()
-  vct <- df[inout(df,poly=poly, bound=TRUE, quiet=TRUE), ] # subset particles based on Gate
+  colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from splancs::inout()
+  vct <- df[splancs::inout(df,poly=poly, bound=TRUE, quiet=TRUE), ] # subset particles based on Gate
   opp[row.names(vct), "pop"] <- popname
 
   return(opp)
