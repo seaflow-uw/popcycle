@@ -2,7 +2,7 @@
 % Please edit documentation in R/gating.R
 \name{classify.opp.files}
 \alias{classify.opp.files}
-\title{Classifiy particles for a list of OPP files.}
+\title{Classify particles for a list of OPP files.}
 \usage{
 classify.opp.files(db, opp.dir, opp.files, vct.dir, gating.id = NULL)
 }

@@ -15,25 +15,21 @@ CREATE TABLE IF NOT EXISTS opp (
     PRIMARY KEY (file, filter_id, quantile)
 );
 
-CREATE INDEX IF NOT EXISTS oppFileIndex ON opp (file);
-
 CREATE TABLE IF NOT EXISTS vct (
     file TEXT NOT NULL,
     pop TEXT NOT NULL,
     count INTEGER NOT NULL,
-    min.fsc_small INTEGER NOT NULL,
-    min.chl_small INTEGER NOT NULL,
-    sd.fsc_small REAL NOT NULL,
-    sd.chl_small REAL NOT NULL,
-    n.peaks.fsc_small INTEGER NOT NULL,
-    n.peaks.chl_small INTEGER NOT NULL,
+    min_fsc_small INTEGER NOT NULL,
+    min_chl_small INTEGER NOT NULL,
+    sd_fsc_small REAL NOT NULL,
+    sd_chl_small REAL NOT NULL,
+    n_peaks_fsc_small INTEGER NOT NULL,
+    n_peaks_chl_small INTEGER NOT NULL,
     gating_id TEXT NOT NULL,
     filter_id TEXT NOT NULL,
     quantile REAL NOT NULL,
-    PRIMARY KEY (file, pop, quantile)
+    PRIMARY KEY (file, pop, gating_id, quantile)
 );
-
-CREATE INDEX IF NOT EXISTS vctFileIndex ON vct (file);
 
 CREATE TABLE IF NOT EXISTS sfl (
   file TEXT NOT NULL,  -- in old files, File+Day. in new files, Timestamp.
@@ -106,8 +102,6 @@ CREATE TABLE IF NOT EXISTS outlier (
   flag INTEGER,
   PRIMARY KEY (file)
 );
-
-CREATE INDEX IF NOT EXISTS outlierFileIndex ON outlier (file);
 
 CREATE VIEW IF NOT EXISTS stat AS
   SELECT

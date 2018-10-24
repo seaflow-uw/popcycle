@@ -5,8 +5,9 @@
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for densCols()
 #' @return None
-#' @export
-plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small',...) {
+#' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+#' @export plot.cytogram
+plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
   cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
 
   par(pty='s')
@@ -24,8 +25,9 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small',...
 #' @param min.count Minimum number of particles for drawing contour lines.
 #' @param ... Additional parameters for plot()
 #' @return None
-#' @export
-plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...){
+#' @usage plot.vct.cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...)
+#' @export plot.vct.cytogram
+plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...) {
   require(scales, quietly=T)
   require(flowViz, quietly=T)
 
@@ -67,7 +69,8 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', m
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @return None
-#' @export
+#' @usage plot.gating.cytogram(opp, gating.log=NULL, para.x = 'fsc_small', para.y = 'chl_small')
+#' @export plot.gating.cytogram
 plot.gating.cytogram <- function(opp, gating.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
 	plot.cytogram(opp, para.x, para.y)
 	if (!is.null(gating.log)) {
@@ -92,8 +95,9 @@ plot.gating.cytogram <- function(opp, gating.log=NULL, para.x = 'fsc_small', par
 #' Plot cell abundances of a population on a map.
 #'
 #' @return None
-#' @export
-plot.map <- function(stat,popname,param,...){
+#' @usage plot.map(stat, popname, param, ...)
+#' @export plot.map
+plot.map <- function(stat, popname, param, ...){
   require(maps, quietly=T)
   require(mapdata, quietly=T)
   require(plotrix, quietly=T)
@@ -134,8 +138,9 @@ plot.map <- function(stat,popname,param,...){
 #' plot.time
 #'
 #' @return None
-#' @export
-plot.time <- function(stat, popname,param, ...){
+#' @usage plot.time(stat, popname,param, ...)
+#' @export plot.time
+plot.time <- function(stat, popname, param, ...){
   require(plotrix, quietly=T)
 
   stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')

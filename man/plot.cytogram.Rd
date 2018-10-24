@@ -4,7 +4,7 @@
 \alias{plot.cytogram}
 \title{Plot EVT or OPP cytogram.}
 \usage{
-plot.cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
+plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 }
 \arguments{
 \item{evtopp}{EVT or OPP data frame.}

@@ -11,15 +11,15 @@ inflection.point <- function(DF){
 
   plot.cytogram(DF, "fsc_small", "pe")
     poly.beads <- getpoly(quiet=TRUE)
-    b <- subset(DF,inout(DF[,c("fsc_small", "pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
+    b <- subset(DF,splancs::inout(DF[,c("fsc_small", "pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
 
   plot.cytogram(b, "fsc_small", "D1")
       polyd1 <- getpoly(quiet=TRUE)
-      opp.d1 <- subset(b,inout(b[,c("fsc_small", "D1")],poly=polyd1, bound=TRUE, quiet=TRUE))
+      opp.d1 <- subset(b,splancs::inout(b[,c("fsc_small", "D1")],poly=polyd1, bound=TRUE, quiet=TRUE))
 
   plot.cytogram(b, "fsc_small", "D2")
       polyd2 <- getpoly(quiet=TRUE)
-      opp.d2 <- subset(b,inout(b[,c("fsc_small", "D2")],poly=polyd2, bound=TRUE, quiet=TRUE))
+      opp.d2 <- subset(b,splancs::inout(b[,c("fsc_small", "D2")],poly=polyd2, bound=TRUE, quiet=TRUE))
   par(def.par)
 
       FSC <- round(summary(c(opp.d1$fsc_small, opp.d2$fsc_small)))
@@ -52,7 +52,8 @@ inflection.point <- function(DF){
 #' \dontrun{
 #' filt <- filter.evt(evt, filter.notch, filter.params)
 #' }
-#' @export
+#' @usage filter.evt(evt, filter.func, ...)
+#' @export filter.evt
 filter.evt <- function(evt, filter.func, ...) {
   filt <- filter.func(evt, ...)
 
@@ -78,7 +79,8 @@ filter.evt <- function(evt, filter.func, ...) {
 #' \dontrun{
 #' filt <- filter.notch(evt, params)
 #' }
-#' @export
+#' @usage filter.notch(evt, filter.params)
+#' @export filter.notch
 filter.notch <- function(evt, filter.params) {
   width <- as.numeric(filter.params$width)
   notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
@@ -131,7 +133,8 @@ filter.notch <- function(evt, filter.params) {
 #'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
 #'   offset.large.D1, offset.large.D2.
 #' @return None
-#' @export
+#' @usage plot.filter.cytogram(evt, filter.params)
+#' @export plot.filter.cytogram
 plot.filter.cytogram <- function(evt, filter.params) {
   width <- as.numeric(filter.params$width)
   notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
@@ -211,7 +214,8 @@ plot.filter.cytogram <- function(evt, filter.params) {
 #'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
 #'   offset.large.D1, offset.large.D2.
 #' @return None
-#' @export
+#' @usage plot.filter.cytogram.by.file(evt.dir, file.name, filter.params)
+#' @export plot.filter.cytogram.by.file
 plot.filter.cytogram.by.file <- function(evt.dir, file.name, filter.params) {
   file.name <- clean.file.path(file.name)
   evt <- readSeaflow(file.path(evt.dir, file.name))
@@ -237,7 +241,8 @@ plot.filter.cytogram.by.file <- function(evt.dir, file.name, filter.params) {
 #' filter.evt.files(db, evt.dir, evt.files, opp.dir,
 #'                  "d3afb1ea-ad20-46cf-866d-869300fe17f4")
 #' }
-#' @export
+#' @usage filter.evt.files(db, evt.dir, evt.files, opp.dir, filter.id=NULL)
+#' @export filter.evt.files
 filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
                              filter.id=NULL) {
   # Get notch and width to use from params file
