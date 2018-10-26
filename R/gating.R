@@ -216,8 +216,6 @@ manual.classify <- function(opp, params, popname) {
 #' }
 #' @export
 auto.classify <- function(opp, params, popname) {
-  library(flowCore)
-  library(flowDensity)
   if (is.null(opp$pop)) {
     opp$pop <- "unknown"
   }
@@ -234,10 +232,10 @@ auto.classify <- function(opp, params, popname) {
   }
   x <- opp[row.selection, names(opp) != "pop"]
 
-  fframe <- flowFrame(as.matrix(log10(x)))
+  fframe <- flowCore::flowFrame(as.matrix(log10(x)))
   #plotDens(f, channels=c(5,8))
   channels <- c(match(params$x, names(x)), match(params$y, names(x)))
-  labeled <- flowDensity(obj=fframe,channels=channels, position=params$position,
+  labeled <- flowDensity::flowDensity(obj=fframe,channels=channels, position=params$position,
                    gates=params$gates, ellip.gate=TRUE,
                    scale=params$scale)
   opp[row.names(x[labeled@index,]),'pop'] <- popname
