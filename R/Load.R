@@ -184,3 +184,38 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   writeBin(out.vect, con, size = column.size)
   close(con)
 }
+
+
+
+
+#' Concatenate EVT or OPP files
+#'
+#' @param evtopp.list List of EVT or OPP files (full path required).
+#' @param n Number of rows to return.
+#' @param min.fsc, min.pe, min.chl Minimum value for fsc_small, pe and chl_small respectively
+#' @return A dataframe with n rows.
+#' @export
+concatenate.evtopp <- function(evtopp.list, n=100000, min.fsc=0, min.pe=0, min.chl=0, transform=TRUE,...){
+  n <- as.numeric(n)
+  DF <- NULL
+  i <- 0
+  for (file in evtopp.list){
+        message(round(100*i/length(evtopp.list)), "% completed \r", appendLF=FALSE)
+
+        tryCatch({
+          df <- readSeaflow(file,transform=transform,...)
+          df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
+          df <- df[round(seq(1,nrow(df), length.out=round(n/length(evtopp.list)))),]
+
+            if(any(is.na(df))) next
+            DF <- rbind(DF, df)
+            }, error = function(e) {
+              cat(paste0("Error with file ", file, ": ", e))
+          })
+
+          i <- i + 1
+          flush.console()
+          }
+
+      return(DF)
+}

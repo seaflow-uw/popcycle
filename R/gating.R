@@ -323,12 +323,11 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
     # There should only be one vct entry in the db for each population/file
     # combination.
     delete.vct.stats.by.file(db, opp.file)
-    delete.vct.by.file(vct.dir, opp.file)
 
     tryCatch({
       for (quantile in QUANTILES) {
         #print(paste('Loading', opp.file))
-        opp <- get.opp.by.file(opp.dir, opp.file, quantile)
+        opp <- get.opp.by.file(opp.dir, opp.file, quantile, vct.dir=vct.dir)
         #print(paste('Classifying', opp.file))
         opp <- classify.opp(opp, gating.params$gates.log)
 
@@ -336,7 +335,9 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
         #print('Uploading labels to the database')
         save.vct.stats(db, opp.file, opp, gating.params$id,
                        filter.id[1], quantile)
-        save.vct.file(opp$pop, vct.dir, opp.file, quantile)
+
+        vct <- opp[ , !(names(opp) %in% EVT.HEADER)]
+        save.vct.file(vct, vct.dir, opp.file, quantile)
       }
     }, error = function(e) {
       cat(paste0("Error with file ", opp.file, ": ", e))
