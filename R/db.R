@@ -978,21 +978,24 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
     dplyr::summarise(
       file=clean.file.path(file.name),
       count=dplyr::n(),
-      min_fsc_small=length(which(fsc_small <= quantile(fsc_small,0.1))),
-      min_chl_small=length(which(chl_small <= quantile(chl_small,0.1))),
-      sd_fsc_small=round(sd(fsc_small),3),
-      sd_chl_small=round(sd(chl_small),3),
-      n_peaks_fsc_small=length(which(diff(sign(diff(hist(log10(fsc_small), breaks=10, plot=F)$counts)))==-2)),
-      n_peaks_chl_small=length(which(diff(sign(diff(hist(log10(chl_small), breaks=10, plot=F)$counts)))==-2)),
+      chl_small= mean(chl_small),
+      pe=mean(pe)
+      fsc_small=mean(fsc_small),
+      diam_lwr=mean(diam_lwr),
+      diam_mid=mean(diam_mid),
+      diam_upr=mean(diam_upr),
+      Qc_lwr=mean(Qc_lwr),
+      Qc_mid=mean(Qc_mid),
+      Qc_upr=mean(Qc_upr),
       gating_id=gating.id,
       filter_id=filter.id,
       quantile=quantile
     )
   cols <- c(
     "file", "pop", "count",
-    "min_fsc_small", "min_chl_small",
-    "sd_fsc_small", "sd_chl_small",
-    "n_peaks_fsc_small", "n_peaks_chl_small",
+    "chl_small","pe","fsc_small",
+    "diam_lwr","diam_mid","diam_upr",
+    "Qc_lwr","Qc_mid","Qc_upr",
     "gating_id", "filter_id", "quantile"
   )
   df.reorder <- as.data.frame(df)[cols]
@@ -1016,9 +1019,7 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
 save.vct.file <- function(vct, vct.dir, file.name, quantile) {
   vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
-  con <- gzfile(vct.file, "w")
-  write.table(vct, con, row.names=F, col.names=F, quote=F)
-  close(con)
+  writeSeaFlow(vct, vct.file, untransform=FALSE)
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
@@ -1489,4 +1490,40 @@ RFC3339.now <- function() {
   # Change timezone to UTC
   attr(now.local, "tzone") <- "UTC"
   return(format(now.local, format="%FT%H:%M:%S+00:00"))
+}
+
+
+
+
+#' Get aggregate statistics data frame along with estimates of cell abundance.
+#'
+#' @param db SQLite3 database file path.
+#' @param inst Instrument serial. If not provided this will attempt to be
+#'   parsed from the SFL file name (<cruise>_<serial>.sfl).
+#' @return Data frame of aggregate statistics.
+#' @export
+get.stat.table <- function(db, inst=NULL) {
+
+  if (is.null(inst)) {
+    inst <- get.inst(db)
+  }
+
+  stat <- get.raw.stat.table(db)
+  fr <- flowrate(stat$stream_pressure, inst=inst)
+
+  stat[,"flow_rate"] <- fr[,1]
+  stat[,"flow_rate.sd"] <- fr[,2]
+
+  # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
+  stat[,c("abundance")]  <- stat[,"n_count"] / (1000* median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
+  stat[,c("abundance.sd")]  <- stat[,"abundance"] * stat[,"flow_rate.sd"] / stat[,"flow_rate"]           # cells µL-1
+
+  # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
+    id <- which(stat$pop == 'prochloro' | stat$pop == 'synecho')
+    if(length(id) > 0){
+      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
+      stat[id,c("abundance.sd")]  <- stat[id,"abundance"] * stat[id,"flow_rate.sd"] / stat[id,"flow_rate"]           # cells µL-1
+    }
+
+  return(stat)
 }
