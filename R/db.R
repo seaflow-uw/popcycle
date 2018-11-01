@@ -1490,3 +1490,82 @@ RFC3339.now <- function() {
   attr(now.local, "tzone") <- "UTC"
   return(format(now.local, format="%FT%H:%M:%S+00:00"))
 }
+
+#' Find common database files between two directories.
+#'
+#' Directories will be search recursively and files will be matched by
+#' basename. An error will be thrown if the same database file occurs more than
+#  once in the same top-level directory.
+#'
+#' @param dir_a, dir_b Directories to compare.
+#' @return Data Frame with columns for basename, old_path, and new_path
+#' @examples
+#' \dontrun{
+#' common <- find_common_dbs(dir_a, dir_b)
+#' }
+find_common_dbs <- function(dir_a, dir_b) {
+  # First find DB files with the same basename
+  dbs_a <- list.files(dir_a, recursive=TRUE, pattern=".*\\.db")
+  dbs_b <- list.files(dir_b, recursive=TRUE, pattern=".*\\.db")
+  dbs_a_base <- sapply(dbs_a, basename)
+  dbs_b_base <- sapply(dbs_b, basename)
+
+  # stop if duplicated DBs, by basename, within either list
+  dups_a <- duplicated(dbs_a_base)
+  dups_b <- duplicated(dbs_b_base)
+  if (any(dups_a)) {
+    stop(paste0("Duplicated databases detected in ", dir_a, ": ", unique(dbs_a_base[dups_a])))
+  }
+  if (any(dups_b)) {
+    stop(paste0("Duplicated databases detected in ", dir_b, ": ", unique(dbs_b[dups_b])))
+  }
+
+  # Find dbs in common
+  common <- intersect(dbs_a_base, dbs_b_base)
+  common_a_idx <- match(common, dbs_a_base)
+  common_b_idx <- match(common, dbs_b_base)
+
+  # Return db file matches as a dataframe with columns for basename,
+  # old file paths, new file paths
+  df <- data.frame(
+    basename=common,
+    old_path=sapply(dbs_a[common_a_idx], function(x) file.path(dir_a, x)),
+    new_path=sapply(dbs_b[common_b_idx], function(x) file.path(dir_b, x)),
+    stringsAsFactors=FALSE
+  )
+  row.names(df) <- NULL  # otherwise row names will equal names(common)
+  return(df)
+}
+
+#' Copy tables from one popcycle database to another.
+#'
+#' The source database will remained unchanged. The destination database will
+#' have selected table cleared before the copy. Schemas for source and
+#' destination tables must match or an error is thrown.
+#' @param db_from Popcycle database to copy tables from.
+#' @param db_to Popcycle database to copy tables to.
+#' @return None
+#' @examples
+#' \dontrun{
+#' copy_tables(db_from, db_to)
+#' }
+copy_tables <- function(db_from, db_to, tables) {
+  for (table_name in tables) {
+    # Make sure schemas match for table to copy
+    schema_query <- paste0("select * from sqlite_master where tbl_name = '", table_name, "'")
+    schema_from <- sql.dbGetQuery(db_from, schema_query)
+    schema_to <- sql.dbGetQuery(db_to, schema_query)
+    if (! all.equal(schema_from, schema_to)) {
+      stop(paste0("db files have differing schemas for ", table_name, " table"))
+    }
+
+    # Clear the db_to table
+    reset.table(db_to, table_name)
+
+    # Get the db_from table
+    table_from <- sql.dbGetQuery(db_from, paste0("select * from ", table_name))
+
+    # Save to db_to table
+    sql.dbWriteTable(db_to, name=table_name, value=table_from)
+  }
+}

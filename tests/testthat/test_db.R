@@ -170,3 +170,56 @@ test_that("Retrieve EVT file names by date", {
 
   tearDown(x)
 })
+
+test_that("Copy tables from one db to another", {
+  x <- setUp()
+
+  # To test we'll copy vct table from full db to bare db
+  metadata_df <- data.frame(
+    cruise=c("testcruisenew"),
+    inst=c(100),
+    stringsAsFactors=FALSE
+  )
+  reset.table(x$db.bare, "metadata")
+  sql.dbWriteTable(x$db.bare, "metadata", metadata_df)
+  popcycle:::copy_tables(x$db.full, x$db.bare, c("vct", "metadata"))
+  src_vct <- get.vct.table(x$db.full)
+  dest_vct <- get.vct.table(x$db.bare)
+  src_metadata <- get.meta.table(x$db.full)
+  dest_metadata <- get.meta.table(x$db.bare)
+  expect_equal(src_vct, dest_vct)
+  expect_equal(src_metadata, dest_metadata)
+
+  tearDown(x)
+})
+
+
+test_that("Find common dbs in two directories", {
+  x <- setUp()
+
+  dir_a <- file.path(x$tmp.dir, "a", "suba")
+  dir_b <- file.path(x$tmp.dir, "b", "subb")
+  dir.create(dir_a, recursive=T)
+  dir.create(dir_b, recursive=T)
+  make.popcycle.db(file.path(dir_a, "w.db"))
+  make.popcycle.db(file.path(dir_a, "x.db"))
+  make.popcycle.db(file.path(dir_b, "y.db"))
+  make.popcycle.db(file.path(dir_b, "x.db"))
+
+  # One db in common
+  common <- popcycle:::find_common_dbs(dir_a, dir_b)
+  answer <- data.frame(
+    basename="x.db",
+    old_path=file.path(dir_a, "x.db"),
+    new_path=file.path(dir_b, "x.db"),
+    stringsAsFactors=FALSE
+  )
+  expect_equal(common, answer)
+
+  # No db in common
+  file.remove(file.path(dir_a, "x.db"))
+  common <- popcycle:::find_common_dbs(dir_a, dir_b)
+  expect_equal(nrow(common), 0)
+
+  tearDown(x)
+})
