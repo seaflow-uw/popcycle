@@ -22,7 +22,7 @@ set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
   para.y <- as.character(para.y)
 
   par(mfrow=c(1,1))
-  plot.gating.cytogram(opp, poly.log, para.x, para.y)
+  plot.cyt(opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
@@ -65,7 +65,7 @@ add.manual.classification <- function(opp, popname, para.x, para.y, gates.log=NU
   para.y <- as.character(para.y)
 
   par(mfrow=c(1,1))
-  plot.gating.cytogram(opp, gates.log, para.x, para.y)
+  plot.cyt(opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
