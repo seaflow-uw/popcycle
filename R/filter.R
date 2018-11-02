@@ -10,15 +10,15 @@ inflection.point <- function(DF){
   par(mfrow=c(1,3),pty='s')
 
   plot.cytogram(DF, "fsc_small", "pe")
-    poly.beads <- getpoly(quiet=TRUE)
+    poly.beads <- splancs::getpoly(quiet=TRUE)
     b <- subset(DF,splancs::inout(DF[,c("fsc_small", "pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
 
   plot.cytogram(b, "fsc_small", "D1")
-      polyd1 <- getpoly(quiet=TRUE)
+      polyd1 <- splancs::getpoly(quiet=TRUE)
       opp.d1 <- subset(b,splancs::inout(b[,c("fsc_small", "D1")],poly=polyd1, bound=TRUE, quiet=TRUE))
 
   plot.cytogram(b, "fsc_small", "D2")
-      polyd2 <- getpoly(quiet=TRUE)
+      polyd2 <- splancs::getpoly(quiet=TRUE)
       opp.d2 <- subset(b,splancs::inout(b[,c("fsc_small", "D2")],poly=polyd2, bound=TRUE, quiet=TRUE))
   par(def.par)
 
