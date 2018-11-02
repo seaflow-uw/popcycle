@@ -978,8 +978,8 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
     dplyr::summarise(
       file=clean.file.path(file.name),
       count=dplyr::n(),
-      chl_small= mean(chl_small),
-      pe=mean(pe)
+      chl_small=mean(chl_small),
+      pe=mean(pe),
       fsc_small=mean(fsc_small),
       diam_lwr=mean(diam_lwr),
       diam_mid=mean(diam_mid),

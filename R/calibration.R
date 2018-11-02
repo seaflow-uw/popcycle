@@ -63,7 +63,7 @@ size.carbon.conversion <- function(opp, beads.fsc){
 #' convert.opp.files(db, opp.dir, opp.files, vct.dir)
 #' }
 #' @export
-convert.opp.files <- function(db, opp.dir, opp.files, vct.dir)
+convert.opp.files <- function(db, opp.dir, opp.files, vct.dir){
 
   # Always assume the latest filter parameters are the ones used to generate
   # the current OPP data

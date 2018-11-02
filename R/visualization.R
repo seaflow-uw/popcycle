@@ -7,7 +7,8 @@
 #' @return None
 #' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
-  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
+
+  cols <- colorRampPalette(viridis(256))
 
   par(pty='s')
   id <- which(colnames(evtopp) == "fsc_small" | colnames(evtopp) == "chl_small" | colnames(evtopp) =="pe" | colnames(evtopp) =="fsc_perp")
@@ -21,28 +22,19 @@ plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
+#' @param bins Number of bin (hex) to display.
 #' @param transform Log transformation for both x- and y-axis'
 #' @return None
 #' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 #' @export plot.cytogram
-plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
-  require(viridis, quietly=T)
-
-  cols <- colorRampPalette(viridis(256))
-
+plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bins=100, transform=T) {
       x <- evtopp[,para.x]
       y <- evtopp[,para.y]
 
-      if(any(names(evtopp) == 'file')){
-        file <- evtopp[,'file']
-        }else file <- NA
-
-      if(transform){ df <- data.frame(x, y, d = densCols(log10(x), log10(y), colramp = cols), file)
-      }else{ df <- data.frame(x, y, d = densCols(x, y, colramp = cols), file=file)}
-
-      p <- ggplot(df) +
-          geom_point(aes(x, y, col = d), size = 0.1) +
-          scale_color_identity() +
+  p <- evtopp %>%
+          ggplot() +
+          stat_bin_2d(aes(x, y), bins=bins, color=NA) +
+          scale_fill_viridis() +
           theme_bw()+
           coord_fixed() +
           labs(x=para.x, y=para.y)
@@ -74,24 +66,16 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
     x <- opp[,para.x]
     y <- opp[,para.y]
 
-    if(any(names(opp) == 'pop')){ population <- opp[,'pop']
-    }else{ print("no gating parameters yet")
-            plot.cytogram(opp, para.x, para.y, transform=transform)
-          }
+    if(!any(names(opp) == 'pop')) opp[,'pop'] <- 'unknown'
 
-      if(any(names(opp) == 'file')){
-        file <- opp[,'file']
-      }else file <- NA
-
-
-    df <- data.frame(x, y, population, file)
-    p <- ggplot(df) +
-          geom_point(aes(x=x, y=y, colour=population), size=0.1, alpha=0.25) +
+    p <- opp %>%
+          ggplot(aes(x, y)) +
+          stat_bin_2d(aes(fill = population, colour = NA, alpha=..count..,),bins=100, show.legend=F) +
           theme_bw() +
           coord_fixed() +
-          stat_density2d(aes(x, y, group=population), bins=5, geom = 'polygon', show.legend=F,fill='white') +
-          stat_density2d(aes(x, y, group=population, fill = factor(population), alpha=log10(stat(level))), bins=5, geom = 'polygon', show.legend=F) +
+          stat_density2d(aes(x, y, color = factor(population), fill=NA), bins=5, geom = 'polygon', show.legend=F) +
           scale_fill_manual(values=group.colors) +
+          scale_alpha_continuous(range=c(0.3,1)) +
           scale_color_manual(values=group.colors) +
           labs(x=para.x, y=para.y) +
           guides(colour = guide_legend(override.aes = list(size=2, alpha=0.5)))
@@ -114,7 +98,7 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 #' @return None
 #' @usage plot.map(stat, param, ...)
 #' @export plot.map
-plot.map <- function(stat, param, transform=FALSE, ...){
+plot.map <- function(stat, param, transform=FALSE){
   require(mapproj, quietly=T)
   require(viridis, quietly=T)
   cols <- colorRampPalette(viridis(256))
@@ -143,9 +127,9 @@ plot.map <- function(stat, param, transform=FALSE, ...){
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter'
 #' @return None
-#' @usage plot.time(stat, popname,param, ...)
+#' @usage plot.time(stat, popname,param)
 #' @export plot.time
-plot.time <- function(stat, param, transform=FALSE, ...){
+plot.time <- function(stat, param, transform=FALSE){
 
   group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho="orange",picoeuk="seagreen3", croco='darkorchid')
   df <- data.frame(time=as.POSIXct(stat$time,format="%FT%T",tz='GMT'), y=stat[,param], population = stat$pop)
@@ -164,5 +148,37 @@ plot.time <- function(stat, param, transform=FALSE, ...){
 }
 
 
+#' Plot histogram.
+#'
+#' @param evtopp EVT or OPP data frame.
+#' @param para.x Channel to use as x axis.
+#' @param transform Log transformation of the parameter'
+#' @param position Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.
+#' @return None
+#' @usage plot.histogram(opp, para.x='fsc_small', transform=T)
+#' @export plot.histogram
 
-plot.histogram <- function()
+plot.histogram <- function(evtopp, para.x = "fsc_small", transform=T, position='identity'){
+
+group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho="orange",picoeuk="seagreen3", croco='darkorchid')
+
+  if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
+
+    x <- evtopp[,para.x]
+    y <- evtopp[,para.y]
+
+    p <- evtopp %>%
+        ggplot() +
+          geom_histogram(aes(x, fill=pop),binwidth=0.02, alpha=0.5, color=NA, position=position) +
+          theme_bw() +
+          scale_fill_manual(values=group.colors) +
+          guides(fill=guide_legend(title="population")) +
+          labs(x=para.x)
+
+    if(transform) p <- p + scale_x_continuous(trans='log10')
+
+    if(any(names(opp) == 'file')) p <- p + facet_wrap(~ file, scale='free_y')
+
+    print(p)
+
+  }

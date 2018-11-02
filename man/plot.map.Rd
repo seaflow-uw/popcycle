@@ -4,7 +4,14 @@
 \alias{plot.map}
 \title{Plot cell abundances of a population on a map.}
 \usage{
-plot.map(stat, popname, param, ...)
+plot.map(stat, param, ...)
+}
+\arguments{
+\item{stat}{Stat table from get.stat.table function}
+
+\item{param}{Parameter to display}
+
+\item{transform}{Log transformation of the parameter'}
 }
 \value{
 None

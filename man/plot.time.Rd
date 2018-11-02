@@ -4,7 +4,14 @@
 \alias{plot.time}
 \title{plot.time}
 \usage{
-plot.time(stat, popname,param, ...)
+plot.time(stat, popname,param)
+}
+\arguments{
+\item{stat}{Stat table from get.stat.table function}
+
+\item{param}{Parameter to display}
+
+\item{transform}{Log transformation of the parameter'}
 }
 \value{
 None
