@@ -69,11 +69,11 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
     if(!any(names(opp) == 'pop')) opp[,'pop'] <- 'unknown'
 
     p <- opp %>%
-          ggplot(aes(x, y)) +
-          stat_bin_2d(aes(fill = population, colour = NA, alpha=..count..,),bins=100, show.legend=F) +
+          ggplot() +
+          stat_bin_2d(aes(x, y, fill = pop, colour = NA, alpha=..count..,),bins=100, show.legend=F) +
           theme_bw() +
           coord_fixed() +
-          stat_density2d(aes(x, y, color = factor(population), fill=NA), bins=5, geom = 'polygon', show.legend=F) +
+          stat_density2d(aes(x, y, color = factor(pop), fill=NA), bins=5, geom = 'polygon', show.legend=F) +
           scale_fill_manual(values=group.colors) +
           scale_alpha_continuous(range=c(0.3,1)) +
           scale_color_manual(values=group.colors) +
@@ -99,22 +99,21 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 #' @usage plot.map(stat, param, ...)
 #' @export plot.map
 plot.map <- function(stat, param, transform=FALSE){
-  require(mapproj, quietly=T)
-  require(viridis, quietly=T)
   cols <- colorRampPalette(viridis(256))
 
-  df <- data.frame(x=stat$lon, y=stat$lat, z=stat[,param], pop=stat$pop)
+  z <- stat[,param]
 
-  p <- ggplot(df) + geom_point(aes(x, y, color=z), size=1, alpha=0.5,show.legend=T) +
-    borders("world", colour = "gray85", fill = "gray80") +
-    labs(x="Longitude", y= "Latitude") +
-    xlim(range(stat$lon, na.rm=T)) +
-    ylim(range(stat$lat, na.rm=T)) +
-    facet_wrap(. ~ pop) +
-    theme_bw()
+  p <- stat %>%
+      ggplot() + geom_point(aes(lon, lat, color=z), size=1, alpha=0.5,show.legend=T) +
+      borders("world", colour = "gray85", fill = "gray80") +
+      labs(x="Longitude", y= "Latitude") +
+      xlim(range(stat$lon, na.rm=T)) +
+      ylim(range(stat$lat, na.rm=T)) +
+      facet_wrap(. ~ pop) +
+      theme_bw()
 
-    if(transform) p <- p + scale_color_gradientn(colours=cols(100), trans='log10', name=paste(param))
-    if(!transform) p <- p + scale_color_gradientn(colours=cols(100), name=paste(param))
+  if(transform) p <- p + scale_color_gradientn(colours=cols(100), trans='log10', name=paste(param))
+  if(!transform) p <- p + scale_color_gradientn(colours=cols(100), name=paste(param))
 
 
     print(p)
@@ -132,14 +131,17 @@ plot.map <- function(stat, param, transform=FALSE){
 plot.time <- function(stat, param, transform=FALSE){
 
   group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho="orange",picoeuk="seagreen3", croco='darkorchid')
-  df <- data.frame(time=as.POSIXct(stat$time,format="%FT%T",tz='GMT'), y=stat[,param], population = stat$pop)
 
-  p <- ggplot(df) + geom_point(aes(time, y, color=population), size=1, alpha=0.25) +
-  theme_bw() +
-  labs(y=paste(param)) +
-  scale_color_manual(values=group.colors) +
-  facet_wrap( ~ population) +
-  guides(colour = guide_legend(override.aes = list(size=2, alpha=0.5)))
+  stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
+  y <- stat[,param]
+
+  p <- stat %>%
+      ggplot() + geom_point(aes(time, y, color=pop), size=1, alpha=0.25) +
+      theme_bw() +
+      labs(y=param) +
+      scale_color_manual(values=group.colors) +
+      facet_wrap( ~ pop) +
+      guides(names='population', colour = guide_legend(override.aes = list(size=2, alpha=0.5)))
 
   if(transform) p <- p + scale_y_continuous(trans='log10')
 
@@ -169,15 +171,15 @@ group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho="or
 
     p <- evtopp %>%
         ggplot() +
-          geom_histogram(aes(x, fill=pop),binwidth=0.02, alpha=0.5, color=NA, position=position) +
-          theme_bw() +
-          scale_fill_manual(values=group.colors) +
-          guides(fill=guide_legend(title="population")) +
-          labs(x=para.x)
+        geom_histogram(aes(x, fill=pop),binwidth=0.02, alpha=0.5, color=NA, position=position) +
+        theme_bw() +
+        scale_fill_manual(values=group.colors) +
+        guides(fill=guide_legend(title="population")) +
+        labs(x=para.x)
 
     if(transform) p <- p + scale_x_continuous(trans='log10')
 
-    if(any(names(opp) == 'file')) p <- p + facet_wrap(~ file, scale='free_y')
+    if(any(names(evtopp) == 'file')) p <- p + facet_wrap(~ file, scale='free_y')
 
     print(p)
 
