@@ -11,11 +11,13 @@ Imports:
     DBI,
     RSQLite,
     uuid,
-    tools
-Suggests:
-    plotrix,
+    tools,
     maps,
     mapdata,
+    viridis,
+    tidyverse
+Suggests:
+    plotrix,
     testthat,
     roxygen2
 License: GPL-2

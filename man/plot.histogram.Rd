@@ -13,7 +13,9 @@ plot.histogram(opp, para.x='fsc_small', transform=T)
 
 \item{transform}{Log transformation of the parameter'}
 
-\item{position}{Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.}
+\item{position}{Position adjustment, either as a string ('stack' or 'identity'), or the result of a call to a position adjustment function.}
+
+\item{free}{Should the y-scale be free (TRUE) or fixed (FIXED)}
 }
 \value{
 None
