@@ -1,11 +1,11 @@
-#' Plot EVT or OPP cytogram.
+#' Plot EVT or OPP cytogram with only builtin R graphics.
 #'
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for densCols()
 #' @return None
-#' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+#' @usage plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 
   cols <- colorRampPalette(viridis::viridis(256))

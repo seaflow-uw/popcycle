@@ -2,9 +2,9 @@
 % Please edit documentation in R/visualization.R
 \name{plot.cyt}
 \alias{plot.cyt}
-\title{Plot EVT or OPP cytogram.}
+\title{Plot EVT or OPP cytogram with only builtin R graphics.}
 \usage{
-plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 }
 \arguments{
 \item{evtopp}{EVT or OPP data frame.}
@@ -19,5 +19,5 @@ plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 None
 }
 \description{
-Plot EVT or OPP cytogram.
+Plot EVT or OPP cytogram with only builtin R graphics.
 }

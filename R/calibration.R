@@ -16,7 +16,7 @@ flowrate <- function(stream_pressure, inst=inst){
     drr.sd <- sd(drr[which(drr$seaflow_serial == inst), "detectable_region_ratio"])
 
     flow_rate <- drr.mean * 10^fr[,"fit"]  # mL min-1
-    flow_rate.sd <- flow_rate * sqrt((log(10) * rowSds(fr))^2 + (drr.sd /drr.mean)^2) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
+    flow_rate.sd <- flow_rate * sqrt((log(10) * matrixStats::rowSds(fr))^2 + (drr.sd /drr.mean)^2) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
 
     return(data.frame(cbind(flow_rate, flow_rate.sd)))
 }
