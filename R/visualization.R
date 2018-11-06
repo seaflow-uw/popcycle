@@ -163,11 +163,12 @@ group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='or
         ggplot() + geom_histogram(aes_string(para.x, fill='pop'),binwidth=0.02, alpha=0.5, color=NA, position=position) +
         theme_bw() +
         scale_fill_manual(values=group.colors) +
-        guides(fill=guide_legend(title='population')) +
-        if(free) facet_wrap(~ file, scale="free_y")
-        if(!free) facet_wrap(~ file)
+        guides(fill=guide_legend(title='population'))
 
-    if(transform) p <- p + scale_x_continuous(trans='log10')
+        if(free){p <- p + facet_wrap(~ file, scale="free_y")
+          }else{ p <- p + facet_wrap(~ file)
+
+        if(transform) p <- p + scale_x_continuous(trans='log10')
 
     print(p)
 
