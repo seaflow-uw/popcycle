@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS vct (
     pop TEXT NOT NULL,
     count INTEGER NOT NULL,
     chl_small REAL NOT NULL,
-    pe REAL NOT NULL
+    pe REAL NOT NULL,
     fsc_small REAL NOT NULL,
     diam_lwr REAL NOT NULL,
     diam_mid REAL NOT NULL,
