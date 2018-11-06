@@ -5,7 +5,6 @@ Author: Francois Ribalet, Chris Berthiaume, Jeremy Hyrkas
 Maintainer: Francois Ribalet <ribalet@uw.edu>
 Description: Seaflow analysis using R/SQLite.
 Imports:
-    dplyr,
     matrixStats,
     splancs,
     DBI,

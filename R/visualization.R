@@ -41,7 +41,7 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bi
 
       if(transform) p <- p + scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
 
-  print(p)
+  return(p)
 
 }
 
@@ -78,7 +78,7 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 
       if(transform) p <- p + scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
 
-    print(p)
+      return(p)
 
 }
 
@@ -108,7 +108,7 @@ plot.map <- function(stat, param, transform=FALSE){
   if(!transform) p <- p + scale_color_gradientn(colours=cols(100), name=paste(param))
 
 
-    print(p)
+  return(p)
 
 }
 
@@ -135,7 +135,7 @@ plot.time <- function(stat, param, transform=FALSE){
 
   if(transform) p <- p + scale_y_continuous(trans='log10')
 
-  print(p)
+  return(p)
 
 }
 
@@ -166,10 +166,10 @@ group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='or
         guides(fill=guide_legend(title='population'))
 
         if(free){p <- p + facet_wrap(~ file, scale="free_y")
-          }else{ p <- p + facet_wrap(~ file)
+        }else{ p <- p + facet_wrap(~ file)}
 
         if(transform) p <- p + scale_x_continuous(trans='log10')
 
-    print(p)
+        return(p)
 
   }
