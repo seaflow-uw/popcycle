@@ -1544,6 +1544,7 @@ find_common_dbs <- function(dir_a, dir_b) {
 #' destination tables must match or an error is thrown.
 #' @param db_from Popcycle database to copy tables from.
 #' @param db_to Popcycle database to copy tables to.
+#' @param tables Tables to copy.
 #' @return None
 #' @examples
 #' \dontrun{
@@ -1555,7 +1556,7 @@ copy_tables <- function(db_from, db_to, tables) {
     schema_query <- paste0("select * from sqlite_master where tbl_name = '", table_name, "'")
     schema_from <- sql.dbGetQuery(db_from, schema_query)
     schema_to <- sql.dbGetQuery(db_to, schema_query)
-    if (! all.equal(schema_from, schema_to)) {
+    if (! identical(schema_from, schema_to)) {
       stop(paste0("db files have differing schemas for ", table_name, " table"))
     }
 

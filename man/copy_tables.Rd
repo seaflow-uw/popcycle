@@ -10,6 +10,8 @@ copy_tables(db_from, db_to, tables)
 \item{db_from}{Popcycle database to copy tables from.}
 
 \item{db_to}{Popcycle database to copy tables to.}
+
+\item{tables}{Tables to copy.}
 }
 \value{
 None
