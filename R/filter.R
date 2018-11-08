@@ -1,47 +1,3 @@
-#' Plot helpful cytograms for estimating the D1, D2 and FSC coordinates of the inflection point (corresponds to location of 1µm beads).
-#'
-#' @param dataframe containing EVT data.
-#' @return D1, D2 and fsc values of presumed 1 µm beads
-#' @export
-inflection.point <- function(DF){
-  QUANTILES <- c(2.5, 50.0, 97.5)
-
-  def.par <- par(no.readonly = TRUE) # save default, for resetting...
-  par(mfrow=c(1,3),pty='s')
-
-  plot.cytogram(DF, "fsc_small", "pe")
-    poly.beads <- splancs::getpoly(quiet=TRUE)
-    b <- subset(DF,splancs::inout(DF[,c("fsc_small", "pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
-
-  plot.cytogram(b, "fsc_small", "D1")
-      polyd1 <- splancs::getpoly(quiet=TRUE)
-      opp.d1 <- subset(b,splancs::inout(b[,c("fsc_small", "D1")],poly=polyd1, bound=TRUE, quiet=TRUE))
-
-  plot.cytogram(b, "fsc_small", "D2")
-      polyd2 <- splancs::getpoly(quiet=TRUE)
-      opp.d2 <- subset(b,splancs::inout(b[,c("fsc_small", "D2")],poly=polyd2, bound=TRUE, quiet=TRUE))
-  par(def.par)
-
-      FSC <- round(summary(c(opp.d1$fsc_small, opp.d2$fsc_small)))
-      D1 <- round(summary(opp.d1$D1))
-      D2 <- round(summary(opp.d2$D2))
-
-      inflection <- data.frame()
-      for (quant in QUANTILES) {
-        if (quant == 2.5) { i <- 2; j <- 5
-        } else if (quant == 50.0) { i <- j <- 3
-        } else if (quant == 97.5) { i <- 5; j <- 2
-          }
-        fsc <- as.vector(FSC[i])
-        d1 <- as.vector(D1[j])
-        d2 <- as.vector(D2[j])
-        newrow <- data.frame(quantile=quant, fsc, d1, d2, stringsAsFactors=FALSE)
-        inflection <- rbind(inflection, newrow)
-        }
-
-  return(inflection)
-}
-
 #' Filter EVT particles with a generic filter function.
 #'
 #' @param evt EVT data frame.
@@ -176,25 +132,25 @@ plot.filter.cytogram <- function(evt, filter.params) {
 
   par(mfrow=c(2,3),pty='s')
 
-  plot.cytogram(evt., "D1", "D2")
+  plot.cyt(evt., "D1", "D2")
   mtext("Alignment", side=3, line=3, font=2, col=2)
   abline(b=1, a=width, col='red',lwd=2)
   abline(b=1, a=-width, col='red',lwd=2)
   mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=1,font=2)
 
-  plot.cytogram(aligned, "fsc_small", "D1")
+  plot.cyt(aligned, "fsc_small", "D1")
   mtext("Focus", side=3, line=3, font=2,col=2)
   abline(b=notch.small.D1, a=offset.small.D1,col=2)
   abline(b=notch.large.D1, a=offset.large.D1,col=3)
   points(filter.params$beads.fsc.small,filter.params$beads.D1, cex=2, pch=16)
 
-  plot.cytogram(aligned, "fsc_small", "D2")
+  plot.cyt(aligned, "fsc_small", "D2")
   mtext("Focus", side=3, line=3, font=2,col=2)
   abline(b=notch.small.D2, a=offset.small.D2,col=2)
   abline(b=notch.large.D2, a=offset.large.D2,col=3)
   points(filter.params$beads.fsc.small,filter.params$beads.D2, cex=2, pch=16)
 
-  plot.cytogram(opp, "fsc_small", "pe"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
+  plot.cyt(opp, "fsc_small", "pe"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
   mtext("OPP", side=3, line=1, font=2, col=2)
   plot.cytogram(opp, "fsc_small","chl_small"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
   mtext("OPP", side=3, line=1, font=2, col=2)

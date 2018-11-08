@@ -13,7 +13,9 @@ plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 
 \item{para.y}{Channel to use as y axis.}
 
-\item{...}{Additional parameters for densCols()}
+\item{bins}{Number of bin (hex) to display.}
+
+\item{transform}{Log transformation for both x- and y-axis'}
 }
 \value{
 None

@@ -1,20 +1,51 @@
-#' Plot EVT or OPP cytogram.
+#' Plot EVT or OPP cytogram with only builtin R graphics.
 #'
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for densCols()
 #' @return None
-#' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
-#' @export plot.cytogram
-plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
-  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
+#' @usage plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
+
+  cols <- colorRampPalette(viridis::viridis(256))
 
   par(pty='s')
-  id <- which(colnames(evtopp) == "fsc_small" | colnames(evtopp) == "chl_small" | colnames(evtopp) =="pe" | colnames(evtopp) =="fsc_perp")
+  id <- which(colnames(evtopp) == 'fsc_small' | colnames(evtopp) == 'chl_small' | colnames(evtopp) =='pe' | colnames(evtopp) =='fsc_perp')
   if(max(evtopp[,c(id)]) > 10^3.5) plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(evtopp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
   else plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(evtopp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 }
+
+
+#' Plot EVT or OPP cytogram.
+#'
+#' @param evtopp EVT or OPP data frame.
+#' @param para.x Channel to use as x axis.
+#' @param para.y Channel to use as y axis.
+#' @param bins Number of bin (hex) to display.
+#' @param transform Log transformation for both x- and y-axis'
+#' @return None
+#' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+#' @export plot.cytogram
+plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bins=100, transform=T) {
+
+  if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
+
+  p <- evtopp %>%
+          ggplot() +
+          stat_bin_2d(aes_string(para.x, para.y), bins=bins, color=NA) +
+          viridis::scale_fill_viridis() +
+          theme_bw()+
+          coord_fixed() +
+          facet_wrap( ~ file)
+
+      if(transform) p <- p + scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
+
+  return(p)
+
+}
+
+
 
 
 #' Plot cytogram with particles colored by population.
@@ -22,131 +53,123 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ..
 #' @param opp OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
-#' @param min.count Minimum number of particles for drawing contour lines.
-#' @param ... Additional parameters for plot()
+#' @param transform Log transformation for both x- and y-axis'
 #' @return None
-#' @usage plot.vct.cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...)
+#' @usage plot.vct.cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small')
 #' @export plot.vct.cytogram
-plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', min.count=300, ...) {
-  require(scales, quietly=T)
-  require(flowViz, quietly=T)
+plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
 
-  if (!is.null(opp$pop)) {
-    popu <- c('unknown','picoeuk','croco','prochloro','synecho','beads')
-    color <- c('grey','seagreen3','darkorchid','skyblue3','orange','red3')
-    for(i in 1:length(popu)) opp[which(opp$pop==popu[i]),'col'] <- color[i]
+    group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='orange',picoeuk='seagreen3', croco='darkorchid')
 
-		par(pty='s')
-        d <- log(mean(par("pin")))
-        plot(opp[,c(para.x, para.y)], cex=d, pch=16, col = alpha(opp$col,0.4), log='xy', xlim=c(1,10^3.5), ylim=c(1,10^3.5),...)
-          par(new=T)
-          plot(1,1,pch=NA, xaxt='n', yaxt='n', xlim=log10(c(1,10^3.5)), ylim=log10(c(1,10^3.5)), xlab=NA, ylab=NA, bty='n')
+    if(!any(names(opp) == 'pop')) opp[,'pop'] <- 'unknown'
+    if(!any(names(opp) == 'file')) opp[,'file'] <- ''
 
+    p <- opp %>%
+          ggplot() +
+          stat_bin_2d(aes_string(para.x, para.y, fill = 'pop', alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
+          theme_bw() +
+          coord_fixed() +
+          stat_density_2d(aes_string(para.x, para.y, color = 'pop'), bins=5, show.legend=F) +
+          scale_fill_manual(values=group.colors) +
+          scale_alpha_continuous(range=c(0.3,1)) +
+          scale_color_manual(values=group.colors) +
+          guides(color='none', alpha='none', fill= guide_legend(override.aes = list(size=2, alpha=0.5),title='population')) +
+          facet_wrap(~ file)
 
-        for(i in c('prochloro','synecho')){
-          df <- subset(opp, pop==i)
-            if(nrow(df) < min.count) next
-          c <- rgb2hsv(col2rgb(df$col))
-          cols <- rainbow(10,s=c[2], v=c[3],start=c[1], alpha=0.1)
-          df.f <- flowFrame(as.matrix(log10(df[,c(para.x, para.y)])))
-          contour(df.f,fill=alpha('white',0.5), col='grey', grid.size=c(30,30),  add=T)
-          contour(df.f,fill=cols, col=cols, grid.size=c(30,30), add=T)
-        }
+      if(transform) p <- p + scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
 
-    legend('topleft', legend=(unique(opp$pop)), col=unique(opp$col), pch=16, pt.cex=0.6, bty='n')
-    } else {
-		print("No Gating parameters yet")
-		plot.cytogram(opp, para.x, para.y, ...)
-		mtext(paste("No Gating parameters yet!"), 3, line=-1, font=2)
-	}
-}
+      return(p)
 
-
-#' Plot cytogram with gates.
-#'
-#' @param opp OPP data frame.
-#' @param poly.log Gating polygon(s) to draw (optional)
-#' @param para.x Channel to use as x axis.
-#' @param para.y Channel to use as y axis.
-#' @return None
-#' @usage plot.gating.cytogram(opp, gating.log=NULL, para.x = 'fsc_small', para.y = 'chl_small')
-#' @export plot.gating.cytogram
-plot.gating.cytogram <- function(opp, gating.log=NULL, para.x = 'fsc_small', para.y = 'chl_small') {
-	plot.cytogram(opp, para.x, para.y)
-	if (!is.null(gating.log)) {
-		for (i in 1:length(gating.log)) {
-      method <- gating.log[[i]]$method
-      if (method != "manual") {
-        next
-      }
-
-	    pop <- names(gating.log[i]) # name of the population
-	    poly <- gating.log[[i]]$poly # Get parameters of the gate for this population
-	    para <- colnames(poly)
-	    if (para[1]==para.x & para[2]==para.y) {
-	      polygon(poly, lwd=3,border=i, col=NA)
-	      text(mean(poly[,1]), mean(poly[,2]),labels=pop, col=i, font=2)
-	    }
-		}
-	}
 }
 
 
 #' Plot cell abundances of a population on a map.
 #'
+#' @param stat Stat table from get.stat.table function
+#' @param param Parameter to display
+#' @param transform Log transformation of the parameter'
 #' @return None
-#' @usage plot.map(stat, popname, param, ...)
+#' @usage plot.map(stat, param, ...)
 #' @export plot.map
-plot.map <- function(stat, popname, param, ...){
-  require(maps, quietly=T)
-  require(mapdata, quietly=T)
-  require(plotrix, quietly=T)
+plot.map <- function(stat, param, transform=FALSE){
 
-  cols <- colorRampPalette(c("blue4","royalblue4","deepskyblue3", "seagreen3", "yellow", "orangered2","darkred"))
+  cols <- colorRampPalette(viridis::viridis(256))
 
-  map.type <- 'worldHires'
+  p <- stat %>%
+      ggplot() + geom_point(aes_string('lon', 'lat', color=param), size=1, alpha=0.5,show.legend=T) +
+      borders('world', colour = 'gray85', fill = 'gray80') +
+      labs(x='Longitude', y= 'Latitude') +
+      xlim(range(stat[,'lon'], na.rm=T)) +
+      ylim(range(stat[,'lat'], na.rm=T)) +
+      facet_wrap(~ pop) +
+      theme_bw()
 
-    xlim <- range(stat$lon, na.rm=T)
-    ylim <- range(stat$lat, na.rm=T)
+  if(transform) p <- p + scale_color_gradientn(colours=cols(100), trans='log10', name=paste(param))
+  if(!transform) p <- p + scale_color_gradientn(colours=cols(100), name=paste(param))
 
-    if(xlim[1] < 0 & xlim[2] > 0){
-        neg.lon <- subset(stat, lon < 0)
-      stat[row.names(neg.lon), "long"] <- neg.lon$lon + 360
-      xlim <- c(min(stat$lon, na.rm=TRUE), max(stat$lon, na.rm=TRUE))
-      stat <- stat[-which(is.na(stat$lon)),]
-      stat$lon[stat$lon < 0] <- stat$lon[stat$lon < 0] + 360
-      map.type <- 'world2Hires'
-        }
 
-  # plot the cruise track as gray line back-ground
-  pop <- subset(stat, pop == popname)
-  plot(pop$lon, pop$lat, xlim=xlim, ylim=ylim, asp=1, main=paste(popname),
-            xlab=expression(paste("Longitude (",degree,"W)")),ylab=expression(paste("Latitude (",degree,"N)")),type='l',lwd=3,col='lightgrey',...)
-  try(maps::map(map.type, fill=T, col='darkgrey',add=TRUE))
-  points(pop$lon, pop$lat, pch=16, asp=1, col=cols(100)[cut(pop[,param],100)],...)
-
-    ylim <- par('usr')[c(3,4)]
-    xlim <- par('usr')[c(1,2)]
-
-    color.legend(xlim[2], ylim[1], xlim[2] + 0.02*diff(xlim), ylim[2],
-      legend=pretty(pop[,param]), rect.col=cols(100), gradient='y',align='rb',...)
-  mtext(paste(param), side=4, line=2,...)
-
+  return(p)
 
 }
 
 #' plot.time
 #'
+#' @param stat Stat table from get.stat.table function
+#' @param param Parameter to display
+#' @param transform Log transformation of the parameter'
 #' @return None
-#' @usage plot.time(stat, popname,param, ...)
+#' @usage plot.time(stat, popname,param)
 #' @export plot.time
-plot.time <- function(stat, popname, param, ...){
-  require(plotrix, quietly=T)
+plot.time <- function(stat, param, transform=FALSE){
 
-  stat$time <- as.POSIXct(stat$time,format="%FT%T",tz='GMT')
-  pop <- subset(stat, pop == popname)
-  if(any(colnames(stat)== paste0(param,".sd"))) plotCI(pop$time, pop[,param], uiw=pop[,paste0(param,".sd")], sfrac=0,xlab="Time", ylab=paste(param),main=paste(popname), scol='grey',...)
-  else plot(pop$time, pop[,param], xlab="Time", ylab=paste(param),main=paste(popname),...)
+  group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='orange',picoeuk='seagreen3', croco='darkorchid')
 
+  stat$time <- as.POSIXct(stat$time,format='%FT%T',tz='GMT')
+
+  p <- stat %>%
+      ggplot() + geom_point(aes_string(x='time',y=param, color='pop'), size=1, alpha=0.25) +
+      theme_bw() +
+      labs(y=param) +
+      scale_color_manual(values=group.colors) +
+      facet_wrap( ~ pop)
+
+  if(transform) p <- p + scale_y_continuous(trans='log10')
+
+  return(p)
 
 }
+
+
+#' Plot histogram.
+#'
+#' @param evtopp EVT or OPP data frame.
+#' @param para.x Channel to use as x axis.
+#' @param transform Log transformation of the parameter'
+#' @param position Position adjustment, either as a string ('stack' or 'identity'), or the result of a call to a position adjustment function.
+#' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
+#' @return None
+#' @usage plot.histogram(opp, para.x='fsc_small', transform=T)
+#' @export plot.histogram
+
+plot.histogram <- function(evtopp, para.x = 'fsc_small', transform=T, position='identity', free=T){
+
+group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='orange',picoeuk='seagreen3', croco='darkorchid')
+
+  if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
+  if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
+  if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
+
+    p <- evtopp %>%
+        ggplot() + geom_histogram(aes_string(para.x, fill='pop'),binwidth=0.02, alpha=0.5, color=NA, position=position) +
+        theme_bw() +
+        scale_fill_manual(values=group.colors) +
+        guides(fill=guide_legend(title='population'))
+
+        if(free){p <- p + facet_wrap(~ file, scale="free_y")
+        }else{ p <- p + facet_wrap(~ file)}
+
+        if(transform) p <- p + scale_x_continuous(trans='log10')
+
+        return(p)
+
+  }

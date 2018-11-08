@@ -22,7 +22,7 @@ set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
   para.y <- as.character(para.y)
 
   par(mfrow=c(1,1))
-  plot.gating.cytogram(opp, poly.log, para.x, para.y)
+  plot.cyt(opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- splancs::getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
@@ -65,7 +65,7 @@ add.manual.classification <- function(opp, popname, para.x, para.y, gates.log=NU
   para.y <- as.character(para.y)
 
   par(mfrow=c(1,1))
-  plot.gating.cytogram(opp, gates.log, para.x, para.y)
+  plot.cyt(opp, para.x, para.y)
   mtext(paste("Set Gate for:",popname), font=2)
   poly <- splancs::getpoly(quiet=TRUE) # Draw Gate
   colnames(poly) <- c(para.x, para.y)
@@ -230,15 +230,20 @@ auto.classify <- function(opp, params, popname) {
   } else {
    row.selection = opp$pop == "unknown" & opp[,paste(params$x)] > params$min.pe
   }
-  x <- opp[row.selection, names(opp) != "pop"]
 
-  fframe <- flowCore::flowFrame(as.matrix(log10(x)))
-  #plotDens(f, channels=c(5,8))
-  channels <- c(match(params$x, names(x)), match(params$y, names(x)))
-  labeled <- flowDensity::flowDensity(obj=fframe,channels=channels, position=params$position,
-                   gates=params$gates, ellip.gate=TRUE,
-                   scale=params$scale)
-  opp[row.names(x[labeled@index,]),'pop'] <- popname
+  # Sometimes there are no unknowns at this point so check for zero rows
+  if (nrow(x) > 0) {
+    x <- opp[row.selection, names(opp) != "pop"]
+
+    fframe <- flowCore::flowFrame(as.matrix(log10(x)))
+    #plotDens(f, channels=c(5,8))
+    channels <- c(match(params$x, names(x)), match(params$y, names(x)))
+    labeled <- flowDensity::flowDensity(obj=fframe,channels=channels,
+                                        position=params$position,
+                                        gates=params$gates, ellip.gate=TRUE,
+                                        scale=params$scale)
+    opp[row.names(x[labeled@index,]),'pop'] <- popname
+  }
 
   return(opp)
 }
@@ -307,10 +312,15 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 
   # Always assume the latest filter parameters are the ones used to generate
   # the current OPP data
-  filter.id <- get.filter.params.latest(db)$id
-  if (is.null(filter.id)) {
-    stop("No entries DB filter entries")
+  filter.params <- get.filter.params.latest(db)
+  if (is.null(filter.params)) {
+    stop("No DB filter entries")
   }
+  # Take from first quantile row, should be the same for all quantiles
+  filter.id <- filter.params$id[1]
+
+  # Get instrument serial number
+  inst <- get.inst(db)
 
   i <- 0
   errors <- list()
@@ -327,14 +337,22 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
       for (quantile in QUANTILES) {
         #print(paste('Loading', opp.file))
         opp <- get.opp.by.file(opp.dir, opp.file, quantile)
+
         #print(paste('Classifying', opp.file))
+        # First calculate diameter and carbon quota
+        beads.fsc <- transformData(data.frame(fsc=filter.params[which(filter.params$quantile == quantile),"beads.fsc.small"]))
+        opp <- size.carbon.conversion(opp, beads.fsc=beads.fsc, inst=inst)
+
+        # Then gate
         opp <- classify.opp(opp, gating.params$gates.log)
 
         # store vct
         #print('Uploading labels to the database')
         save.vct.stats(db, opp.file, opp, gating.params$id,
-                       filter.id[1], quantile)
-        save.vct.file(opp$pop, vct.dir, opp.file, quantile)
+                       filter.id, quantile)
+
+        vct <- opp[ , !(names(opp) %in% EVT.HEADER)]
+        save.vct.file(vct, vct.dir, opp.file, quantile)
       }
     }, error = function(e) {
       cat(paste0("Error with file ", opp.file, ": ", e))
