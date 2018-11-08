@@ -4,12 +4,14 @@
 \alias{size.carbon.conversion}
 \title{Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized foward scatter to 1-µm beads used as internal standard}
 \usage{
-size.carbon.conversion(opp, beads.fsc)
+size.carbon.conversion(opp, beads.fsc, inst)
 }
 \arguments{
 \item{opp}{Table that contains fsc_small values (transformed data).}
 
 \item{beads.fsc}{Values of the fsc_small for beads (transformed data).}
+
+\item{inst}{Instrument serial number}
 }
 \value{
 A dataframe with cell size and carbon cell quotas

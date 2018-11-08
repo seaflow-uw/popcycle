@@ -1019,7 +1019,9 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
 save.vct.file <- function(vct, vct.dir, file.name, quantile) {
   vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
-  writeSeaFlow(vct, vct.file, untransform=FALSE)
+  con <- gzfile(vct.file, "w")
+  write.table(vct, con, row.names=F, col.names=F, quote=F)
+  close(con)
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
@@ -1491,9 +1493,6 @@ RFC3339.now <- function() {
   attr(now.local, "tzone") <- "UTC"
   return(format(now.local, format="%FT%H:%M:%S+00:00"))
 }
-
-
-
 
 #' Get aggregate statistics data frame along with estimates of cell abundance.
 #'

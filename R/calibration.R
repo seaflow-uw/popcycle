@@ -28,9 +28,10 @@ flowrate <- function(stream_pressure, inst=inst){
 #'
 #' @param opp Table that contains fsc_small values (transformed data).
 #' @param beads.fsc Values of the fsc_small for beads (transformed data).
+#' @param inst Instrument serial number
 #' @return A dataframe with cell size and carbon cell quotas
 #' @export
-size.carbon.conversion <- function(opp, beads.fsc){
+size.carbon.conversion <- function(opp, beads.fsc, inst){
 
   mie <- read.csv(system.file("scatter", paste0("calibrated-mie.csv"),package='popcycle'))
 
@@ -69,8 +70,11 @@ convert.opp.files <- function(db, opp.dir, opp.files, vct.dir){
   # the current OPP data
   filter.params <- get.filter.params.latest(db)
   if (is.null(filter.params)) {
-    stop("No entries DB filter entries")
+    stop("No DB filter entries")
   }
+
+  # Get instrument serial number
+  inst <- get.inst(db)
 
   i <- 0
   errors <- list()
@@ -89,7 +93,7 @@ convert.opp.files <- function(db, opp.dir, opp.files, vct.dir){
 
         beads.fsc <- transformData(data.frame(fsc=filter.params[which(filter.params$quantile == quantile),"beads.fsc.small"]))
         #print(paste('Classifying', opp.file))
-        opp <- size.carbon.conversion(opp, beads.fsc=beads.fsc)
+        opp <- size.carbon.conversion(opp, beads.fsc=beads.fsc, inst=inst)
 
         # store vct
         vct <- opp[ , !(names(opp) %in% EVT.HEADER)]
