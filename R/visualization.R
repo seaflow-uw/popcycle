@@ -59,7 +59,8 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bi
 #' @export plot.vct.cytogram
 plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
 
-    group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='orange',picoeuk='seagreen3', croco='darkorchid')
+
+    group.colors <- c(unknown='grey', beads='red3', prochloro=viridis(4)[1],synecho=viridis(4)[2],picoeuk=viridis(4)[3], croco=viridis(4)[4])
 
     if(!any(names(opp) == 'pop')) opp[,'pop'] <- 'unknown'
     if(!any(names(opp) == 'file')) opp[,'file'] <- ''
@@ -122,7 +123,7 @@ plot.map <- function(stat, param, transform=FALSE){
 #' @export plot.time
 plot.time <- function(stat, param, transform=FALSE){
 
-  group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='orange',picoeuk='seagreen3', croco='darkorchid')
+  group.colors <- c(unknown='grey', beads='red3', prochloro=viridis(4)[1],synecho=viridis(4)[2],picoeuk=viridis(4)[3], croco=viridis(4)[4])
 
   stat$time <- as.POSIXct(stat$time,format='%FT%T',tz='GMT')
 
@@ -153,7 +154,7 @@ plot.time <- function(stat, param, transform=FALSE){
 
 plot.histogram <- function(evtopp, para.x = 'fsc_small', transform=T, position='identity', free=T){
 
-group.colors <- c(unknown='grey', beads='red3', prochloro='skyblue3',synecho='orange',picoeuk='seagreen3', croco='darkorchid')
+  group.colors <- c(unknown='grey', beads='red3', prochloro=viridis(4)[1],synecho=viridis(4)[2],picoeuk=viridis(4)[3], croco=viridis(4)[4])
 
   if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
   if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
