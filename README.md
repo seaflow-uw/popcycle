@@ -8,6 +8,7 @@ The Popcycle pipeline performs 3 different analyses:
 
 The metadata and aggregated statistics for each step are saved into a SQL database using SQLite3 and the particle data is saved into gzip compressed binary and text files.
 
+![SeaFlow workflow](documentation/images/seaflow-workflow.png?raw=true)
 
 # Installation
 First we need to satisfy some dependencies. Make sure Python 2.7 is installed with [Anaconda](https://www.continuum.io/downloads). Then install the `seaflowpy` Python package:

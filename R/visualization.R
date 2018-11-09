@@ -8,12 +8,10 @@
 #' @usage plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 
-  cols <- viridis::viridis(256)
-
   par(pty='s')
   id <- which(colnames(evtopp) == 'fsc_small' | colnames(evtopp) == 'chl_small' | colnames(evtopp) =='pe' | colnames(evtopp) =='fsc_perp')
-  if(max(evtopp[,c(id)]) > 10^3.5) plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(evtopp[,c(para.x, para.y)], colramp = cols), xlim=c(0,2^16), ylim=c(0,2^16), ...)
-  else plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = densCols(log10(evtopp[,c(para.x, para.y)]), colramp = cols), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
+  if(max(evtopp[,c(id)]) > 10^3.5) plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = grDevices::densCols(evtopp[,c(para.x, para.y)], colramp = viridis::viridis), xlim=c(0,2^16), ylim=c(0,2^16), ...)
+  else plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = grDevices::densCols(log10(evtopp[,c(para.x, para.y)]), colramp = viridis::viridis), log='xy',xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 }
 
 
