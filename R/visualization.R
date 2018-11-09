@@ -8,7 +8,7 @@
 #' @usage plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 
-  cols <- colorRampPalette(viridis::viridis(256))
+  cols <- viridis::viridis(256)
 
   par(pty='s')
   id <- which(colnames(evtopp) == 'fsc_small' | colnames(evtopp) == 'chl_small' | colnames(evtopp) =='pe' | colnames(evtopp) =='fsc_perp')
@@ -60,7 +60,7 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bi
 plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
 
 
-    group.colors <- c(unknown='grey', beads='red3', prochloro=viridis(4)[1],synecho=viridis(4)[2],picoeuk=viridis(4)[3], croco=viridis(4)[4])
+    group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
     if(!any(names(opp) == 'pop')) opp[,'pop'] <- 'unknown'
     if(!any(names(opp) == 'file')) opp[,'file'] <- ''
@@ -94,7 +94,7 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 #' @export plot.map
 plot.map <- function(stat, param, transform=FALSE){
 
-  cols <- colorRampPalette(viridis::viridis(256))
+  cols <- viridis::viridis(256)
 
   p <- stat %>%
       ggplot() + geom_point(aes_string('lon', 'lat', color=param), size=1, alpha=0.5,show.legend=T) +
@@ -123,16 +123,20 @@ plot.map <- function(stat, param, transform=FALSE){
 #' @export plot.time
 plot.time <- function(stat, param, transform=FALSE){
 
-  group.colors <- c(unknown='grey', beads='red3', prochloro=viridis(4)[1],synecho=viridis(4)[2],picoeuk=viridis(4)[3], croco=viridis(4)[4])
+  group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
+  stat <- stat[,c('time',param,'quantile','pop')]
   stat$time <- as.POSIXct(stat$time,format='%FT%T',tz='GMT')
+  stat2 <- spread(data=stat, key=quantile, value=param)
+  names(stat2) <- c('time', 'pop','upr','mid','lwr')
 
-  p <- stat %>%
-      ggplot() + geom_point(aes_string(x='time',y=param, color='pop'), size=1, alpha=0.25) +
+  p <- stat2 %>%
+      ggplot() + geom_linerange(aes(x=time,ymin=lwr, ymax=upr), color='lightgrey') +
+      geom_point(aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
       theme_bw() +
       labs(y=param) +
-      scale_color_manual(values=group.colors) +
-      facet_wrap( ~ pop)
+      scale_fill_manual(values=group.colors) +
+      facet_grid( pop ~ ., scale='free_y')
 
   if(transform) p <- p + scale_y_continuous(trans='log10')
 
@@ -154,7 +158,7 @@ plot.time <- function(stat, param, transform=FALSE){
 
 plot.histogram <- function(evtopp, para.x = 'fsc_small', transform=T, position='identity', free=T){
 
-  group.colors <- c(unknown='grey', beads='red3', prochloro=viridis(4)[1],synecho=viridis(4)[2],picoeuk=viridis(4)[3], croco=viridis(4)[4])
+  group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
   if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
   if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
