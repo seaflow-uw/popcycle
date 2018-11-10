@@ -6,7 +6,7 @@
 #' @param ... Additional parameters for densCols()
 #' @return None
 #' @usage plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
-plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
+plot_cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 
   par(pty='s')
   id <- which(colnames(evtopp) == 'fsc_small' | colnames(evtopp) == 'chl_small' | colnames(evtopp) =='pe' | colnames(evtopp) =='fsc_perp')
@@ -25,7 +25,7 @@ plot.cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 #' @return None
 #' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 #' @export plot.cytogram
-plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bins=100, transform=T) {
+plot_cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bins=100, transform=T) {
 
   if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
 
@@ -55,7 +55,7 @@ plot.cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bi
 #' @return None
 #' @usage plot.vct.cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small')
 #' @export plot.vct.cytogram
-plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
+plot_vct_cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
 
 
     group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
@@ -90,7 +90,7 @@ plot.vct.cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 #' @return None
 #' @usage plot.map(stat, param, ...)
 #' @export plot.map
-plot.map <- function(stat, param, transform=FALSE){
+plot_map <- function(stat, param, transform=FALSE){
 
   cols <- viridis::viridis(256)
 
@@ -119,7 +119,7 @@ plot.map <- function(stat, param, transform=FALSE){
 #' @return None
 #' @usage plot.time(stat, popname,param)
 #' @export plot.time
-plot.time <- function(stat, param, transform=FALSE){
+plot_time <- function(stat, param, transform=FALSE){
 
   group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
@@ -147,6 +147,7 @@ plot.time <- function(stat, param, transform=FALSE){
 #'
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
+#' @param binwidth The width of the bins. Can be specified as a numeric value, or a function that calculates width from x. The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
 #' @param transform Log transformation of the parameter'
 #' @param position Position adjustment, either as a string ('stack' or 'identity'), or the result of a call to a position adjustment function.
 #' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
@@ -154,7 +155,7 @@ plot.time <- function(stat, param, transform=FALSE){
 #' @usage plot.histogram(opp, para.x='fsc_small', transform=T)
 #' @export plot.histogram
 
-plot.histogram <- function(evtopp, para.x = 'fsc_small', transform=T, position='identity', free=T){
+plot_histogram <- function(evtopp, para.x = 'fsc_small', binwidth=0.02, transform=T, position='identity', free=T){
 
   group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
@@ -163,7 +164,7 @@ plot.histogram <- function(evtopp, para.x = 'fsc_small', transform=T, position='
   if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
 
     p <- evtopp %>%
-        ggplot() + geom_histogram(aes_string(para.x, fill='pop'),binwidth=0.02, alpha=0.5, color=NA, position=position) +
+        ggplot() + geom_histogram(aes_string(para.x, fill='pop'),binwidth=binwidth, alpha=0.5, color=NA, position=position) +
         theme_bw() +
         scale_fill_manual(values=group.colors) +
         guides(fill=guide_legend(title='population'))
