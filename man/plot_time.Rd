@@ -2,9 +2,9 @@
 % Please edit documentation in R/visualization.R
 \name{plot_time}
 \alias{plot_time}
-\title{plot.time}
+\title{plot time}
 \usage{
-plot.time(stat, popname,param)
+plot_time(stat, popname,param)
 }
 \arguments{
 \item{stat}{Stat table from get.stat.table function}
@@ -17,5 +17,5 @@ plot.time(stat, popname,param)
 None
 }
 \description{
-plot.time
+plot time
 }

@@ -5,7 +5,9 @@
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for densCols()
 #' @return None
-#' @usage plot.cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+#' @usage plot_cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+#' @export plot_cyt
+
 plot_cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 
   par(pty='s')
@@ -23,8 +25,8 @@ plot_cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 #' @param bins Number of bin (hex) to display.
 #' @param transform Log transformation for both x- and y-axis'
 #' @return None
-#' @usage plot.cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
-#' @export plot.cytogram
+#' @usage plot_cytogram(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
+#' @export plot_cytogram
 plot_cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bins=100, transform=T) {
 
   if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
@@ -53,8 +55,8 @@ plot_cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bi
 #' @param para.y Channel to use as y axis.
 #' @param transform Log transformation for both x- and y-axis'
 #' @return None
-#' @usage plot.vct.cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small')
-#' @export plot.vct.cytogram
+#' @usage plot_vct_cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small')
+#' @export plot_vct_cytogram
 plot_vct_cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', transform=T) {
 
 
@@ -88,8 +90,8 @@ plot_vct_cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter'
 #' @return None
-#' @usage plot.map(stat, param, ...)
-#' @export plot.map
+#' @usage plot_map(stat, param, ...)
+#' @export plot_map
 plot_map <- function(stat, param, transform=FALSE){
 
   cols <- viridis::viridis(256)
@@ -111,14 +113,14 @@ plot_map <- function(stat, param, transform=FALSE){
 
 }
 
-#' plot.time
+#' plot time
 #'
 #' @param stat Stat table from get.stat.table function
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter'
 #' @return None
-#' @usage plot.time(stat, popname,param)
-#' @export plot.time
+#' @usage plot_time(stat, popname,param)
+#' @export plot_time
 plot_time <- function(stat, param, transform=FALSE){
 
   group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
@@ -152,8 +154,8 @@ plot_time <- function(stat, param, transform=FALSE){
 #' @param position Position adjustment, either as a string ('stack' or 'identity'), or the result of a call to a position adjustment function.
 #' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
 #' @return None
-#' @usage plot.histogram(opp, para.x='fsc_small', transform=T)
-#' @export plot.histogram
+#' @usage plot_histogram(opp, para.x='fsc_small', transform=T)
+#' @export plot_histogram
 
 plot_histogram <- function(evtopp, para.x = 'fsc_small', binwidth=0.02, transform=T, position='identity', free=T){
 

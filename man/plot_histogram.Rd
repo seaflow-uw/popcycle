@@ -4,7 +4,7 @@
 \alias{plot_histogram}
 \title{Plot histogram.}
 \usage{
-plot.histogram(opp, para.x='fsc_small', transform=T)
+plot_histogram(opp, para.x='fsc_small', transform=T)
 }
 \arguments{
 \item{evtopp}{EVT or OPP data frame.}

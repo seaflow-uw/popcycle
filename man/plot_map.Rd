@@ -4,7 +4,7 @@
 \alias{plot_map}
 \title{Plot cell abundances of a population on a map.}
 \usage{
-plot.map(stat, param, ...)
+plot_map(stat, param, ...)
 }
 \arguments{
 \item{stat}{Stat table from get.stat.table function}
