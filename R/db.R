@@ -836,7 +836,7 @@ get.poly.table <- function(db) {
 #' @return Data frame.
 #' @examples
 #' \dontrun{
-#' stat.table <- get.stat.table(db)
+#' outlier.table <- get.outlier.table(db)
 #' }
 #' @export
 get.outlier.table <- function(db) {

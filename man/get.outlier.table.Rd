@@ -17,6 +17,6 @@ Get list of outliers.
 }
 \examples{
 \dontrun{
-stat.table <- get.stat.table(db)
+outlier.table <- get.outlier.table(db)
 }
 }
