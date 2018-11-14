@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{plot_map}
 \alias{plot_map}
-\title{Plot cell abundances of a population on a map.}
+\title{Plot population distribution on a map.}
 \usage{
 plot_map(stat, param, ...)
 }
@@ -17,5 +17,5 @@ plot_map(stat, param, ...)
 None
 }
 \description{
-Plot cell abundances of a population on a map.
+Plot population distribution on a map.
 }

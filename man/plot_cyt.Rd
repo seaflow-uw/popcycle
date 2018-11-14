@@ -13,7 +13,7 @@ plot_cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 
 \item{para.y}{Channel to use as y axis.}
 
-\item{...}{Additional parameters for densCols()}
+\item{...}{Additional parameters for plot()}
 }
 \value{
 None

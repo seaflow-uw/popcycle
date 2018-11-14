@@ -3,7 +3,7 @@
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
-#' @param ... Additional parameters for densCols()
+#' @param ... Additional parameters for plot()
 #' @return None
 #' @usage plot_cyt(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...)
 #' @export plot_cyt
@@ -32,14 +32,14 @@ plot_cytogram <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', bi
   if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
 
   p <- evtopp %>%
-          ggplot() +
-          stat_bin_2d(aes_string(para.x, para.y), bins=bins, color=NA) +
+          ggplot2::ggplot() +
+          ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y), bins=bins, color=NA) +
           viridis::scale_fill_viridis() +
-          theme_bw()+
-          coord_fixed() +
-          facet_wrap( ~ file)
+          ggplot2::theme_bw()+
+          ggplot2::coord_fixed() +
+          ggplot2::facet_wrap( ~ file)
 
-      if(transform) p <- p + scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
+      if(transform) p <- p + ggplot2::scale_y_continuous(trans='log10') + ggplot2::scale_x_continuous(trans='log10')
 
   return(p)
 
@@ -66,25 +66,25 @@ plot_vct_cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
     if(!any(names(opp) == 'file')) opp[,'file'] <- ''
 
     p <- opp %>%
-          ggplot() +
-          stat_bin_2d(aes_string(para.x, para.y, fill = 'pop', alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
-          theme_bw() +
-          coord_fixed() +
-          stat_density_2d(aes_string(para.x, para.y, color = 'pop'), bins=5, show.legend=F) +
-          scale_fill_manual(values=group.colors) +
-          scale_alpha_continuous(range=c(0.3,1)) +
-          scale_color_manual(values=group.colors) +
-          guides(color='none', alpha='none', fill= guide_legend(override.aes = list(size=2, alpha=0.5),title='population')) +
-          facet_wrap(~ file)
+          ggplot2::ggplot() +
+          ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y, fill = 'pop', alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
+          ggplot2::theme_bw() +
+          ggplot2::coord_fixed() +
+          ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = 'pop'), bins=5, show.legend=F) +
+          ggplot2::scale_fill_manual(values=group.colors) +
+          ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
+          ggplot2::scale_color_manual(values=group.colors) +
+          ggplot2::guides(color='none', alpha='none', fill= ggplot2::guide_legend(override.aes = list(size=2, alpha=0.5),title='population')) +
+          ggplot2::facet_wrap(~ file)
 
-      if(transform) p <- p + scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
+      if(transform) p <- p + ggplot2::scale_y_continuous(trans='log10') + ggplot2::scale_x_continuous(trans='log10')
 
       return(p)
 
 }
 
 
-#' Plot cell abundances of a population on a map.
+#' Plot population distribution on a map.
 #'
 #' @param stat Stat table from get.stat.table function
 #' @param param Parameter to display
@@ -94,26 +94,75 @@ plot_vct_cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 #' @export plot_map
 plot_map <- function(stat, param, transform=FALSE){
 
-  cols <- viridis::viridis(256)
-
   p <- stat %>%
-      ggplot() + geom_point(aes_string('lon', 'lat', color=param), size=1, alpha=0.5,show.legend=T) +
-      borders('world', colour = 'gray85', fill = 'gray80') +
-      labs(x='Longitude', y= 'Latitude') +
-      xlim(range(stat[,'lon'], na.rm=T)) +
-      ylim(range(stat[,'lat'], na.rm=T)) +
-      facet_wrap(~ pop) +
-      theme_bw()
+      ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes_string('lon', 'lat', color=param), size=1, alpha=0.5,show.legend=T) +
+      ggplot2::borders('world', colour = 'gray85', fill = 'gray80') +
+      ggplot2::labs(x='Longitude', y= 'Latitude') +
+      ggplot2::xlim(range(stat[,'lon'], na.rm=T)) +
+      ggplot2::ylim(range(stat[,'lat'], na.rm=T)) +
+      ggplot2::facet_wrap(~ pop) +
+      ggplot2::theme_bw()
 
-  if(transform) p <- p + scale_color_gradientn(colours=cols(100), trans='log10', name=paste(param))
-  if(!transform) p <- p + scale_color_gradientn(colours=cols(100), name=paste(param))
+  if(transform) p <- p + ggplot2::scale_color_gradientn(colours=viridis::viridis(100), trans='log10', name=paste(param))
+  if(!transform) p <- p + ggplot2::scale_color_gradientn(colours=viridis::viridis(100), name=paste(param))
 
 
   return(p)
 
 }
 
-#' plot time
+
+#' Plot cruise track on a map.
+#'
+#' @param sfl sfl table from get.sfl.table function
+#' @param param Parameter to display
+#' @return None
+#' @usage plot_cruisetrack(stat, param)
+#' @export plot_cruisetrack
+plot_cruisetrack <- function(sfl, param){
+
+
+  geo <- list(
+    showland = TRUE,
+    showlakes = TRUE,
+    showcountries = TRUE,
+    showocean = TRUE,
+    countrywidth = 0.5,
+    landcolor = plotly::toRGB("grey90"),
+    lakecolor = plotly::toRGB("white"),
+    oceancolor = plotly::toRGB("white"),
+    projection = list(
+      type = 'orthographic',
+      rotation = list(
+        lon = -100,
+        lat = 40,
+        roll = 0
+      )
+    ),
+    lonaxis = list(
+      showgrid = TRUE,
+      gridcolor = plotly::toRGB("gray40"),
+      gridwidth = 0.5
+    ),
+    lataxis = list(
+      showgrid = TRUE,
+      gridcolor = plotly::toRGB("gray40"),
+      gridwidth = 0.5
+    )
+  )
+
+  p <- plotly::plot_geo(sfl, lat = ~lat, lon = ~lon, color = sfl[,param], colors = viridis::viridis_pal(option = "D")(100), alpha=0.5) %>%
+        plotly::colorbar(title = paste(param)) %>%
+        plotly::layout(showlegend=T, geo = geo)
+
+    return(p)
+
+}
+
+
+
+
+#' plot population dynamics over time
 #'
 #' @param stat Stat table from get.stat.table function
 #' @param param Parameter to display
@@ -127,18 +176,18 @@ plot_time <- function(stat, param, transform=FALSE){
 
   stat <- stat[,c('time',param,'quantile','pop')]
   stat$time <- as.POSIXct(stat$time,format='%FT%T',tz='GMT')
-  stat2 <- spread(data=stat, key=quantile, value=param)
+  stat2 <- tidyr::spread(data=stat, key=quantile, value=param)
   names(stat2) <- c('time', 'pop','upr','mid','lwr')
 
   p <- stat2 %>%
-      ggplot() + geom_linerange(aes(x=time,ymin=lwr, ymax=upr), color='lightgrey') +
-      geom_point(aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
-      theme_bw() +
-      labs(y=param) +
-      scale_fill_manual(values=group.colors) +
-      facet_grid( pop ~ ., scale='free_y')
+      ggplot2::ggplot() + ggplot2::geom_linerange(ggplot2::aes(x=time,ymin=lwr, ymax=upr), color='lightgrey') +
+      ggplot2::geom_point(ggplot2::aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
+      ggplot2::theme_bw() +
+      ggplot2::labs(y=param) +
+      ggplot2::scale_fill_manual(values=group.colors) +
+      ggplot2::facet_grid( pop ~ ., scale='free_y')
 
-  if(transform) p <- p + scale_y_continuous(trans='log10')
+  if(transform) p <- p + ggplot2::scale_y_continuous(trans='log10')
 
   return(p)
 
@@ -166,15 +215,15 @@ plot_histogram <- function(evtopp, para.x = 'fsc_small', binwidth=0.02, transfor
   if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
 
     p <- evtopp %>%
-        ggplot() + geom_histogram(aes_string(para.x, fill='pop'),binwidth=binwidth, alpha=0.5, color=NA, position=position) +
-        theme_bw() +
-        scale_fill_manual(values=group.colors) +
-        guides(fill=guide_legend(title='population'))
+        ggplot2::ggplot() + ggplot2::geom_histogram(ggplot2::aes_string(para.x, fill='pop'),binwidth=binwidth, alpha=0.5, color=NA, position=position) +
+        ggplot2::theme_bw() +
+        ggplot2::scale_fill_manual(values=group.colors) +
+        ggplot2::guides(fill=ggplot2::guide_legend(title='population'))
 
-        if(free){p <- p + facet_wrap(~ file, scale="free_y")
-        }else{ p <- p + facet_wrap(~ file)}
+        if(free){p <- p + ggplot2::facet_wrap(~ file, scale="free_y")
+        }else{ p <- p + ggplot2::facet_wrap(~ file)}
 
-        if(transform) p <- p + scale_x_continuous(trans='log10')
+        if(transform) p <- p + ggplot2::scale_x_continuous(trans='log10')
 
         return(p)
 

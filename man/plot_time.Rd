@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{plot_time}
 \alias{plot_time}
-\title{plot time}
+\title{plot population dynamics over time}
 \usage{
 plot_time(stat, popname,param)
 }
@@ -17,5 +17,5 @@ plot_time(stat, popname,param)
 None
 }
 \description{
-plot time
+plot population dynamics over time
 }
