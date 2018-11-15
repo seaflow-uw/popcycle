@@ -17,6 +17,88 @@ plot_cyt <- function(evtopp, para.x = 'fsc_small', para.y = 'chl_small', ...) {
 }
 
 
+
+#' Plot cytograms for exploring filtering parameters.
+#'
+#' @param evt EVT data frame.
+#' @param filter.params Filtering parameters in a one row data frame or named
+#'   list. Columns should include width, notch.small.D1, notch.small.D2,
+#'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
+#'   offset.large.D1, offset.large.D2.
+#' @return None
+#' @usage plot_filter_cytogram(evt, filter.params)
+#' @export plot_filter_cytogram
+
+plot_filter_cytogram <- function(evt, filter.params) {
+    width <- as.numeric(filter.params$width)
+    notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
+    notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
+    notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
+    notch.large.D2 <- as.numeric(filter.params$notch.large.D2)
+    offset.small.D1 <- as.numeric(filter.params$offset.small.D1)
+    offset.small.D2 <- as.numeric(filter.params$offset.small.D2)
+    offset.large.D1 <- as.numeric(filter.params$offset.large.D1)
+    offset.large.D2 <- as.numeric(filter.params$offset.large.D2)
+
+    # linearize the LOG transformed data
+    id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
+    if (!any(max(evt[,c(id)]) > 10^3.5)) {
+      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
+    }
+
+    # Filtering out noise
+    evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
+
+    # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
+    aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
+
+    # Filtering focused particles (fsc_small > D * notch)
+    opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
+        D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
+
+        ################
+        ### PLOTTING ###
+        ################
+        percent.opp <- round(100*nrow(opp)/nrow(evt.),2)
+        percent.noise <- round(100-100*nrow(evt.)/nrow(evt),0)
+
+        if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
+        if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
+
+        def.par <- par(no.readonly = TRUE) # save default, for resetting...
+
+        par(mfrow=c(2,3),pty='s')
+
+        plot_cyt(evt., "D1", "D2")
+        mtext("Alignment", side=3, line=3, font=2, col=2)
+        abline(b=1, a=width, col='red',lwd=2)
+        abline(b=1, a=-width, col='red',lwd=2)
+        mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=1,font=2)
+
+        plot_cyt(aligned, "fsc_small", "D1")
+        mtext("Focus", side=3, line=3, font=2,col=2)
+        abline(b=notch.small.D1, a=offset.small.D1,col=2)
+        abline(b=notch.large.D1, a=offset.large.D1,col=3)
+        points(filter.params$beads.fsc.small,filter.params$beads.D1, cex=2, pch=16)
+
+        plot_cyt(aligned, "fsc_small", "D2")
+        mtext("Focus", side=3, line=3, font=2,col=2)
+        abline(b=notch.small.D2, a=offset.small.D2,col=2)
+        abline(b=notch.large.D2, a=offset.large.D2,col=3)
+        points(filter.params$beads.fsc.small,filter.params$beads.D2, cex=2, pch=16)
+
+        plot_cyt(opp, "fsc_small", "pe"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
+        mtext("OPP", side=3, line=1, font=2, col=2)
+        plot_cyt(opp, "fsc_small","chl_small"); abline(v=filter.params$beads.fsc.small, lty=2, col='grey')
+        mtext("OPP", side=3, line=1, font=2, col=2)
+        plot_cyt(opp, "chl_small","pe")
+        mtext("OPP", side=3, line=1, font=2, col=2)
+        mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-2,font=2,col=1)
+
+        par(def.par)
+}
+
+
 #' Plot EVT or OPP cytogram.
 #'
 #' @param evtopp EVT or OPP data frame.
