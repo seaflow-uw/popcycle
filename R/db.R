@@ -1586,7 +1586,13 @@ get.stat.table <- function(db, inst=NULL) {
     inst <- get.inst(db)
   }
 
+
   stat <- get.raw.stat.table(db)
+  outliers <- get.outlier.table(db)
+
+  #merge stat table with outlier table
+  stat <- merge(stat, outliers, all.x=T)
+
   fr <- flowrate(stat$stream_pressure, inst=inst)
 
   stat[,"flow_rate"] <- fr[,1]
