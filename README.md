@@ -22,3 +22,5 @@ Here we introduce **Popcycle**, an R package that uses a database management sys
 The cell population identification (GATED data), diameter and carbon content (CALIBRATED data) of each OPP are saved as separate text files in similar file structure as RAW data.
 
 The metadata, gating scheme and aggregated statistics for each step are saved into a SQL database using SQLite3.
+
+To get started with **Popcycle**, go to the [wiki](https://github.com/armbrustlab/popcycle/wiki/SeaFlow-data-analysis-tutorial)
