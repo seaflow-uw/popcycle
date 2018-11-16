@@ -8,13 +8,15 @@ SeaFlow project
 
 Popcycle
 ========
-Here we introduce *Popycle*, an R package that uses a database management system approach to facilitate the analysis of [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) data. The software performs 3 key analysis:
+SeaFlow data are stored in a custom binary file format (RAW data) created every 3 minutes and consist of eight 16-bit integer channels. The acquisition time, stream pressure of each sample and contextual information provided by the ship's data system (e.g., time, location, sea surface temperature, salinity, light intensity) are written into a log file ([metadata](https://github.com/armbrustlab/seaflow-sfl)). The files are stored in julian day labeled directories, each containing raw files with the associated log file.
 
-1. Classification of phytoplankton cell population using a mixture of manual gating or semi-supervized clusterting algorithm
-2. Convert light scattering of each particle to [carbon content](https://github.com/armbrustlab/fsc-poc-calibration) and [cell diameter](https://github.com/armbrustlab/fsc-size-calibration)
-3. Perform aggregate statistics for the different populations
+Here we introduce **Popcycle**, an R package that uses a database management system approach to facilitate the analysis of [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) data. 
 
 <img src="documentation/images/seaflow-workflow.png?raw=true" alt="Popcycle workflow"
-	title="Popcycle workflow" align="left" style="float" width="500">
+	title="Popcycle workflow" align="right" style="float" width="500">
 
-SeaFlow data are stored in a custom binary file format (RAW data) created every 3 minutes and consist of eight 16-bit integer channels. The acquisition time, stream pressure of each sample and contextual information provided by the ship's data system (e.g., time, location, sea surface temperature, salinity, light intensity) are written into a log file ([metadata](https://github.com/armbrustlab/seaflow-sfl)). The files are stored in julian day labeled directories, each containing raw files with the associated log file. The cell population identification (GATED data), diameter and carbon content (CALIBRATED data) of each OPP are saved as separate text files in similar file structure as RAW data. Aggregate statistics, along with propagated errors, are then calculated for each cell population. The metadata, gating scheme and aggregated statistics for each step are saved into a SQL database using SQLite3.
+**Popcycle** performs 3 key analysis:
+1. ```Gating``` Classification of phytoplankton cell population using a mixture of manual gating or semi-supervized clusterting algorithm
+2. ```Light scatter conversion``` Convert light scattering of each particle to [carbon content](https://github.com/armbrustlab/fsc-poc-calibration) and [cell diameter](https://github.com/armbrustlab/fsc-size-calibration)
+3. ```PER POPULATION data``` Perform aggregate statistics, along with error propagation, for the different populations.
+The cell population identification (GATED data), diameter and carbon content (CALIBRATED data) of each OPP are saved as separate text files in similar file structure as RAW data. The metadata, gating scheme and aggregated statistics for each step are saved into a SQL database using SQLite3.
