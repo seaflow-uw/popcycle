@@ -19,4 +19,6 @@ Here we introduce **Popcycle**, an R package that uses a database management sys
 1. ```Gating``` Classification of phytoplankton cell population using a mixture of manual gating or semi-supervized clusterting algorithm
 2. ```Light scatter conversion``` Convert light scattering of each particle to [carbon content](https://github.com/armbrustlab/fsc-poc-calibration) and [cell diameter](https://github.com/armbrustlab/fsc-size-calibration)
 3. ```PER POPULATION data``` Perform aggregate statistics, along with error propagation, for the different populations.
-The cell population identification (GATED data), diameter and carbon content (CALIBRATED data) of each OPP are saved as separate text files in similar file structure as RAW data. The metadata, gating scheme and aggregated statistics for each step are saved into a SQL database using SQLite3.
+The cell population identification (GATED data), diameter and carbon content (CALIBRATED data) of each OPP are saved as separate text files in similar file structure as RAW data.
+
+The metadata, gating scheme and aggregated statistics for each step are saved into a SQL database using SQLite3.
