@@ -1578,13 +1578,13 @@ find_common_dbs <- function(dir_a, dir_b) {
 #' }
 copy_tables <- function(db_from, db_to, tables) {
   for (table_name in tables) {
-    # Make sure schemas match for table to copy
-    schema_query <- paste0("select * from sqlite_master where tbl_name = '", table_name, "'")
-    schema_from <- sql.dbGetQuery(db_from, schema_query)
-    schema_to <- sql.dbGetQuery(db_to, schema_query)
-    # if (! identical(schema_from, schema_to)) {
-    #   stop(paste0("db files have differing schemas for ", table_name, " table"))
-    # }
+
+    # Make sure columns match for table to copy
+    col_from <- colnames(sql.dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
+    col_to <- colnames(sql.dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
+    if (! identical(col_from, col_to)) {
+      stop(paste0("db files have differing columns for ", table_name, " table"))
+    }
 
     # Clear the db_to table
     reset.table(db_to, table_name)
@@ -1619,17 +1619,17 @@ get.stat.table <- function(db, inst=NULL) {
   fr <- flowrate(stat$stream_pressure, inst=inst)
 
   stat[,"flow_rate"] <- fr[,1]
-  stat[,"flow_rate.sd"] <- fr[,2]
+  stat[,"flow_rate.se"] <- fr[,2]
 
   # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
   stat[,c("abundance")]  <- stat[,"n_count"] / (1000* median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
-  stat[,c("abundance.sd")]  <- stat[,"abundance"] * stat[,"flow_rate.sd"] / stat[,"flow_rate"]           # cells µL-1
+  stat[,c("abundance.se")]  <- stat[,"abundance"] * stat[,"flow_rate.se"] / stat[,"flow_rate"]           # cells µL-1
 
   # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
     id <- which(stat$pop == 'prochloro' | stat$pop == 'synecho')
     if(length(id) > 0){
       stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
-      stat[id,c("abundance.sd")]  <- stat[id,"abundance"] * stat[id,"flow_rate.sd"] / stat[id,"flow_rate"]           # cells µL-1
+      stat[id,c("abundance.se")]  <- stat[id,"abundance"] * stat[id,"flow_rate.se"] / stat[id,"flow_rate"]           # cells µL-1
     }
 
 

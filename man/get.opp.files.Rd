@@ -4,7 +4,7 @@
 \alias{get.opp.files}
 \title{Get OPP file names for data with focused particles in all quantiles.}
 \usage{
-get.opp.files(db, all.files = FALSE)
+get.opp.files(db, all.files = FALSE, outliers = TRUE)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -12,6 +12,8 @@ get.opp.files(db, all.files = FALSE)
 \item{all.files}{Return all OPP files that were considered for processing,
 even entries where the raw EVT was unreadable or no focused particles made
 it through filtering.}
+
+\item{outliers}{If TRUE, remove data flaged as outliers}
 }
 \value{
 List of OPP file names based on the latest filtering

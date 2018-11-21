@@ -5,7 +5,8 @@
 \title{Get OPP data frame by date and quantile}
 \usage{
 get.opp.by.date(db, opp.dir, quantile, start.date, end.date,
-  channel = NULL, transform = TRUE, vct.dir = NULL, pop = NULL)
+  channel = NULL, transform = TRUE, vct.dir = NULL, pop = NULL,
+  outliers = TRUE)
 }
 \arguments{
 \item{db}{SQLite3 data file path.}
@@ -28,6 +29,8 @@ not have a pop column.}
 
 \item{pop}{If specified, the returned data frame will only contain entries
 for this population.}
+
+\item{outliers}{If TRUE, remove data flaged as outliers}
 }
 \value{
 Data frame of OPP data for all files between start.date and end.date
