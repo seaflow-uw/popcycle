@@ -1555,12 +1555,11 @@ find_common_dbs <- function(dir_a, dir_b) {
 #' }
 copy_tables <- function(db_from, db_to, tables) {
   for (table_name in tables) {
-    # Make sure schemas match for table to copy
-    schema_query <- paste0("select * from sqlite_master where tbl_name = '", table_name, "'")
-    schema_from <- sql.dbGetQuery(db_from, schema_query)
-    schema_to <- sql.dbGetQuery(db_to, schema_query)
-    if (! identical(schema_from, schema_to)) {
-      stop(paste0("db files have differing schemas for ", table_name, " table"))
+    # Make sure columns match for table to copy
+    col_from <- colnames(sql.dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
+    col_to <- colnames(sql.dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
+    if (! identical(col_from, col_to)) {
+      stop(paste0("db files have differing columns for ", table_name, " table"))
     }
 
     # Clear the db_to table
