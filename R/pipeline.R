@@ -67,7 +67,7 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       cruise <- get.cruise(common$new_path)
       opp_dir <- file.path(working_dir, paste0(cruise, "_opp"))
       vct_dir <- file.path(working_dir, paste0(cruise, "_vct"))
-      opp_files <- get.opp.files(common$new_path)
+      opp_files <- get.opp.files(common$new_path, outliers=T)
 
       # Predict diameter, carbon quota, classify
       # diameter call here

@@ -130,7 +130,7 @@ CREATE VIEW IF NOT EXISTS stat AS
     vct.diam_upr as diam_upr,
     vct.Qc_lwr as Qc_lwr,
     vct.Qc_mid as Qc_mid,
-    vct.Qcm_upr as Qc_upr,
+    vct.Qc_upr as Qc_upr,
     vct.quantile as quantile
   FROM
     opp, vct, sfl

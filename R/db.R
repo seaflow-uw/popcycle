@@ -409,6 +409,7 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
 #'   not have a pop column.
 #' @param pop If specified, the returned data frame will only contain entries
 #'   for this population.
+#' @param outliers If TRUE, remove data flaged as outliers
 #' @return Data frame of OPP data for all files between start.date and end.date
 #'   inclusive.
 #' @examples
@@ -421,11 +422,22 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
 #' @export
 get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
                             channel=NULL, transform=TRUE, vct.dir=NULL,
-                            pop=NULL) {
+                            pop=NULL, outliers=TRUE) {
   if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
   opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
   # Filter for stats for one quantile
   opp.stats <- opp.stats[opp.stats$quantile == quantile, ]
+
+  #remove outliers
+  if(outliers){
+    outliers.list <- get.outlier.table(db)
+    if(nrow(outliers.list)>0){
+      opp.stats <- merge(opp.stats, outliers.list, all.x=T)
+      opp.stats <- subset(opp.stats, flag == 0)
+    }else{print("empty outlier table")}
+  }
+
+  #retrieve data
   opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile, channel=channel,
                          transform=transform, vct.dir=vct.dir, pop=pop)
   return(opp)
@@ -910,6 +922,7 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' @param all.files Return all OPP files that were considered for processing,
 #'   even entries where the raw EVT was unreadable or no focused particles made
 #'   it through filtering.
+#' @param outliers If TRUE, remove data flaged as outliers
 #' @return List of OPP file names based on the latest filtering
 #'   parameters or NULL if no filtering has been done.
 #' @examples
@@ -917,7 +930,7 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' opp.files <- get.opp.files(db)
 #' }
 #' @export
-get.opp.files <- function(db, all.files=FALSE) {
+get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
   filter.id <- get.filter.params.latest(db)$id
   if (is.null(filter.id)) {
     return(NULL)
@@ -930,6 +943,16 @@ get.opp.files <- function(db, all.files=FALSE) {
     sql <- paste0("SELECT file FROM opp WHERE opp_count > 0 AND filter_id = '", filter.id, "' GROUP BY file HAVING COUNT(*) == 3")
   }
   files <- sql.dbGetQuery(db, sql)
+
+  #remove outliers
+  if(outliers){
+    outliers.list <- get.outlier.table(db)
+    if(nrow(outliers.list)>0){
+      outliers.list <- subset(outliers.list, flag == 0)
+      files <- files[match(files, outliers.list$file, nomatch=0)]
+    }else{print('empty outlier table')}
+  }
+
   return(files$file)
 }
 
@@ -1559,9 +1582,9 @@ copy_tables <- function(db_from, db_to, tables) {
     schema_query <- paste0("select * from sqlite_master where tbl_name = '", table_name, "'")
     schema_from <- sql.dbGetQuery(db_from, schema_query)
     schema_to <- sql.dbGetQuery(db_to, schema_query)
-    if (! identical(schema_from, schema_to)) {
-      stop(paste0("db files have differing schemas for ", table_name, " table"))
-    }
+    # if (! identical(schema_from, schema_to)) {
+    #   stop(paste0("db files have differing schemas for ", table_name, " table"))
+    # }
 
     # Clear the db_to table
     reset.table(db_to, table_name)
@@ -1608,6 +1631,7 @@ get.stat.table <- function(db, inst=NULL) {
       stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
       stat[id,c("abundance.sd")]  <- stat[id,"abundance"] * stat[id,"flow_rate.sd"] / stat[id,"flow_rate"]           # cells µL-1
     }
+
 
   return(stat)
 }

@@ -232,7 +232,7 @@ auto.classify <- function(opp, params, popname) {
   }
 
   # Sometimes there are no unknowns at this point so check for zero rows
-  if (nrow(x) > 0) {
+  if (nrow(opp) > 0) {
     x <- opp[row.selection, names(opp) != "pop"]
 
     fframe <- flowCore::flowFrame(as.matrix(log10(x)))
