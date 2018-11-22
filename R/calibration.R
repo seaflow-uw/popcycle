@@ -36,7 +36,7 @@ size.carbon.conversion <- function(opp, beads.fsc, inst){
   mie <- read.csv(system.file('scatter', paste0('calibrated-mie.csv'),package='popcycle'))
 
     # find closest matches in Mie lookup table
-    id <- findInterval(opp[,'fsc_small']/beads.fsc, mie$scatter)
+    id <- findInterval(opp[,'fsc_small']/as.numeric(beads.fsc), mie$scatter)
 
     #convert scatter to diameter and Qc
     for(quant in c('_lwr','_mid','_upr')){

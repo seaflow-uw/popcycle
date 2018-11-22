@@ -340,7 +340,7 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 
         #print(paste('Classifying', opp.file))
         # First calculate diameter and carbon quota
-        beads.fsc <- transformData(data.frame(fsc=filter.params[which(filter.params$quantile == quantile),"beads.fsc.small"]))
+        beads.fsc <- as.numeric(transformData(data.frame(fsc=filter.params[which(filter.params$quantile == quantile),"beads.fsc.small"])))
         opp <- size.carbon.conversion(opp, beads.fsc=beads.fsc, inst=inst)
 
         # Then gate

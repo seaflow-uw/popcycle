@@ -60,7 +60,7 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       common <- common_dbs[i, ]
 
       print(paste0("Merging ", common$old_path, " into ", common$new_path))
-      copy_tables(common$old_path, common$new_path, c("gating", "poly", "metadata"))
+      copy_tables(common$old_path, common$new_path, c("gating", "poly", "metadata", "outlier"))
 
       print(paste0("Classifying with ", common$new_path))
       working_dir <- dirname(common$new_path)

@@ -18,6 +18,7 @@ xls_convert <- function(db, meta, path){
     print(paste('formatting stat table for cruise:', cruise))
 
     data <- get.stat.table(db)
+    data <- subset(data, flag == 0)
 
     # add depth as metadata
     data$depth <- 5
@@ -124,6 +125,6 @@ xls_convert <- function(db, meta, path){
                         )
 
 
-      openxlsx::write.xlsx(list(data, dataset_meta_data, vars_meta_data), file=paste0(path,"/",official.cruise,".xlsx"), sheetName=c('data','dataset_meta_data','vars_meta_data'))
+      openxlsx::write.xlsx(list(data, dataset_meta_data, vars_meta_data), file=path, sheetName=c('data','dataset_meta_data','vars_meta_data'))
 
 }

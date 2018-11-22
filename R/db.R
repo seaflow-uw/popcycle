@@ -516,7 +516,7 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
   } else {
     con <- file(description=vct.file)
   }
-  vct <- read.table(con, col.names=c("pop"))
+  vct <- read.table(con, col.names=c("diam_lwr","diam_mid","diam_upr","Qc_lwr","Qc_mid","Qc_upr","pop"))
   return(vct)
 }
 
@@ -949,11 +949,11 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
     outliers.list <- get.outlier.table(db)
     if(nrow(outliers.list)>0){
       outliers.list <- subset(outliers.list, flag == 0)
-      files <- files[match(files, outliers.list$file, nomatch=0)]
+      id <- match(files$file, outliers.list$file, nomatch=0)
     }else{print('empty outlier table')}
-  }
+  }else{id <- 1:nrow(files)}
 
-  return(files$file)
+  return(files$file[id])
 }
 
 #' Get VCT file names.
