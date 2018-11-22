@@ -14,7 +14,7 @@ xls_convert(db, meta, path)
 \item{path}{Path to save the XLSX file.}
 }
 \value{
-none
+None
 }
 \description{
 Add metadata to 'stat' table and convert it to XLSX format.

@@ -3,14 +3,14 @@
 #' @param db SQLite3 database file path.
 #' @param meta SeaFlow instrument log file.
 #' @param path Path to save the XLSX file.
-#' @return none
+#' @return None
 #' @examples
 #' \dontrun{
 #' xls_convert(db, meta, path)
 #' }
 #' @export
 
-xls_convert <- function(db, meta, path){
+xls_convert <- function(db, meta, path) {
 
     # meta <- googlesheets::gs_read(googlesheets::gs_title("SeaFlow\ instrument\ log", verbose = FALSE))
 
@@ -125,6 +125,6 @@ xls_convert <- function(db, meta, path){
                         )
 
 
-      openxlsx::write.xlsx(list(data, dataset_meta_data, vars_meta_data), file=path, sheetName=c('data','dataset_meta_data','vars_meta_data'))
+      openxlsx::write.xlsx(x=list(data, dataset_meta_data, vars_meta_data), file=path, sheetName=c('data','dataset_meta_data','vars_meta_data'))
 
 }
