@@ -516,7 +516,7 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
   } else {
     con <- file(description=vct.file)
   }
-  vct <- read.table(con, col.names=c("diam_lwr","diam_mid","diam_upr","Qc_lwr","Qc_mid","Qc_upr","pop"))
+  vct <- read.table(con, header=T)
   return(vct)
 }
 
@@ -922,7 +922,7 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' @param all.files Return all OPP files that were considered for processing,
 #'   even entries where the raw EVT was unreadable or no focused particles made
 #'   it through filtering.
-#' @param outliers If TRUE, remove data flaged as outliers
+#' @param outliers If TRUE, remove data flagged as outliers
 #' @return List of OPP file names based on the latest filtering
 #'   parameters or NULL if no filtering has been done.
 #' @examples
@@ -945,13 +945,18 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
   files <- sql.dbGetQuery(db, sql)
 
   #remove outliers
-  if(outliers){
+  if (outliers) {
     outliers.list <- get.outlier.table(db)
-    if(nrow(outliers.list)>0){
+    if (nrow(outliers.list) > 0) {
       outliers.list <- subset(outliers.list, flag == 0)
       id <- match(files$file, outliers.list$file, nomatch=0)
-    }else{print('empty outlier table')}
-  }else{id <- 1:nrow(files)}
+    } else {
+      print('empty outlier table')
+      id <- 1:nrow(files)
+    }
+  } else {
+    id <- 1:nrow(files)
+  }
 
   return(files$file[id])
 }
@@ -1043,7 +1048,7 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
   vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   con <- gzfile(vct.file, "w")
-  write.table(vct, con, row.names=F, col.names=F, quote=F)
+  write.table(vct, con, row.names=F, col.names=T, quote=F)
   close(con)
 }
 

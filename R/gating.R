@@ -302,11 +302,20 @@ classify.opp <- function(opp, gates.log) {
 #' @export
 classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
                                gating.id=NULL, vct.table=NULL) {
+  if (!is.null(gating.id) & !is.null(vct.table)) {
+    stop('gating.id and vct.table are mutually exclusive parameters')
+  }
   if (!is.null(gating.id)) {
+    # Use provided gating.id for all files
     gating.params <- get.gating.params.by.id(db, gating.id)
     if (length(gating.params$gates.log) == 0) {
-    stop('No gate paramters yet; no gating.')
+      stop('No gate paramters yet; no gating.')
     }
+  }
+  if (is.null(gating.id) & is.null(vct.table)) {
+    # No guidance on what gating parameters to used has been supplied.
+    # Default to using the latest gating parameters for all files
+    gating.params <- get.gating.params.latest(db)
   }
 
   # Always assume the latest filter parameters are the ones used to generate
@@ -326,38 +335,24 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
   for (opp.file in opp.files) {
     message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
 
-    # get gating parameters (only if gating.id is NULL)
-    if (any(is.null(gating.id) & !is.null(vct.table))){
-      id.gating <- unique(vct.table[which(vct.table$file == opp.file),"gating_id"])
-
-      # NB: for now, 1 gating id allowed
-      if(length(id.gating) == 1){
-        gating.params <- get.gating.params.by.id(db, id.gating)
-      }
-    }
-
-    # get gating parameters (only if gating.id and vct.table are NULL)
-    if (any(is.null(gating.id) & is.null(vct.table))){
-      gating <- get.vct.stats.by.file(db, opp.file)
-      id.gating <- unique(gating$gating_id)
-
-      # NB: for now, 1 gating id allowed
-      if(length(id.gating) == 1){
-        gating.params <- get.gating.params.by.id(db, id.gating)
-      }
-    }
-
-
     # delete old vct entries if they exist so we keep file/particle distinct
     # There should only be one vct entry in the db for each population/file
     # combination.
     delete.vct.stats.by.file(db, opp.file)
     delete.vct.by.file(vct.dir, opp.file)
 
-    if(is.null(gating.id) & length(id.gating) > 1){
-      print('multiple gating.id found, skip classification')
-      next
+    # get gating parameters (only if gating.id is NULL)
+    if (is.null(gating.id) & !is.null(vct.table)) {
+      id.gating <- unique(vct.table[which(vct.table$file == opp.file),"gating_id"])
+
+      # NB: for now, 1 gating id allowed
+      if(length(id.gating) == 1){
+        gating.params <- get.gating.params.by.id(db, id.gating)
+      } else {
+        print('multiple gating.id found, skip classification')
+        next
       }
+    }
 
     tryCatch({
       for (quantile in QUANTILES) {
