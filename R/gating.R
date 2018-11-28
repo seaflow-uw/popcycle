@@ -289,7 +289,9 @@ classify.opp <- function(opp, gates.log) {
 #' @param opp.files List of OPP files to classify. Include julian day directory.
 #' @param vct.dir VCT file output directory.
 #' @param gating.id Optionally provide the ID for gating parameters. If NULL,
-#'   the most recently saved gating parameters will be used.
+#'   the existing gating parameters will be used.
+#' @param vct.table Optionally provide the VCT table. If NULL,
+#'   the existing gating parameters will be used.
 #' @return None
 #' @examples
 #' \dontrun{
@@ -299,7 +301,7 @@ classify.opp <- function(opp, gates.log) {
 #' }
 #' @export
 classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
-                               gating.id=NULL) {
+                               gating.id=NULL, vct.table=NULL) {
   if (!is.null(gating.id)) {
     gating.params <- get.gating.params.by.id(db, gating.id)
     if (length(gating.params$gates.log) == 0) {
@@ -325,15 +327,26 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
     message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
 
     # get gating parameters (only if gating.id is NULL)
-    if (is.null(gating.id)){
-    gating <- get.vct.stats.by.file(db, opp.file)
-    id.gating <- unique(gating$gating_id)
+    if (any(is.null(gating.id) & !is.null(vct.table))){
+      id.gating <- unique(vct.table[which(vct.table$file == opp.file),"gating_id"])
 
-        # NB: for now, 1 gating id allowed
-        if(length(id.gating) == 1){
-          gating.params <- get.gating.params.by.id(db, id.gating)
-          }
-        }
+      # NB: for now, 1 gating id allowed
+      if(length(id.gating) == 1){
+        gating.params <- get.gating.params.by.id(db, id.gating)
+      }
+    }
+
+    # get gating parameters (only if gating.id and vct.table are NULL)
+    if (any(is.null(gating.id) & is.null(vct.table))){
+      gating <- get.vct.stats.by.file(db, opp.file)
+      id.gating <- unique(gating$gating_id)
+
+      # NB: for now, 1 gating id allowed
+      if(length(id.gating) == 1){
+        gating.params <- get.gating.params.by.id(db, id.gating)
+      }
+    }
+
 
     # delete old vct entries if they exist so we keep file/particle distinct
     # There should only be one vct entry in the db for each population/file

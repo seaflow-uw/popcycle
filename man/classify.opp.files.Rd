@@ -4,7 +4,8 @@
 \alias{classify.opp.files}
 \title{Classify particles for a list of OPP files.}
 \usage{
-classify.opp.files(db, opp.dir, opp.files, vct.dir, gating.id = NULL)
+classify.opp.files(db, opp.dir, opp.files, vct.dir, gating.id = NULL,
+  vct.table = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -16,7 +17,10 @@ classify.opp.files(db, opp.dir, opp.files, vct.dir, gating.id = NULL)
 \item{vct.dir}{VCT file output directory.}
 
 \item{gating.id}{Optionally provide the ID for gating parameters. If NULL,
-the most recently saved gating parameters will be used.}
+the existing gating parameters will be used.}
+
+\item{vct.table}{Optionally provide the VCT table. If NULL,
+the existing gating parameters will be used.}
 }
 \value{
 None
