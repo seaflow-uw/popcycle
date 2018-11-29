@@ -516,7 +516,7 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
   } else {
     con <- file(description=vct.file)
   }
-  vct <- read.table(con, header=T)
+  vct <- read.table(con, col.names=c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop"))
   return(vct)
 }
 
@@ -1045,10 +1045,13 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
 #' }
 #' @export
 save.vct.file <- function(vct, vct.dir, file.name, quantile) {
+  # Make sure we define the order here in case it changes somewhere upstream.
+  # This should match the column order defined wherever vct files are read.
+  vct <- vct[, c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop")]
   vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   con <- gzfile(vct.file, "w")
-  write.table(vct, con, row.names=F, col.names=T, quote=F)
+  write.table(vct, con, row.names=F, col.names=F, quote=F)
   close(con)
 }
 
