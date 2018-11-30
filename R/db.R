@@ -1,3 +1,4 @@
+
 #' Delete entries in the opp table by file name.
 #'
 #' @param db SQLite3 database file path.
@@ -959,27 +960,6 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
   }
 
   return(files$file[id])
-}
-
-#' Get VCT file names.
-#'
-#' @param db SQLite3 database file path.
-#' @return List of distinct VCT file names based on the latest gating
-#'   parameters or NULL if no gating has been done.
-#' @examples
-#' \dontrun{
-#' vct.files <- get.vct.files(db)
-#' }
-#' @export
-get.vct.files <- function(db) {
-  gating.id <- get.gating.params.latest(db)$id
-  if (is.null(gating.id)) {
-    return(NULL)
-  }
-  sql <- paste0("SELECT DISTINCT file from vct WHERE gating_id = '", gating.id, "'")
-  files <- sql.dbGetQuery(db, sql)
-  print(paste(length(files$file), "vct files found"))
-  return(files$file)
 }
 
 #' Save VCT aggregate population statistics for one file to vct table.

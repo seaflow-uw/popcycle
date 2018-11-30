@@ -178,10 +178,9 @@ plot_map <- function(stat, param, transform=FALSE){
 
   p <- stat %>%
       ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes_string('lon', 'lat', color=param), size=1, alpha=0.5,show.legend=T) +
-      ggplot2::borders('world', colour = 'gray85', fill = 'gray80') +
+      ggplot2::borders('world', colour = 'black', fill = 'gray80') +
       ggplot2::labs(x='Longitude', y= 'Latitude') +
-      ggplot2::xlim(range(stat[,'lon'], na.rm=T)) +
-      ggplot2::ylim(range(stat[,'lat'], na.rm=T)) +
+      ggplot2::coord_fixed(ratio = 1, xlim = range(stat[,'lon'], na.rm=T), ylim = range(stat[,'lat'], na.rm=T)) +
       ggplot2::facet_wrap(~ pop) +
       ggplot2::theme_bw()
 
@@ -198,11 +197,13 @@ plot_map <- function(stat, param, transform=FALSE){
 #'
 #' @param sfl sfl table from get.sfl.table function
 #' @param param Parameter to display
+#' @param bin An integer representing the time interval (in hour) into which time is to be averaged
 #' @return None
 #' @usage plot_cruisetrack(stat, param)
 #' @export plot_cruisetrack
-plot_cruisetrack <- function(sfl, param){
+plot_cruisetrack <- function(sfl, param, bin=NULL){
 
+  sfl$date <- as.POSIXct(sfl$date, format="%FT%T", tz='GMT')
 
   geo <- list(
     showland = TRUE,
@@ -232,6 +233,13 @@ plot_cruisetrack <- function(sfl, param){
       gridwidth = 0.5
     )
   )
+
+  if(!is.null(bin)) {
+    sfl <- sfl %>%
+        group_by(date= cut(date, breaks=paste(bin, "hour"))) %>%
+        summarise_all(mean)
+    sfl <- data.frame(sfl)
+  }
 
   p <- plotly::plot_geo(sfl, lat = ~lat, lon = ~lon, color = sfl[,param], colors = viridis::viridis_pal(option = "D")(100), alpha=0.5) %>%
         plotly::colorbar(title = paste(param)) %>%
