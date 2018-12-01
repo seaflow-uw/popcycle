@@ -13,7 +13,7 @@ get.opp.files(db, all.files = FALSE, outliers = TRUE)
 even entries where the raw EVT was unreadable or no focused particles made
 it through filtering.}
 
-\item{outliers}{If TRUE, remove data flaged as outliers}
+\item{outliers}{If TRUE, remove data flagged as outliers}
 }
 \value{
 List of OPP file names based on the latest filtering
