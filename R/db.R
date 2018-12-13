@@ -916,6 +916,23 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
   return(file.list[start.index:end.index])
 }
 
+#' Get ISO8601 datetime strings (e.g. 2018-07-13T22:24:40+00:00) for OPP files.
+#'
+#' @param db SQLite3 database file path.
+#' @param opp_files Character vector of OPP file IDs.
+#' @return DataFrame with columns "file" and "date".
+#' @examples
+#' \dontrun{
+#' opp_dates <- get.opp.dates(db, opp_files)
+#' }
+#' @export
+get.opp.dates <- function(db, opp_files) {
+  sfl <- get.sfl.table(db)
+  idx <- match(opp_files, sfl$file)
+  dates <- sfl[idx, "date"]
+  df <- data.frame("file"=opp_files, "date"=dates)
+  return(df)
+}
 
 #' Get OPP file names for data with focused particles in all quantiles.
 #'

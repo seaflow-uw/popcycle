@@ -195,9 +195,11 @@ manual.classify <- function(opp, params, popname) {
   para <- colnames(poly)  # channels
   df <- opp[opp$pop=="unknown", para]
 
-  colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from splancs::inout()
-  vct <- df[splancs::inout(df,poly=poly, bound=TRUE, quiet=TRUE), ] # subset particles based on Gate
-  opp[row.names(vct), "pop"] <- popname
+  if (nrow(df) > 0) {
+    colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from splancs::inout()
+    vct <- df[splancs::inout(df,poly=poly, bound=TRUE, quiet=TRUE), ] # subset particles based on Gate
+    opp[row.names(vct), "pop"] <- popname
+  }
 
   return(opp)
 }
@@ -232,7 +234,7 @@ auto.classify <- function(opp, params, popname) {
   }
 
   # Sometimes there are no unknowns at this point so check for zero rows
-  if (nrow(opp) > 0) {
+  if (nrow(opp[row.selection, ]) > 0) {
     x <- opp[row.selection, names(opp) != "pop"]
 
     fframe <- flowCore::flowFrame(as.matrix(log10(x)))
@@ -317,6 +319,9 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
     # Default to using the latest gating parameters for all files
     gating.params <- get.gating.params.latest(db)
   }
+  if (is.null(gating.id) & !is.null(vct.table)) {
+    opp_gates <- get.opp.gates(db, opp.files, vct.table)
+  }
 
   # Always assume the latest filter parameters are the ones used to generate
   # the current OPP data
@@ -343,15 +348,8 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 
     # get gating parameters (only if gating.id is NULL)
     if (is.null(gating.id) & !is.null(vct.table)) {
-      id.gating <- unique(vct.table[which(vct.table$file == opp.file),"gating_id"])
-
-      # NB: for now, 1 gating id allowed
-      if(length(id.gating) == 1){
-        gating.params <- get.gating.params.by.id(db, id.gating)
-      } else {
-        print('multiple gating.id found, skip classification')
-        next
-      }
+      id.gating <- opp_gates[opp_gates$file == opp.file, "gating_id"]
+      gating.params <- get.gating.params.by.id(db, id.gating)
     }
 
     tryCatch({
@@ -382,4 +380,57 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
     i <- i + 1
     flush.console()
   }
+}
+
+#' Get per file gating IDs to use for regating based on previous gating.
+#'
+#' Based on the time ranges different gating parameters were applied during
+#' a previous gating run (as captured by vct_table), return a DataFrame with
+#' OPP file to gating ID matches.
+#'
+#' @param db SQLite3 database file path.
+#' @param opp_files List of OPP files to classify. Include julian day directory.
+#' @param vct_table VCT table from past gating.
+#' @return DataFrame of "file", "opp_dates", "gating_id"
+#' @examples
+#' \dontrun{
+#' get.opp.gates(db, opp_files, vct_table)
+#' }
+#' @export
+get.opp.gates <- function(db, opp_files, vct_table, verbose=TRUE) {
+  # Get run length encoding results for gating ids. We're trying to find the
+  # boundaries of different gating parameters throughout the cruise.
+  rle_result <- rle(vct_table$gating_id)
+  gating_start_idx <- rle_starts(rle_result)  # start of each gating section
+
+  # Get the first dates for each gating section
+  gating_start_dates <- lubridate::ymd_hms(vct_table[gating_start_idx, "date"])
+
+  if (verbose) {
+    print("Timestamps during cruise where new gating parameters will be applied")
+    tmpdf <- data.frame(
+      date=gating_start_dates,
+      gating_id=vct_table[gating_start_idx, "gating_id"]
+    )
+    print(tmpdf)
+  }
+
+  # Get files and dates
+  opp <- get.opp.dates(db, opp_files)
+  intervals <- findInterval(
+    as.numeric(lubridate::ymd_hms(opp$date)),
+    as.numeric(gating_start_dates)
+  )
+
+  # For values which are before any interval, findInterval returns an index of
+  # 0. Convert those to 1 here, meaning use the first gating parameters for
+  # these files.
+  intervals <- sapply(intervals, function(x) {
+    if (x == 0) { return(1) } else { return(x) }
+  })
+
+  gating_ids <- rle_result$values
+  opp_gating_ids <- gating_ids[intervals]
+  df <- data.frame(file=opp$file, opp_dates=opp$date, gating_id=opp_gating_ids)
+  return(df)
 }
