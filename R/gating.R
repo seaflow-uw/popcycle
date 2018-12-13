@@ -195,9 +195,11 @@ manual.classify <- function(opp, params, popname) {
   para <- colnames(poly)  # channels
   df <- opp[opp$pop=="unknown", para]
 
-  colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from splancs::inout()
-  vct <- df[splancs::inout(df,poly=poly, bound=TRUE, quiet=TRUE), ] # subset particles based on Gate
-  opp[row.names(vct), "pop"] <- popname
+  if (nrow(df) > 0) {
+    colnames(poly) <- colnames(df) <- c("x","y") # to stop stupid Warnings from splancs::inout()
+    vct <- df[splancs::inout(df,poly=poly, bound=TRUE, quiet=TRUE), ] # subset particles based on Gate
+    opp[row.names(vct), "pop"] <- popname
+  }
 
   return(opp)
 }
@@ -232,7 +234,7 @@ auto.classify <- function(opp, params, popname) {
   }
 
   # Sometimes there are no unknowns at this point so check for zero rows
-  if (nrow(opp) > 0) {
+  if (nrow(opp[row.selection, ]) > 0) {
     x <- opp[row.selection, names(opp) != "pop"]
 
     fframe <- flowCore::flowFrame(as.matrix(log10(x)))
@@ -395,7 +397,7 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 #' get.opp.gates(db, opp_files, vct_table)
 #' }
 #' @export
-get.opp.gates <- function(db, opp_files, vct_table) {
+get.opp.gates <- function(db, opp_files, vct_table, verbose=TRUE) {
   # Get run length encoding results for gating ids. We're trying to find the
   # boundaries of different gating parameters throughout the cruise.
   rle_result <- rle(vct_table$gating_id)
@@ -404,6 +406,15 @@ get.opp.gates <- function(db, opp_files, vct_table) {
   # Get the first dates for each gating section
   gating_start_dates <- lubridate::ymd_hms(vct_table[gating_start_idx, "date"])
 
+  if (verbose) {
+    print("Timestamps during cruise where new gating parameters will be applied")
+    tmpdf <- data.frame(
+      date=gating_start_dates,
+      gating_id=vct_table[gating_start_idx, "gating_id"]
+    )
+    print(tmpdf)
+  }
+
   # Get files and dates
   opp <- get.opp.dates(db, opp_files)
   intervals <- findInterval(
@@ -411,7 +422,7 @@ get.opp.gates <- function(db, opp_files, vct_table) {
     as.numeric(gating_start_dates)
   )
 
-  # For values which are before any interval findInterval returns an index of
+  # For values which are before any interval, findInterval returns an index of
   # 0. Convert those to 1 here, meaning use the first gating parameters for
   # these files.
   intervals <- sapply(intervals, function(x) {
