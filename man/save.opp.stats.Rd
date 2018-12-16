@@ -4,8 +4,7 @@
 \alias{save.opp.stats}
 \title{Save OPP aggregate statistics for one file/quantile combo to opp table.}
 \usage{
-save.opp.stats(db, file.name, all_count, evt_count, opp, filter.id,
-  quantile)
+save.opp.stats(db, file.name, all_count, evt_count, opp, filter.id)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -17,8 +16,6 @@ save.opp.stats(db, file.name, all_count, evt_count, opp, filter.id,
 \item{opp}{OPP data frame with pop column.}
 
 \item{filter.id}{ID for entry in filter table.}
-
-\item{quantile}{Filtering quantile for this file}
 }
 \value{
 None

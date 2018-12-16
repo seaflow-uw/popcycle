@@ -25,10 +25,15 @@ test_that("Filter EVT files", {
 
   # Make sure written OPP files have the same number of particles as those
   # recorded in database opp table
+  # Test DB results first
   opp.files <- get.opp.files(x$db.bare)
   expect_equal(length(opp.files), 2)
   all.opp.files <- get.opp.files(x$db.bare, all.files=TRUE)
   expect_equal(length(all.opp.files), 7)
+
+  # Then check how many OPP files actually exist
+  actual_files <- list.files(file.path(x$opp.dir, "2014_185"), pattern=".*\\.opp\\.gz")
+  expect_equal(length(actual_files), 2)
 
   for (opp.file in opp.files) {
     for (q in c(2.5, 50, 97.5)) {

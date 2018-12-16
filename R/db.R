@@ -439,7 +439,7 @@ get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
   }
 
   #retrieve data
-  opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile, channel=channel,
+  opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile=quantile, channel=channel,
                          transform=transform, vct.dir=vct.dir, pop=pop)
   return(opp)
 }
@@ -468,28 +468,39 @@ get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
 #'                        transform=F, vct.dir=vct.dir)
 #' }
 #' @export
-get.opp.by.file <- function(opp.dir, file.name, quantile, channel=NULL,
+get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
                             transform=TRUE, vct.dir=NULL, pop=NULL) {
   file.name.clean <- unlist(lapply(file.name, clean.file.path))
   opp.files <- paste0(file.name.clean, ".opp")
   opp.reader <- function(f) {
-    path <- file.path(opp.dir, quantile, f)
-    opp <- readSeaflow(path, channel=channel, transform=transform)
+    path <- file.path(opp.dir, f)
+    opp <- readSeaflow(path, channel=channel, transform=transform, columns=c(EVT.HEADER, "bitflags"))
     return(opp)
   }
   opps <- lapply(opp.files, opp.reader)
   opps.bound <- dplyr::bind_rows(opps)
+  opps.bound <- decode_bit_flags(opps.bound)
 
-  if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
+  if (! is.null(quantile)) {
+    # Select for single quantile, and if needed attach vct
+    qcolumn <- paste0("q", quantile)
+    # Select for one quantile and drop quantile flag columns
+    opps.bound <- opps.bound[opps.bound[qcolumn] == TRUE, EVT.HEADER]
 
-  if (! is.null(vct.dir)) {
-   vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
-   vcts.bound <- dplyr::bind_rows(vcts)
-   opps.bound <- cbind(opps.bound, vcts.bound)
-   if (! is.null(pop)) {
-     opps.bound <- opps.bound[opps.bound$pop == pop, ]
-   }
+    if (!is.null(pop) & is.null(vct.dir)) {
+      print("no vct data found, returning all opp instead")
+    }
+
+    if (! is.null(vct.dir) ) {
+      vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
+      vcts.bound <- dplyr::bind_rows(vcts)
+      opps.bound <- cbind(opps.bound, vcts.bound)
+      if (! is.null(pop)) {
+        opps.bound <- opps.bound[opps.bound$pop == pop, ]
+      }
+    }
   }
+
   return(opps.bound)
 }
 
@@ -1059,7 +1070,6 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' @param evt_count Number of particles in EVT file.
 #' @param opp OPP data frame with pop column.
 #' @param filter.id ID for entry in filter table.
-#' @param quantile Filtering quantile for this file
 #' @return None
 #' @examples
 #' \dontrun{
@@ -1069,22 +1079,32 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' }
 #' @export
 save.opp.stats <- function(db, file.name, all_count,
-                           evt_count, opp, filter.id, quantile) {
-  opp <- transformData(opp)
-  opp_count <- nrow(opp)
-  if (evt_count == 0) {
-    opp_evt_ratio <- 0.0
-  } else {
-    opp_evt_ratio <- opp_count / evt_count
+                           evt_count, opp, filter.id) {
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+
+    if (nrow(opp)) {
+      qopp <- opp[opp[qcolumn] == TRUE, ]  # opp for this quantile
+    } else {
+      qopp <- opp  # empty dataframe
+    }
+
+    qopp <- transformData(qopp)
+    opp_count <- nrow(qopp)
+    if (evt_count == 0) {
+      opp_evt_ratio <- 0.0
+    } else {
+      opp_evt_ratio <- opp_count / evt_count
+    }
+    df <- data.frame(file=clean.file.path(file.name),
+                     all_count=all_count,
+                     opp_count=opp_count,
+                     evt_count=evt_count,
+                     opp_evt_ratio=opp_evt_ratio,
+                     filter_id=filter.id,
+                     quantile=quantile)
+    sql.dbWriteTable(db, name="opp", value=df)
   }
-  df <- data.frame(file=clean.file.path(file.name),
-                   all_count=all_count,
-                   opp_count=opp_count,
-                   evt_count=evt_count,
-                   opp_evt_ratio=opp_evt_ratio,
-                   filter_id=filter.id,
-                   quantile=quantile)
-  sql.dbWriteTable(db, name="opp", value=df)
 }
 
 #' Save OPP as a gzipped LabView format binary file
@@ -1093,18 +1113,28 @@ save.opp.stats <- function(db, file.name, all_count,
 #' @param opp.dir Output directory. Julian day sub-directories will be
 #'   automatically created.
 #' @param file.name File name with julian day directory.
-#' @param quantile Filtering quantile for this file
 #' @param untransform Convert linear data to log.
+#' @param require_all_quantiles Only write if all quantiles have focused particles
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
+#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-save.opp.file <- function(opp, opp.dir, file.name, quantile, untransform=FALSE) {
-  opp.file <- paste0(file.path(opp.dir, quantile, clean.file.path(file.name)), ".opp.gz")
-  dir.create(dirname(opp.file), showWarnings=F, recursive=T)
-  writeSeaflow(opp, opp.file, untransform=untransform)
+save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_all_quantiles=TRUE) {
+  in_all_quantiles <- TRUE
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+    in_all_quantiles <- in_all_quantiles & any(opp[, qcolumn])
+  }
+  if (nrow(opp) > 0) {
+    if ((require_all_quantiles & in_all_quantiles) | ! require_all_quantiles) {
+      opp <- encode_bit_flags(opp)
+      opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
+      dir.create(dirname(opp.file), showWarnings=F, recursive=T)
+      writeSeaflow(opp[, c(EVT.HEADER, "bitflags")], opp.file, untransform=untransform)
+    }
+  }
 }
 
 #' Save Outliers in the database

@@ -4,10 +4,12 @@
 \alias{untransformData}
 \title{Log SeaFlow linear data}
 \usage{
-untransformData(df)
+untransformData(df, columns = NULL)
 }
 \arguments{
 \item{df}{Data frame returned by readSeaflow}
+
+\item{columns}{If not NULL, only these columns will be modified}
 }
 \value{
 Exponentiated version of df

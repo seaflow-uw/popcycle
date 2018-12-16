@@ -4,10 +4,12 @@
 \alias{transformData}
 \title{Exponentiate SeaFlow log data}
 \usage{
-transformData(df)
+transformData(df, columns = NULL)
 }
 \arguments{
 \item{df}{Data frame returned by readSeaflow}
+
+\item{columns}{If not NULL, only these columns will be modified}
 }
 \value{
 Exponentiated version of integer.dataframe

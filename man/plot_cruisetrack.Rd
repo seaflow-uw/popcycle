@@ -10,6 +10,8 @@ plot_cruisetrack(stat, param)
 \item{sfl}{sfl table from get.sfl.table function}
 
 \item{param}{Parameter to display}
+
+\item{bin}{An integer representing the time interval (in hour) into which time is to be averaged}
 }
 \value{
 None
