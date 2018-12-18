@@ -8,10 +8,10 @@ EVT.HEADER <- c("time","pulse_width","D1","D2",
 QUANTILES <- c(2.5, 50.0, 97.5)
 
 # Outlier flag meanings
-FLAG_OK <- 0          # not an outlier
-FLAG_INSTRUMENT <- 1  # stream pressure, event rate
-FLAG_FILTRATION <- 2  # OPP:EVT, bead scatter
-FLAG_GATING <- 3      # gating outliers
+FLAG_OK <- 0L          # not an outlier
+FLAG_INSTRUMENT <- 1L  # stream pressure, event rate
+FLAG_FILTRATION <- 2L  # OPP:EVT, bead scatter
+FLAG_GATING <- 3L      # gating outliers
 
 instrument.id <- '740'
 
