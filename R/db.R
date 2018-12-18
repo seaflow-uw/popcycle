@@ -966,7 +966,7 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
   if (outliers) {
     outliers.list <- get.outlier.table(db)
     if (nrow(outliers.list) > 0) {
-      outliers.list <- subset(outliers.list, flag == 0)
+      outliers.list <- subset(outliers.list, flag == FLAG_OK)
       id <- match(files$file, outliers.list$file, nomatch=0)
     } else {
       print('empty outlier table')

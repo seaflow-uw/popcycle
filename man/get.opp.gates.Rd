@@ -4,7 +4,7 @@
 \alias{get.opp.gates}
 \title{Get per file gating IDs to use for regating based on previous gating.}
 \usage{
-get.opp.gates(db, opp_files, vct_table)
+get.opp.gates(db, opp_files, vct_table, verbose = TRUE)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
