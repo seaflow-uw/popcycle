@@ -174,12 +174,14 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
     # any focused particles.
     err <- tryCatch({
       save.opp.stats(db, evt.file, all_count, evt_count, opp, unique(filter.params$id))
+      save.outliers(db, data.frame(file=evt.file, flag=FLAG_OK))
     }, error = function(e) {
       cat(paste0("Error saving opp results to db with file ", evt.file, ": ", e))
     })
     if (inherits(err, "error")) {
       delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
       delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+      delete.outliers(db, evt.file)
       break
     }
 

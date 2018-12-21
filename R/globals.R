@@ -13,6 +13,12 @@ QUANTILES <- c(2.5, 50.0, 97.5)
 QFLAGS <- c(1,2,4)
 names(QFLAGS) <- c("q2.5", "q50", "q97.5")
 
+# Outlier flag meanings
+FLAG_OK <- 0L          # not an outlier
+FLAG_INSTRUMENT <- 1L  # stream pressure, event rate
+FLAG_FILTRATION <- 2L  # OPP:EVT, bead scatter
+FLAG_GATING <- 3L      # gating outliers
+
 instrument.id <- '740'
 
 # This package's name
