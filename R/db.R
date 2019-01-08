@@ -481,22 +481,28 @@ get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
   opp.files <- paste0(file.name.clean, ".opp")
 
   opp.reader <- function(f) {
-    # Check if this is an opp split by quantile
-    multi_quantile <- TRUE
-    if (! is.null(quantile)) {
+    multi_quantile <- FALSE
+    path <- NULL
+    # Check if this is an opp with a quantile bitflags column
+    tmp_path <- file.path(opp.dir, f)
+    if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
+      multi_quantile <- TRUE
+      columns <- c(EVT.HEADER, "bitflags")
+      path <- tmp_path
+    }
+    # Check for opp split into per-quantile files
+    if (! is.null(quantile) & ! multi_quantile) {
       tmp_path <- file.path(opp.dir, quantile, f)
       if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
         # It is split-quantile file, set appropriate path and columns
         path <- tmp_path
         columns <- EVT.HEADER
-        multi_quantile <- FALSE
       }
     }
-    if (multi_quantile) {
-      # Not split-quantile, assume multi-quantile file
-      path <- file.path(opp.dir, f)
-      columns <- c(EVT.HEADER, "bitflags")
+    if (is.null(path)) {
+      stop(paste0("Can't find OPP file ", f))
     }
+
     opp <- readSeaflow(path, channel=channel, transform=transform, columns=columns)
     if (multi_quantile) {
       opp <- decode_bit_flags(opp)
