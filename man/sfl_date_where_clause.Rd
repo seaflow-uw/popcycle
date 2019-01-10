@@ -4,7 +4,7 @@
 \alias{sfl_date_where_clause}
 \title{Add a WHERE clause with date conditionals to SQL statement.}
 \usage{
-sfl_date_where_clause(sql, start.date, end.date, append = F)
+sfl_date_where_clause(start.date, end.date)
 }
 \arguments{
 \item{start.date}{Start date in format YYYY-MM-DD HH:MM.}
@@ -24,8 +24,8 @@ of any existing WHERE statements.
 }
 \examples{
 \dontrun{
-sql <- sfl_date_where_class(sql, "2014-07-04 00:00", "2014-07-04 00:10")
-sql <- sfl_date_where_class(sql, "2014-07-04 00:00", "2014-07-04 00:10",
+sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10")
+sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10",
                             append=T)
 }
 }

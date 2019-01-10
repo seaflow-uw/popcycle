@@ -1416,7 +1416,6 @@ make.popcycle.db <- function(db) {
 #' sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10",
 #'                             append=T)
 #' }
-#' @export
 sfl_date_where_clause <- function(start.date, end.date) {
   if (! is.null(start.date) || ! is.null(end.date)) {
     if (! is.null(start.date)) {
@@ -1466,7 +1465,6 @@ opp_quantile_inner_join_clause <- function() {
 #' \dontrun{
 #' check.for.populated.sfl(db)
 #' }
-#' @export
 check.for.populated.sfl <- function(db) {
   if (nrow(get.sfl.table(db)) == 0) {
     stop("SFL table is empty")
