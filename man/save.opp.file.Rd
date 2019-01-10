@@ -4,7 +4,8 @@
 \alias{save.opp.file}
 \title{Save OPP as a gzipped LabView format binary file}
 \usage{
-save.opp.file(opp, opp.dir, file.name, quantile, untransform = FALSE)
+save.opp.file(opp, opp.dir, file.name, untransform = FALSE,
+  require_all_quantiles = TRUE)
 }
 \arguments{
 \item{opp}{OPP data frame of filtered particles.}
@@ -14,9 +15,9 @@ automatically created.}
 
 \item{file.name}{File name with julian day directory.}
 
-\item{quantile}{Filtering quantile for this file}
-
 \item{untransform}{Convert linear data to log.}
+
+\item{require_all_quantiles}{Only write if all quantiles have focused particles}
 }
 \value{
 None
@@ -26,6 +27,6 @@ Save OPP as a gzipped LabView format binary file
 }
 \examples{
 \dontrun{
-save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
+save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
 }
 }

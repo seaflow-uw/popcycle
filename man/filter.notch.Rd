@@ -9,14 +9,13 @@ filter.notch(evt, filter.params)
 \arguments{
 \item{evt}{EVT data frame.}
 
-\item{filter.params}{Filtering parameters in a one row data frame or named
-list. Columns should include width, notch.small.D1, notch.small.D2,
-notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
-offset.large.D1, offset.large.D2.}
+\item{filter.params}{Filtering parameters in data frame. Should contain
+parameters for all quantiles. Columns should include quantile, width,
+notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.}
 }
 \value{
-Named list where list$params contains a list of filtering parameters
-  and list$opp contains OPP data frame.
+OPP data frame with new logical columns for each quantile.
 }
 \description{
 Filter EVT particles.

@@ -36,6 +36,21 @@ delete.opp.by.file <- function(opp.dir, file.name) {
   }
 }
 
+#' Delete entries in the outlier table by file name.
+#'
+#' @param db SQLite3 database file path.
+#' @param file.name File name with julian day directory.
+#' @return None
+#' @examples
+#' \dontrun{
+#' delete.outliers.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
+#' }
+#' @export
+delete.outliers.by.file <- function(db, file.name) {
+  sql <- paste0("DELETE FROM outlier WHERE file == '", clean.file.path(file.name), "'")
+  sql.dbExecute(db, sql)
+}
+
 #' Delete an entry in the vct table by file name.
 #'
 #' @param db SQLite3 database file path.
@@ -299,11 +314,10 @@ get.opp.stats.by.file <- function(db, file.name) {
   sql <- paste0("SELECT
     sfl.date, opp.*
   FROM
-    sfl, opp
+    sfl
+  INNER JOIN opp ON sfl.file == opp.file
   WHERE
     opp.file == '", clean.file.path(file.name), "'
-    AND
-    sfl.file == opp.file
   ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
@@ -325,17 +339,18 @@ get.opp.stats.by.file <- function(db, file.name) {
 #' @export
 get.opp.stats.by.date <- function(db, start.date, end.date) {
   check.for.populated.sfl(db)
-  sql <- "
-    SELECT
-      sfl.date, opp.*
-    FROM
-      sfl, opp
-    WHERE
-      sfl.file == opp.file"
-  sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
+  sql <- paste0(
+    "SELECT sfl.date, opp.*\n",
+    "FROM sfl\n",
+    "INNER JOIN opp ON sfl.file == opp.file\n",
+    opp_quantile_inner_join_clause(),
+    "INNER JOIN outlier ON sfl.file == outlier.file\n",
+    "WHERE outlier.flag == ", FLAG_OK, "\n",
+    "AND\n",
+    sfl_date_where_clause(start.date, end.date),
+    "ORDER BY sfl.date ASC"
+  )
   opp <- sql.dbGetQuery(db, sql)
-  opp.files <- get.opp.files(db)  # get opp files with particles in all quantiles
-  opp <- opp[opp$file %in% opp.files, ]
   return(opp)
 }
 
@@ -353,15 +368,13 @@ get.opp.stats.by.date <- function(db, start.date, end.date) {
 #' @export
 get.vct.stats.by.file <- function(db, file.name) {
   check.for.populated.sfl(db)
-  sql <- paste0("SELECT
-    sfl.date, vct.*
-  FROM
-    sfl, vct
-  WHERE
-    vct.file == '", clean.file.path(file.name), "'
-    AND
-    sfl.file == vct.file
-  ORDER BY sfl.date ASC")
+  sql <- paste0("
+    SELECT sfl.date, vct.*
+    FROM sfl
+    INNER JOIN vct on sfl.file == vct.file
+    WHERE vct.file == '", clean.file.path(file.name), "'
+    ORDER BY sfl.date ASC
+  ")
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
 }
@@ -382,14 +395,17 @@ get.vct.stats.by.file <- function(db, file.name) {
 #' @export
 get.vct.stats.by.date <- function(db, start.date, end.date) {
   check.for.populated.sfl(db)
-  sql <- "
-    SELECT
-      sfl.date, vct.*
-    FROM
-      sfl, vct
-    WHERE
-      sfl.file == vct.file"
-  sql <- sfl_date_where_clause(sql, start.date, end.date, append=T)
+  sql <- paste0(
+    "SELECT sfl.date, vct.*\n",
+    "FROM sfl\n",
+    "INNER JOIN vct on sfl.file == vct.file\n",
+    opp_quantile_inner_join_clause(),
+    "INNER JOIN outlier ON sfl.file == outlier.file\n",
+    "WHERE outlier.flag == ", FLAG_OK, "\n",
+    "AND\n",
+    sfl_date_where_clause(start.date, end.date),
+    "ORDER BY sfl.date ASC"
+  )
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
 }
@@ -429,17 +445,8 @@ get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
   # Filter for stats for one quantile
   opp.stats <- opp.stats[opp.stats$quantile == quantile, ]
 
-  #remove outliers
-  if(outliers){
-    outliers.list <- get.outlier.table(db)
-    if(nrow(outliers.list)>0){
-      opp.stats <- merge(opp.stats, outliers.list, all.x=T)
-      opp.stats <- subset(opp.stats, flag == 0)
-    }else{print("empty outlier table")}
-  }
-
   #retrieve data
-  opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile, channel=channel,
+  opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile=quantile, channel=channel,
                          transform=transform, vct.dir=vct.dir, pop=pop)
   return(opp)
 }
@@ -468,28 +475,64 @@ get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
 #'                        transform=F, vct.dir=vct.dir)
 #' }
 #' @export
-get.opp.by.file <- function(opp.dir, file.name, quantile, channel=NULL,
+get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
                             transform=TRUE, vct.dir=NULL, pop=NULL) {
   file.name.clean <- unlist(lapply(file.name, clean.file.path))
   opp.files <- paste0(file.name.clean, ".opp")
+
   opp.reader <- function(f) {
-    path <- file.path(opp.dir, quantile, f)
-    opp <- readSeaflow(path, channel=channel, transform=transform)
+    multi_quantile <- FALSE
+    path <- NULL
+    # Check if this is an opp with a quantile bitflags column
+    tmp_path <- file.path(opp.dir, f)
+    if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
+      multi_quantile <- TRUE
+      columns <- c(EVT.HEADER, "bitflags")
+      path <- tmp_path
+    }
+    # Check for opp split into per-quantile files
+    if (! is.null(quantile) & ! multi_quantile) {
+      tmp_path <- file.path(opp.dir, quantile, f)
+      if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
+        # It is split-quantile file, set appropriate path and columns
+        path <- tmp_path
+        columns <- EVT.HEADER
+      }
+    }
+    if (is.null(path)) {
+      stop(paste0("Can't find OPP file ", f))
+    }
+
+    opp <- readSeaflow(path, channel=channel, transform=transform, columns=columns)
+    if (multi_quantile) {
+      opp <- decode_bit_flags(opp)
+      if (! is.null(quantile)) {
+        # Select for one quantile and drop quantile flag columns
+        qcolumn <- paste0("q", quantile)
+        opp <- opp[opp[qcolumn] == TRUE, EVT.HEADER]
+      }
+    }
     return(opp)
   }
+
   opps <- lapply(opp.files, opp.reader)
   opps.bound <- dplyr::bind_rows(opps)
 
-  if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
+  if (! is.null(quantile)) {
+    if (!is.null(pop) & is.null(vct.dir)) {
+      print("no vct data found, returning all opp instead")
+    }
 
-  if (! is.null(vct.dir)) {
-   vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
-   vcts.bound <- dplyr::bind_rows(vcts)
-   opps.bound <- cbind(opps.bound, vcts.bound)
-   if (! is.null(pop)) {
-     opps.bound <- opps.bound[opps.bound$pop == pop, ]
-   }
+    if (! is.null(vct.dir) ) {
+      vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
+      vcts.bound <- dplyr::bind_rows(vcts)
+      opps.bound <- cbind(opps.bound, vcts.bound)
+      if (! is.null(pop)) {
+        opps.bound <- opps.bound[opps.bound$pop == pop, ]
+      }
+    }
   }
+
   return(opps.bound)
 }
 
@@ -534,8 +577,11 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
 #' }
 #' @export
 get.sfl.by.date <- function(db, start.date, end.date) {
-  sql <- "SELECT * FROM sfl"
-  sql <- sfl_date_where_clause(sql, start.date, end.date, append=F)
+  sql <- paste0(
+    "SELECT * FROM sfl\n",
+    "WHERE\n",
+    sfl_date_where_clause(start.date, end.date)
+  )
   sfl <- sql.dbGetQuery(db, sql)
   return(sfl)
 }
@@ -765,10 +811,8 @@ get.opp.table <- function(db) {
   sql <- "
     SELECT
       sfl.date, opp.*
-    FROM
-      sfl, opp
-    WHERE
-      sfl.file == opp.file
+    FROM opp
+    INNER JOIN sfl ON sfl.file == opp.file
     ORDER BY sfl.date ASC"
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
@@ -788,10 +832,8 @@ get.vct.table <- function(db) {
   sql <- "
     SELECT
       sfl.date, vct.*
-    FROM
-      sfl, vct
-    WHERE
-      sfl.file == vct.file
+    FROM sfl
+    INNER JOIN vct ON sfl.file == vct.file
     ORDER BY sfl.date ASC"
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
@@ -927,10 +969,15 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
 #' }
 #' @export
 get.opp.dates <- function(db, opp_files) {
-  sfl <- get.sfl.table(db)
-  idx <- match(opp_files, sfl$file)
-  dates <- sfl[idx, "date"]
-  df <- data.frame("file"=opp_files, "date"=dates)
+  sql <- "
+    SELECT opp.file, sfl.date
+    FROM opp
+    INNER JOIN sfl ON opp.file == sfl.file
+  "
+  df <- sql.dbGetQuery(db, sql)
+  idx <- match(opp_files, df$file)
+  dates <- df[idx, "date"]
+  df <- na.omit(data.frame("file"=opp_files, "date"=dates))
   return(df)
 }
 
@@ -949,34 +996,29 @@ get.opp.dates <- function(db, opp_files) {
 #' }
 #' @export
 get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
-  filter.id <- get.filter.params.latest(db)$id
-  if (is.null(filter.id)) {
-    return(NULL)
-  }
-  filter.id <- filter.id[1]
-  if (all.files) {
-    sql <- paste0("SELECT file from opp WHERE filter_id = '", filter.id, "' GROUP BY file")
-  } else {
+  check.for.populated.sfl(db)
+  sql <- "
+    SELECT DISTINCT opp.file
+    FROM opp
+    INNER JOIN sfl ON opp.file == sfl.file
+  "
+  if (! all.files) {
     # Only return files where all quantiles produced OPP data
-    sql <- paste0("SELECT file FROM opp WHERE opp_count > 0 AND filter_id = '", filter.id, "' GROUP BY file HAVING COUNT(*) == 3")
+    sql <- paste(sql, opp_quantile_inner_join_clause(), sep="\n")
   }
-  files <- sql.dbGetQuery(db, sql)
-
-  #remove outliers
   if (outliers) {
-    outliers.list <- get.outlier.table(db)
-    if (nrow(outliers.list) > 0) {
-      outliers.list <- subset(outliers.list, flag == FLAG_OK)
-      id <- match(files$file, outliers.list$file, nomatch=0)
-    } else {
-      print('empty outlier table')
-      id <- 1:nrow(files)
-    }
-  } else {
-    id <- 1:nrow(files)
+    # Only return files not flagged as outliers
+    sql2 <- paste0("
+      INNER JOIN outlier ON sfl.file == outlier.file
+      WHERE outlier.flag == ", FLAG_OK, "
+    ")
+    sql <- paste0(sql, sql2)
   }
-
-  return(files$file[id])
+  sql <- paste0(sql, "
+    ORDER BY sfl.date ASC
+  ")
+  df <- sql.dbGetQuery(db, sql)
+  return(df$file)
 }
 
 #' Save VCT aggregate population statistics for one file to vct table.
@@ -1059,7 +1101,6 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' @param evt_count Number of particles in EVT file.
 #' @param opp OPP data frame with pop column.
 #' @param filter.id ID for entry in filter table.
-#' @param quantile Filtering quantile for this file
 #' @return None
 #' @examples
 #' \dontrun{
@@ -1069,22 +1110,35 @@ save.vct.file <- function(vct, vct.dir, file.name, quantile) {
 #' }
 #' @export
 save.opp.stats <- function(db, file.name, all_count,
-                           evt_count, opp, filter.id, quantile) {
-  opp <- transformData(opp)
-  opp_count <- nrow(opp)
-  if (evt_count == 0) {
-    opp_evt_ratio <- 0.0
-  } else {
-    opp_evt_ratio <- opp_count / evt_count
+                           evt_count, opp, filter.id) {
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+
+    if (nrow(opp)) {
+      qopp <- opp[opp[qcolumn] == TRUE, ]  # opp for this quantile
+    } else {
+      qopp <- opp  # empty dataframe
+    }
+
+    qopp <- transformData(qopp)
+    opp_count <- nrow(qopp)
+    if (evt_count == 0) {
+      opp_evt_ratio <- 0.0
+    } else {
+      opp_evt_ratio <- opp_count / evt_count
+    }
+    df <- data.frame(file=clean.file.path(file.name),
+                     all_count=all_count,
+                     opp_count=opp_count,
+                     evt_count=evt_count,
+                     opp_evt_ratio=opp_evt_ratio,
+                     filter_id=filter.id,
+                     quantile=quantile)
+    sql.dbWriteTable(db, name="opp", value=df)
   }
-  df <- data.frame(file=clean.file.path(file.name),
-                   all_count=all_count,
-                   opp_count=opp_count,
-                   evt_count=evt_count,
-                   opp_evt_ratio=opp_evt_ratio,
-                   filter_id=filter.id,
-                   quantile=quantile)
-  sql.dbWriteTable(db, name="opp", value=df)
+
+  # Mark in outlier table as OK
+  save.outliers(db, data.frame(file=clean.file.path(file.name), flag=FLAG_OK))
 }
 
 #' Save OPP as a gzipped LabView format binary file
@@ -1093,18 +1147,28 @@ save.opp.stats <- function(db, file.name, all_count,
 #' @param opp.dir Output directory. Julian day sub-directories will be
 #'   automatically created.
 #' @param file.name File name with julian day directory.
-#' @param quantile Filtering quantile for this file
 #' @param untransform Convert linear data to log.
+#' @param require_all_quantiles Only write if all quantiles have focused particles
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
+#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-save.opp.file <- function(opp, opp.dir, file.name, quantile, untransform=FALSE) {
-  opp.file <- paste0(file.path(opp.dir, quantile, clean.file.path(file.name)), ".opp.gz")
-  dir.create(dirname(opp.file), showWarnings=F, recursive=T)
-  writeSeaflow(opp, opp.file, untransform=untransform)
+save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_all_quantiles=TRUE) {
+  in_all_quantiles <- TRUE
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+    in_all_quantiles <- in_all_quantiles & any(opp[, qcolumn])
+  }
+  if (nrow(opp) > 0) {
+    if ((require_all_quantiles & in_all_quantiles) | ! require_all_quantiles) {
+      opp <- encode_bit_flags(opp)
+      opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
+      dir.create(dirname(opp.file), showWarnings=F, recursive=T)
+      writeSeaflow(opp[, c(EVT.HEADER, "bitflags")], opp.file, untransform=untransform)
+    }
+  }
 }
 
 #' Save Outliers in the database
@@ -1118,8 +1182,13 @@ save.opp.file <- function(opp, opp.dir, file.name, quantile, untransform=FALSE) 
 #' }
 #' @export
 save.outliers <- function(db, table.name) {
-  df <- data.frame(file=table.name$file, flag=table.name$flag)
-  sql.dbWriteTable(db, name="outlier", value=df)
+  for (i in 1:nrow(table.name)) {
+    # Upsert!
+    sql <- paste0("
+      INSERT OR REPLACE INTO outlier(file,flag) VALUES('", table.name$file[i], "',", table.name$flag[i], ")
+    ")
+    sql.dbExecute(db, sql)
+  }
 }
 
 #' Save filter parameters to the filter table.
@@ -1343,38 +1412,50 @@ make.popcycle.db <- function(db) {
 #' @return Original SQL string with new WHERE clause statements.
 #' @examples
 #' \dontrun{
-#' sql <- sfl_date_where_class(sql, "2014-07-04 00:00", "2014-07-04 00:10")
-#' sql <- sfl_date_where_class(sql, "2014-07-04 00:00", "2014-07-04 00:10",
+#' sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10")
+#' sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10",
 #'                             append=T)
 #' }
 #' @export
-sfl_date_where_clause <- function(sql, start.date, end.date, append=F) {
+sfl_date_where_clause <- function(start.date, end.date) {
   if (! is.null(start.date) || ! is.null(end.date)) {
-    if (! append) {
-      sql <- paste0(sql, "
-        WHERE"
-      )
-    } else {
-      sql <- paste0(sql, "
-        AND"
-      )
-    }
-
     if (! is.null(start.date)) {
       start.date <- paste0("sfl.date >= '", date.to.db.date(start.date), "'")
     }
     if (! is.null(end.date)) {
       end.date <- paste0("sfl.date <= '", date.to.db.date(end.date), "'")
     }
-    sql <- paste0(sql, "
-      ", paste(c(start.date, end.date), collapse=" AND ")
-    )
+    sql <- paste0("\n", paste(c(start.date, end.date), collapse=" AND "), "\n")
+  } else {
+    sql <- "\n"
   }
-
-  sql <- paste0(sql, "
-    ORDER BY sfl.date ASC"
-  )
   return(sql);
+}
+
+#' Add an INNER JOIN to only select OPP files with data in all quantiles.
+#'
+#' Return a SQL string with an INNER JOIN to a subquery selecting for OPP files
+#' that contain data in all quantiles. The benefit of making this a subquery is
+#' the GROUP BY doesn't affect the rest of the SQL query this JOIN is embedded
+#' into.
+#'
+#' @return SQL INNER JOIN string
+#' @examples
+#' \dontrun{
+#' sql <- opp_quantile_inner_join_clause()
+#' }
+opp_quantile_inner_join_clause <- function() {
+  sql <- "
+  INNER JOIN
+    (
+      SELECT opp.file
+      FROM opp
+      WHERE opp.opp_count > 0
+      GROUP BY opp.file
+      HAVING count(opp.file) == 3
+    ) AS opp_all_quantiles ON sfl.file == opp_all_quantiles.file
+  "
+  return(sql)
 }
 
 #' Check if SFL table is populated.

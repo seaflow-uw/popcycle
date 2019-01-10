@@ -4,6 +4,7 @@ library(uuid)
 setUp <- function() {
   x <- list()
   x$tmp.dir <- file.path(tempdir(), UUIDgenerate())
+  #print(x$tmp.dir)
   dir.create(x$tmp.dir)
   x$cruise <- "testcruise"
   x$serial <- "740"

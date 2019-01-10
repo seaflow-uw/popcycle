@@ -25,12 +25,11 @@ filter.evt <- function(evt, filter.func, ...) {
 #' Filter EVT particles.
 #'
 #' @param evt EVT data frame.
-#' @param filter.params Filtering parameters in a one row data frame or named
-#'   list. Columns should include width, notch.small.D1, notch.small.D2,
-#'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
-#'   offset.large.D1, offset.large.D2.
-#' @return Named list where list$params contains a list of filtering parameters
-#'   and list$opp contains OPP data frame.
+#' @param filter.params Filtering parameters in data frame. Should contain
+#'   parameters for all quantiles. Columns should include quantile, width,
+#'   notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
+#'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.
+#' @return OPP data frame with new logical columns for each quantile.
 #' @examples
 #' \dontrun{
 #' filt <- filter.notch(evt, params)
@@ -38,19 +37,9 @@ filter.evt <- function(evt, filter.func, ...) {
 #' @usage filter.notch(evt, filter.params)
 #' @export filter.notch
 filter.notch <- function(evt, filter.params) {
-  width <- as.numeric(filter.params$width)
-  notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
-  notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
-  notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
-  notch.large.D2 <- as.numeric(filter.params$notch.large.D2)
-  offset.small.D1 <- as.numeric(filter.params$offset.small.D1)
-  offset.small.D2 <- as.numeric(filter.params$offset.small.D2)
-  offset.large.D1 <- as.numeric(filter.params$offset.large.D1)
-  offset.large.D2 <- as.numeric(filter.params$offset.large.D2)
-
   # Check for empty evt data frame.  If empty return empty opp data frame.
   if (nrow(evt) == 0) {
-    return(list("opp"=data.frame(c())))
+    return(data.frame(c()))
   }
 
   # linearize the LOG transformed data
@@ -64,24 +53,45 @@ filter.notch <- function(evt, filter.params) {
   # Filtering out noise
   evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
-  # Fltering aligned particles (D1 = D2)
-  aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
+  opp_selector <- FALSE
 
-  # Filtering focused particles (fsc_small > D + notch)
-  opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
+  for (quantile in QUANTILES) {
+    p <- filter.params[filter.params$quantile == quantile, ]
+    width <- as.numeric(p$width)
+    notch.small.D1 <- as.numeric(p$notch.small.D1)
+    notch.small.D2 <- as.numeric(p$notch.small.D2)
+    notch.large.D1 <- as.numeric(p$notch.large.D1)
+    notch.large.D2 <- as.numeric(p$notch.large.D2)
+    offset.small.D1 <- as.numeric(p$offset.small.D1)
+    offset.small.D2 <- as.numeric(p$offset.small.D2)
+    offset.large.D1 <- as.numeric(p$offset.large.D1)
+    offset.large.D2 <- as.numeric(p$offset.large.D2)
+
+    # Fltering aligned particles (D1 = D2)
+    aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
+
+    # Filtering focused particles (fsc_small > D + notch)
+    opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
       D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
 
-      if(lin) opp <- transformData(opp)
+    # Mark focused particles for this quantile in the original EVT dataframe
+    qcolumn <- paste0("q", quantile)
+    evt[qcolumn] = FALSE
+    evt[as.numeric(rownames(opp)), qcolumn] <- TRUE
 
-  params = list("width"=width,
-                "notch.small.D1"= notch.small.D1,"notch.small.D2"= notch.small.D2,
-                "notch.large.D1"= notch.large.D1,"notch.large.D2"= notch.large.D2,
-                "offset.small.D1"= offset.small.D1,"offset.small.D2"= offset.small.D2,
-                "offset.large.D1"= offset.large.D1,"offset.large.D2"= offset.large.D2)
-  return(list("opp"=opp, "params"=params))
+    # Build a logical row selector which finds particles which are focused in
+    # any quantile.
+    opp_selector <- opp_selector | evt[, qcolumn]
+  }
+
+  opp <- evt[opp_selector, ]  # select for focused particles
+
+  if (lin) {
+    opp <- transformData(opp)
+  }
+
+  return(opp)
 }
-
-
 
 #' Filter a list of EVT files.
 #'
@@ -148,55 +158,44 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
     delete.opp.by.file(opp.dir, evt.file)
     delete.opp.stats.by.file(db, evt.file)
 
-    quantile_opp_counts <- list(0, 0, 0)
-    qi <- 1
-    for (quantile in QUANTILES) {
-      p <- filter.params[filter.params$quantile == quantile, ]
-      # Filter EVT to OPP
-      # Return empty data frame on warning or error
-      result <- tryCatch({
-        filter.evt(evt, filter.notch, p)
-      }, warnings = function(err) {
-        print(err)
-        return(list(opp=data.frame()))
-      }, error = function(err) {
-        print(err)
-        return(list(opp=data.frame()))
-      })
+    # Filter EVT to OPP
+    # Return empty data frame on warning or error
+    opp <- tryCatch({
+      filter.evt(evt, filter.notch, filter.params)
+    }, warnings = function(err) {
+      print(err)
+      return(data.frame())
+    }, error = function(err) {
+      print(err)
+      return(data.frame())
+    })
 
-      # Save OPP data
-      err <- tryCatch({
-        save.opp.stats(db, evt.file, all_count, evt_count,
-                       result$opp, p$id, quantile)
-      }, error = function(e) {
-        cat(paste0("Error saving opp results to db with file ", evt.file, " for quantile ", quantile, ": ", e))
-      })
-      if (inherits(err, "error")) {
-        delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
-        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
-        break
-      }
-      err <- tryCatch({
-        if (nrow(result$opp) > 0) {
-          save.opp.file(result$opp, opp.dir, evt.file, quantile)
-        }
-      }, error = function(e) {
-        cat(paste0("Error saving opp file ", evt.file, " for quantile ", quantile, ": ", e))
-      })
-      if (inherits(err, "error")) {
-        delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
-        delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
-        break
-      }
-      # store how many focused particles there were for this quantile
-      quantile_opp_counts[qi] <- nrow(result$opp)
-      qi <- qi + 1
+    # Save OPP data to database, regardless of whether this quantile has
+    # any focused particles.
+    err <- tryCatch({
+      save.opp.stats(db, evt.file, all_count, evt_count, opp, unique(filter.params$id))
+      save.outliers(db, data.frame(file=evt.file, flag=FLAG_OK))
+    }, error = function(e) {
+      cat(paste0("Error saving opp results to db with file ", evt.file, ": ", e))
+    })
+    if (inherits(err, "error")) {
+      delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
+      delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+      delete.outliers(db, evt.file)
+      break
     }
 
-    # If all quantiles didn't produce OPP for this EVT file, erase any OPP
-    # files that were created, but keep all DB entries
-    if (! all(quantile_opp_counts > 0)) {
-      delete.opp.by.file(opp.dir, evt.file)
+    err <- tryCatch({
+      if (nrow(opp) > 0) {
+        save.opp.file(opp, opp.dir, evt.file)
+      }
+    }, error = function(e) {
+      cat(paste0("Error saving opp file ", evt.file, ": ", e))
+    })
+    if (inherits(err, "error")) {
+      delete.opp.by.file(opp.dir, evt.file)   # clean up opp files
+      delete.opp.stats.by.file(db, evt.file)  # clean up any db entry
+      break
     }
 
     i <-  i + 1
@@ -206,88 +205,30 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
   flush.console()
 }
 
-#' Filter a directory of EVT files using seaflowpy_filter
-#'
-#' Filter a list of EVT files. Save OPP per file aggregate statistics to
-#' SQLite3 database and save particle data to binary files in opp.dir.
-#'
-#' @param db SQLite3 database file path.
-#' @param cruise.name Cruise name.
-#' @param evt.dir EVT file directory.
-#' @param opp.dir OPP file output directory.
-#' @param process.count Number of processes to start for filtering.
-#' @param limit Only process up to this many files.
-#' @param resolution Progress update resolution in \%.
-#' @param width,notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2 Filter parameters.
-#' @return None
-#' @examples
-#' \dontrun{
-#' seaflowpy_filter("testcruise.db", "testcruise", "./testcruise", "./testcruise_opp")
-#' }
-#' @export
-seaflowpy_filter <- function(db, cruise.name, evt.dir, opp.dir, process.count=1, twopass=FALSE,
-                             limit=NULL, resolution=NULL, width=NULL,
-                             notch.small.D1=NULL, notch.small.D2=NULL,
-                             notch.large.D1=NULL, notch.large.D2=NULL,
-                             offset.small.D1=NULL, offset.small.D2=NULL,
-                             offset.large.D1=NULL, offset.large.D2=NULL){
-
-  # First check for seaflowpy_filter in PATH
-  result <- tryCatch(
-    {
-      system2("bash", c("-lc", "'seaflowpy_filter --version'"), stdout=TRUE, stderr=TRUE)
-    },
-    warning=function(w) {
-      invisible(w)
-    },
-    error=function(e) {
-      return("system2error")
+encode_bit_flags <- function(opp) {
+  bit_flags <- NULL
+  to_remove <- c()
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+    shift_size <- log(QFLAGS[[qcolumn]], 2)
+    if (is.null(bit_flags)) {
+      bit_flags <- bitwShiftL(as.numeric(opp[, qcolumn]), shift_size)
+    } else {
+      bit_flags <- bitwOr(bit_flags, bitwShiftL(as.numeric(opp[, qcolumn]), shift_size))
     }
-  )
-  if (result == "system2error") {
-    warning("Could not run seaflowpy_filter")
-    return()
+    to_remove <- c(to_remove, qcolumn)
   }
+  opp["bitflags"] <- bit_flags
+  opp <- dplyr::select(opp, -to_remove)
+  return(opp)
+}
 
-  cmd <- paste0("'seaflowpy_filter ", '-c "', cruise.name, '" -e "',
-                normalizePath(evt.dir), '" -o "',  normalizePath(opp.dir),
-                '" -d "', normalizePath(db), '"')
-  if (! is.null(process.count)) {
-    cmd <- paste0(cmd, " -p ", process.count)
+decode_bit_flags <- function(opp) {
+  bit_flags <- opp$bitflags
+  opp <- dplyr::select(opp, -bitflags)
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+    opp[qcolumn] <- (bitwAnd(bit_flags, as.integer(QFLAGS[qcolumn])) > 0)
   }
-  if (! is.null(resolution)) {
-    cmd <- paste0(cmd, " -r ", resolution)
-  }
-  if (! is.null(limit)) {
-    cmd <- paste0(cmd, " -l ", limit)
-  }
-  if (! is.null(width)) {
-    cmd <- paste0(cmd, " --width ", width)
-  }
-  if (! is.null(notch.small.D1)) {
-    cmd <- paste0(cmd, " --notch.small.D1 ", notch.small.D1)
-  }
-  if (! is.null(notch.small.D2)) {
-    cmd <- paste0(cmd, " --notch.small.D2 ", notch.small.D2)
-  }
-  if (! is.null(notch.largel.D1)) {
-    cmd <- paste0(cmd, " --notch.large.D1 ", notch.large.D1)
-  }
-  if (! is.null(notch.large.D2)) {
-    cmd <- paste0(cmd, " --notch.large.D2 ", notch.large.D2)
-  }
-  if (! is.null(offset.small.D1)) {
-    cmd <- paste0(cmd, " --offset.small.D1 ", offset.small.D1)
-  }
-  if (! is.null(offset.small.D2)) {
-    cmd <- paste0(cmd, " --offset.small.D2 ", offset.small.D2)
-  }
-  if (! is.null(offset.largel.D1)) {
-    cmd <- paste0(cmd, " --offset.large.D1 ", offset.large.D1)
-  }
-  if (! is.null(offset.large.D2)) {
-    cmd <- paste0(cmd, " --offset.large.D2 ", offset.large.D2)
-  }
-  cmd <- paste0(cmd, "'")
-  system2("bash", c("-lc", cmd))
+  return(opp)
 }

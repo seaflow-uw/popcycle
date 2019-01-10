@@ -91,13 +91,12 @@ test_that("Retrieve OPP stats by date", {
   x <- setUp()
 
   opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
-  opp <- opp[order(opp$file), ]
   expect_equal(
     opp$file,
     c(rep("2014_185/2014-07-04T00-00-02+00-00", 3), rep("2014_185/2014-07-04T00-03-02+00-00", 3))
   )
 
-  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:03", "2014-07-04 00:10")
+  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:03", "2014-07-04 00:17")
   expect_equal(opp$file, rep("2014_185/2014-07-04T00-03-02+00-00", 3))
 
   tearDown(x)
@@ -110,6 +109,12 @@ test_that("Retrieve VCT stats by date", {
   expect_equal(
     vct$file,
     c(rep("2014_185/2014-07-04T00-00-02+00-00", 12), rep("2014_185/2014-07-04T00-03-02+00-00", 12))
+  )
+
+  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 0:03", "2014-07-04 00:17")
+  expect_equal(
+    vct$file,
+    c(rep("2014_185/2014-07-04T00-03-02+00-00", 12))
   )
 
   tearDown(x)
@@ -132,6 +137,10 @@ test_that("Retrieve OPP by file", {
   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, vct.dir=x$vct.input.dir)
   expect_true("pop" %in% names(opp))
 
+  # All quantiles
+  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1], transform=F)
+  expect_equal(nrow(opp), 427)
+
   tearDown(x)
 })
 
@@ -141,6 +150,11 @@ test_that("Retrieve OPP by date", {
   # Without VCT, transformed
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
   expect_equal(nrow(opp), 289)
+  expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
+
+  # Without VCT, transformed
+  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:03", "2014-07-04 00:17")
+  expect_equal(nrow(opp), 182)
   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
@@ -153,6 +167,29 @@ test_that("Retrieve OPP by date", {
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
                          vct.dir=x$vct.input.dir)
   expect_true("pop" %in% names(opp))
+
+  tearDown(x)
+})
+
+test_that("Retrieve split-quantile OPP file", {
+  x <- setUp()
+
+  # First get a multi-quantile OPP file
+  opp_file <- get.opp.files(x$db.full)[1]
+  opp <- get.opp.by.file(x$opp.input.dir, opp_file, transform=F)
+  expect_equal(nrow(opp), 427)
+  opp50 <- opp[opp["q50"] == TRUE, popcycle:::EVT.HEADER]
+
+  # Save it manually as an old style split-quantile file
+  opp_dir <- file.path(x$tmp.dir, "splitopp")
+  out_path <- paste0(file.path(opp_dir, "50", opp_file), ".opp.gz")
+  dir.create(dirname(out_path), showWarnings=F, recursive=T)
+  writeSeaflow(opp50, out_path, untransform=F)
+
+  # Read it back and make sure it's the same
+  opp_again <- get.opp.by.file(opp_dir, opp_file, quantile=50, transform=F)
+  rownames(opp50) <- NULL  # reset row names to match opp_again
+  expect_true(identical(opp50, opp_again))
 
   tearDown(x)
 })
@@ -222,4 +259,31 @@ test_that("Find common dbs in two directories", {
   expect_equal(nrow(common), 0)
 
   tearDown(x)
+})
+
+test_that("Get list of OPP files", {
+  x <- setUp()
+
+  # Set an outlier
+  save.outliers(x$db.full, data.frame(file="2014_185/2014-07-04T00-00-02+00-00", flag=1))
+
+  expect_equal(
+    c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"),
+    get.opp.files(x$db.full, outliers=F)
+  )
+
+  expect_equal(
+    c("2014_185/2014-07-04T00-03-02+00-00"),
+    get.opp.files(x$db.full, outliers=T)
+  )
+
+  expect_equal(
+    7,
+    length(get.opp.files(x$db.full, outliers=F, all.files=T))
+  )
+
+  expect_equal(
+    6,
+    length(get.opp.files(x$db.full, outliers=T, all.files=T))
+  )
 })

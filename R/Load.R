@@ -5,27 +5,26 @@
 #' 10^3.5.
 #'
 #' @param df Data frame returned by readSeaflow
+#' @param columns If not NULL, only these columns will be modified
 #' @return Exponentiated version of integer.dataframe
 #' @examples
 #' \dontrun{
 #' evt <- transformData(evt)
 #' }
 #' @export
-transformData <- function(df) {
+transformData <- function(df, columns=NULL) {
   if (nrow(df) == 0) {
     return(df)
   }
-  id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) == "pop")
-  if (length(id)) {
-    df[,-c(id)] <- 10^((df[,-c(id)]/2^16)*3.5)
+  if (! is.null(columns)) {
+    df[, columns] <- 10^((df[, columns]/2^16)*3.5)
   } else {
-    # This probably looks strange and you might wonder why we don't just assign
-    # to df rather thandf[, ].
-    # Exponentiating a data frame in R returns a matrix, not a data frame, so
-    # to keep df as a data frame we assign back into the original
-    # data frame. Otherwise we would rebind df as a new matrix instead of data
-    # frame.
-    df[, ] <- 10^((df/2^16)*3.5)
+    id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) == "pop")
+    if (length(id)) {
+      df[,-c(id)] <- 10^((df[,-c(id)]/2^16)*3.5)
+    } else {
+      df[, ] <- 10^((df[, ]/2^16)*3.5)
+    }
   }
   return(df)
 }
@@ -36,20 +35,25 @@ transformData <- function(df) {
 #' data back to its original form of log data on a 2^16 linear scale.
 #'
 #' @param df Data frame returned by readSeaflow
+#' @param columns If not NULL, only these columns will be modified
 #' @return Exponentiated version of df
 #' \dontrun{
 #' evt <- untransformData(evt)
 #' }
 #' @export
-untransformData <- function(df) {
+untransformData <- function(df, columns=NULL) {
   if (nrow(df) == 0) {
     return(df)
   }
-  id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
-  if (length(id)) {
-    df[,-c(id)] <-(log10(df[,-c(id)])/3.5)*2^16
+  if (! is.null(columns)) {
+    df[, columns] <-(log10(df[, columns])/3.5)*2^16
   } else {
-    df[, ] <-(log10(df)/3.5)*2^16
+    id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
+    if (length(id)) {
+      df[,-c(id)] <-(log10(df[,-c(id)])/3.5)*2^16
+    } else {
+      df[, ] <-(log10(df)/3.5)*2^16
+    }
   }
   return(df)
 }
@@ -70,7 +74,7 @@ untransformData <- function(df) {
 #' evt <- readSeaflow("foo/2014_213/2014-07-04T00-00-02+00-00.gz", channel=c("fsc_small", "pe"))
 #' }
 #' @export
-readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
+readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, columns=NULL) {
   # reads a binary seaflow event file into memory as a dataframe
   if (!file.exists(path)) {
     path <- paste0(path, ".gz")
@@ -78,11 +82,15 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
       stop(paste("The file doesn't exist;", path))
     }
   }
+  if (is.null(columns)) {
+    columns <- EVT.HEADER
+  }
+
   ## initialize dimensional parameters
   n.bytes.header <- 4
   n.bytes.padding <- 4
   column.size <- 2
-  n.data.columns <- length(EVT.HEADER)
+  n.data.columns <- length(columns)
   n.extra.columns <- 2  # 2 uint16 (10 and 0) at start of each row
   n.total.columns <- n.data.columns + n.extra.columns
 
@@ -119,7 +127,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
     # Convert to data frame dropping first two padding columns
     integer.dataframe <- data.frame(integer.matrix[,(n.extra.columns+1):n.total.columns])
     ## name the columns
-    names(integer.dataframe) <- c(EVT.HEADER)
+    names(integer.dataframe) <- columns
     close(con)
 
     if (nrow(integer.dataframe) != header) {
@@ -134,7 +142,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
     }
 
     ## Transform data to LOG scale
-    if(transform) integer.dataframe <- transformData(integer.dataframe)
+    if(transform) integer.dataframe <- transformData(integer.dataframe, columns=EVT.HEADER)
 
     return (integer.dataframe)
   }
@@ -161,7 +169,7 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   EOL.double <- 10
 
 	## UNTRANSFORM BACK TO ORIGINAL DATA
-  if(untransform)  df <- untransformData(df)
+  if (untransform)  df <- untransformData(df, columns=EVT.HEADER)
 
   ## open connection ##
   if (endswith(path, ".gz")) {
@@ -172,9 +180,6 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   ## write newline ##
   writeBin(as.integer(c(nrow(df),EOL.double)), con, size = n.bytes.header, endian = "little")
 
-  ## write out end of line character
-  #writeBin(10, con, size = 4, endian = "little") #done 2 lines above?
-
   ## construct a vector of integers from the dataframe with the EOL integers at the end of each line
   out.vect <- as.integer(unlist(t(cbind(df, EOL.double, 0))))
 
@@ -184,9 +189,6 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   writeBin(out.vect, con, size = column.size)
   close(con)
 }
-
-
-
 
 #' Concatenate EVT or OPP files
 #'
