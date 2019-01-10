@@ -45,7 +45,6 @@ delete.opp.by.file <- function(opp.dir, file.name) {
 #' \dontrun{
 #' delete.outliers.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
-#' @export
 delete.outliers.by.file <- function(db, file.name) {
   sql <- paste0("DELETE FROM outlier WHERE file == '", clean.file.path(file.name), "'")
   sql.dbExecute(db, sql)
