@@ -45,6 +45,7 @@ delete.opp.by.file <- function(opp.dir, file.name) {
 #' \dontrun{
 #' delete.outliers.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
+#' @export
 delete.outliers.by.file <- function(db, file.name) {
   sql <- paste0("DELETE FROM outlier WHERE file == '", clean.file.path(file.name), "'")
   sql.dbExecute(db, sql)
@@ -894,7 +895,7 @@ get.poly.table <- function(db) {
 #' }
 #' @export
 get.outlier.table <- function(db) {
-  sql <- "SELECT * FROM outlier;"
+  sql <- "SELECT * FROM outlier ORDER BY file;"
   outlier <- sql.dbGetQuery(db, sql)
   return(outlier)
 }
@@ -1523,15 +1524,20 @@ sql.dbExecute <- function(db, sql) {
 #' @param db SQLite3 database file path.
 #' @param name Table name.
 #' @param value Data frame to write.
+#' @param overwrite If TRUE, overwrite table rather than append
 #' @examples
 #' \dontrun{
 #' sql.dbWriteTable(db, name="vct", value=df)
 #' }
 #' @export
-sql.dbWriteTable <- function(db, name, value) {
+sql.dbWriteTable <- function(db, name, value, overwrite=FALSE) {
   con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
-    DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
+    if (overwrite) {
+      DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, overwrite=T)
+    } else {
+      DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
+    }
     DBI::dbDisconnect(con)
   }, error=function(e) {
     DBI::dbDisconnect(con)
@@ -1678,6 +1684,32 @@ copy_tables <- function(db_from, db_to, tables) {
     # Save to db_to table
     sql.dbWriteTable(db_to, name=table_name, value=table_from)
   }
+}
+
+#' Copy outlier entries from src_db to dest_db.
+#'
+#' This assumes db_to already has a complete outlier table with entries for
+#' every file in the opp table. Entries in db_to with flag values in db_from
+#' > 0 will be updated to reflect db_from. db_from entries without a
+#' corresponding entry in db_to will be ignored.
+#' @param db_from Popcycle database to copy flags > 0 from.
+#' @param db_to Popcycle database to copy flags > 0 to.
+#' @return None
+#' @examples
+#' \dontrun{
+#' copy_outlier_table(db_from, db_to)
+#' }
+copy_outlier_table <- function(db_from, db_to) {
+  src <- get.outlier.table(db_from)
+  dest <- get.outlier.table(db_to)
+  joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
+  new_dest_flags <- unlist(lapply(joined$flag.x, function(x) { if (is.na(x)) { 0 } else { x } }))
+  # Check that new_dest_flags has the same number of values as dest here
+  if (nrow(dest) != length(new_dest_flags)) {
+    stop("copy_outlier_table produced an incorrect result")
+  }
+  dest$flag <- new_dest_flags
+  sql.dbWriteTable(db_to, name='outlier', value=dest, overwrite=TRUE)
 }
 
 #' Get aggregate statistics data frame along with estimates of cell abundance.

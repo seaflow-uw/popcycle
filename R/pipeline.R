@@ -60,7 +60,9 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       common <- common_dbs[i, ]
 
       print(paste0('Merging ', common$old_path, ' into ', common$new_path))
-      copy_tables(common$old_path, common$new_path, c('metadata','gating', 'poly', 'outlier'))
+      copy_tables(common$old_path, common$new_path, c('metadata','gating', 'poly'))
+      # Outlier table is a bit trickier and needs its own function
+      copy_outlier_table(common$old_path, common$new_path)
 
       print(paste0('Extracting VCT table from ', common$old_path))
       vct.table <- get.vct.table(common$old_path)
