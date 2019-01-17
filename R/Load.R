@@ -125,7 +125,11 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
     ## reformat the vector into a matrix -> dataframe
     integer.matrix <- matrix(integer.vector, nrow = header, ncol = n.total.columns, byrow=TRUE)
     # Convert to data frame dropping first two padding columns
-    integer.dataframe <- data.frame(integer.matrix[,(n.extra.columns+1):n.total.columns])
+    # Drop=FALSE is necessary here when subsetting the matrix. Otherwise in the
+    # case of a one-row matrix the subsetted matrix will have the unnecessary
+    # dimension "dropped" and you'll get an integer vector back instead of a
+    # matrix, which creates a completely differently shaped data.frame.
+    integer.dataframe <- data.frame(integer.matrix[,(n.extra.columns+1):n.total.columns, drop=F])
     ## name the columns
     names(integer.dataframe) <- columns
     close(con)
