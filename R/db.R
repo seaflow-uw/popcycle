@@ -1708,7 +1708,7 @@ copy_outlier_table <- function(db_from, db_to) {
   if (nrow(dest) != length(new_dest_flags)) {
     stop("copy_outlier_table produced an incorrect result")
   }
-  dest$flag <- new_dest_flags
+  dest$flag <- as.integer(new_dest_flags)
   sql.dbWriteTable(db_to, name='outlier', value=dest, overwrite=TRUE)
 }
 
