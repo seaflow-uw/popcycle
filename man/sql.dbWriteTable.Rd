@@ -4,7 +4,7 @@
 \alias{sql.dbWriteTable}
 \title{Wrapper to run dbWriteTable and clean up connection on error.}
 \usage{
-sql.dbWriteTable(db, name, value, overwrite = FALSE)
+sql.dbWriteTable(db, name, value)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -12,8 +12,6 @@ sql.dbWriteTable(db, name, value, overwrite = FALSE)
 \item{name}{Table name.}
 
 \item{value}{Data frame to write.}
-
-\item{overwrite}{If TRUE, overwrite table rather than append}
 }
 \description{
 Wrapper to run dbWriteTable and clean up connection on error.

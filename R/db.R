@@ -1524,20 +1524,15 @@ sql.dbExecute <- function(db, sql) {
 #' @param db SQLite3 database file path.
 #' @param name Table name.
 #' @param value Data frame to write.
-#' @param overwrite If TRUE, overwrite table rather than append
 #' @examples
 #' \dontrun{
 #' sql.dbWriteTable(db, name="vct", value=df)
 #' }
 #' @export
-sql.dbWriteTable <- function(db, name, value, overwrite=FALSE) {
+sql.dbWriteTable <- function(db, name, value) {
   con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
-    if (overwrite) {
-      DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, overwrite=T)
-    } else {
-      DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
-    }
+    DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
     DBI::dbDisconnect(con)
   }, error=function(e) {
     DBI::dbDisconnect(con)
@@ -1709,7 +1704,8 @@ copy_outlier_table <- function(db_from, db_to) {
     stop("copy_outlier_table produced an incorrect result")
   }
   dest$flag <- as.integer(new_dest_flags)
-  sql.dbWriteTable(db_to, name='outlier', value=dest, overwrite=TRUE)
+  reset.table(db_to, 'outlier')
+  sql.dbWriteTable(db_to, name='outlier', value=dest)
 }
 
 #' Get aggregate statistics data frame along with estimates of cell abundance.
