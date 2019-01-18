@@ -15,7 +15,7 @@ test_that("Classify one file", {
   # Test some basic values from file
   expect_equal(
     mean(vct[vct$pop == "prochloro", "diam_lwr"]),
-    0.9227806
+    0.917590777913385
   )
   expect_equal(nrow(vct), 107)
 
@@ -24,7 +24,7 @@ test_that("Classify one file", {
   expect_equal(unique(vct_stats$file), "2014_185/2014-07-04T00-00-02+00-00")
   expect_equal(
     vct_stats[vct_stats$quantile == 50 & vct_stats$pop == "prochloro", "diam_lwr"],
-    0.9227806
+    0.917590777913385
   )
   expect_equal(
     sum(vct_stats[vct_stats$quantile == 50, "count"]),
