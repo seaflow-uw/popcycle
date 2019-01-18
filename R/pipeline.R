@@ -65,7 +65,16 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       copy_outlier_table(common$old_path, common$new_path)
 
       print(paste0('Extracting VCT table from ', common$old_path))
-      vct.table <- get.vct.table(common$old_path)
+      old_vct_table <- get.vct.table(common$old_path)
+      # Sometimes a VCT table has entries for OPP files that are not in the
+      # latest set of OPP files for that database for whatever reason. Do a
+      # merge here to make sure that only VCT entries for OPP files returned by
+      # get.opp.files(old_db, outliers=F) are considered.
+      old_opp_files <- get.opp.files(common$old_path, outliers=F)
+      # This will remove VCT entries not in old_opp_files
+      joined_vct <- merge(x=old_vct_table, y=data.frame(file=old_opp_files), by="file", all.y=T)
+      # This will remove opp file entries not in VCT
+      joined_vct <- joined_vct[!is.na(joined_vct$gating_id), ]
 
       print(paste0('Classifying with ', common$new_path))
       working_dir <- dirname(common$new_path)
@@ -76,7 +85,7 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       # Predict diameter, carbon quota, classify
       # diameter call here
       # carbon quota call here
-      classify.opp.files(db=common$new_path, opp.dir=opp_dir,  opp.files=opp_files, vct.dir=vct_dir, vct.table=vct.table)
+      classify.opp.files(db=common$new_path, opp.dir=opp_dir,  opp.files=opp_files, vct.dir=vct_dir, vct.table=joined_vct)
     }
   }
 }
