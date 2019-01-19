@@ -28,12 +28,12 @@ dir_to <- args[2]
 if (length(args) < 2) {
   stop(usage, call.=FALSE)
 } else {
-  if (file.info(args[1])$isdir) {
+  if (! is.na(file.info(args[1])$isdir)) {
     dir_from <- args[1]
   } else {
     stop(paste0("Error: argument ", args[1], " is not a directory"), call.=FALSE)
   }
-  if (file.info(args[2])$isdir) {
+  if (! is.na(file.info(args[2])$isdir)) {
     dir_to <- args[2]
   } else {
     stop(paste0("Error: argument ", args[1], " is not a directory"), call.=FALSE)
