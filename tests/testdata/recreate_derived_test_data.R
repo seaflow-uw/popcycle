@@ -5,6 +5,9 @@
 library(popcycle)
 
 args = commandArgs(trailingOnly=TRUE)
+if (length(args) != 1) {
+  stop("usage: Rscript recreate_derived_test_data.R workingdir", call.=FALSE)
+}
 wd <- args[1]
 dir.create(wd, showWarnings=F, recursive=T)
 db <- file.path(wd, "testcruise.db")
