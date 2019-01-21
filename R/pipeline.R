@@ -72,9 +72,15 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       # get.opp.files(old_db, outliers=F) are considered.
       old_opp_files <- get.opp.files(common$old_path, outliers=F)
       # This will remove VCT entries not in old_opp_files
-      joined_vct <- merge(x=old_vct_table, y=data.frame(file=old_opp_files), by="file", all.y=T)
+      joined_vct <- merge(
+        x=old_vct_table, y=data.frame(file=old_opp_files),
+        by="file", all.x=F, all.y=T, sort=F
+      )
       # This will remove opp file entries not in VCT
       joined_vct <- joined_vct[!is.na(joined_vct$gating_id), ]
+      # The merge step may reorder things so make sure everything is still
+      # sorted by ascending date
+      joined_vct <- joined_vct[order(joined_vct$date), ]
 
       print(paste0('Classifying with ', common$new_path))
       working_dir <- dirname(common$new_path)
