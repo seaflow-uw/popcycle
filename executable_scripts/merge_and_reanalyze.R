@@ -36,7 +36,7 @@ if (length(args) < 2) {
   if (! is.na(file.info(args[2])$isdir)) {
     dir_to <- args[2]
   } else {
-    stop(paste0("Error: argument ", args[1], " is not a directory"), call.=FALSE)
+    stop(paste0("Error: argument ", args[2], " is not a directory"), call.=FALSE)
   }
 }
 
