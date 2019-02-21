@@ -80,7 +80,7 @@ xls_convert <- function(db, meta, path) {
                           var_sensor = c(rep('SeaFlow',1), rep("ship's broadcasted data", 2), 'none' ,rep("ship's broadcasted data", 3), rep('SeaFlow',13)),
                           var_unit = c( '%Y-%m-%dT%H:%M:%S (UTC)',
                                         'decimal degree North',
-                                        'decimal degree South',
+                                        'decimal degree East',
                                         'm',
                                         'deg C',
                                         'psu',
