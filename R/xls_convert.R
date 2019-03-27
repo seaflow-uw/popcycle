@@ -18,7 +18,6 @@ xls_convert <- function(db, meta, path) {
     print(paste('formatting stat table for cruise:', cruise))
 
     data <- get.stat.table(db)
-    data <- subset(data, flag == 0)
 
     # add depth as metadata
     data$depth <- 5
@@ -27,7 +26,7 @@ xls_convert <- function(db, meta, path) {
     data <- data[,c('time','lat','lon','depth','temp','salinity','par',
                     'quantile','pop','chl_small','pe','fsc_small',
                     'diam_lwr','diam_mid','diam_upr','Qc_lwr','Qc_mid','Qc_upr',
-                    'abundance', 'abundance.se')]
+                    'abundance', 'abundance.se','flag')]
 
     #official cruise name
     official.cruise <- paste(meta[which(meta$cruise == cruise),'Cruise ID'])
@@ -42,13 +41,11 @@ xls_convert <- function(db, meta, path) {
                           dataset_source = 'University of Washington / Armbrust lab (ribalet@uw.edu)',
                           dataset_history = 'NA',
                           dataset_description = 'Continuous underway measurements of picophytoplankton abundance and cell size were made using SeaFlow, see Swalwell JE, Ribalet F, Armbrust EV (2011) SeaFlow: A novel underway flow-cytometer for continuous observations of phytoplankton in the ocean. Limnology and Oceanogra- phy: Methods 9:466–477).
-                                                Seawater samples were collected underway from the continuous seawater flow-through system (~5 m depth) and were prefiltered through a 100-micrometer stainless steel mesh (to eliminate large particles) prior to analysis.
-                                                The flow rate of the water stream was set at 15 mL min−1 through a 200-micrometer nozzle for both cruises and for the laboratory experiments; this corresponded to an analysis rate of 15 microL min−1 by the instrument.
-                                                A programmable syringe pump (Cavro XP3000, Hamilton Company) continuously injected fluorescent microspheres (1 μm, Polysciences) into the water stream as an internal standard.
-                                                Data files were created every three minutes, yielding a sampling resolution along the cruise track of 1 km (for a ship cruising at ~11 knots).
+                                                Seawater samples were collected underway from the continuous seawater flow-through system (5-10 m depth).
+                                                Data files were created every three minutes (yielding a sampling resolution along the cruise track of 1 km for a ship cruising at ~11 knots).
                                                 Data were analyzed using the R package Popcycle (https://github.com/armbrustlab/popcycle) which uses statistical clustering methods to discriminate between different phytoplankton populations, namely Prochlorococcus, Synechococcus and picoeukaryotes.
                                                 For more information about the SeaFlow project, visit https://armbrustlab.ocean.washington.edu/tools/seaflow',
-                          dataset_references = 'placeholder to ScientificData manuscript, in prep'
+                          dataset_references = 'Ribalet F, Hynes A, Berthiaume C, Swalwell J and Armbrust EV. ScientificData,  submitted'
                         )
 
 
@@ -74,7 +71,8 @@ xls_convert <- function(db, meta, path) {
                                             'mid bound of mean carbon quota',
                                             'upper bound of mean carbon quota',
                                             'cell abundance',
-                                            'standard error of cell abundance'
+                                            'standard error of cell abundance',
+                                            'outliers'
                                           ),
                           var_standard_name = rep(' ',ncol(data)),
                           var_sensor = c(rep('SeaFlow',1), rep("ship's broadcasted data", 2), 'none' ,rep("ship's broadcasted data", 3), rep('SeaFlow',13)),
@@ -97,19 +95,21 @@ xls_convert <- function(db, meta, path) {
                                         'picogram carbon per cell',
                                         'picogram carbon per cell',
                                         'cells per microliter',
-                                        'cells per microliter'
-                                    ),
+                                        'cells per microliter',
+                                        'unitless'
+                                      ),
                           var_spatial_res = 'irregular',
                           var_temporal_res = '3 minutes',
                           var_missing_value = 'NA',
                           var_discipline = c(rep(' ', 4),
                                              rep('physics, abiotic', 3),
-                                             rep('biology, ecology, flow cytometry',13)
+                                             rep('biology, ecology, flow cytometry',13),
+                                             ' '
                                            ),
                           var_keywords =' ',
                           var_comment = c(rep(' ',7),
                                           'quantile for OPP filtrationa (2.5 = conservative approach; 50 = standard approach; 97.5 = loosen approach, see https://github.com/armbrustlab/seaflow-filter for more details)',
-                                          'population clustering based on a misture of manual gaing and semi-supervized algorithm, see https://github.com/armbrustlab/popcycle for more details',
+                                          'population clustering based on a mixture of manual gating and semi-supervized algorithm, see https://github.com/armbrustlab/popcycle for more details',
                                           'Red fluorescence collected using a 692-40 bandpass filter',
                                           'Orange fluorescence collected using a 572-27 bandpass filter',
                                           'Forward light scatter collected using a 457-50 bandpass filter',
@@ -120,8 +120,9 @@ xls_convert <- function(db, meta, path) {
                                           'Carbon cell quotas estimates, based on mid bound of cell diameter, see https://github.com/armbrustlab/fsc-poc-calibration for more details',
                                           'Carbon cell quotas estimates, based on upper bound of cell diameter, see https://github.com/armbrustlab/fsc-poc-calibration for more details',
                                           'mean of cell abundance, see https://github.com/armbrustlab/seaflow-virtualcore for more details',
-                                          'standard error based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/armbrustlab/seaflow-virtualcore for more details'
-                                      )
+                                          'standard error based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/armbrustlab/seaflow-virtualcore for more details',
+                                          'outliers (0: Quality data; 1: issue related to instrument performance; 2: issue related to OPP filtration; 3 issue related to population classification'
+                                          )
                         )
 
 
