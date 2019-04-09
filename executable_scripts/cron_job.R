@@ -15,7 +15,7 @@ inst <- Sys.getenv("SERIAL")
 cruise <- Sys.getenv("CRUISE")
 
 evt.files <- get.evt.files(evt.dir)
-file.transfer(evt.dir, instrument.dir)
+file_transfer(evt.dir, instrument.dir)
 
 filter.params <- get.filter.params.latest(db)
 

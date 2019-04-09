@@ -161,3 +161,35 @@ get.dawn.dusk.time <- function(x, cutoff) {
 
     return(dawn.dusk)
 }
+
+#' file_transfer
+#'
+#' @return None
+#' @export
+file_transfer <- function(evt.dir, instrument.dir){
+
+  last.evt <- get.latest.evt(evt.dir)
+  file.list <- list.files(instrument.dir, recursive=T)
+  sfl.list <- file.list[grepl('.sfl', file.list)]
+  file.list <- file.list[-length(file.list)] # remove the last file (opened file)
+  file.list <- sort(file.list[!grepl('.sfl', file.list)])
+
+  id <- match(last.evt, file.list)
+
+  if(is.na(id)){
+    day <- unique(dirname(file.list))
+      for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
+    print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
+    system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
+    system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
+  }
+  else{
+    file.list <- file.list[id:length(file.list)]
+    day <- unique(dirname(file.list))
+      for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
+    print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
+    system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
+    system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
+  }
+}
+
