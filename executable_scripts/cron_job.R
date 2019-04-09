@@ -48,7 +48,7 @@ for (evt.file in evt.list) {
 ######################
 cex=1.4
 
-last.file <- tail[opp.list,1]
+last.file <- tail(opp.list,1)
 opp <- try(get.opp.by.file(opp.dir, last.file, quantile=50, vct.dir=vct.dir))
 
 print("creating vct.cytogram.png")
