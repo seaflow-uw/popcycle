@@ -43,6 +43,16 @@ for (evt.file in evt.list) {
   })
 }
 
+##################
+### PLOT STATS ###
+##################
+stat <- get.stat.table(db)
+sfl <- get.sfl.table(db)
+print("saving stat.csv")
+write.csv(stat, stat.file, row.names=FALSE, quote=FALSE)
+print("saving sfl.csv")
+write.csv(sfl, sfl.file, row.names=FALSE, quote=FALSE)
+
 ######################
 ### PLOT CYTOGRAMS ###
 ######################
@@ -69,14 +79,4 @@ plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="pe")
 mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
 dev.off()
 
-
-##################
-### PLOT STATS ###
-##################
-stat <- get.stat.table(db)
-sfl <- get.sfl.table(db)
-print("saving stat.csv")
-write.csv(stat, stat.file, row.names=FALSE, quote=FALSE)
-print("saving sfl.csv")
-write.csv(sfl, sfl.file, row.names=FALSE, quote=FALSE)
 print("DONE")
