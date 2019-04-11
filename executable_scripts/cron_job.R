@@ -56,27 +56,17 @@ write.csv(sfl, sfl.file, row.names=FALSE, quote=FALSE)
 ######################
 ### PLOT CYTOGRAMS ###
 ######################
-cex=1.4
-
+library(tidyverse)
+opp.list <- get.opp.files(db, all.files=TRUE)
 last.file <- tail(opp.list,1)
 opp <- try(get.opp.by.file(opp.dir, last.file, quantile=50, vct.dir=vct.dir))
 
 print("creating vct.cytogram.png")
-png(plot.vct.file,width=15,height=9,unit='in',res=100)
-par(mfrow=c(1,2),cex=cex)
-plot.vct.cytogram(opp, "fsc_small","chl_small")
-plot.vct.cytogram(opp, "fsc_small","pe")
-mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
-dev.off()
-
-gating.log <- get.gating.params.latest(db)$gates.log
+plot_vct_cytogram(opp, "fsc_small","chl_small", transform=TRUE)
+ggsave(plot.vct.file, width=10, height=6, unit='in', dpi=150)
 
 print("creating gate.cytogram.png")
-png(plot.gate.file,width=15,height=9,unit='in',res=100)
-par(mfrow=c(1,2),cex=cex)
-plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="chl_small")
-plot.gate.cytogram(opp, gating.log, para.x="fsc_small",para.y="pe")
-mtext(paste(last.file), side=3, line=-3,outer=T,cex=cex)
-dev.off()
+plot_cytogram(opp, para.x="fsc_small",para.y="chl_small", bins=200, transform=TRUE)
+ggsave(plot.gate.file, width=10, height=6, unit='in', dpi=150)
 
 print("DONE")
