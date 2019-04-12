@@ -60,6 +60,7 @@ library(tidyverse)
 opp.list <- get.opp.files(db, all.files=TRUE)
 last.file <- tail(opp.list,1)
 opp <- try(get.opp.by.file(opp.dir, last.file, quantile=50, vct.dir=vct.dir))
+opp$file <- last.file
 
 print("creating vct.cytogram.png")
 plot_vct_cytogram(opp, "fsc_small","chl_small", transform=TRUE)
