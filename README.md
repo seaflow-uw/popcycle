@@ -1,7 +1,7 @@
 SeaFlow project
 ========
-<img src="https://github.com/armbrustlab/seaflow-sfl/blob/master/cruise-track.png" alt="SeaFlow cruisetracks"
-	title="SeaFlow cruisetracks" align="left" style="float" width="400">
+<img src="./images/cruise-track.png" alt="SeaFlow cruisetracks"	title="SeaFlow cruisetracks" align="left" style="float" width="400">
+
 [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) is a new environmental flow cytometer designed by the [Armbrust lab](https://armbrustlab.ocean.washington.edu) to be deployed on oceanographic research vessels to continuously monitor photosynthetic microorganisms. Since its first deployment in 2008, the [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) instrument has collected over 200,000 samples in surface waters of the North Pacific and Atlantic Oceans. The geographic distribution of marine phytoplankton, their optical characteristics (size and pigment content), and their dynamics in relation to environmental factors are of major interest to oceanographers. 
 
   Unlike a conventional flow cytometer, [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) directly analyzes a raw stream of seawater using two detectors that determine the position of the particle within the focal region of the instrument optical system ([Swalwell et al. 2011](https://doi.org/10.4319/lom.2011.9.466)). With this technology, measurements from particles that pass through the ideal focal position of the collection optics can be differentiated from improperly positioned particles, producing a measurement equivalent to that obtained with a conventional cytometer (see [OPP filtration](https://github.com/armbrustlab/seaflow-filter)). The ratio of these optimally positioned particles (OPP) to the total detectable particles is used to retrieve the volumetric flow rate, allowing accurate estimation of cell abundances (see [Virtual Core calibration](https://github.com/armbrustlab/seaflow-virtualcore)). Each particle is defined by its light scatter and by two different wavelengths of fluorescence associated with pigments:  chlorophyll (690 nm for red fluorescence) and phycoerythrin (570 nm for orange fluorescence). These parameters allow the discrimination between cells and detritus or suspended sediments and between photosynthetic and non-photosynthetic organisms. 
@@ -23,4 +23,12 @@ The cell population identification (GATED data) and diameter and carbon content 
 
 The metadata, gating scheme, and aggregated statistics for each step are saved to a SQL database using SQLite3.
 
-To get started with **Popcycle**, go to the [wiki](https://github.com/armbrustlab/popcycle/wiki/SeaFlow-data-analysis-tutorial)
+### Install
+In this project's directory, run the install script `setup.R`. This will install `devtools`, `BiocManager`, and any dependencies listed in `DESCRIPTION`. It will not upgrade any packages. To upgrade dependencies, manually run the install commands in `setup.R` in an interactive R environment making sure to set install options for upgrading or updating appropriately.
+
+```
+Rscript setup.R
+```
+
+### Analysis
+To get started with **Popcycle** analysis, go to the [wiki](https://github.com/armbrustlab/popcycle/wiki/SeaFlow-data-analysis-tutorial)
