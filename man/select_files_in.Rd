@@ -2,7 +2,7 @@
 % Please edit documentation in R/files.R
 \name{select_files_in}
 \alias{select_files_in}
-\title{select_files_in}
+\title{Select SeaFlow files based on presence in a second vector}
 \usage{
 select_files_in(files, keep)
 }

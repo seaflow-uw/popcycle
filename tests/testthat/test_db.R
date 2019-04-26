@@ -224,8 +224,8 @@ test_that("Copy tables from one db to another", {
   dest_vct <- get.vct.table(x$db.bare)
   src_metadata <- get.meta.table(x$db.full)
   dest_metadata <- get.meta.table(x$db.bare)
-  expect_equal(src_vct, dest_vct)
-  expect_equal(src_metadata, dest_metadata)
+  expect_equal(dest_vct, src_vct)
+  expect_equal(dest_metadata, src_metadata)
 
   tearDown(x)
 })
@@ -268,13 +268,13 @@ test_that("Get list of OPP files", {
   save.outliers(x$db.full, data.frame(file="2014_185/2014-07-04T00-00-02+00-00", flag=1))
 
   expect_equal(
-    c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"),
-    get.opp.files(x$db.full, outliers=F)
+    get.opp.files(x$db.full, outliers=F),
+    c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00")
   )
 
   expect_equal(
-    c("2014_185/2014-07-04T00-03-02+00-00"),
-    get.opp.files(x$db.full, outliers=T)
+    get.opp.files(x$db.full, outliers=T),
+    c("2014_185/2014-07-04T00-03-02+00-00")
   )
 
   expect_equal(

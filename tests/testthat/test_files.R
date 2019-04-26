@@ -60,24 +60,86 @@ test_that("Clean file paths", {
 test_that("Read EVT files", {
   x <- setUp()
 
+  channels <- c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big")
+
   # Good file, uncompressed
-  df = readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00"))
+  df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
+  expect_equal(nrow(df), 40000)
+  expect_known_hash(df, 'b8908dfb31')
+  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=T)
   expect_equal(nrow(df), 40000)
   expect_known_hash(df, '77b5c5ecbb')
+  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+
   # Good file, compressed
-  df = readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00.gz"))
+  df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00")
+  expect_equal(nrow(df), 40000)
+  expect_known_hash(df, '870e8258a7')
+  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00", transform=T)
   expect_equal(nrow(df), 40000)
   expect_known_hash(df, 'd8d5667a31')
+  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+
+  # Two EVT files at once
+  df <- get.evt.by.file(x$evt.input.dir, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"))
+  expect_equal(nrow(df), 80000)
+
   # size 0 file
-  expect_warning(readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-06-02+00-00")))
+  expect_warning(get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-06-02+00-00"))
+
   # No particles, header == 0
-  expect_warning(readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-09-02+00-00")))
+  expect_warning(get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-09-02+00-00"))
+
   # bad 2 byte header, should be 4
-  expect_warning(readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-12-02+00-00")))
+  expect_warning(get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-12-02+00-00"))
+
   # more data than header reports
-  expect_warning(readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-21-02+00-00")))
+  expect_warning(get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-21-02+00-00"))
+
   # less data than header reports
-  expect_warning(readSeaflow(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-27-02+00-00")))
+  expect_warning(get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-27-02+00-00"))
+
+  tearDown(x)
+})
+
+test_that("Read OPP files", {
+  x <- setUp()
+
+  channels <- c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big")
+
+  # One quantile, transformed
+  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", quantile=50)
+  expect_equal(ncol(df), 10)
+  expect_equal(nrow(df), 107)
+  expect_known_hash(df, 'a84c9ae9b1')
+  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+
+  # One quantile, not transformed
+  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", quantile=50, transform=F)
+  expect_equal(ncol(df), 10)
+  expect_equal(nrow(df), 107)
+  expect_known_hash(df, '1fd4e451b3')
+  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+
+  # All quantiles, transformed
+  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
+  expect_equal(ncol(df), 13)
+  expect_equal(nrow(df), 427)
+  expect_known_hash(df, '28189af38c')
+  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+
+  # All quantiles, not transformed
+  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=F)
+  expect_equal(ncol(df), 13)
+  expect_equal(nrow(df), 427)
+  expect_known_hash(df, 'c30a24ce39')
+  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+
+  # Two OPP files at once
+  df <- get.opp.by.file(x$opp.input.dir, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"), quantile=50)
+  expect_equal(nrow(df), 289)
 
   tearDown(x)
 })
@@ -107,5 +169,5 @@ test_that("Filter file list", {
     "tests/testcruise_evt/2014_185/2014-07-04T00-17-02+00-00.gz"
   )
   result <- select_files_in(files, filter_list)
-  expect_equal(answer, result)
+  expect_equal(result, answer)
 })

@@ -9,7 +9,7 @@ test_that("Classify one file", {
   opp_file <- "2014_185/2014-07-04T00-00-02+00-00"
   vct_dir <- file.path(x$tmp.dir, "vct")
   reset.vct.stats.table(x$db.full)
-  expect_equal(0, nrow(get.vct.table(x$db.full)))  # make sure we deleted it
+  expect_equal(nrow(get.vct.table(x$db.full)), 0)  # make sure we deleted it
   classify.opp.files(x$db.full, x$opp.input.dir, c(opp_file), vct_dir)
   vct <- get.vct.by.file(vct_dir, opp_file, 50)
 

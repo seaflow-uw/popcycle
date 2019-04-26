@@ -120,7 +120,6 @@ endswith <- function(path, ending) {
 }
 
 
-
 #' Extract dawn and dusk times from a time series of PAR values
 #'
 #' Extracts the time that dawn and dusk occur from a time series consisting of PAR values (light intensity).
@@ -193,8 +192,7 @@ file_transfer <- function(evt.dir, instrument.dir){
   }
 }
 
-
-#' select_files_in
+#' Select SeaFlow files based on presence in a second vector
 #'
 #' Only keep files in input vector if they are present in vector of files to
 #' keep. Match based on the canonical SeaFlow file ID.
@@ -212,4 +210,138 @@ select_files_in <- function(files, keep) {
   files_clean <- unlist(lapply(files, clean.file.path))
   keep_clean <- unlist(lapply(keep, clean.file.path))
   return(files[files_clean %in% keep_clean])
+}
+
+#' Get OPP data frame by file and quantile.
+#'
+#' @param opp.dir OPP file directory.
+#' @param file.name File name with julian day directory. Can be a single
+#'   file name or vector of file names.
+#' @param quantile Filtering quantile for this file
+#' @param channel Channels to keep in returned data frame. Can be a single name
+#'   or a vector. Choosing fewer channels can significantly speed up retrieval.
+#' @param transform Linearize OPP data.
+#' @param vct.dir VCT file directory. If not specified returned data frame will
+#'   not have a pop column.
+#' @param pop If specified, the returned data frame will only contain entries
+#'   for this population.
+#' @return Data frame of OPP data for all files in file.name. If vct.dir is
+#'   specified the data frame will have a per particle population annotations
+#'   in a pop column.
+#' @examples
+#' \dontrun{
+#' opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00",
+#'                        channel=c("fsc_small", "chl_small", "pe"),
+#'                        transform=F, vct.dir=vct.dir)
+#' }
+#' @export
+get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
+                            transform=TRUE, vct.dir=NULL, pop=NULL) {
+  file.name.clean <- unlist(lapply(file.name, clean.file.path))
+  opp.files <- paste0(file.name.clean, ".opp")
+
+  opp.reader <- function(f) {
+    multi_quantile <- FALSE
+    path <- NULL
+    # Check if this is an opp with a quantile bitflags column
+    tmp_path <- file.path(opp.dir, f)
+    if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
+      multi_quantile <- TRUE
+      columns <- c(EVT.HEADER, "bitflags")
+      path <- tmp_path
+    }
+    # Check for opp split into per-quantile files
+    if (! is.null(quantile) & ! multi_quantile) {
+      tmp_path <- file.path(opp.dir, quantile, f)
+      if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
+        # It is split-quantile file, set appropriate path and columns
+        path <- tmp_path
+        columns <- EVT.HEADER
+      }
+    }
+
+    opp <- readSeaflow(path, channel=channel, transform=transform, columns=columns)
+    if (multi_quantile) {
+      opp <- decode_bit_flags(opp)
+      if (! is.null(quantile)) {
+        # Select for one quantile and drop quantile flag columns
+        qcolumn <- paste0("q", quantile)
+        opp <- opp[opp[qcolumn] == TRUE, EVT.HEADER]
+      }
+    }
+    return(opp)
+  }
+
+  opps <- lapply(opp.files, opp.reader)
+  opps.bound <- dplyr::bind_rows(opps)
+
+  if (! is.null(quantile)) {
+    if (!is.null(pop) & is.null(vct.dir)) {
+      print("no vct data found, returning all opp instead")
+    }
+
+    if (! is.null(vct.dir) ) {
+      vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
+      vcts.bound <- dplyr::bind_rows(vcts)
+      opps.bound <- cbind(opps.bound, vcts.bound)
+      if (! is.null(pop)) {
+        opps.bound <- opps.bound[opps.bound$pop == pop, ]
+      }
+    }
+  }
+
+  return(opps.bound)
+}
+
+#' Get EVT data frame by file.
+#'
+#' @param evt.dir EVT file directory.
+#' @param file.name File name with julian day directory. Can be a single
+#'   file name or vector of file names.
+#' @param transform Linearize EVT data. Default is FALSE.
+#' @return Data frame of EVT data for all files in file.name.
+#' @examples
+#' \dontrun{
+#' evt <- get.evt.by.file(evt.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' }
+#' @export
+get.evt.by.file <- function(evt.dir, file.name, transform=FALSE) {
+  evt_files <- unlist(lapply(file.name, clean.file.path))
+  evt_reader <- function(f) {
+    return(readSeaflow(file.path(evt.dir, f), transform=transform))
+  }
+  evts <- lapply(evt_files, evt_reader)
+  if (length(evts) > 0) {
+    return(dplyr::bind_rows(evts))
+  }
+  return(evts[1])
+}
+
+#' Get data frame of per particle population classifications by file and quantile
+#'
+#' @param vct.dir VCT file directory.
+#' @param file.name File name with julian day directory.
+#' @param quantile Filtering quantile for this file
+#' @return Data frame of per particle population classifications.
+#' @examples
+#' \dontrun{
+#' vct <- get.vct.by.file(vct.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' }
+#' @export
+get.vct.by.file <- function(vct.dir, file.name, quantile) {
+  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct")
+  if (!file.exists(vct.file)) {
+    vct.file <- paste0(vct.file, ".gz")
+    if (!file.exists(vct.file)) {
+      stop(paste("No VCT file for ", file.name))
+    }
+  }
+  if (tools::file_ext(vct.file) == "gz") {
+    con <- gzfile(description=vct.file)
+  } else {
+    con <- file(description=vct.file)
+  }
+  vct <- read.table(con, col.names=c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop"))
+  return(vct)
 }

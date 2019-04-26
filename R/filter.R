@@ -140,8 +140,7 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
     # Read EVT file
     # Create empty data frame on warning or error
     evt <- tryCatch({
-      path <- file.path(evt.dir, evt.file)
-      readSeaflow(path, transform=FALSE)
+      get.evt.by.file(evt.dir, evt.file, transform=F)
     }, warnings = function(err) {
       print(err)
       return(data.frame())
