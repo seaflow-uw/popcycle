@@ -808,12 +808,7 @@ get.sfl.table <- function(db) {
 #' @export
 get.opp.table <- function(db) {
   check.for.populated.sfl(db)
-  sql <- "
-    SELECT
-      sfl.date, opp.*
-    FROM opp
-    INNER JOIN sfl ON sfl.file == opp.file
-    ORDER BY sfl.date ASC"
+  sql <- "SELECT * FROM opp ORDER BY file"
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
 }
@@ -829,12 +824,7 @@ get.opp.table <- function(db) {
 #' @export
 get.vct.table <- function(db) {
   check.for.populated.sfl(db)
-  sql <- "
-    SELECT
-      sfl.date, vct.*
-    FROM sfl
-    INNER JOIN vct ON sfl.file == vct.file
-    ORDER BY sfl.date ASC"
+  sql <- "SELECT * FROM vct ORDER BY file"
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
 }

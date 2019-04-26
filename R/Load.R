@@ -103,7 +103,12 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
   header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
   # Check for empty file.  If empty return an empty data frame
   if (length(header) == 0) {
-    warning(sprintf("File %s has size zero.", path))
+    warning(sprintf("File %s has size zero or truncated header.", path))
+    close(con)
+    return(data.frame())
+  }
+  if (header == 0) {
+    warning(sprintf("File %s has no particle data.", path))
     close(con)
     return(data.frame())
   }
@@ -111,18 +116,28 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
   if (count.only) {
    return(header) #return just the event count in the header
   } else {
-    ## read the actual events
+    # read the actual events
     n.events <- header * n.total.columns
     expected.bytes <- n.events * column.size
     integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
     received.bytes <- length(integer.vector) * column.size
+    
+    # Now read any data left. There shouldn't be any.
+    while (TRUE) {
+      extra.bytes <- readBin(con, "integer", n = 8192, size = 1, signed = FALSE, endian = "little")
+      received.bytes = received.bytes + length(extra.bytes)
+      if (length(extra.bytes) == 0) {
+        break
+      }
+    }
+
     if (received.bytes != expected.bytes) {
       warning(sprintf("File %s has incorrect data size. Expected %i bytes, saw %i bytes",
                       path, expected.bytes, received.bytes))
       close(con)
       return(data.frame())
     }
-    ## reformat the vector into a matrix -> dataframe
+    # reformat the vector into a matrix -> dataframe
     integer.matrix <- matrix(integer.vector, nrow = header, ncol = n.total.columns, byrow=TRUE)
     # Convert to data frame dropping first two padding columns
     # Drop=FALSE is necessary here when subsetting the matrix. Otherwise in the

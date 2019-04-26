@@ -193,3 +193,23 @@ file_transfer <- function(evt.dir, instrument.dir){
   }
 }
 
+
+#' select_files_in
+#'
+#' Only keep files in input vector if they are present in vector of files to
+#' keep. Match based on the canonical SeaFlow file ID.
+#'
+#' @param files Vector of files to pull from
+#' @param keep Vector of files to keep in <files>
+#' @return Subset of <files> that are in <keep> based on SeaFlow file ID
+#' @examples
+#' \dontrun{
+#' chosen <- select_files_in(files, keep)
+#' }
+#' @export
+select_files_in <- function(files, keep) {
+  # Convert to canonical SeaFlow file ID
+  files_clean <- unlist(lapply(files, clean.file.path))
+  keep_clean <- unlist(lapply(keep, clean.file.path))
+  return(files[files_clean %in% keep_clean])
+}

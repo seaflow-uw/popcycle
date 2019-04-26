@@ -9,7 +9,7 @@ test_that("Load / Delete SFL", {
   # Load SFL data
   save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
   sfl <- get.sfl.table(x$db)
-  expect_true(nrow(sfl) == 7)
+  expect_true(nrow(sfl) == 8)
   reset.sfl.table(x$db)
   sfl <- get.sfl.table(x$db)
   expect_true(nrow(sfl) == 0)

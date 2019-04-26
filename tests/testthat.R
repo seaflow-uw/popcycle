@@ -1,3 +1,2 @@
 library(testthat)
-results <- test_dir("tests/testthat")
-print(results)
+test_dir("tests/testthat")

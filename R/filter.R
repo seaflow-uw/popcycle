@@ -127,6 +127,12 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
     stop("No filter parameters defined")
   }
 
+  # If SFL data is present, only filter EVT files in SFL table
+  sfl.files <- get.sfl.table(db)$file
+  if (length(sfl.files) > 0) {
+    evt.files <- select_files_in(evt.files, sfl.files)
+  }
+
   i <- 0
   for (evt.file in evt.files) {
     message(round(100*i/length(evt.files)), "% completed \r", appendLF=FALSE)
