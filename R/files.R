@@ -312,10 +312,10 @@ get.evt.by.file <- function(evt.dir, file.name, transform=FALSE) {
     return(readSeaflow(file.path(evt.dir, f), transform=transform))
   }
   evts <- lapply(evt_files, evt_reader)
-  if (length(evts) > 0) {
+  if (length(evts) > 1) {
     return(dplyr::bind_rows(evts))
   }
-  return(evts[1])
+  return(evts[[1]])
 }
 
 #' Get data frame of per particle population classifications by file and quantile

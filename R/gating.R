@@ -233,10 +233,9 @@ auto.classify <- function(opp, params, popname) {
    row.selection = opp$pop == "unknown" & opp[,paste(params$x)] > params$min.pe
   }
 
+  x <- opp[row.selection, names(opp) != "pop"]
   # Sometimes there are no unknowns at this point so check for zero rows
-  if (nrow(opp[row.selection, ]) > 0) {
-    x <- opp[row.selection, names(opp) != "pop"]
-
+  if (nrow(x) > 0) {
     fframe <- flowCore::flowFrame(as.matrix(log10(x)))
     #plotDens(f, channels=c(5,8))
     channels <- c(match(params$x, names(x)), match(params$y, names(x)))

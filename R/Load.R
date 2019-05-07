@@ -196,13 +196,12 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   } else {
     con <- file(description = path, open="wb")
   }
-  ## write newline ##
-  writeBin(as.integer(c(nrow(df),EOL.double)), con, size = n.bytes.header, endian = "little")
+  ## write row count ##
+  writeBin(as.integer(nrow(df)), con, size = n.bytes.header, endian = "little")
 
-  ## construct a vector of integers from the dataframe with the EOL integers at the end of each line
-  out.vect <- as.integer(unlist(t(cbind(df, EOL.double, 0))))
-
-  out.vect <- out.vect[1:(length(out.vect)-2)] # hack to remove the last two \r\n characters (see below)
+  # construct a vector of integers from the dataframe with the EOL integers at
+  # the start of each line
+  out.vect <- as.integer(unlist(t(cbind(EOL.double, 0, df))))
 
   ## write it out
   writeBin(out.vect, con, size = column.size)

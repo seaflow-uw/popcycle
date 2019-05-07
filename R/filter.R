@@ -49,15 +49,21 @@ filter.notch <- function(evt, filter.params) {
     evt <- untransformData(evt)
     lin <- TRUE
   }
-
+  # Assume width the same for all quantiles
+  if (length(unique(filter.params[, "width"])) != 1) {
+    stop("More than one width in filter parameters")
+  }
+  width <- as.numeric(filter.params[1, "width"])
+  
   # Filtering out noise
-  evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
-
+  signal_selector <- evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1
+  # Filtering aligned particles (D1 = D2)
+  aligned_selector <- signal_selector & (evt$D2 < evt$D1 + width) & (evt$D1 < evt$D2 + width)
+  # Track which particles are OPP in any quantile
   opp_selector <- FALSE
 
   for (quantile in QUANTILES) {
     p <- filter.params[filter.params$quantile == quantile, ]
-    width <- as.numeric(p$width)
     notch.small.D1 <- as.numeric(p$notch.small.D1)
     notch.small.D2 <- as.numeric(p$notch.small.D2)
     notch.large.D1 <- as.numeric(p$notch.large.D1)
@@ -67,21 +73,20 @@ filter.notch <- function(evt, filter.params) {
     offset.large.D1 <- as.numeric(p$offset.large.D1)
     offset.large.D2 <- as.numeric(p$offset.large.D2)
 
-    # Fltering aligned particles (D1 = D2)
-    aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
-
     # Filtering focused particles (fsc_small > D + notch)
-    opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
-      D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
+    qopp_selector <- (((evt$D1 <= evt$fsc_small * notch.small.D1 + offset.small.D1) & 
+      (evt$D2 <= evt$fsc_small * notch.small.D2 + offset.small.D2)) | 
+      ((evt$D1 <= evt$fsc_small * notch.large.D1 + offset.large.D1) & 
+      (evt$D2 <= evt$fsc_small * notch.large.D2 + offset.large.D2))) & 
+      aligned_selector
 
     # Mark focused particles for this quantile in the original EVT dataframe
     qcolumn <- paste0("q", quantile)
-    evt[qcolumn] = FALSE
-    evt[as.numeric(rownames(opp)), qcolumn] <- TRUE
+    evt[qcolumn] = qopp_selector
 
     # Build a logical row selector which finds particles which are focused in
     # any quantile.
-    opp_selector <- opp_selector | evt[, qcolumn]
+    opp_selector <- opp_selector | qopp_selector
   }
 
   opp <- evt[opp_selector, ]  # select for focused particles
@@ -151,8 +156,8 @@ filter.evt.files <- function(db, evt.dir, evt.files, opp.dir,
 
     if (nrow(evt) > 0) {
       # noise filter
-      evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
-      evt_count <- nrow(evt.)  # after noise filter
+      signal_selector <- (evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1)
+      evt_count <- sum(signal_selector)  # after noise filter
       all_count <- nrow(evt)   # before noise filter
     } else {
       evt_count <- 0

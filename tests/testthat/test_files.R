@@ -65,7 +65,7 @@ test_that("Read EVT files", {
   # Good file, uncompressed
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
   expect_equal(nrow(df), 40000)
-  expect_known_hash(df, 'b8908dfb31')
+  expect_known_hash(df, '83812912ef')
   expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=T)
   expect_equal(nrow(df), 40000)
@@ -75,7 +75,7 @@ test_that("Read EVT files", {
   # Good file, compressed
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00")
   expect_equal(nrow(df), 40000)
-  expect_known_hash(df, '870e8258a7')
+  expect_known_hash(df, 'd0c9a83524')
   expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00", transform=T)
   expect_equal(nrow(df), 40000)
