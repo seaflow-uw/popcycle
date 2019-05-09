@@ -65,22 +65,28 @@ test_that("Read EVT files", {
   # Good file, uncompressed
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
   expect_equal(nrow(df), 40000)
-  expect_known_hash(df, '83812912ef')
   expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  df_expected <- readRDS(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00.notransform.rds"))
+  expect_equal(df, df_expected)
+  
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=T)
   expect_equal(nrow(df), 40000)
-  expect_known_hash(df, '77b5c5ecbb')
   expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+  df_expected <- readRDS(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-00-02+00-00.transform.rds"))
+  expect_equal(df, df_expected)
 
   # Good file, compressed
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00")
   expect_equal(nrow(df), 40000)
-  expect_known_hash(df, 'd0c9a83524')
   expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  df_expected <- readRDS(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00.notransform.rds"))
+  expect_equal(df, df_expected)
+
   df <- get.evt.by.file(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00", transform=T)
   expect_equal(nrow(df), 40000)
-  expect_known_hash(df, 'd8d5667a31')
   expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+  df_expected <- readRDS(file.path(x$evt.input.dir, "2014_185/2014-07-04T00-03-02+00-00.transform.rds"))
+  expect_equal(df, df_expected)
 
   # Two EVT files at once
   df <- get.evt.by.file(x$evt.input.dir, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"))
