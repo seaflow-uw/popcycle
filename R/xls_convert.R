@@ -148,19 +148,192 @@ xls_convert <- function(db, meta, path) {
                           var_comment = c(rep('none',4),
                                           rep('uncurated data broadcasted by the ship (as is).',3),
                                           'interval confidence for OPP filtration (2.5 = conservative approach; 50 = standard approach; 97.5 = permissive approach); see https://github.com/armbrustlab/seaflow-filter for more details.',
-                                          'prochloro (Prochlorococcus-like particles) synecho (Synechococcus-like particles) picoeuk (picoeukaryotes-like particles) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles).',
-                                          'mean of chlorophyll fluorescence distribution (collected using a 692-40 bandpass filter).',
-                                          'mean of phycoerythrin fluorescence distribution (collected using a 572-27 bandpass filter).',
-                                          'mean of forward angle light scatter distribution (collected using a 457-50 bandpass filter).',
+                                          'prochloro (Prochlorococcus) synecho (Synechococcus) picoeuk (picoeukaryote phytoplankton) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles).',
+                                          'mean of chlorophyll fluorescence (collected using a 692-40 bandpass filter).',
+                                          'mean of phycoerythrin fluorescence (collected using a 572-27 bandpass filter).',
+                                          'mean of forward angle light scatter (collected using a 457-50 bandpass filter).',
                                           'lower bound of mean equivalent spherical cell diameter based on Mie theory using an index of refraction of 1.35 for phytoplankton, see https://github.com/armbrustlab/fsc-size-calibration for more details.',
                                           'middle value of mean cell diameter based on Mie theory using an index of refraction of 1.38 for phytoplankton, see https://github.com/armbrustlab/fsc-size-calibration for more details.',
                                           'upper bound of mean cell diameter based on Mie theory using an index of refraction of 1.41 for phytoplankton, see https://github.com/armbrustlab/fsc-size-calibration for more details.',
-                                          'lower bound of mean carbon quota based on the equation fgC cell-1 = 0.216 x Volume ^ 0.939, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
-                                          'middle value of mean carbon quota based on the equation fgC cell-1 = 0.216 x Volume ^ 0.939, assuming spherical particle;  see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
-                                          'upper bound of mean carbon quota based on the equation fgC cell-1 = 0.216 x Volume ^ 0.939, assuming spherical particle;  see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
+                                          'mean cellular carbon content based on the equation fgC cell-1 = 0.216 x Volume^0.939, where Volume is calculated from the lower bound of cell diameter, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
+                                          'mean cellular carbon content based on the equation fgC cell-1 = 0.216 x Volume^0.939, where Volume is calculated from the middle value of cell diameter, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
+                                          'mean cellular carbon content based on the equation fgC cell-1 = 0.216 x Volume^0.939, where Volume is calculated from the upper bound of cell diameter, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
                                           'cell abundance, see https://github.com/armbrustlab/seaflow-virtualcore for more details.',
                                           'standard error of cell abundance based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/armbrustlab/seaflow-virtualcore for more details.',
-                                          'outliers (0 = Quality data; 1 = issue related to instrument performance; 2 = issue related to OPP filtration; 3 = issue related to population classification); see Jupiter notebook provided with the dataset for more details.'
+                                          'outliers (0 = Quality data; 1 = issue related to instrument performance; 2 = issue related to OPP filtration; 3 = issue related to population classification).'
+                                          )
+                        )
+
+
+      openxlsx::write.xlsx(x=list(data, dataset_meta_data, vars_meta_data), file=path, sheetName=c('data','dataset_meta_data','vars_meta_data'))
+
+}
+
+
+
+#' Merge multiple 'xlsx' table and convert it to XLSX format.
+#'
+#' @param list list of xlsx tables created by popcycle::xls_convert().
+#' @param path Path to save the merged XLSX file.
+#' @return None
+#' @examples
+#' \dontrun{
+#' xls_merge(list, path)
+#' }
+#' @export
+
+xls_merge <- function(list, path) {
+
+  data <- NULL
+  for(file in list){
+    cruise <- basename(dirname(file))
+    print(cruise)
+    stat <- openxlsx::read.xlsx(file, sheet=1)
+    stat$cruise <- cruise
+    source <- openxlsx::read.xlsx(file, sheet=2)$dataset_source
+    stat$serial <- as.numeric(gsub("[^0-9]", "", source))
+    data <- rbind(data, stat)
+    }
+
+    # Order dataframe
+    data <- data[,c('cruise','serial','time','lat','lon','depth','temp','salinity','par',
+                    'quantile','pop','chl_small','pe','fsc_small',
+                    'diam_lwr','diam_mid','diam_upr','Qc_lwr','Qc_mid','Qc_upr',
+                    'abundance', 'abundance.se','flag')]
+
+    #official cruise name
+
+    dataset_meta_data <- dplyr::tibble(
+                          dataset_short_name = paste0('SeaFlow_merged_',as.Date(Sys.time())),
+                          dataset_long_name = paste0('SeaFlow_merged',as.Date(Sys.time())),
+                          dataset_version = 'v1.0',
+                          dataset_release_date = as.Date(Sys.time()),
+                          dataset_make = 'observation',
+                          dataset_doi = 'https://doi.org/10.5281/zenodo.XXXXX',
+                          dataset_description = 'SeaFlow data generated by University of Washington / Armbrust lab (ribalet@uw.edu). Visit https://armbrustlab.ocean.washington.edu/tools/seaflow for more information about the SeaFlow project',
+                          dataset_references = 'Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData'
+                          )
+
+
+    vars_meta_data <- dplyr::tibble(
+                          var_short_name = names(data),
+                          var_long_name = c('cruise name',
+                                            'instrument serial number',
+                                            'time of sample collection (UTC)',
+                                            'latitude',
+                                            'longitude',
+                                            'depth of the flow-through seawater system',
+                                            'sea surface temperature',
+                                            'sea surface salinity',
+                                            'sea surface solar irradience',
+                                            'quantile',
+                                            'population',
+                                            'mean of chlorophyll fluorescence distribution',
+                                            'mean of phycoerythrin fluorescence distribution',
+                                            'mean of the forward light scatter distribution',
+                                            'lower bound of mean equivalent spherical particle diameter',
+                                            'middle value of mean equivalent spherical particle diameter',
+                                            'upper bound of mean equivalent spherical particle diameter',
+                                            'lower bound of mean cellular carbon content',
+                                            'middle value of mean cellular carbon content',
+                                            'upper bound of mean cellular carbon content',
+                                            'cell abundance',
+                                            'standard error of cell abundance',
+                                            'outliers'
+                                          ),
+                          var_standard_name = c('cruise name based on Rolling Deck to Repository',
+                                            'instrument serial number',
+                                            'time',
+                                            'latitude',
+                                            'longitude',
+                                            'depth',
+                                            'sea surface temperature',
+                                            'sea surface salinity',
+                                            'sea surface solar irradiance',
+                                            'quantile',
+                                            'none',
+                                            'TBD',
+                                            'TBD',
+                                            'TBD',
+                                            'lower bound of mean equivalent spherical particle diameter',
+                                            'middle value of mean equivalent spherical particle diameter',
+                                            'upper bound of mean equivalent spherical particle diameter',
+                                            'lower bound of mean cellular carbon content',
+                                            'middle value of mean cellular carbon content',
+                                            'upper bound of mean cellular carbon content',
+                                            'cell concentration',
+                                            'standard error of cell aconcentration',
+                                            'status flag'
+                                          ),
+                          var_sensor = c('none','none', 'none',rep('data broadcasted by ship', 2), 'none' ,rep('data broadcasted by ship', 3), rep(paste0('SeaFlow instrument'),14)),
+                          var_unit = c('unitless',
+                                        'unitless',
+                                        '%Y-%m-%dT%H:%M:%S',
+                                        'decimal degree North',
+                                        'decimal degree East',
+                                        'm',
+                                        'deg C',
+                                        'psu',
+                                        'micromol photons m-2 s-1',
+                                        'percent',
+                                        'unitless',
+                                        'unitless',
+                                        'unitless',
+                                        'unitless',
+                                        'micrometer',
+                                        'micrometer',
+                                        'micrometer',
+                                        'picogram carbon per cell',
+                                        'picogram carbon per cell',
+                                        'picogram carbon per cell',
+                                        'cells per microliter',
+                                        'cells per microliter',
+                                        'unitless'
+                                      ),
+                          var_spatial_res = 'irregular',
+                          var_temporal_res = '3 minutes',
+                          var_missing_value = 'NA',
+                          var_discipline = c(rep('none', 6),
+                                             rep('physics+abiotic', 3),
+                                             rep('optics+cytometry+SeaFlow',5),
+                                             rep('biology+biogeochemistry+optics+cytometry+SeaFlow',8),
+                                             'none'
+                                           ),
+                          var_keywords =c('cruise+expedition+transect',
+                                          'instrument+serial+SeaFlow',
+                                          'time+UTC+date',
+                                          'latitude',
+                                          'longitude',
+                                          'depth+pressure',
+                                          'temperature+sst',
+                                          'salinity+sss',
+                                          'light+irradiance+PAR',
+                                          'interval+confidence',
+                                          'Prochlorococcus+Synechococcus+Crocosphaera+picoeukaryotes+phytoplankton+picophytoplankton',
+                                          'red+fluorescence+chlorophyll',
+                                          'orange+fluorescence+phycoerythrin+pe',
+                                          'forward+angle+light+scatter+FSC+FALS',
+                                          rep('size+diameter',3),
+                                          rep('quotas+carbon+biomass+POC',3),
+                                          rep('abundance+concentration+density',2),
+                                          'none'
+                                           ),
+                          var_comment = c(rep('none',6),
+                                          rep('uncurated data broadcasted by the ship (as is).',3),
+                                          'interval confidence for OPP filtration (2.5 = conservative approach; 50 = standard approach; 97.5 = permissive approach); see https://github.com/armbrustlab/seaflow-filter for more details.',
+                                          'prochloro (Prochlorococcus) synecho (Synechococcus) picoeuk (picoeukaryote phytoplankton) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles).',
+                                          'mean of chlorophyll fluorescence (collected using a 692-40 bandpass filter).',
+                                          'mean of phycoerythrin fluorescence (collected using a 572-27 bandpass filter).',
+                                          'mean of forward angle light scatter (collected using a 457-50 bandpass filter).',
+                                          'lower bound of mean equivalent spherical cell diameter based on Mie theory using an index of refraction of 1.35 for phytoplankton, see https://github.com/armbrustlab/fsc-size-calibration for more details.',
+                                          'middle value of mean cell diameter based on Mie theory using an index of refraction of 1.38 for phytoplankton, see https://github.com/armbrustlab/fsc-size-calibration for more details.',
+                                          'upper bound of mean cell diameter based on Mie theory using an index of refraction of 1.41 for phytoplankton, see https://github.com/armbrustlab/fsc-size-calibration for more details.',
+                                          'mean cellular carbon content based on the equation fgC cell-1 = 0.216 x Volume^0.939, where Volume is calculated from the lower bound of cell diameter, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
+                                          'mean cellular carbon content based on the equation fgC cell-1 = 0.216 x Volume^0.939, where Volume is calculated from the middle value of cell diameter, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
+                                          'mean cellular carbon content based on the equation fgC cell-1 = 0.216 x Volume^0.939, where Volume is calculated from the upper bound of cell diameter, assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details.',
+                                          'cell abundance, see https://github.com/armbrustlab/seaflow-virtualcore for more details.',
+                                          'standard error of cell abundance based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/armbrustlab/seaflow-virtualcore for more details.',
+                                          'outliers (0 = Quality data; 1 = issue related to instrument performance; 2 = issue related to OPP filtration; 3 = issue related to population classification).'
                                           )
                         )
 
