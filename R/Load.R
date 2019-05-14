@@ -121,7 +121,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
     expected.bytes <- n.events * column.size
     integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
     received.bytes <- length(integer.vector) * column.size
-    
+
     # Now read any data left. There shouldn't be any.
     while (TRUE) {
       extra.bytes <- readBin(con, "integer", n = 8192, size = 1, signed = FALSE, endian = "little")
@@ -208,24 +208,58 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   close(con)
 }
 
-#' Concatenate EVT or OPP files
+#' Concatenate EVT files
 #'
-#' @param evtopp.list List of EVT or OPP files (full path required).
+#' @param evt.list List of EVT files.
+#' @param evt.dir Path to EVT files.
 #' @param n Number of rows to return.
 #' @param min.fsc, min.pe, min.chl Minimum value for fsc_small, pe and chl_small respectively
 #' @return A dataframe with n rows.
 #' @export
-concatenate.evtopp <- function(evtopp.list, n=100000, min.fsc=0, min.pe=0, min.chl=0, transform=TRUE,...){
+concatenate.evt <- function(evt.list, evt.dir, n=100000, min.fsc=0, min.pe=0, min.chl=0, transform=TRUE,...){
   n <- as.numeric(n)
   DF <- NULL
   i <- 0
-  for (file in evtopp.list){
-        message(round(100*i/length(evtopp.list)), "% completed \r", appendLF=FALSE)
+  for (file in evt.list){
+        message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
 
         tryCatch({
-          df <- readSeaflow(file,transform=transform,...)
+          df <- get.evt.by.file(evt.dir, file, transform=transform)
           df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
-          df <- df[round(seq(1,nrow(df), length.out=round(n/length(evtopp.list)))),]
+          df <- df[round(seq(1,nrow(df), length.out=round(n/length(evt.list)))),]
+
+            if(any(is.na(df))) next
+            DF <- rbind(DF, df)
+            }, error = function(e) {
+              cat(paste0("Error with file ", file, ": ", e))
+          })
+
+          i <- i + 1
+          flush.console()
+          }
+
+      return(DF)
+}
+
+#' Concatenate OPP files
+#'
+#' @param opp.list List of OPP files.
+#' @param opp.dir Path to OPP files.
+#' @param n Number of rows to return.
+#' @param min.fsc, min.pe, min.chl Minimum value for fsc_small, pe and chl_small respectively
+#' @return A dataframe with n rows.
+#' @export
+concatenate.opp <- function(opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0, min.chl=0, transform=TRUE,...){
+  n <- as.numeric(n)
+  DF <- NULL
+  i <- 0
+  for (file in opp.list){
+        message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
+
+        tryCatch({
+          df <- get.opp.by.file(opp.dir, file, transform=transform)
+          df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
+          df <- df[round(seq(1,nrow(df), length.out=round(n/length(opp.list)))),]
 
             if(any(is.na(df))) next
             DF <- rbind(DF, df)

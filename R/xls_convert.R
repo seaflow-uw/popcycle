@@ -61,9 +61,9 @@ xls_convert <- function(db, meta, path) {
                                             'sea surface solar irradience',
                                             'quantile',
                                             'population',
-                                            'mean of chlorophyll fluorescence distribution',
-                                            'mean of phycoerythrin fluorescence distribution',
-                                            'mean of the forward light scatter distribution',
+                                            'mean of chlorophyll fluorescence',
+                                            'mean of phycoerythrin fluorescence',
+                                            'mean of the forward scatter',
                                             'lower bound of mean equivalent spherical particle diameter',
                                             'middle value of mean equivalent spherical particle diameter',
                                             'upper bound of mean equivalent spherical particle diameter',
@@ -81,7 +81,7 @@ xls_convert <- function(db, meta, path) {
                                             'sea surface temperature',
                                             'sea surface salinity',
                                             'sea surface solar irradiance',
-                                            'quantile',
+                                            'OPP confidence interval',
                                             'none',
                                             'TBD',
                                             'TBD',
@@ -186,7 +186,7 @@ xls_merge <- function(list, path) {
 
   data <- NULL
   for(file in list){
-    cruise <- basename(dirname(file))
+    cruise <- sub('_v1.0.xlsx','',sub('SeaFlow_','',basename(file)))
     print(cruise)
     stat <- openxlsx::read.xlsx(file, sheet=1)
     stat$cruise <- cruise
@@ -226,11 +226,11 @@ xls_merge <- function(list, path) {
                                             'sea surface temperature',
                                             'sea surface salinity',
                                             'sea surface solar irradience',
-                                            'quantile',
+                                            'OPP confidence interval',
                                             'population',
-                                            'mean of chlorophyll fluorescence distribution',
-                                            'mean of phycoerythrin fluorescence distribution',
-                                            'mean of the forward light scatter distribution',
+                                            'mean of chlorophyll fluorescence',
+                                            'mean of phycoerythrin fluorescence',
+                                            'mean of the forward light scatter',
                                             'lower bound of mean equivalent spherical particle diameter',
                                             'middle value of mean equivalent spherical particle diameter',
                                             'upper bound of mean equivalent spherical particle diameter',
