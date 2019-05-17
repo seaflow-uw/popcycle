@@ -1585,6 +1585,12 @@ copy_outlier_table <- function(db_from, db_to) {
   src <- get.outlier.table(db_from)
   dest <- get.outlier.table(db_to)
   joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
+  # So we don't screw anything up and because merge may reorder rows by "by"
+  # column, enforce a common sort order by "file" on both dataframes we'll use
+  # going forward.
+  dest <- dest[order(dest$file), ]
+  joined <- joined[order(joined$file), ]
+
   new_dest_flags <- unlist(lapply(joined$flag.x, function(x) { if (is.na(x)) { 0 } else { x } }))
   # Check that new_dest_flags has the same number of values as dest here
   if (nrow(dest) != length(new_dest_flags)) {
