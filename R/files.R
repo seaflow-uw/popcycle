@@ -238,6 +238,9 @@ select_files_in <- function(files, keep) {
 #' @export
 get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
                             transform=TRUE, vct.dir=NULL, pop=NULL) {
+  if (length(file.name) == 0) {
+    return(empty_opp())
+  }
   file.name.clean <- unlist(lapply(file.name, clean.file.path))
   opp.files <- paste0(file.name.clean, ".opp")
 
@@ -344,4 +347,28 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
   }
   vct <- read.table(con, col.names=c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop"))
   return(vct)
+}
+
+#' Create an empty EVT data frame
+#'
+#' @return EVT data frame with no rows
+#' @examples
+#' \dontrun{
+#' evt <- empty_evt()
+#' }
+empty_evt <- function() {
+  df <- data.frame(matrix(ncol = length(EVT.HEADER), nrow = 0))
+  colnames(df) <- EVT.HEADER
+  return(df)
+}
+
+#' Create an empty OPP data frame
+#'
+#' @return OPP data frame with no rows
+#' @examples
+#' \dontrun{
+#' evt <- empty_opp()
+#' }
+empty_opp <- function() {
+  return(empty_evt())
 }

@@ -330,6 +330,7 @@ get.opp.stats.by.file <- function(db, file.name) {
 #' @param db SQLite3 data file path.
 #' @param start.date Start date in format YYYY-MM-DD HH:MM.
 #' @param end.date End date in format YYYY-MM-DD HH:MM.
+#' @param outliers If TRUE, remove data flaged as outliers
 #' @return Data frame of OPP aggregate statistics for all files between
 #'   start.date and end.date inclusive.
 #' @examples
@@ -337,7 +338,7 @@ get.opp.stats.by.file <- function(db, file.name) {
 #' opp.stats <- get.opp.stats.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
 #' }
 #' @export
-get.opp.stats.by.date <- function(db, start.date, end.date) {
+get.opp.stats.by.date <- function(db, start.date, end.date, outliers=TRUE) {
   check.for.populated.sfl(db)
   sql <- paste0(
     "SELECT sfl.date, opp.*\n",
@@ -345,11 +346,17 @@ get.opp.stats.by.date <- function(db, start.date, end.date) {
     "INNER JOIN opp ON sfl.file == opp.file\n",
     opp_quantile_inner_join_clause(),
     "INNER JOIN outlier ON sfl.file == outlier.file\n",
-    "WHERE outlier.flag == ", FLAG_OK, "\n",
-    "AND\n",
-    sfl_date_where_clause(start.date, end.date),
-    "ORDER BY sfl.date ASC"
+    "WHERE\n",
+    sfl_date_where_clause(start.date, end.date)
   )
+  if (outliers) {
+    sql <- paste0(
+      sql,
+      "AND\n",
+      "outlier.flag == ", FLAG_OK, "\n"
+    )
+  }
+  sql <- paste0(sql,  "ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
 }
@@ -386,6 +393,7 @@ get.vct.stats.by.file <- function(db, file.name) {
 #' @param db SQLite3 data file path.
 #' @param start.date Start date in format YYYY-MM-DD HH:MM.
 #' @param end.date End date in format YYYY-MM-DD HH:MM.
+#' @param outliers If TRUE, remove data flaged as outliers
 #' @return Data frame of VCT aggregate statistics for all files between
 #'   start.date and end.date inclusive.
 #' @examples
@@ -393,7 +401,7 @@ get.vct.stats.by.file <- function(db, file.name) {
 #' vct.stats <- get.vct.stats.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
 #' }
 #' @export
-get.vct.stats.by.date <- function(db, start.date, end.date) {
+get.vct.stats.by.date <- function(db, start.date, end.date, outliers=TRUE) {
   check.for.populated.sfl(db)
   sql <- paste0(
     "SELECT sfl.date, vct.*\n",
@@ -401,11 +409,17 @@ get.vct.stats.by.date <- function(db, start.date, end.date) {
     "INNER JOIN vct on sfl.file == vct.file\n",
     opp_quantile_inner_join_clause(),
     "INNER JOIN outlier ON sfl.file == outlier.file\n",
-    "WHERE outlier.flag == ", FLAG_OK, "\n",
-    "AND\n",
-    sfl_date_where_clause(start.date, end.date),
-    "ORDER BY sfl.date ASC"
+    "WHERE\n",
+    sfl_date_where_clause(start.date, end.date)
   )
+  if (outliers) {
+    sql <- paste0(
+      sql,
+      "AND\n",
+      "outlier.flag == ", FLAG_OK, "\n"
+    )
+  }
+  sql <- paste0(sql,  "ORDER BY sfl.date ASC")
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
 }
@@ -441,7 +455,7 @@ get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
                             channel=NULL, transform=TRUE, vct.dir=NULL,
                             pop=NULL, outliers=TRUE) {
   if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
-  opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date)
+  opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date, outliers=outliers)
   # Filter for stats for one quantile
   opp.stats <- opp.stats[opp.stats$quantile == quantile, ]
 
