@@ -4,7 +4,7 @@
 \alias{get.opp.stats.by.date}
 \title{Get OPP aggregated filtered particle statistics by date.}
 \usage{
-get.opp.stats.by.date(db, start.date, end.date)
+get.opp.stats.by.date(db, start.date, end.date, outliers = TRUE)
 }
 \arguments{
 \item{db}{SQLite3 data file path.}
@@ -12,6 +12,8 @@ get.opp.stats.by.date(db, start.date, end.date)
 \item{start.date}{Start date in format YYYY-MM-DD HH:MM.}
 
 \item{end.date}{End date in format YYYY-MM-DD HH:MM.}
+
+\item{outliers}{If TRUE, remove data flaged as outliers}
 }
 \value{
 Data frame of OPP aggregate statistics for all files between

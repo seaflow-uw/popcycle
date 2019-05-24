@@ -4,7 +4,7 @@
 \alias{get.vct.stats.by.date}
 \title{Get VCT aggregated per population statistics by date.}
 \usage{
-get.vct.stats.by.date(db, start.date, end.date)
+get.vct.stats.by.date(db, start.date, end.date, outliers = TRUE)
 }
 \arguments{
 \item{db}{SQLite3 data file path.}
@@ -12,6 +12,8 @@ get.vct.stats.by.date(db, start.date, end.date)
 \item{start.date}{Start date in format YYYY-MM-DD HH:MM.}
 
 \item{end.date}{End date in format YYYY-MM-DD HH:MM.}
+
+\item{outliers}{If TRUE, remove data flaged as outliers}
 }
 \value{
 Data frame of VCT aggregate statistics for all files between
