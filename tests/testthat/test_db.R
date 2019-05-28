@@ -99,6 +99,24 @@ test_that("Retrieve OPP stats by date", {
   opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:03", "2014-07-04 00:17")
   expect_equal(opp$file, rep("2014_185/2014-07-04T00-03-02+00-00", 3))
 
+  # With/Without outliers
+  outliers_df <- data.frame( 
+    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
+    flag=c(1, 3),
+    stringsAsFactors=FALSE
+  )
+  save.outliers(x$db.full, outliers_df)
+  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(
+    opp$file,
+    rep("2014_185/2014-07-04T00-00-02+00-00", 3)
+  )
+  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
+  expect_equal(
+    opp$file,
+    c(rep("2014_185/2014-07-04T00-00-02+00-00", 3), rep("2014_185/2014-07-04T00-03-02+00-00", 3))
+  )
+
   tearDown(x)
 })
 
@@ -115,6 +133,24 @@ test_that("Retrieve VCT stats by date", {
   expect_equal(
     vct$file,
     c(rep("2014_185/2014-07-04T00-03-02+00-00", 12))
+  )
+
+  # With/Without outliers
+  outliers_df <- data.frame( 
+    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
+    flag=c(1, 3),
+    stringsAsFactors=FALSE
+  )
+  save.outliers(x$db.full, outliers_df)
+  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(
+    vct$file,
+    rep("2014_185/2014-07-04T00-00-02+00-00", 12)
+  )
+  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
+  expect_equal(
+    vct$file,
+    c(rep("2014_185/2014-07-04T00-00-02+00-00", 12), rep("2014_185/2014-07-04T00-03-02+00-00", 12))
   )
 
   tearDown(x)
@@ -168,6 +204,18 @@ test_that("Retrieve OPP by date", {
                          vct.dir=x$vct.input.dir)
   expect_true("pop" %in% names(opp))
 
+  # With/Without outliers
+  outliers_df <- data.frame( 
+    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
+    flag=c(1, 3),
+    stringsAsFactors=FALSE
+  )
+  save.outliers(x$db.full, outliers_df)
+  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(nrow(opp), 107)
+  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
+  expect_equal(nrow(opp), 289)
+
   tearDown(x)
 })
 
@@ -211,7 +259,7 @@ test_that("Retrieve EVT file names by date", {
 test_that("Copy tables from one db to another", {
   x <- setUp()
 
-  # To test we'll copy vct table from full db to bare db
+  # To test we'll copy vct, metadata, outlier tables from full db to bare db
   metadata_df <- data.frame(
     cruise=c("testcruisenew"),
     inst=c(100),
@@ -219,14 +267,32 @@ test_that("Copy tables from one db to another", {
   )
   reset.table(x$db.bare, "metadata")
   sql.dbWriteTable(x$db.bare, "metadata", metadata_df)
+
+  outliers_df <- data.frame( 
+    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
+    flag=c(1, 3),
+    stringsAsFactors=FALSE
+  )
+  save.outliers(x$db.full, outliers_df)
+  # Need to initialize outlier table in dest db (bare)
+  outliers_df <- data.frame( 
+    file=get.outlier.table(x$db.full)$file,
+    flag=0,
+    stringsAsFactors=FALSE
+  )
+  save.outliers(x$db.bare, outliers_df)
+
   popcycle:::copy_tables(x$db.full, x$db.bare, c("vct", "metadata"))
+  popcycle:::copy_outlier_table(x$db.full, x$db.bare)
   src_vct <- get.vct.table(x$db.full)
   dest_vct <- get.vct.table(x$db.bare)
   src_metadata <- get.meta.table(x$db.full)
   dest_metadata <- get.meta.table(x$db.bare)
+  src_outliers <- get.outlier.table(x$db.full)
+  dest_outliers <- get.outlier.table(x$db.bare)
   expect_equal(dest_vct, src_vct)
   expect_equal(dest_metadata, src_metadata)
-
+  expect_equal(dest_outliers, src_outliers)
   tearDown(x)
 })
 
