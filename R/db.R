@@ -1267,7 +1267,7 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
     stop("save.sfl requires sfl.file")
   }
 
-  args <- c("sfl", "db", "-f", "-d", normalizePath(db), "-i", normalizePath(sfl.file))
+  args <- c("db", "create", "-f", "-d", normalizePath(db), "-i", normalizePath(sfl.file))
   if (! is.null(cruise)) {
     args[length(args)+1] <- "-c"
     args[length(args)+1] <- cruise
