@@ -26,7 +26,7 @@ xls_convert <- function(db, meta, path) {
     data <- data[,c('time','lat','lon','depth','temp','salinity','par',
                     'quantile','pop','chl_small','pe','fsc_small',
                     'diam_lwr','diam_mid','diam_upr','Qc_lwr','Qc_mid','Qc_upr',
-                    'abundance', 'abundance.se','flag')]
+                    'abundance', 'abundance_se','flag')]
 
     #official cruise name
     official.cruise <- paste(meta[which(meta$cruise == cruise),'Cruise ID'])
@@ -199,7 +199,7 @@ xls_merge <- function(list, path) {
     data <- data[,c('cruise','serial','time','lat','lon','depth','temp','salinity','par',
                     'quantile','pop','chl_small','pe','fsc_small',
                     'diam_lwr','diam_mid','diam_upr','Qc_lwr','Qc_mid','Qc_upr',
-                    'abundance', 'abundance.se','flag')]
+                    'abundance', 'abundance_se','flag')]
 
     #official cruise name
 

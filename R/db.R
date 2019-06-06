@@ -710,10 +710,10 @@ get.sfl.table <- function(db) {
 get.opp.table <- function(db) {
   check.for.populated.sfl(db)
   sql <- "
-    SELECT	
-      sfl.date, opp.*	
-    FROM opp	
-    INNER JOIN sfl ON sfl.file == opp.file	
+    SELECT
+      sfl.date, opp.*
+    FROM opp
+    INNER JOIN sfl ON sfl.file == opp.file
     ORDER BY sfl.date ASC"
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
@@ -731,10 +731,10 @@ get.opp.table <- function(db) {
 get.vct.table <- function(db) {
   check.for.populated.sfl(db)
   sql <- "
-    SELECT	
-      sfl.date, vct.*	
-    FROM sfl	
-    INNER JOIN vct ON sfl.file == vct.file	
+    SELECT
+      sfl.date, vct.*
+    FROM sfl
+    INNER JOIN vct ON sfl.file == vct.file
     ORDER BY sfl.date ASC"
   vct <- sql.dbGetQuery(db, sql)
   return(vct)
@@ -1637,17 +1637,17 @@ get.stat.table <- function(db, inst=NULL) {
   fr <- flowrate(stat$stream_pressure, inst=inst)
 
   stat[,"flow_rate"] <- fr[,1]
-  stat[,"flow_rate.se"] <- fr[,2]
+  stat[,"flow_rate_se"] <- fr[,2]
 
   # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
   stat[,c("abundance")]  <- stat[,"n_count"] / (1000* median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
-  stat[,c("abundance.se")]  <- stat[,"abundance"] * stat[,"flow_rate.se"] / stat[,"flow_rate"]           # cells µL-1
+  stat[,c("abundance_se")]  <- stat[,"abundance"] * stat[,"flow_rate_se"] / stat[,"flow_rate"]           # cells µL-1
 
   # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
     id <- which(stat$pop == 'prochloro' | stat$pop == 'synecho')
     if(length(id) > 0){
       stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
-      stat[id,c("abundance.se")]  <- stat[id,"abundance"] * stat[id,"flow_rate.se"] / stat[id,"flow_rate"]           # cells µL-1
+      stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1
     }
 
 
