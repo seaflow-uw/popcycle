@@ -12,7 +12,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager", repos='http://cran.us.r-project.org')
 }
 if (!requireNamespace("flowDensity", quietly = TRUE)) {
-  BiocManager::install("flowDensity", version = "3.8", update=FALSE)
+  BiocManager::install("flowDensity", update=FALSE)
 }
 
 # Install this package and the packages it imports
