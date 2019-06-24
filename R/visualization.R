@@ -146,6 +146,7 @@ plot_vct_cytogram <- function(opp, para.x = 'fsc_small', para.y = 'chl_small', t
 
     if(!any(names(opp) == 'pop')) opp[,'pop'] <- 'unknown'
     if(!any(names(opp) == 'file')) opp[,'file'] <- ''
+    opp$pop <- factor(opp$pop, levels = names(group.colors))
 
     p <- opp %>%
           ggplot2::ggplot() +
@@ -264,13 +265,15 @@ plot_time <- function(stat, param, transform=FALSE){
 
   group.colors <- c(unknown='grey', beads='red3', prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
-  stat <- stat[,c('time',param,'quantile','pop')]
+  stat <- stat[,c('time','par',param,'quantile','pop')]
   stat$time <- as.POSIXct(stat$time,format='%FT%T',tz='GMT')
   stat2 <- tidyr::spread(data=stat, key=quantile, value=param)
-  names(stat2) <- c('time', 'pop','upr','mid','lwr')
+  names(stat2) <- c('time', 'par', 'pop','upr','mid','lwr')
+  stat2$pop <- factor(stat2$pop, levels = names(group.colors))
 
   p <- stat2 %>%
-      ggplot2::ggplot() + ggplot2::geom_linerange(ggplot2::aes(x=time,ymin=lwr, ymax=upr), color='lightgrey') +
+      ggplot2::ggplot() + ggplot2::geom_vline(xintercept=as.POSIXct(ifelse(stat2$par < 5, stat2$time, 0),origin="1970-01-01",tz='GMT'), col='lightgrey',alpha=0.01, lwd=2) +
+      ggplot2::geom_linerange(ggplot2::aes(x=time,ymin=lwr, ymax=upr), color='grey') +
       ggplot2::geom_point(ggplot2::aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
       ggplot2::theme_bw() +
       ggplot2::labs(y=param) +
@@ -303,6 +306,7 @@ plot_histogram <- function(evtopp, para.x = 'fsc_small', binwidth=0.02, transfor
   if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
   if(!any(names(evtopp) == 'pop')) evtopp[,'pop'] <- 'unknown'
   if(!any(names(evtopp) == 'file')) evtopp[,'file'] <- NA
+  evtopp$pop <- factor(evtopp$pop, levels = names(group.colors))
 
     p <- evtopp %>%
         ggplot2::ggplot() + ggplot2::geom_histogram(ggplot2::aes_string(para.x, fill='pop'),binwidth=binwidth, alpha=0.5, color=NA, position=position) +
