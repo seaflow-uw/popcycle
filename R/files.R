@@ -182,20 +182,22 @@ file_transfer <- function(evt.dir, instrument.dir){
 
   id <- match(last.evt, file.list)
 
-  if(is.na(id)){
-    day <- unique(dirname(file.list))
-      for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
-    print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
-    system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
-    system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
-  }
-  else{
-    file.list <- file.list[id:length(file.list)]
-    day <- unique(dirname(file.list))
-      for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
-    print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
-    system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
-    system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
+  if (length(file.list) > 0) {
+    if (is.na(id)) {
+      day <- unique(dirname(file.list))
+        for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
+      print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
+      system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
+      system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
+    }
+    else{
+      file.list <- file.list[id:length(file.list)]
+      day <- unique(dirname(file.list))
+        for(d in day) system(paste0("mkdir ",evt.dir,"/",d))
+      print(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list))
+      system(paste0("scp ",instrument.dir,"/",file.list," ", evt.dir,"/",file.list, collapse=";"))
+      system(paste0("scp ",instrument.dir,"/",sfl.list," ", evt.dir,"/",sfl.list, collapse=";"))
+    }
   }
 }
 
