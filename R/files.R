@@ -21,6 +21,9 @@ get.evt.files <- function(evt.dir) {
   regexp <- "/?[0-9]+\\.evt(\\.gz)?$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}[+-][0-9]{2}-?[0-9]{2}(\\.gz)?$"
   id <- grep(regexp,file.list)
   file.list <- file.list[id]
+  # Only keep files that look like doy/filename. i.e. don't go deeper in the
+  # directory structure, filter out sub/dir/doy/filename
+  file.list <- file.list[lapply(stringr::str_split(file.list, "/"), length) <= 2]
   #print(paste(length(file.list), "evt files found"))
   return(sort(unlist(lapply(file.list, clean.file.path))))
 }
@@ -169,9 +172,13 @@ file_transfer <- function(evt.dir, instrument.dir){
 
   last.evt <- get.latest.evt(evt.dir)
   file.list <- list.files(instrument.dir, recursive=T)
+  # Only keep files that look like doy/filename. i.e. don't go deeper in the
+  # directory structure, filter out sub/dir/doy/filename
+  file.list <- file.list[lapply(stringr::str_split(file.list, "/"), length) <= 2]
   sfl.list <- file.list[grepl('.sfl', file.list)]
-  file.list <- file.list[-length(file.list)] # remove the last file (opened file)
-  file.list <- sort(file.list[!grepl('.sfl', file.list)])
+  # Now get only EVT files, no SFL or anything else
+  file.list <- select_files_in(file.list, get.evt.files(instrument.dir))
+  file.list <- file.list[-length(file.list)] # remove the last EVT file (opened file)
 
   id <- match(last.evt, file.list)
 
