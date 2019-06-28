@@ -1,6 +1,6 @@
 SeaFlow project
 ========
-<img src="./images/cruise-track.png" alt="SeaFlow cruisetracks"	title="SeaFlow cruisetracks" align="left" style="float" width="400">
+<img src="https://github.com/armbrustlab/seaflow-sfl/blob/master/cruise-track.png" alt="SeaFlow cruisetracks"	title="SeaFlow cruisetracks" align="left" style="float" width="400">
 
 [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) is a new environmental flow cytometer designed by the [Armbrust lab](https://armbrustlab.ocean.washington.edu) to be deployed on oceanographic research vessels to continuously monitor photosynthetic microorganisms. Since its first deployment in 2008, the [SeaFlow](https://armbrustlab.ocean.washington.edu/tools/seaflow/) instrument has collected over 200,000 samples in surface waters of the North Pacific and Atlantic Oceans. The geographic distribution of marine phytoplankton, their optical characteristics (size and pigment content), and their dynamics in relation to environmental factors are of major interest to oceanographers. 
 
