@@ -1,0 +1,28 @@
+FROM r-base:3.6.1
+# Install system dependencies for popcycle R package installation
+# Separating this image from the image that installs popcycle + deps allows for
+# smaller pulls after reinstalling new popcycle versions.
+
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libgit2-dev \
+    libssh2-1-dev \
+    libssl-dev \
+    file \
+    libxml2-dev \
+    libgeos-dev \
+    curl \
+    git \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . /src
+WORKDIR /src
+
+RUN curl -sLO  https://github.com/armbrustlab/seaflowpy/releases/latest/download/seaflowpy-linux64 \
+    && chmod +x seaflowpy-linux64 \
+    && mv seaflowpy-linux64 /usr/local/bin/seaflowpy
+
+RUN git clean -fdx \
+    && rm -rf .git \
+    && Rscript install-deps-only.R
