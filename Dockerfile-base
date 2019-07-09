@@ -3,6 +3,8 @@ FROM r-base:3.6.1
 # Separating this image from the image that installs popcycle + deps allows for
 # smaller pulls after reinstalling new popcycle versions.
 
+ARG MAKE_JOBS=4
+
 RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libgit2-dev \
@@ -16,13 +18,13 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /src
-WORKDIR /src
+RUN curl -sL -o /usr/local/bin/seaflowpy https://github.com/armbrustlab/seaflowpy/releases/latest/download/seaflowpy-linux64 \
+    && chmod +x /usr/local/bin/seaflowpy
 
-RUN curl -sLO  https://github.com/armbrustlab/seaflowpy/releases/latest/download/seaflowpy-linux64 \
-    && chmod +x seaflowpy-linux64 \
-    && mv seaflowpy-linux64 /usr/local/bin/seaflowpy
+COPY DESCRIPTION install-deps-only.R NAMESPACE LICENSE /src/
 
-RUN git clean -fdx \
-    && rm -rf .git \
-    && Rscript install-deps-only.R
+WORKDIR /src/
+
+# Allow parallel compilation
+ENV MAKE make -j ${MAKE_JOBS}
+RUN Rscript install-deps-only.R
