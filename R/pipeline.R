@@ -9,19 +9,19 @@
 #' @examples
 #' \dontrun{
 #' evaluate.evt(db, evt.dir, opp.dir, vct.dir,
-#'              '2014_185/2014-07-04T00-00-02+00-00')
+#'              "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
 evaluate.evt <- function(db, evt.dir, opp.dir, vct.dir, evt.file) {
   if (length(evt.file) == 0) {
-    print('No data collected yet.')
+    print("No data collected yet.")
     return()
   }
 
-  print(paste('Analyzing', evt.file))
-  print(paste('Filtering', evt.file))
+  print(paste("Analyzing", evt.file))
+  print(paste("Filtering", evt.file))
   filter.evt.files(db, evt.dir, evt.file, opp.dir)
-  print(paste('Classifying', evt.file))
+  print(paste("Classifying", evt.file))
   classify.opp.files(db, opp.dir, evt.file, vct.dir)
 }
 
@@ -51,7 +51,7 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
   common_dbs <- find_common_dbs(dir_old, dir_new)
 
   if (nrow(common_dbs)) {
-    print(paste0('Found ', nrow(common_dbs), ' common database file(s)'))
+    print(paste0("Found ", nrow(common_dbs), " common database file(s)"))
     print(common_dbs)
 
     # Copy tables needed to reanalyze after refiltering
@@ -59,12 +59,12 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
     for (i in seq(nrow(common_dbs))) {
       common <- common_dbs[i, ]
 
-      print(paste0('Merging ', common$old_path, ' into ', common$new_path))
-      copy_tables(common$old_path, common$new_path, c('metadata','gating', 'poly'))
+      print(paste0("Merging ", common$old_path, " into ", common$new_path))
+      copy_tables(common$old_path, common$new_path, c("metadata","gating", "poly"))
       # Outlier table is a bit trickier and needs its own function
       copy_outlier_table(common$old_path, common$new_path)
 
-      print(paste0('Extracting VCT table from ', common$old_path))
+      print(paste0("Extracting VCT table from ", common$old_path))
       old_vct_table <- get.vct.table(common$old_path)
       # Sometimes a VCT table has entries for OPP files that are not in the
       # latest set of OPP files for that database for whatever reason. Do a
@@ -82,11 +82,11 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       # sorted by ascending date
       joined_vct <- joined_vct[order(joined_vct$date), ]
 
-      print(paste0('Classifying with ', common$new_path))
+      print(paste0("Classifying with ", common$new_path))
       working_dir <- dirname(common$new_path)
       cruise <- get.cruise(common$new_path)
-      opp_dir <- file.path(working_dir, paste0(cruise, '_opp'))
-      vct_dir <- file.path(working_dir, paste0(cruise, '_vct'))
+      opp_dir <- file.path(working_dir, paste0(cruise, "_opp"))
+      vct_dir <- file.path(working_dir, paste0(cruise, "_vct"))
       opp_files <- get.opp.files(common$new_path, outliers=F)
       # Predict diameter, carbon quota, classify
       # diameter call here

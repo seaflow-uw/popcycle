@@ -16,7 +16,7 @@ filter.evt <- function(evt, filter.func, ...) {
   # SANITY CHECKS
   # need same columns for opp
   if (!all(names(evt) == names(filt$opp))) {
-    stop('Filtering function produced OPP with different columns')
+    stop("Filtering function produced OPP with different columns")
   }
 
   return (filt)
@@ -54,9 +54,11 @@ filter.notch <- function(evt, filter.params) {
     stop("More than one width in filter parameters")
   }
   width <- as.numeric(filter.params[1, "width"])
-  
+
   # Filtering out noise
   signal_selector <- evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1
+  # Filtering out particles with saturated  D1 & D2 signal
+  signal_selector <- signal_selector & ((evt$D1 < max(evt$D1)) | (evt$D2 < max(evt$D2)))
   # Filtering aligned particles (D1 = D2)
   aligned_selector <- signal_selector & (evt$D2 < evt$D1 + width) & (evt$D1 < evt$D2 + width)
   # Track which particles are OPP in any quantile
@@ -74,10 +76,10 @@ filter.notch <- function(evt, filter.params) {
     offset.large.D2 <- as.numeric(p$offset.large.D2)
 
     # Filtering focused particles (fsc_small > D + notch)
-    qopp_selector <- (((evt$D1 <= evt$fsc_small * notch.small.D1 + offset.small.D1) & 
-      (evt$D2 <= evt$fsc_small * notch.small.D2 + offset.small.D2)) | 
-      ((evt$D1 <= evt$fsc_small * notch.large.D1 + offset.large.D1) & 
-      (evt$D2 <= evt$fsc_small * notch.large.D2 + offset.large.D2))) & 
+    qopp_selector <- (((evt$D1 <= evt$fsc_small * notch.small.D1 + offset.small.D1) &
+      (evt$D2 <= evt$fsc_small * notch.small.D2 + offset.small.D2)) |
+      ((evt$D1 <= evt$fsc_small * notch.large.D1 + offset.large.D1) &
+      (evt$D2 <= evt$fsc_small * notch.large.D2 + offset.large.D2))) &
       aligned_selector
 
     # Mark focused particles for this quantile in the original EVT dataframe

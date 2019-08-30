@@ -18,7 +18,7 @@ FLAG_INSTRUMENT <- 1L  # stream pressure, event rate
 FLAG_FILTRATION <- 2L  # OPP:EVT, bead scatter
 FLAG_GATING <- 3L      # gating outliers
 
-instrument.id <- '740'
+instrument.id <- "740"
 
-# This package's name
-.pkg.name <- 'popcycle'
+# This package"s name
+.pkg.name <- "popcycle"

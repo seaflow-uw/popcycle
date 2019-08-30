@@ -10,7 +10,7 @@
 #' }
 #' @export
 delete.opp.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM opp WHERE file == '", clean.file.path(file.name), "'")
+  sql <- paste0("DELETE FROM opp WHERE file == "", clean.file.path(file.name), """)
   sql.dbExecute(db, sql)
 }
 
@@ -47,7 +47,7 @@ delete.opp.by.file <- function(opp.dir, file.name) {
 #' }
 #' @export
 delete.outliers.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM outlier WHERE file == '", clean.file.path(file.name), "'")
+  sql <- paste0("DELETE FROM outlier WHERE file == "", clean.file.path(file.name), """)
   sql.dbExecute(db, sql)
 }
 
@@ -62,7 +62,7 @@ delete.outliers.by.file <- function(db, file.name) {
 #' }
 #' @export
 delete.vct.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM vct WHERE file == '", clean.file.path(file.name), "'")
+  sql <- paste0("DELETE FROM vct WHERE file == "", clean.file.path(file.name), """)
   sql.dbExecute(db, sql)
 }
 
@@ -99,7 +99,7 @@ delete.vct.by.file <- function(vct.dir, file.name) {
 #' }
 #' @export
 delete.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("DELETE FROM filter WHERE id == '", filter.id, "'")
+  sql <- paste0("DELETE FROM filter WHERE id == "", filter.id, """)
   sql.dbExecute(db, sql)
 }
 
@@ -116,7 +116,7 @@ delete.filter.params.by.id <- function(db, filter.id) {
 #' }
 #' @export
 delete.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("DELETE FROM gating WHERE id == '", gating.id, "'")
+  sql <- paste0("DELETE FROM gating WHERE id == "", gating.id, """)
   sql.dbExecute(db, sql)
   delete.poly.by.id(db, gating.id)
 }
@@ -134,7 +134,7 @@ delete.gating.params.by.id <- function(db, gating.id) {
 #' }
 #' @export
 delete.poly.by.id <- function(db, gating.id) {
-  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "'")
+  sql <- paste0("DELETE FROM poly WHERE gating_id == "", gating.id, """)
   sql.dbExecute(db, sql)
 }
 
@@ -152,7 +152,7 @@ delete.poly.by.id <- function(db, gating.id) {
 #' }
 #' @export
 delete.poly.by.id.pop <- function(db, gating.id, popname) {
-  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "' AND pop == '", popname, "'")
+  sql <- paste0("DELETE FROM poly WHERE gating_id == "", gating.id, "" AND pop == "", popname, """)
   sql.dbExecute(db, sql)
 }
 
@@ -317,7 +317,7 @@ get.opp.stats.by.file <- function(db, file.name) {
     sfl
   INNER JOIN opp ON sfl.file == opp.file
   WHERE
-    opp.file == '", clean.file.path(file.name), "'
+    opp.file == "", clean.file.path(file.name), ""
   ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
@@ -379,7 +379,7 @@ get.vct.stats.by.file <- function(db, file.name) {
     SELECT sfl.date, vct.*
     FROM sfl
     INNER JOIN vct on sfl.file == vct.file
-    WHERE vct.file == '", clean.file.path(file.name), "'
+    WHERE vct.file == "", clean.file.path(file.name), ""
     ORDER BY sfl.date ASC
   ")
   vct <- sql.dbGetQuery(db, sql)
@@ -516,7 +516,7 @@ get.filter.params.latest <- function(db) {
 #' }
 #' @export
 get.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("SELECT * FROM filter WHERE id = '", filter.id, "' ORDER BY quantile")
+  sql <- paste0("SELECT * FROM filter WHERE id = "", filter.id, "" ORDER BY quantile")
   result <- sql.dbGetQuery(db, sql)
   # DB column names have underscores due to sqlite column naming restrictions.
   # To get this dataframe to match filter parameter column names used
@@ -562,7 +562,7 @@ get.gating.params.latest <- function(db) {
 #' }
 #' @export
 get.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("SELECT * FROM gating WHERE id = '", gating.id, "' ORDER BY pop_order ASC")
+  sql <- paste0("SELECT * FROM gating WHERE id = "", gating.id, "" ORDER BY pop_order ASC")
   gating.df <- sql.dbGetQuery(db, sql)
   if (nrow(gating.df) == 0) {
     stop(paste0("No entry found in gating table for ", gating.id))
@@ -610,9 +610,9 @@ get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
   sql <- paste0("
     SELECT * FROM poly
     WHERE
-      gating_id = '", gating.id, "'
+      gating_id = "", gating.id, ""
       AND
-      pop = '", popname, "'
+      pop = "", popname, ""
     ORDER BY point_order"
   )
   pop.poly <- sql.dbGetQuery(db, sql)
@@ -690,8 +690,8 @@ get.meta.table <- function(db) {
 #' }
 #' @export
 get.sfl.table <- function(db) {
-  # Don't check for populated SFL table here since it should be obvious
-  # if it's populated by result. Also, this would lead to infinite recursion
+  # Don"t check for populated SFL table here since it should be obvious
+  # if it"s populated by result. Also, this would lead to infinite recursion
   # since check.for.populated.sfl calls this function.
   sql <- "SELECT * FROM sfl ORDER BY date ASC"
   sfl <- sql.dbGetQuery(db, sql)
@@ -946,26 +946,52 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
     dplyr::summarise(
       file=clean.file.path(file.name),
       count=dplyr::n(),
-      chl_small=mean(chl_small),
-      pe=mean(pe),
-      fsc_small=mean(fsc_small),
-      diam_lwr=mean(diam_lwr),
-      diam_mid=mean(diam_mid),
-      diam_upr=mean(diam_upr),
-      Qc_lwr=mean(Qc_lwr),
-      Qc_mid=mean(Qc_mid),
-      Qc_upr=mean(Qc_upr),
+      chl_1q= as.numeric(quantile(chl_small, 0.25)),
+      chl_med= as.numeric(quantile(chl_small, 0.5)),
+      chl_3q= as.numeric(quantile(chl_small, 0.75)),
+      pe_1q= as.numeric(quantile(pe, 0.25)),
+      pe_med= as.numeric(quantile(pe, 0.5)),
+      pe_3q= as.numeric(quantile(pe, 0.75)),
+      fsc_1q= as.numeric(quantile(fsc_small, 0.25)),
+      fsc_med= as.numeric(quantile(fsc_small, 0.5)),
+      fsc_3q= as.numeric(quantile(fsc_small, 0.75)),
+      diam_lwr_1q= as.numeric(quantile(diam_lwr, 0.25)),
+      diam_lwr_med= as.numeric(quantile(diam_lwr, 0.5)),
+      diam_lwr_3q= as.numeric(quantile(diam_lwr, 0.75)),
+      diam_mid_1q= as.numeric(quantile(diam_mid, 0.25)),
+      diam_mid_med= as.numeric(quantile(diam_mid, 0.5)),
+      diam_mid_3q= as.numeric(quantile(diam_mid, 0.75)),
+      diam_upr_1q= as.numeric(quantile(diam_upr, 0.25)),
+      diam_upr_med= as.numeric(quantile(diam_upr, 0.5)),
+      diam_upr_3q= as.numeric(quantile(diam_upr, 0.75)),
+      Qc_lwr_1q= as.numeric(quantile(Qc_lwr, 0.25)),
+      Qc_lwr_med= as.numeric(quantile(Qc_lwr, 0.5)),
+      Qc_lwr_mean= mean(Qc_lwr),
+      Qc_lwr_3q= as.numeric(quantile(Qc_lwr, 0.75)),
+      Qc_mid_1q= as.numeric(quantile(Qc_mid, 0.25)),
+      Qc_mid_med= as.numeric(quantile(Qc_mid, 0.5)),
+      Qc_mid_mean= mean(Qc_mid),
+      Qc_mid_3q= as.numeric(quantile(Qc_mid, 0.75)),
+      Qc_upr_1q= as.numeric(quantile(Qc_upr, 0.25)),
+      Qc_upr_med= as.numeric(quantile(Qc_upr, 0.5)),
+      Qc_upr_mean= mean(Qc_upr),
+      Qc_upr_3q= as.numeric(quantile(Qc_upr, 0.75)),
       gating_id=gating.id,
       filter_id=filter.id,
       quantile=quantile
     )
-  cols <- c(
-    "file", "pop", "count",
-    "chl_small","pe","fsc_small",
-    "diam_lwr","diam_mid","diam_upr",
-    "Qc_lwr","Qc_mid","Qc_upr",
-    "gating_id", "filter_id", "quantile"
-  )
+  cols <- c( "file", ,"pop", "count",
+             "chl_1q","chl_med", "chl_3q"
+             "pe_1q","pe_med", "pe_3q"
+             "fsc_1q","fsc_med", "fsc_3q"
+             "diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
+             "diam_mid_1q","diam_mid_med","diam_mid_3q",
+             "diam_upr_1q","diam_upr_med","diam_upr_3q",
+             "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
+             "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
+             "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
+             "gating_id", "filter_id", "quantile")
+
   df.reorder <- as.data.frame(df)[cols]
   sql.dbWriteTable(db, name="vct", value=df.reorder)
 }
@@ -987,7 +1013,13 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
 save.vct.file <- function(vct, vct.dir, file.name, quantile) {
   # Make sure we define the order here in case it changes somewhere upstream.
   # This should match the column order defined wherever vct files are read.
-  vct <- vct[, c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop")]
+  vct <- vct[, c("diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
+                 "diam_mid_1q","diam_mid_med","diam_mid_3q",
+                 "diam_upr_1q","diam_upr_med","diam_upr_3q",
+                 "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
+                 "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
+                 "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
+                 "pop")]
   vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
   dir.create(dirname(vct.file), showWarnings=F, recursive=T)
   con <- gzfile(vct.file, "w")
@@ -1086,7 +1118,7 @@ save.outliers <- function(db, table.name) {
   for (i in 1:nrow(table.name)) {
     # Upsert!
     sql <- paste0("
-      INSERT OR REPLACE INTO outlier(file,flag) VALUES('", table.name$file[i], "',", table.name$flag[i], ")
+      INSERT OR REPLACE INTO outlier(file,flag) VALUES("", table.name$file[i], "",", table.name$flag[i], ")
     ")
     sql.dbExecute(db, sql)
   }
@@ -1335,7 +1367,7 @@ sfl_date_where_clause <- function(start.date, end.date) {
 #'
 #' Return a SQL string with an INNER JOIN to a subquery selecting for OPP files
 #' that contain data in all quantiles. The benefit of making this a subquery is
-#' the GROUP BY doesn't affect the rest of the SQL query this JOIN is embedded
+#' the GROUP BY doesn"t affect the rest of the SQL query this JOIN is embedded
 #' into.
 #'
 #' @return SQL INNER JOIN string
@@ -1404,7 +1436,7 @@ sql.dbGetQuery <- function(db, sql) {
 #' @return Number of rows affected
 #' @examples
 #' \dontrun{
-#' sql.dbExecute(db, "DELETE FROM vct WHERE file == 'somefile'")
+#' sql.dbExecute(db, "DELETE FROM vct WHERE file == "somefile"")
 #' }
 #' @export
 sql.dbExecute <- function(db, sql) {
@@ -1598,8 +1630,8 @@ copy_outlier_table <- function(db_from, db_to) {
   src <- get.outlier.table(db_from)
   dest <- get.outlier.table(db_to)
   joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
-  # So we don't screw anything up and because merge may reorder rows by "by"
-  # column, enforce a common sort order by "file" on both dataframes we'll use
+  # So we don"t screw anything up and because merge may reorder rows by "by"
+  # column, enforce a common sort order by "file" on both dataframes we"ll use
   # going forward.
   dest <- dest[order(dest$file), ]
   joined <- joined[order(joined$file), ]
@@ -1610,8 +1642,8 @@ copy_outlier_table <- function(db_from, db_to) {
     stop("copy_outlier_table produced an incorrect result")
   }
   dest$flag <- as.integer(new_dest_flags)
-  reset.table(db_to, 'outlier')
-  sql.dbWriteTable(db_to, name='outlier', value=dest)
+  reset.table(db_to, "outlier")
+  sql.dbWriteTable(db_to, name="outlier", value=dest)
 }
 
 #' Get aggregate statistics data frame along with estimates of cell abundance.
@@ -1642,8 +1674,8 @@ get.stat.table <- function(db, inst=NULL) {
   stat[,c("abundance")]  <- stat[,"n_count"] / (1000* median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
   stat[,c("abundance_se")]  <- stat[,"abundance"] * stat[,"flow_rate_se"] / stat[,"flow_rate"]           # cells µL-1
 
-  # If Prochlorococcus present, abundance is calculated based on individual opp_evt ratio (each file), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
-    id <- which(stat$pop == 'prochloro' | stat$pop == 'synecho')
+  # If Prochlorococcus or Synechococcus present, abundance is calculated based on individual opp_evt ratio (based on each file, not the median), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
+    id <- which(stat$pop == "prochloro" | stat$pop == "synecho")
     if(length(id) > 0){
       stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
       stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1

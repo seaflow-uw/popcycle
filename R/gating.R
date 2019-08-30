@@ -5,7 +5,7 @@
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param poly.log Named list of gating polygon definitions. If a definition for
-#'   popname already exists it will be updated. If it doesn't exist it will be
+#'   popname already exists it will be updated. If it doesn"t exist it will be
 #'   appended to the end to the list. If poly.log is NULL a new list will be
 #'   created.
 #' @return Version of poly.log with a new polygon defintion for popname.
@@ -48,7 +48,7 @@ set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param gates.log Per population named list of classification parameters. If
-#'   a definition for popname already exists it will be updated. If it doesn't
+#'   a definition for popname already exists it will be updated. If it doesn"t
 #'   exist it will be appended to the end to the list. If NULL, a new list will
 #'   be created.
 #' @return gates.log with a new polygon defintion for popname.
@@ -91,7 +91,7 @@ add.manual.classification <- function(opp, popname, para.x, para.y, gates.log=NU
 #' @param scale scale parameter to FlowDensity
 #' @param min.pe Only consider partciesl with pe > min.pe
 #' @param gates.log Per population named list of classification parameters. If
-#'   a definition for popname already exists it will be updated. If it doesn't
+#'   a definition for popname already exists it will be updated. If it doesn"t
 #'   exist it will be appended to the end to the list. If NULL, a new list will
 #'   be created.
 #' @return gates.log with a new FlowDensity func call parameter set for popname
@@ -223,7 +223,7 @@ auto.classify <- function(opp, params, popname) {
   }
 
   if (is.null(params)) {
-    stop(paste0("No gate parameters found for ", popname))
+    stop(paste("No gate parameters found for", popname))
   }
 
   # Only keep selected unknow pop rows and remove pop column
@@ -243,7 +243,7 @@ auto.classify <- function(opp, params, popname) {
                                         position=params$position,
                                         gates=params$gates, ellip.gate=TRUE,
                                         scale=params$scale)
-    opp[row.names(x[labeled@index,]),'pop'] <- popname
+    opp[row.names(x[labeled@index,]),"pop"] <- popname
   }
 
   return(opp)
@@ -254,7 +254,7 @@ auto.classify <- function(opp, params, popname) {
 #' Classify particles from an OPP dataframe using a gating scheme provided by gates.log.
 #'
 #' @param opp SQLite3 database file path.
-#' @param gates.log A gating scheme from the function 'add.manual.classification()' or 'add.auto.classification()'
+#' @param gates.log A gating scheme from the function "add.manual.classification()" or "add.auto.classification()"
 #' @return List of per particle classifications
 #' @examples
 #' \dontrun{
@@ -269,7 +269,7 @@ classify.opp <- function(opp, gates.log) {
     } else if (params$method == "auto") {
       opp <- auto.classify(opp, params, popname)
     } else {
-      stop(paste0("unrecognized classification method in classify.opp ", params$method))
+      stop(paste("unrecognized classification method in classify.opp", params$method))
     }
   }
   if (! is.null(opp$pop)) {
@@ -304,13 +304,13 @@ classify.opp <- function(opp, gates.log) {
 classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
                                gating.id=NULL, vct.table=NULL) {
   if (!is.null(gating.id) & !is.null(vct.table)) {
-    stop('gating.id and vct.table are mutually exclusive parameters')
+    stop("gating.id and vct.table are mutually exclusive parameters")
   }
   if (!is.null(gating.id)) {
     # Use provided gating.id for all files
     gating.params <- get.gating.params.by.id(db, gating.id)
     if (length(gating.params$gates.log) == 0) {
-      stop('No gate paramters yet; no gating.')
+      stop("No gate paramters yet; no gating.")
     }
   }
   if (is.null(gating.id) & is.null(vct.table)) {
@@ -353,10 +353,10 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 
     tryCatch({
       for (quantile in QUANTILES) {
-        #print(paste('Loading', opp.file))
+        #print(paste("Loading", opp.file))
         opp <- get.opp.by.file(opp.dir, opp.file, quantile)
 
-        #print(paste('Classifying', opp.file))
+        #print(paste("Classifying", opp.file))
         # First calculate diameter and carbon quota
         beads.fsc <- as.numeric(transformData(data.frame(fsc=filter.params[which(filter.params$quantile == quantile),"beads.fsc.small"])))
         opp <- size.carbon.conversion(opp, beads.fsc=beads.fsc, inst=inst)
@@ -365,7 +365,7 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
         opp <- classify.opp(opp, gating.params$gates.log)
 
         # store vct
-        #print('Uploading labels to the database')
+        #print("Uploading labels to the database")
         save.vct.stats(db, opp.file, opp, gating.params$id,
                        filter.id, quantile)
 
@@ -397,7 +397,7 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 #' }
 #' @export
 get.opp.gates <- function(db, opp_files, vct_table, verbose=TRUE) {
-  # Get run length encoding results for gating ids. We're trying to find the
+  # Get run length encoding results for gating ids. We"re trying to find the
   # boundaries of different gating parameters throughout the cruise.
   rle_result <- rle(vct_table$gating_id)
   gating_start_idx <- rle_starts(rle_result)  # start of each gating section

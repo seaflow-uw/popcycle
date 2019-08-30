@@ -7,15 +7,15 @@
 #' @export
 flowrate <- function(stream_pressure, inst=inst){
 
-  load(system.file('flowrate', paste0('lm_',inst),package='popcycle'))
-    fr <- predict(reg, newdata=data.frame(measured.pressure=log10(stream_pressure)),interval='predict')
+  load(system.file("flowrate", paste0("lm_",inst),package="popcycle"))
+    fr <- predict(reg, newdata=data.frame(measured.pressure=log10(stream_pressure)),interval="predict")
 
     # ratio of the volume of the stream analyzed by the laser (aka, detectable region) to the whole water stream (200 µm nozzle) for that instrument
-    drr <- read.csv(system.file('flowrate', 'detectable_region.csv',package='popcycle'))
-    drr.mean <- mean(drr[which(drr$seaflow_serial == inst), 'detectable_region_ratio'])
-    drr.sd <- sd(drr[which(drr$seaflow_serial == inst), 'detectable_region_ratio'])
+    drr <- read.csv(system.file("flowrate", "detectable_region.csv",package="popcycle"))
+    drr.mean <- mean(drr[which(drr$seaflow_serial == inst), "detectable_region_ratio"])
+    drr.sd <- sd(drr[which(drr$seaflow_serial == inst), "detectable_region_ratio"])
 
-    flow_rate <- drr.mean * 10^fr[,'fit']  # mL min-1
+    flow_rate <- drr.mean * 10^fr[,"fit"]  # mL min-1
     flow_rate.sd <- flow_rate * sqrt((log(10) * matrixStats::rowSds(fr))^2 + (drr.sd /drr.mean)^2) # uncertainties Antilog, base 10 : y=10^a so Sy= log(10) * y * Sa
 
     return(data.frame(cbind(flow_rate, flow_rate.sd)))
@@ -33,16 +33,16 @@ flowrate <- function(stream_pressure, inst=inst){
 #' @export
 size.carbon.conversion <- function(opp, beads.fsc, inst){
 
-  mie <- read.csv(system.file('scatter', paste0('calibrated-mie.csv'),package='popcycle'))
+  mie <- read.csv(system.file("scatter", paste0("calibrated-mie.csv"),package="popcycle"))
 
     # find closest matches in Mie lookup table
-    id <- findInterval(opp[,'fsc_small']/as.numeric(beads.fsc), mie$scatter)
+    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter)
 
     #convert scatter to diameter and Qc
-    for(quant in c('_lwr','_mid','_upr')){
+    for(quant in c("_lwr","_mid","_upr")){
 
-      opp[,paste0('diam',quant)] <- mie[id,paste0('diam_',inst,quant)]
-      opp[,paste0('Qc',quant)] <- mie[id,paste0('Qc_',inst,quant)]
+      opp[,paste0("diam",quant)] <- mie[id,paste0("diam_",inst,quant)]
+      opp[,paste0("Qc",quant)] <- mie[id,paste0("Qc_",inst,quant)]
 
     }
 

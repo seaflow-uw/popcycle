@@ -150,8 +150,8 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
     close(con)
 
     if (nrow(integer.dataframe) != header) {
-      msg <- paste("In file ", path, " the declared number of events ", header,
-           " doesn't equal the actual number of events", sep="")
+      msg <- paste("In file", path, "the declared number of events", header,
+           "does not equal the actual number of events")
       warning(msg)
       return(data.frame())
     }
@@ -231,7 +231,7 @@ concatenate.evt <- function(evt.list, evt.dir, n=100000, min.fsc=0, min.pe=0, mi
             if(any(is.na(df))) next
             DF <- rbind(DF, df)
             }, error = function(e) {
-              cat(paste0("Error with file ", file, ": ", e))
+              cat(paste("Error with file", file, ":", e))
           })
 
           i <- i + 1
@@ -264,7 +264,7 @@ concatenate.opp <- function(opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0, mi
             if(any(is.na(df))) next
             DF <- rbind(DF, df)
             }, error = function(e) {
-              cat(paste0("Error with file ", file, ": ", e))
+              cat(paste("Error with file", file, ":", e))
           })
 
           i <- i + 1

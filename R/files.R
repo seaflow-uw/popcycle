@@ -345,7 +345,14 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
   } else {
     con <- file(description=vct.file)
   }
-  vct <- read.table(con, col.names=c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop"))
+  vct <- read.table(con,
+     col.names=c("diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
+                 "diam_mid_1q","diam_mid_med","diam_mid_3q",
+                 "diam_upr_1q","diam_upr_med","diam_upr_3q",
+                 "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
+                 "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
+                 "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
+                 "pop"))
   return(vct)
 }
 
