@@ -10,7 +10,7 @@
 #' }
 #' @export
 delete.opp.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM opp WHERE file == "", clean.file.path(file.name), """)
+  sql <- paste0("DELETE FROM opp WHERE file == '", clean.file.path(file.name), "'")
   sql.dbExecute(db, sql)
 }
 
@@ -47,7 +47,7 @@ delete.opp.by.file <- function(opp.dir, file.name) {
 #' }
 #' @export
 delete.outliers.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM outlier WHERE file == "", clean.file.path(file.name), """)
+  sql <- paste0("DELETE FROM outlier WHERE file == '", clean.file.path(file.name), "'")
   sql.dbExecute(db, sql)
 }
 
@@ -62,7 +62,7 @@ delete.outliers.by.file <- function(db, file.name) {
 #' }
 #' @export
 delete.vct.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM vct WHERE file == "", clean.file.path(file.name), """)
+  sql <- paste0("DELETE FROM vct WHERE file == '", clean.file.path(file.name), "'")
   sql.dbExecute(db, sql)
 }
 
@@ -99,7 +99,7 @@ delete.vct.by.file <- function(vct.dir, file.name) {
 #' }
 #' @export
 delete.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("DELETE FROM filter WHERE id == "", filter.id, """)
+  sql <- paste0("DELETE FROM filter WHERE id == '", filter.id, "'")
   sql.dbExecute(db, sql)
 }
 
@@ -116,7 +116,7 @@ delete.filter.params.by.id <- function(db, filter.id) {
 #' }
 #' @export
 delete.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("DELETE FROM gating WHERE id == "", gating.id, """)
+  sql <- paste0("DELETE FROM gating WHERE id == '", gating.id, "'")
   sql.dbExecute(db, sql)
   delete.poly.by.id(db, gating.id)
 }
@@ -134,7 +134,7 @@ delete.gating.params.by.id <- function(db, gating.id) {
 #' }
 #' @export
 delete.poly.by.id <- function(db, gating.id) {
-  sql <- paste0("DELETE FROM poly WHERE gating_id == "", gating.id, """)
+  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "'")
   sql.dbExecute(db, sql)
 }
 
@@ -152,7 +152,7 @@ delete.poly.by.id <- function(db, gating.id) {
 #' }
 #' @export
 delete.poly.by.id.pop <- function(db, gating.id, popname) {
-  sql <- paste0("DELETE FROM poly WHERE gating_id == "", gating.id, "" AND pop == "", popname, """)
+  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "' AND pop == '", popname, "'")
   sql.dbExecute(db, sql)
 }
 
@@ -317,7 +317,7 @@ get.opp.stats.by.file <- function(db, file.name) {
     sfl
   INNER JOIN opp ON sfl.file == opp.file
   WHERE
-    opp.file == "", clean.file.path(file.name), ""
+  opp.file == '", clean.file.path(file.name), "'
   ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
@@ -379,7 +379,7 @@ get.vct.stats.by.file <- function(db, file.name) {
     SELECT sfl.date, vct.*
     FROM sfl
     INNER JOIN vct on sfl.file == vct.file
-    WHERE vct.file == "", clean.file.path(file.name), ""
+    WHERE vct.file == '", clean.file.path(file.name), "'
     ORDER BY sfl.date ASC
   ")
   vct <- sql.dbGetQuery(db, sql)
@@ -516,7 +516,7 @@ get.filter.params.latest <- function(db) {
 #' }
 #' @export
 get.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("SELECT * FROM filter WHERE id = "", filter.id, "" ORDER BY quantile")
+  sql <- paste0("SELECT * FROM filter WHERE id = '", filter.id, "' ORDER BY quantile")
   result <- sql.dbGetQuery(db, sql)
   # DB column names have underscores due to sqlite column naming restrictions.
   # To get this dataframe to match filter parameter column names used
@@ -562,7 +562,7 @@ get.gating.params.latest <- function(db) {
 #' }
 #' @export
 get.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("SELECT * FROM gating WHERE id = "", gating.id, "" ORDER BY pop_order ASC")
+  sql <- paste0("SELECT * FROM gating WHERE id = '", gating.id, "' ORDER BY pop_order ASC")
   gating.df <- sql.dbGetQuery(db, sql)
   if (nrow(gating.df) == 0) {
     stop(paste0("No entry found in gating table for ", gating.id))
@@ -608,12 +608,12 @@ get.gating.params.by.id <- function(db, gating.id) {
 get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
   poly.log <- list()
   sql <- paste0("
-    SELECT * FROM poly
-    WHERE
-      gating_id = "", gating.id, ""
-      AND
-      pop = "", popname, ""
-    ORDER BY point_order"
+  SELECT * FROM poly
+  WHERE
+    gating_id = '", gating.id, "'
+    AND
+    pop = '", popname, "'
+  ORDER BY point_order"
   )
   pop.poly <- sql.dbGetQuery(db, sql)
 
@@ -981,9 +981,9 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
       quantile=quantile
     )
   cols <- c( "file", ,"pop", "count",
-             "chl_1q","chl_med", "chl_3q"
-             "pe_1q","pe_med", "pe_3q"
-             "fsc_1q","fsc_med", "fsc_3q"
+             "chl_1q","chl_med", "chl_3q",
+             "pe_1q","pe_med", "pe_3q",
+             "fsc_1q","fsc_med", "fsc_3q",
              "diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
              "diam_mid_1q","diam_mid_med","diam_mid_3q",
              "diam_upr_1q","diam_upr_med","diam_upr_3q",
@@ -1118,7 +1118,7 @@ save.outliers <- function(db, table.name) {
   for (i in 1:nrow(table.name)) {
     # Upsert!
     sql <- paste0("
-      INSERT OR REPLACE INTO outlier(file,flag) VALUES("", table.name$file[i], "",", table.name$flag[i], ")
+    INSERT OR REPLACE INTO outlier(file,flag) VALUES('", table.name$file[i], "',", table.name$flag[i], ")
     ")
     sql.dbExecute(db, sql)
   }

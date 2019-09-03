@@ -4,7 +4,7 @@
 \alias{plot_vct_cytogram}
 \title{Plot cytogram with particles colored by population.}
 \usage{
-plot_vct_cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small')
+plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small")
 }
 \arguments{
 \item{opp}{OPP data frame.}
@@ -13,7 +13,7 @@ plot_vct_cytogram(opp, para.x = 'fsc_small', para.y = 'chl_small')
 
 \item{para.y}{Channel to use as y axis.}
 
-\item{transform}{Log transformation for both x- and y-axis'}
+\item{transform}{Log transformation for both x- and y-axis"}
 }
 \value{
 None

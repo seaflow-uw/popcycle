@@ -16,7 +16,7 @@ set.gating.params(opp, popname, para.x, para.y, poly.log = NULL)
 \item{para.y}{Channel to use as y axis.}
 
 \item{poly.log}{Named list of gating polygon definitions. If a definition for
-popname already exists it will be updated. If it doesn't exist it will be
+popname already exists it will be updated. If it doesn"t exist it will be
 appended to the end to the list. If poly.log is NULL a new list will be
 created.}
 }

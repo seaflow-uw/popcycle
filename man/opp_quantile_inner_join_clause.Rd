@@ -12,7 +12,7 @@ SQL INNER JOIN string
 \description{
 Return a SQL string with an INNER JOIN to a subquery selecting for OPP files
 that contain data in all quantiles. The benefit of making this a subquery is
-the GROUP BY doesn't affect the rest of the SQL query this JOIN is embedded
+the GROUP BY doesn"t affect the rest of the SQL query this JOIN is embedded
 into.
 }
 \examples{

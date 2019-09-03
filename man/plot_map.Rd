@@ -11,7 +11,7 @@ plot_map(stat, param, ...)
 
 \item{param}{Parameter to display}
 
-\item{transform}{Log transformation of the parameter'}
+\item{transform}{Log transformation of the parameter"}
 }
 \value{
 None

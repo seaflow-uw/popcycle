@@ -9,7 +9,7 @@ classify.opp(opp, gates.log)
 \arguments{
 \item{opp}{SQLite3 database file path.}
 
-\item{gates.log}{A gating scheme from the function 'add.manual.classification()' or 'add.auto.classification()'}
+\item{gates.log}{A gating scheme from the function "add.manual.classification()" or "add.auto.classification()"}
 }
 \value{
 List of per particle classifications

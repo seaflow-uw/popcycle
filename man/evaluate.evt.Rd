@@ -26,6 +26,6 @@ Filter and classify one EVT file.
 \examples{
 \dontrun{
 evaluate.evt(db, evt.dir, opp.dir, vct.dir,
-             '2014_185/2014-07-04T00-00-02+00-00')
+             "2014_185/2014-07-04T00-00-02+00-00")
 }
 }
