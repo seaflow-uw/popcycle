@@ -23,7 +23,7 @@ add.auto.classification(popname, para.x, para.y, position, gates, scale,
 \item{min.pe}{Only consider partciesl with pe > min.pe}
 
 \item{gates.log}{Per population named list of classification parameters. If
-a definition for popname already exists it will be updated. If it doesn"t
+a definition for popname already exists it will be updated. If it doesn't
 exist it will be appended to the end to the list. If NULL, a new list will
 be created.}
 }

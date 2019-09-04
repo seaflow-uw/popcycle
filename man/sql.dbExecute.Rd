@@ -19,6 +19,6 @@ Use for any statement except SELECT, in which case use sql.dbGetQuery.
 }
 \examples{
 \dontrun{
-sql.dbExecute(db, "DELETE FROM vct WHERE file == "somefile"")
+sql.dbExecute(db, "DELETE FROM vct WHERE file == 'somefile'")
 }
 }

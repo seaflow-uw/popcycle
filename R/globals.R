@@ -20,5 +20,5 @@ FLAG_GATING <- 3L      # gating outliers
 
 instrument.id <- "740"
 
-# This package"s name
+# This package's name
 .pkg.name <- "popcycle"

@@ -317,7 +317,7 @@ get.opp.stats.by.file <- function(db, file.name) {
     sfl
   INNER JOIN opp ON sfl.file == opp.file
   WHERE
-  opp.file == '", clean.file.path(file.name), "'
+    opp.file == '", clean.file.path(file.name), "'
   ORDER BY sfl.date ASC")
   opp <- sql.dbGetQuery(db, sql)
   return(opp)
@@ -608,12 +608,12 @@ get.gating.params.by.id <- function(db, gating.id) {
 get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
   poly.log <- list()
   sql <- paste0("
-  SELECT * FROM poly
-  WHERE
-    gating_id = '", gating.id, "'
-    AND
-    pop = '", popname, "'
-  ORDER BY point_order"
+    SELECT * FROM poly
+    WHERE
+      gating_id = '", gating.id, "'
+      AND
+      pop = '", popname, "'
+    ORDER BY point_order"
   )
   pop.poly <- sql.dbGetQuery(db, sql)
 
@@ -690,8 +690,8 @@ get.meta.table <- function(db) {
 #' }
 #' @export
 get.sfl.table <- function(db) {
-  # Don"t check for populated SFL table here since it should be obvious
-  # if it"s populated by result. Also, this would lead to infinite recursion
+  # Don't check for populated SFL table here since it should be obvious
+  # if it's populated by result. Also, this would lead to infinite recursion
   # since check.for.populated.sfl calls this function.
   sql <- "SELECT * FROM sfl ORDER BY date ASC"
   sfl <- sql.dbGetQuery(db, sql)
@@ -1118,7 +1118,7 @@ save.outliers <- function(db, table.name) {
   for (i in 1:nrow(table.name)) {
     # Upsert!
     sql <- paste0("
-    INSERT OR REPLACE INTO outlier(file,flag) VALUES('", table.name$file[i], "',", table.name$flag[i], ")
+      INSERT OR REPLACE INTO outlier(file,flag) VALUES('", table.name$file[i], "',", table.name$flag[i], ")
     ")
     sql.dbExecute(db, sql)
   }
@@ -1367,7 +1367,7 @@ sfl_date_where_clause <- function(start.date, end.date) {
 #'
 #' Return a SQL string with an INNER JOIN to a subquery selecting for OPP files
 #' that contain data in all quantiles. The benefit of making this a subquery is
-#' the GROUP BY doesn"t affect the rest of the SQL query this JOIN is embedded
+#' the GROUP BY doesn't affect the rest of the SQL query this JOIN is embedded
 #' into.
 #'
 #' @return SQL INNER JOIN string
@@ -1436,7 +1436,7 @@ sql.dbGetQuery <- function(db, sql) {
 #' @return Number of rows affected
 #' @examples
 #' \dontrun{
-#' sql.dbExecute(db, "DELETE FROM vct WHERE file == "somefile"")
+#' sql.dbExecute(db, "DELETE FROM vct WHERE file == 'somefile'")
 #' }
 #' @export
 sql.dbExecute <- function(db, sql) {
@@ -1630,8 +1630,8 @@ copy_outlier_table <- function(db_from, db_to) {
   src <- get.outlier.table(db_from)
   dest <- get.outlier.table(db_to)
   joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
-  # So we don"t screw anything up and because merge may reorder rows by "by"
-  # column, enforce a common sort order by "file" on both dataframes we"ll use
+  # So we don't screw anything up and because merge may reorder rows by "by"
+  # column, enforce a common sort order by "file" on both dataframes we'll use
   # going forward.
   dest <- dest[order(dest$file), ]
   joined <- joined[order(joined$file), ]

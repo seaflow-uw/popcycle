@@ -5,7 +5,7 @@
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param poly.log Named list of gating polygon definitions. If a definition for
-#'   popname already exists it will be updated. If it doesn"t exist it will be
+#'   popname already exists it will be updated. If it doesn't exist it will be
 #'   appended to the end to the list. If poly.log is NULL a new list will be
 #'   created.
 #' @return Version of poly.log with a new polygon defintion for popname.
@@ -48,7 +48,7 @@ set.gating.params <- function(opp, popname, para.x, para.y, poly.log=NULL) {
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param gates.log Per population named list of classification parameters. If
-#'   a definition for popname already exists it will be updated. If it doesn"t
+#'   a definition for popname already exists it will be updated. If it doesn't
 #'   exist it will be appended to the end to the list. If NULL, a new list will
 #'   be created.
 #' @return gates.log with a new polygon defintion for popname.
@@ -91,7 +91,7 @@ add.manual.classification <- function(opp, popname, para.x, para.y, gates.log=NU
 #' @param scale scale parameter to FlowDensity
 #' @param min.pe Only consider partciesl with pe > min.pe
 #' @param gates.log Per population named list of classification parameters. If
-#'   a definition for popname already exists it will be updated. If it doesn"t
+#'   a definition for popname already exists it will be updated. If it doesn't
 #'   exist it will be appended to the end to the list. If NULL, a new list will
 #'   be created.
 #' @return gates.log with a new FlowDensity func call parameter set for popname
@@ -223,7 +223,7 @@ auto.classify <- function(opp, params, popname) {
   }
 
   if (is.null(params)) {
-    stop(paste("No gate parameters found for", popname))
+    stop(paste0("No gate parameters found for ", popname))
   }
 
   # Only keep selected unknow pop rows and remove pop column
@@ -397,7 +397,7 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
 #' }
 #' @export
 get.opp.gates <- function(db, opp_files, vct_table, verbose=TRUE) {
-  # Get run length encoding results for gating ids. We"re trying to find the
+  # Get run length encoding results for gating ids. We're trying to find the
   # boundaries of different gating parameters throughout the cruise.
   rle_result <- rle(vct_table$gating_id)
   gating_start_idx <- rle_starts(rle_result)  # start of each gating section

@@ -16,7 +16,7 @@ add.manual.classification(opp, popname, para.x, para.y, gates.log = NULL)
 \item{para.y}{Channel to use as y axis.}
 
 \item{gates.log}{Per population named list of classification parameters. If
-a definition for popname already exists it will be updated. If it doesn"t
+a definition for popname already exists it will be updated. If it doesn't
 exist it will be appended to the end to the list. If NULL, a new list will
 be created.}
 }
