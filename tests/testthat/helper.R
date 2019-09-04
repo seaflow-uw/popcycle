@@ -22,8 +22,8 @@ setUp <- function() {
 
   # Below are prebuilt files for SQLite3 DB, OPP, and VCT data.
   # Copy dbs to tempdir before tests
-  file.copy("../testdata/testcruise_full.db", x$tmp.dir)
-  file.copy("../testdata/testcruise_bare.db", x$tmp.dir)
+  file.copy("../testdata/testcruise_full.db", x$tmp.dir, copy.mode=F)
+  file.copy("../testdata/testcruise_bare.db", x$tmp.dir, copy.mode=F)
   # Database with fixed results. May not exactly represent current filter settings,
   # but it's here to insulate non-filtering tests from filtering changes.
   x$db.full <- file.path(x$tmp.dir, "testcruise_full.db")

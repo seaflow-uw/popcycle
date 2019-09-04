@@ -56,11 +56,11 @@ filter.notch <- function(evt, filter.params) {
   width <- as.numeric(filter.params[1, "width"])
 
   # Filtering out noise
-  signal_selector <- evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1
+  prefilter <- evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1
   # Filtering out particles with saturated  D1 & D2 signal
-  signal_selector <- signal_selector & ((evt$D1 < max(evt$D1)) | (evt$D2 < max(evt$D2)))
+  prefilter <- prefilter & evt$D1 < max(evt$D1) & evt$D2 < max(evt$D2)
   # Filtering aligned particles (D1 = D2)
-  aligned_selector <- signal_selector & (evt$D2 < evt$D1 + width) & (evt$D1 < evt$D2 + width)
+  aligned_selector <- prefilter & (evt$D2 < evt$D1 + width) & (evt$D1 < evt$D2 + width)
   # Track which particles are OPP in any quantile
   opp_selector <- FALSE
 

@@ -132,20 +132,20 @@ test_that("Read OPP files", {
   # All quantiles, transformed
   df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
   expect_equal(ncol(df), 13)
-  expect_equal(nrow(df), 427)
-  expect_known_hash(df, '28189af38c')
+  expect_equal(nrow(df), 426)
+  expect_known_hash(df, 'cbc06fc003')
   expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
 
   # All quantiles, not transformed
   df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=F)
   expect_equal(ncol(df), 13)
-  expect_equal(nrow(df), 427)
-  expect_known_hash(df, 'c30a24ce39')
+  expect_equal(nrow(df), 426)
+  expect_known_hash(df, '7be2bda6ea')
   expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
 
   # Two OPP files at once
   df <- get.opp.by.file(x$opp.input.dir, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"), quantile=50)
-  expect_equal(nrow(df), 289)
+  expect_equal(nrow(df), 285)
 
   tearDown(x)
 })

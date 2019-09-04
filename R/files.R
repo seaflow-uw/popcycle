@@ -212,6 +212,30 @@ select_files_in <- function(files, keep) {
   return(files[files_clean %in% keep_clean])
 }
 
+#' Get EVT data frame by file.
+#'
+#' @param evt.dir EVT file directory.
+#' @param file.name File name with julian day directory. Can be a single
+#'   file name or vector of file names.
+#' @param transform Linearize EVT data. Default is FALSE.
+#' @return Data frame of EVT data for all files in file.name.
+#' @examples
+#' \dontrun{
+#' evt <- get.evt.by.file(evt.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' }
+#' @export
+get.evt.by.file <- function(evt.dir, file.name, transform=FALSE) {
+  evt_files <- unlist(lapply(file.name, clean.file.path))
+  evt_reader <- function(f) {
+    return(readSeaflow(file.path(evt.dir, f), transform=transform))
+  }
+  evts <- lapply(evt_files, evt_reader)
+  if (length(evts) > 1) {
+    return(dplyr::bind_rows(evts))
+  }
+  return(evts[[1]])
+}
+
 #' Get OPP data frame by file and quantile.
 #'
 #' @param opp.dir OPP file directory.
@@ -297,28 +321,34 @@ get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
   return(opps.bound)
 }
 
-#' Get EVT data frame by file.
+#' Save OPP as a gzipped LabView format binary file
 #'
-#' @param evt.dir EVT file directory.
-#' @param file.name File name with julian day directory. Can be a single
-#'   file name or vector of file names.
-#' @param transform Linearize EVT data. Default is FALSE.
-#' @return Data frame of EVT data for all files in file.name.
+#' @param opp OPP data frame of filtered particles.
+#' @param opp.dir Output directory. Julian day sub-directories will be
+#'   automatically created.
+#' @param file.name File name with julian day directory.
+#' @param untransform Convert linear data to log.
+#' @param require_all_quantiles Only write if all quantiles have focused particles
+#' @return None
 #' @examples
 #' \dontrun{
-#' evt <- get.evt.by.file(evt.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-get.evt.by.file <- function(evt.dir, file.name, transform=FALSE) {
-  evt_files <- unlist(lapply(file.name, clean.file.path))
-  evt_reader <- function(f) {
-    return(readSeaflow(file.path(evt.dir, f), transform=transform))
+save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_all_quantiles=TRUE) {
+  in_all_quantiles <- TRUE
+  for (quantile in QUANTILES) {
+    qcolumn <- paste0("q", quantile)
+    in_all_quantiles <- in_all_quantiles & any(opp[, qcolumn])
   }
-  evts <- lapply(evt_files, evt_reader)
-  if (length(evts) > 1) {
-    return(dplyr::bind_rows(evts))
+  if (nrow(opp) > 0) {
+    if ((require_all_quantiles & in_all_quantiles) | ! require_all_quantiles) {
+      opp <- encode_bit_flags(opp)
+      opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
+      dir.create(dirname(opp.file), showWarnings=F, recursive=T)
+      writeSeaflow(opp[, c(EVT.HEADER, "bitflags")], opp.file, untransform=untransform)
+    }
   }
-  return(evts[[1]])
 }
 
 #' Get data frame of per particle population classifications by file and quantile
@@ -345,15 +375,33 @@ get.vct.by.file <- function(vct.dir, file.name, quantile) {
   } else {
     con <- file(description=vct.file)
   }
-  vct <- read.table(con,
-     col.names=c("diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
-                 "diam_mid_1q","diam_mid_med","diam_mid_3q",
-                 "diam_upr_1q","diam_upr_med","diam_upr_3q",
-                 "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
-                 "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
-                 "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
-                 "pop"))
+  vct <- read.table(con, col.names=c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop"))
   return(vct)
+}
+
+#' Save VCT per particle population classification.
+#'
+#' File will be saved to vct.dir as a gzipped text file, one line per particle.
+#'
+#' @param vct List of per particle population classifications.
+#' @param vct.dir Output directory for VCT files.
+#' @param file.name File name with julian day directory.
+#' @param quantile Filtering quantile for this file
+#' @return None
+#' @examples
+#' \dontrun{
+#' save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
+#' }
+#' @export
+save.vct.file <- function(vct, vct.dir, file.name, quantile) {
+  # Make sure we define the order here in case it changes somewhere upstream.
+  # This should match the column order defined wherever vct files are read.
+  vct <- vct[, c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop")]
+  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
+  dir.create(dirname(vct.file), showWarnings=F, recursive=T)
+  con <- gzfile(vct.file, "w")
+  write.table(vct, con, row.names=F, col.names=F, quote=F)
+  close(con)
 }
 
 #' Create an empty EVT data frame

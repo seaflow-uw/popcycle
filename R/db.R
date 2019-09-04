@@ -980,7 +980,7 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
       filter_id=filter.id,
       quantile=quantile
     )
-  cols <- c( "file", ,"pop", "count",
+  cols <- c( "file", "pop", "count",
              "chl_1q","chl_med", "chl_3q",
              "pe_1q","pe_med", "pe_3q",
              "fsc_1q","fsc_med", "fsc_3q",
@@ -994,31 +994,6 @@ save.vct.stats <- function(db, file.name, opp, gating.id,
 
   df.reorder <- as.data.frame(df)[cols]
   sql.dbWriteTable(db, name="vct", value=df.reorder)
-}
-
-#' Save VCT per particle population classification.
-#'
-#' File will be saved to vct.dir as a gzipped text file, one line per particle.
-#'
-#' @param vct List of per particle population classifications.
-#' @param vct.dir Output directory for VCT files.
-#' @param file.name File name with julian day directory.
-#' @param quantile Filtering quantile for this file
-#' @return None
-#' @examples
-#' \dontrun{
-#' save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
-#' }
-#' @export
-save.vct.file <- function(vct, vct.dir, file.name, quantile) {
-  # Make sure we define the order here in case it changes somewhere upstream.
-  # This should match the column order defined wherever vct files are read.
-  vct <- vct[, c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop")]
-  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
-  dir.create(dirname(vct.file), showWarnings=F, recursive=T)
-  con <- gzfile(vct.file, "w")
-  write.table(vct, con, row.names=F, col.names=F, quote=F)
-  close(con)
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
@@ -1066,36 +1041,6 @@ save.opp.stats <- function(db, file.name, all_count,
 
   # Mark in outlier table as OK
   save.outliers(db, data.frame(file=clean.file.path(file.name), flag=FLAG_OK))
-}
-
-#' Save OPP as a gzipped LabView format binary file
-#'
-#' @param opp OPP data frame of filtered particles.
-#' @param opp.dir Output directory. Julian day sub-directories will be
-#'   automatically created.
-#' @param file.name File name with julian day directory.
-#' @param untransform Convert linear data to log.
-#' @param require_all_quantiles Only write if all quantiles have focused particles
-#' @return None
-#' @examples
-#' \dontrun{
-#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_all_quantiles=TRUE) {
-  in_all_quantiles <- TRUE
-  for (quantile in QUANTILES) {
-    qcolumn <- paste0("q", quantile)
-    in_all_quantiles <- in_all_quantiles & any(opp[, qcolumn])
-  }
-  if (nrow(opp) > 0) {
-    if ((require_all_quantiles & in_all_quantiles) | ! require_all_quantiles) {
-      opp <- encode_bit_flags(opp)
-      opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
-      dir.create(dirname(opp.file), showWarnings=F, recursive=T)
-      writeSeaflow(opp[, c(EVT.HEADER, "bitflags")], opp.file, untransform=untransform)
-    }
-  }
 }
 
 #' Save Outliers in the database

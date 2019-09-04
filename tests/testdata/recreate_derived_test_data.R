@@ -11,7 +11,7 @@ if (length(args) != 1) {
 wd <- args[1]
 dir.create(wd, showWarnings=F, recursive=T)
 db <- file.path(wd, "testcruise.db")
-file.copy("testcruise_bare.db", db, overwrite=T)
+file.copy("testcruise_bare.db", db, overwrite=T, copy.mode=F)
 evt_dir <- "evt"
 opp_dir <- file.path(wd, "opp")
 vct_dir <- file.path(wd, "vct")

@@ -27,7 +27,7 @@ test_that("Successfully run realtime last file pipeline", {
       "synecho", "synecho", "synecho",
       "unknown", "unknown", "unknown")
   )
-  expect_equal(vct$count, c(7, 7, 7, 382, 72, 49, 20, 20, 19, 14, 8, 11))
+  expect_equal(vct$count, c(7, 7, 7, 382, 72, 49, 20, 20, 19, 14, 8, 10))
 
   tearDown(x)
 })

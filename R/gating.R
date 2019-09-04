@@ -368,9 +368,7 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
         #print("Uploading labels to the database")
         save.vct.stats(db, opp.file, opp, gating.params$id,
                        filter.id, quantile)
-
-        vct <- opp[ , !(names(opp) %in% EVT.HEADER)]
-        save.vct.file(vct, vct.dir, opp.file, quantile)
+        save.vct.file(opp, vct.dir, opp.file, quantile)
       }
     }, error = function(e) {
       cat(paste0("Error with file ", opp.file, ": ", e))

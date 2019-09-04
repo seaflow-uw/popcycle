@@ -161,12 +161,12 @@ test_that("Retrieve OPP by file", {
 
   # Without VCT, transformed
   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50)
-  expect_equal(nrow(opp), 289)
+  expect_equal(nrow(opp), 285)
   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, transform=F)
-  expect_equal(nrow(opp), 289)
+  expect_equal(nrow(opp), 285)
   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
   # With VCT
@@ -175,7 +175,7 @@ test_that("Retrieve OPP by file", {
 
   # All quantiles
   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1], transform=F)
-  expect_equal(nrow(opp), 427)
+  expect_equal(nrow(opp), 426)
 
   tearDown(x)
 })
@@ -185,18 +185,18 @@ test_that("Retrieve OPP by date", {
 
   # Without VCT, transformed
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(nrow(opp), 289)
+  expect_equal(nrow(opp), 285)
   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, transformed
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:03", "2014-07-04 00:17")
-  expect_equal(nrow(opp), 182)
+  expect_equal(nrow(opp), 178)
   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
   # Without VCT, not transformed
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
                          transform=F)
-  expect_equal(nrow(opp), 289)
+  expect_equal(nrow(opp), 285)
   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
   # With VCT
@@ -214,7 +214,7 @@ test_that("Retrieve OPP by date", {
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
   expect_equal(nrow(opp), 107)
   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
-  expect_equal(nrow(opp), 289)
+  expect_equal(nrow(opp), 285)
 
   tearDown(x)
 })
@@ -225,7 +225,7 @@ test_that("Retrieve split-quantile OPP file", {
   # First get a multi-quantile OPP file
   opp_file <- get.opp.files(x$db.full)[1]
   opp <- get.opp.by.file(x$opp.input.dir, opp_file, transform=F)
-  expect_equal(nrow(opp), 427)
+  expect_equal(nrow(opp), 426)
   opp50 <- opp[opp["q50"] == TRUE, popcycle:::EVT.HEADER]
 
   # Save it manually as an old style split-quantile file
