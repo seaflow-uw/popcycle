@@ -30,15 +30,6 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 #' @export plot_filter_cytogram
 
 plot_filter_cytogram <- function(evt, filter.params) {
-    width <- as.numeric(filter.params$width)
-    notch.small.D1 <- as.numeric(filter.params$notch.small.D1)
-    notch.small.D2 <- as.numeric(filter.params$notch.small.D2)
-    notch.large.D1 <- as.numeric(filter.params$notch.large.D1)
-    notch.large.D2 <- as.numeric(filter.params$notch.large.D2)
-    offset.small.D1 <- as.numeric(filter.params$offset.small.D1)
-    offset.small.D2 <- as.numeric(filter.params$offset.small.D2)
-    offset.large.D1 <- as.numeric(filter.params$offset.large.D1)
-    offset.large.D2 <- as.numeric(filter.params$offset.large.D2)
 
     # linearize the LOG transformed data
     id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
@@ -49,15 +40,11 @@ plot_filter_cytogram <- function(evt, filter.params) {
     # Filtering noise
     evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
-    # Filtering out particles with saturated D1 and D2 signals
-    evt.. <- evt.[evt.$D1 > max(evt.$D1) | evt.$D2 > max(evt.$D2), ]
-
     # Fltering aligned particles (D1 = D2)
-    aligned <- subset(evt.., D2 < D1 + width & D1 < D2 + width)
+    aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
 
     # Filtering focused particles (fsc_small > D * notch)
-    opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
-        D1  <= fsc_small*notch.large.D1 + offset.large.D1 & D2 <= fsc_small*notch.large.D2 + offset.large.D2)
+    opp <- filter.evt(evt, filter.params)
 
         ################
         ### PLOTTING ###
