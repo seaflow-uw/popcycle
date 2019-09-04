@@ -172,7 +172,7 @@ CREATE VIEW IF NOT EXISTS stat AS
     vct.Qc_upr_1q as Qc_upr_1q,
     vct.Qc_upr_med as Qc_upr_med,
     vct.Qc_upr_mean as Qc_upr_mean,
-    vct.Qc_upr_3q as Qc_upr_3q,
+    vct.Qc_upr_3q as Qc_upr_3q
   FROM
     opp, vct, sfl
   WHERE
