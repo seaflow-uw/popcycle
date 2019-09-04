@@ -46,11 +46,14 @@ plot_filter_cytogram <- function(evt, filter.params) {
       evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
     }
 
-    # Filtering out noise
+    # Filtering noise
     evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
-    # Fltering aligned particles (D1 = D2), with Correction for the difference of sensitivity between D1 and D2
-    aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
+    # Filtering out particles with saturated D1 and D2 signals
+    evt.. <- evt.[evt.$D1 > max(evt.$D1) | evt.$D2 > max(evt.$D2), ]
+
+    # Fltering aligned particles (D1 = D2)
+    aligned <- subset(evt.., D2 < D1 + width & D1 < D2 + width)
 
     # Filtering focused particles (fsc_small > D * notch)
     opp <- subset(aligned, D1 <= fsc_small*notch.small.D1 + offset.small.D1 & D2 <= fsc_small*notch.small.D2 + offset.small.D2 |
