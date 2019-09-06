@@ -21,12 +21,13 @@ metadata table.}
 None
 }
 \description{
-This functions automates many parts of common analysis that occur downstream
-from raw particle filtration, e.g. gating. It will clear the gating and poly
-tables in databases in dir_new and copy the same tables from corresponding
-databases found in dir_old. After the new databases have been updated, OPP
-particles will be reclassified and diameters and carbon quotas will be
-recalculated.
+This functions automates reanalysis that occurs downstream from raw particle
+filtration, e.g. gating, diameter, carbon. It will clear the gating, poly,
+and metadata tables in databases in dir_new and copy the same tables from
+corresponding databases found in dir_old. It will also copy outlier flags
+from old databases to new for files that exist in both databases. After the
+new databases have been updated, OPP particles will be reclassified and
+diameters and carbon quotas will be recalculated.
 }
 \examples{
 \dontrun{
