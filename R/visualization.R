@@ -11,7 +11,6 @@
 plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 
   par(pty="s")
-  id <- which(colnames(evtopp) == "fsc_small" | colnames(evtopp) == "chl_small" | colnames(evtopp) =="pe" | colnames(evtopp) =="fsc_perp")
   if(max(evtopp[,c(id)]) > 10^3.5) plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = grDevices::densCols(evtopp[,c(para.x, para.y)], colramp = viridis::viridis), xlim=c(0,2^16), ylim=c(0,2^16), ...)
   else plot(evtopp[,c(para.x, para.y)], pch=16, cex=0.3, col = grDevices::densCols(log10(evtopp[,c(para.x, para.y)]), colramp = viridis::viridis), log="xy",xlim=c(1,10^3.5), ylim=c(1,10^3.5), ...)
 }
@@ -101,17 +100,22 @@ plot_filter_cytogram <- function(evt, filter.params) {
 #' @export plot_cytogram
 plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T) {
 
-  if(!any(names(evtopp) == "file")) evtopp[,"file"] <- NA
+  if (max(evtopp[,para.x]) > 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,2^16)
+  if (max(evtopp[,para.x]) < 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,10^3.5)
+  if (max(evtopp[,para.y]) > 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,2^16)
+  if (max(evtopp[,para.y]) < 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,10^3.5)
+
+  if(!any(names(evtopp) == "file")) evtopp[,"file"] <- ""
 
   p <- evtopp %>%
           ggplot2::ggplot() +
           ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y), bins=bins, color=NA) +
           viridis::scale_fill_viridis() +
           ggplot2::theme_bw()+
-          ggplot2::coord_fixed() +
           ggplot2::facet_wrap( ~ file)
 
-      if(transform) p <- p + ggplot2::scale_y_continuous(trans="log10") + ggplot2::scale_x_continuous(trans="log10")
+      if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
+      }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
 
   return(p)
 
@@ -131,6 +135,10 @@ plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bi
 #' @export plot_vct_cytogram
 plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", transform=T) {
 
+  if (max(opp[,para.x]) > 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,2^16)
+  if (max(opp[,para.x]) < 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,10^3.5)
+  if (max(opp[,para.y]) > 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,2^16)
+  if (max(opp[,para.y]) < 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,10^3.5)
 
     group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
@@ -142,7 +150,6 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
           ggplot2::ggplot() +
           ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y, fill = "pop", alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
           ggplot2::theme_bw() +
-          ggplot2::coord_fixed() +
           ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
           ggplot2::scale_fill_manual(values=group.colors) +
           ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
@@ -150,7 +157,8 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
           ggplot2::guides(color="none", alpha="none", fill= ggplot2::guide_legend(override.aes = list(size=2, alpha=0.5),title="population")) +
           ggplot2::facet_wrap(~ file)
 
-      if(transform) p <- p + ggplot2::scale_y_continuous(trans="log10") + ggplot2::scale_x_continuous(trans="log10")
+          if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
+          }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
 
       return(p)
 
