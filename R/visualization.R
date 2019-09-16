@@ -270,7 +270,8 @@ plot_time <- function(stat, param, transform=FALSE){
   stat2$pop <- factor(stat2$pop, levels = names(group.colors))
 
   p <- stat2 %>%
-      ggplot2::ggplot() + ggplot2::geom_vline(xintercept=as.POSIXct(ifelse(stat2$par < 5, stat2$time, 0),origin="1970-01-01",tz="GMT"), col="lightgrey",alpha=0.01, lwd=2) +
+      ggplot2::ggplot() +
+      #ggplot2::geom_vline(xintercept=as.POSIXct(ifelse(stat2$par != min(stat2$par,na.rm=T), stat2$time, 0),origin="1970-01-01",tz="GMT"), col="lightgrey",alpha=0.01, lwd=2) +  # only works for curated PAR
       ggplot2::geom_linerange(ggplot2::aes(x=time,ymin=lwr, ymax=upr), color="grey") +
       ggplot2::geom_point(ggplot2::aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
       ggplot2::theme_bw() +
