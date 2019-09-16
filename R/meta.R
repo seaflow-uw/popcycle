@@ -220,6 +220,6 @@ csv_convert<- function(db, meta, path, version = "v1.0") {
                           var_discipline,
                           var_keywords,
                           var_comment)
-    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata_", version,".csv"))
+    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata.csv"))
 
 }
