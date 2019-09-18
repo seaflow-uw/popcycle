@@ -22,8 +22,6 @@ usage <- "usage: merge_and_reanalyze.R dirA dirB
   will be created in the same location."
 
 args = commandArgs(trailingOnly=TRUE)
-dir_from <- args[1]
-dir_to <- args[2]
 
 if (length(args) < 2) {
   stop(usage, call.=FALSE)
