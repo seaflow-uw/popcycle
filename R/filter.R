@@ -57,7 +57,8 @@ filter.notch <- function(evt, filter.params) {
 
   # Filtering out noise
   prefilter <- evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1
-  # Filtering out particles with saturated  D1 & D2 signal
+  # Filtering out particles with saturated  D1 or D2 signal
+  # Here this means both D1 AND D2 must be below the max for either channel
   prefilter <- prefilter & evt$D1 < max(evt$D1) & evt$D2 < max(evt$D2)
   # Filtering aligned particles (D1 = D2)
   aligned_selector <- prefilter & (evt$D2 < evt$D1 + width) & (evt$D1 < evt$D2 + width)
