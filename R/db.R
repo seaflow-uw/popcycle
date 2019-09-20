@@ -1588,15 +1588,13 @@ copy_outlier_table <- function(db_from, db_to) {
 #' Get aggregate statistics data frame along with estimates of cell abundance.
 #'
 #' @param db SQLite3 database file path.
-#' @param inst Instrument serial. If not provided this will attempt to be
-#'   parsed from the SFL file name (<cruise>_<serial>.sfl).
+#' @param inst Instrument serial. If not provided will attempt to read from db.
 #' @return Data frame of aggregate statistics.
 #' @export
 get.stat.table <- function(db, inst=NULL) {
   if (is.null(inst)) {
     inst <- get.inst(db)
   }
-
 
   stat <- get.raw.stat.table(db)
   outliers <- get.outlier.table(db)
@@ -1619,7 +1617,6 @@ get.stat.table <- function(db, inst=NULL) {
       stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
       stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1
     }
-
 
   return(stat)
 }

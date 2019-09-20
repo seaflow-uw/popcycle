@@ -9,8 +9,7 @@ get.stat.table(db, inst = NULL)
 \arguments{
 \item{db}{SQLite3 database file path.}
 
-\item{inst}{Instrument serial. If not provided this will attempt to be
-parsed from the SFL file name (<cruise>_<serial>.sfl).}
+\item{inst}{Instrument serial. If not provided will attempt to read from db.}
 }
 \value{
 Data frame of aggregate statistics.
