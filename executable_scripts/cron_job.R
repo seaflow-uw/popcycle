@@ -47,6 +47,13 @@ for (evt.file in evt.list) {
 ### PLOT STATS ###
 ##################
 stat <- get.stat.table(db)
+statcols <- c(
+  'time', 'lat', 'lon', 'temp', 'salinity', 'par',
+  'stream_pressure', 'file_duration', 'event_rate', 'opp_evt_ratio',
+  'pop', 'n_count', 'chl_med', 'pe_med', 'fsc_med',
+  'diam_mid_med', 'Qc_mid_med', 'quantile', 'flag', 'flow_rate', 'abundance'
+)
+stat <- stat[stat$quantile == 50, statcols]
 sfl <- get.sfl.table(db)
 print("saving stat.csv")
 write.csv(stat, stat.file, row.names=FALSE, quote=FALSE)
