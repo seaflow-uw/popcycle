@@ -51,7 +51,7 @@ statcols <- c(
   'time', 'lat', 'lon', 'temp', 'salinity', 'par',
   'stream_pressure', 'file_duration', 'event_rate', 'opp_evt_ratio',
   'pop', 'n_count', 'chl_med', 'pe_med', 'fsc_med',
-  'diam_mid_med', 'Qc_mid_med', 'quantile', 'flag', 'flow_rate', 'abundance'
+  'diam_mid_med', 'Qc_mid_med', 'quantile', 'flag', 'flow_rate'
 )
 stat <- stat[stat$quantile == 50, statcols]
 sfl <- get.sfl.table(db)
