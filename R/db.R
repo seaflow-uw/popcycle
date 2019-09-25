@@ -1608,15 +1608,25 @@ get.stat.table <- function(db, inst=NULL) {
   stat[,"flow_rate_se"] <- fr[,2]
 
   # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
-  stat[,c("abundance")]  <- stat[,"n_count"] / (1000* median(stat[,"opp_evt_ratio"], na.rm=T) * stat[,"flow_rate"] * stat[,"file_duration"]/60)   # cells µL-1
-  stat[,c("abundance_se")]  <- stat[,"abundance"] * stat[,"flow_rate_se"] / stat[,"flow_rate"]           # cells µL-1
+  qratios <- stat %>%
+    dplyr::group_by(time, quantile) %>%
+    dplyr::summarize(opp_evt_ratio=mean(opp_evt_ratio, na.rm=T)) %>%  # this just gets the single value per file,quantile which is duplicated for each pop
+    dplyr::group_by(quantile) %>%  # now we have one ratio per file,quantile. group by quantile to create 3 groups with one ratio per file
+    dplyr::summarize(opp_evt_ratio=median(opp_evt_ratio, na.rm=T))  # median of each quantile without double-counting for population duplicates
+
+  for (q in qratios$quantile) {
+    ratio <- qratios[qratios$quantile == q, "opp_evt_ratio"][[1]]
+    qindex <- stat$quantile == q
+    stat[qindex, c("abundance")]  <- stat[qindex, "n_count"] / (1000* ratio * stat[qindex, "flow_rate"] * stat[qindex, "file_duration"]/60)   # cells µL-1
+    stat[qindex, c("abundance_se")]  <- stat[qindex, "abundance"] * stat[qindex, "flow_rate_se"] / stat[qindex, "flow_rate"]           # cells µL-1
+  }
 
   # If Prochlorococcus or Synechococcus present, abundance is calculated based on individual opp_evt ratio (based on each file, not the median), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
-    id <- which(stat$pop == "prochloro" | stat$pop == "synecho")
-    if(length(id) > 0){
-      stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
-      stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1
-    }
+  id <- which(stat$pop == "prochloro" | stat$pop == "synecho")
+  if (length(id) > 0) {
+    stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
+    stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1
+  }
 
   return(stat)
 }
