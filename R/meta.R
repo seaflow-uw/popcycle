@@ -99,7 +99,7 @@ var_long_name <- c("time of sample collection (UTC)",
 
 var_comment <-  c(rep('none',3),
                   rep('uncurated data broadcasted by the ship (as is)',3),
-                  'interval confidence for OPP filtration (2.5 = conservative approach; 50 = standard approach; 97.5 = permissive approach); see https://github.com/armbrustlab/seaflow-filter for more details',
+                  'interval confidence for OPP filtration (2.5 = permissive approach; 50 = standard approach; 97.5 = conservative approach); see https://github.com/armbrustlab/seaflow-filter for more details',
                   'prochloro (Prochlorococcus) synecho (Synechococcus) picoeuk (picoeukaryote phytoplankton) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles)',
                   rep('chlorophyll fluorescence (collected using a 692-40 bandpass filter)',3),
                   rep('phycoerythrin fluorescence (collected using a 572-27 bandpass filter)',3),
