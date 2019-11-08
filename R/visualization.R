@@ -29,6 +29,9 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 #' @export plot_filter_cytogram
 
 plot_filter_cytogram <- function(evt, filter.params) {
+    
+fp <- subset(filter.params, quantile == 50)
+
 
     # linearize the LOG transformed data
     id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
@@ -40,10 +43,10 @@ plot_filter_cytogram <- function(evt, filter.params) {
     evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
     # Fltering aligned particles (D1 = D2)
-    aligned <- subset(evt., D2 < D1 + width & D1 < D2 + width)
+    aligned <- subset(evt., D2 < D1 + fp$width & D1 < D2 + fp$width)
 
     # Filtering focused particles (fsc_small > D * notch)
-    opp <- filter.evt(evt, filter.params)
+    opp <- filter.notch(evt, filter.params)
 
         ################
         ### PLOTTING ###
@@ -60,25 +63,25 @@ plot_filter_cytogram <- function(evt, filter.params) {
 
         plot_cyt(evt., "D1", "D2")
         mtext("Alignment", side=3, line=3, font=2, col=2)
-        abline(b=1, a=width, col="red",lwd=2)
-        abline(b=1, a=-width, col="red",lwd=2)
+        abline(b=1, a=fp$width, col="red",lwd=2)
+        abline(b=1, a=-fp$width, col="red",lwd=2)
         mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=1,font=2)
 
         plot_cyt(aligned, "fsc_small", "D1")
         mtext("Focus", side=3, line=3, font=2,col=2)
-        abline(b=notch.small.D1, a=offset.small.D1,col=2)
-        abline(b=notch.large.D1, a=offset.large.D1,col=3)
-        points(filter.params$beads.fsc.small,filter.params$beads.D1, cex=2, pch=16)
+        abline(b=fp$notch.small.D1, a=fp$offset.small.D1,col=2)
+        abline(b=fp$notch.large.D1, a=fp$offset.large.D1,col=3)
+        points(fp$beads.fsc.small,fp$beads.D1, cex=2, pch=16)
 
         plot_cyt(aligned, "fsc_small", "D2")
         mtext("Focus", side=3, line=3, font=2,col=2)
-        abline(b=notch.small.D2, a=offset.small.D2,col=2)
-        abline(b=notch.large.D2, a=offset.large.D2,col=3)
-        points(filter.params$beads.fsc.small,filter.params$beads.D2, cex=2, pch=16)
+        abline(b=fp$notch.small.D2, a=fp$offset.small.D2,col=2)
+        abline(b=fp$notch.large.D2, a=fp$offset.large.D2,col=3)
+        points(fp$beads.fsc.small,fp$beads.D2, cex=2, pch=16)
 
-        plot_cyt(opp, "fsc_small", "pe"); abline(v=filter.params$beads.fsc.small, lty=2, col="grey")
+        plot_cyt(opp, "fsc_small", "pe"); abline(v=fp$beads.fsc.small, lty=2, col="grey")
         mtext("OPP", side=3, line=1, font=2, col=2)
-        plot_cyt(opp, "fsc_small","chl_small"); abline(v=filter.params$beads.fsc.small, lty=2, col="grey")
+        plot_cyt(opp, "fsc_small","chl_small"); abline(v=fp$beads.fsc.small, lty=2, col="grey")
         mtext("OPP", side=3, line=1, font=2, col=2)
         plot_cyt(opp, "chl_small","pe")
         mtext("OPP", side=3, line=1, font=2, col=2)
@@ -302,7 +305,6 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transfor
 
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
-  if(!any(names(evtopp) == "pop")) evtopp[,"pop"] <- "unknown"
   if(!any(names(evtopp) == "pop")) evtopp[,"pop"] <- "unknown"
   if(!any(names(evtopp) == "file")) evtopp[,"file"] <- NA
   evtopp$pop <- factor(evtopp$pop, levels = names(group.colors))
