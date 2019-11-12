@@ -1,4 +1,4 @@
-Popcycle - A reproducible approach to process, calibrate and curate shipboard underway flow cytometry data
+Popcycle - a reproducible approach to process, calibrate and curate SeaFlow data
 ========
 **Popcycle** is an R package that uses a database management system approach to analyze flow cytometry data collected by SeaFlow. 
 
