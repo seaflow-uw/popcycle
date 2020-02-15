@@ -2,7 +2,6 @@ Popcycle
 ========
 **Popcycle** is an R package that offers a reproducible approach to process, calibrate and curate flow cytometry data collected by SeaFlow. 
 
-<img src="https://github.com/armbrustlab/seaflow-sfl/blob/master/cruise-track.png" alt="SeaFlow cruisetracks"	title="SeaFlow cruisetracks" align="left" style="float" width="400">
 <img src="https://github.com/armbrustlab/seaflow-sfl/blob/master/cruise-track.png" alt="SeaFlow cruisetracks"	title="SeaFlow cruisetracks" align="left" style="float" width="400"> SeaFlow is an shipboard underway flow cytometer that provides continuous single celled measurements of light scatter and fluorescence associated with the pigments chlorophyll a and phycoerythrin ([Swalwell et al. 2011](https://doi.org/10.4319/lom.2011.9.466)). Since 2010, we have operated SeaFlow for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. We have created Popcycle, an R package that use reproducible analytical methods to uniformly process and curate SeaFlow data. The current datasets consist of cell abundance, cell diameter and cellular carbon content of small phytoplankton (< 10 μm), which includes the cyanobacteria <i>Prochlorococcus</i>, <i>Synechococcus</i> and <i>Crocosphaera</i>, and a mixture of unindentified protists.
 
 <img src="documentation/images/seaflow-workflow.png?raw=true" alt="Popcycle workflow"
