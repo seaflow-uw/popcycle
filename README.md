@@ -1,6 +1,6 @@
 Popcycle
 ========
-**Popcycle** is an R package that offers a reproducible approach to process, calibrate and curate flow cytometry data collected by SeaFlow. 
+**Popcycle** is an R package that offers a reproducible approach to process, calibrate and curate flow cytometry data collected by SeaFlow.
 
 <img src="documentation/images/seaflow-workflow.png?raw=true" alt="Popcycle workflow"
 	title="Popcycle workflow" align="right" style="float" width="500">
