@@ -98,15 +98,12 @@ fp <- subset(filter.params, quantile == 50)
 #' @param para.y Channel to use as y axis.
 #' @param bins Number of bin (hex) to display.
 #' @param transform Log transformation for both x- and y-axis"
+#' @param xlim limits for x-axis.
+#' @param ylim limits for y-axis.
 #' @return None
 #' @usage plot_cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
 #' @export plot_cytogram
-plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T) {
-
-  if (max(evtopp[,para.x]) > 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,2^16)
-  if (max(evtopp[,para.x]) < 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,10^3.5)
-  if (max(evtopp[,para.y]) > 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,2^16)
-  if (max(evtopp[,para.y]) < 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,10^3.5)
+plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T, xlim=NULL, ylim=NULL) {
 
   if(!any(names(evtopp) == "file")) evtopp[,"file"] <- ""
 
