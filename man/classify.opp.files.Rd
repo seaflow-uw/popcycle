@@ -4,8 +4,14 @@
 \alias{classify.opp.files}
 \title{Classify particles for a list of OPP files.}
 \usage{
-classify.opp.files(db, opp.dir, opp.files, vct.dir, gating.id = NULL,
-  vct.table = NULL)
+classify.opp.files(
+  db,
+  opp.dir,
+  opp.files,
+  vct.dir,
+  gating.id = NULL,
+  vct.table = NULL
+)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}

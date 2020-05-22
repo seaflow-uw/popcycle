@@ -4,8 +4,13 @@
 \alias{save.opp.file}
 \title{Save OPP as a gzipped LabView format binary file}
 \usage{
-save.opp.file(opp, opp.dir, file.name, untransform = FALSE,
-  require_all_quantiles = TRUE)
+save.opp.file(
+  opp,
+  opp.dir,
+  file.name,
+  untransform = FALSE,
+  require_all_quantiles = TRUE
+)
 }
 \arguments{
 \item{opp}{OPP data frame of filtered particles.}

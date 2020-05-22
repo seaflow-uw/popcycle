@@ -4,8 +4,16 @@
 \alias{add.auto.classification}
 \title{Define polygons for manual population gating.}
 \usage{
-add.auto.classification(popname, para.x, para.y, position, gates, scale,
-  min.pe = NA, gates.log = NULL)
+add.auto.classification(
+  popname,
+  para.x,
+  para.y,
+  position,
+  gates,
+  scale,
+  min.pe = NA,
+  gates.log = NULL
+)
 }
 \arguments{
 \item{popname}{Population name.}

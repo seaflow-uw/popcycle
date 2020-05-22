@@ -4,8 +4,16 @@
 \alias{concatenate.evt}
 \title{Concatenate EVT files}
 \usage{
-concatenate.evt(evt.list, evt.dir, n = 1e+05, min.fsc = 0,
-  min.pe = 0, min.chl = 0, transform = TRUE, ...)
+concatenate.evt(
+  evt.list,
+  evt.dir,
+  n = 1e+05,
+  min.fsc = 0,
+  min.pe = 0,
+  min.chl = 0,
+  transform = TRUE,
+  ...
+)
 }
 \arguments{
 \item{evt.list}{List of EVT files.}

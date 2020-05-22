@@ -4,8 +4,15 @@
 \alias{get.opp.by.file}
 \title{Get OPP data frame by file and quantile.}
 \usage{
-get.opp.by.file(opp.dir, file.name, quantile = NULL, channel = NULL,
-  transform = TRUE, vct.dir = NULL, pop = NULL)
+get.opp.by.file(
+  opp.dir,
+  file.name,
+  quantile = NULL,
+  channel = NULL,
+  transform = TRUE,
+  vct.dir = NULL,
+  pop = NULL
+)
 }
 \arguments{
 \item{opp.dir}{OPP file directory.}

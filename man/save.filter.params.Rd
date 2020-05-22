@@ -18,8 +18,6 @@ offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.}
 \item{beads.fsc.small}{Small forward scatter of 1µm beads used to determine
 filter.params}
 
-\item{beads.D1}{D1 of 1µm beads used to determine filter.params}
-
 \item{beads.D1}{D2 of 1µm beads used to determine filter.params}
 }
 \value{

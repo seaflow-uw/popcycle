@@ -130,15 +130,12 @@ plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bi
 #' @param para.x Channel to use as x axis.
 #' @param para.y Channel to use as y axis.
 #' @param transform Log transformation for both x- and y-axis"
+#' @param xlim limits for x-axis.
+#' @param ylim limits for y-axis.
 #' @return None
 #' @usage plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small")
 #' @export plot_vct_cytogram
-plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", transform=T) {
-
-  if (max(opp[,para.x]) > 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,2^16)
-  if (max(opp[,para.x]) < 10^3.5 & length(grep("diam",para.x)) ==0 & length(grep("Qc",para.x)) ==0) xlim <- c(1,10^3.5)
-  if (max(opp[,para.y]) > 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,2^16)
-  if (max(opp[,para.y]) < 10^3.5 & length(grep("diam",para.y)) ==0 & length(grep("Qc",para.y)) ==0) ylim <- c(1,10^3.5)
+plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", transform=T, xlim=NULL, ylim=NULL) {
 
     group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 

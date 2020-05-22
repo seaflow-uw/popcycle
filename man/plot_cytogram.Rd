@@ -16,6 +16,10 @@ plot_cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
 \item{bins}{Number of bin (hex) to display.}
 
 \item{transform}{Log transformation for both x- and y-axis"}
+
+\item{xlim}{limits for x-axis.}
+
+\item{ylim}{limits for y-axis.}
 }
 \value{
 None

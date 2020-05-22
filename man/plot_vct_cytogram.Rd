@@ -14,6 +14,10 @@ plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small")
 \item{para.y}{Channel to use as y axis.}
 
 \item{transform}{Log transformation for both x- and y-axis"}
+
+\item{xlim}{limits for x-axis.}
+
+\item{ylim}{limits for y-axis.}
 }
 \value{
 None
