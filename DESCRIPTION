@@ -6,6 +6,7 @@ Maintainer: Francois Ribalet <ribalet@uw.edu>
 Description: Seaflow analysis using R/SQLite.
 Depends:
     R (>= 3.4.0)
+biocViews:
 Imports:
     arrow,
     flowCore,
