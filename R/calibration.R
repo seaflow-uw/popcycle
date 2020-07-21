@@ -29,11 +29,13 @@ flowrate <- function(stream_pressure, inst=inst){
 #' @param opp Table that contains fsc_small values (transformed data).
 #' @param beads.fsc Values of the fsc_small for beads (transformed data).
 #' @param inst Instrument serial number
+#' @param mie Optional Mie theory lookup dataframe
 #' @return A dataframe with cell size and carbon cell quotas
 #' @export
-size.carbon.conversion <- function(opp, beads.fsc, inst){
-
-  mie <- read.csv(system.file("scatter", paste0("calibrated-mie.csv"),package="popcycle"))
+size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
+    if (is.null(mie)) {
+        mie <- read_mie_csv()
+    }
 
     # find closest matches in Mie lookup table
     id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter)
@@ -47,4 +49,15 @@ size.carbon.conversion <- function(opp, beads.fsc, inst){
     }
 
   return(opp)
+}
+
+#' Read Mie theory calibration file
+#'
+#' @return A dataframe of Mie theory conversion values
+#' @export
+read_mie_csv <- function(path=NULL) {
+  if (is.null(path)) {
+    path <- system.file("scatter", paste0("calibrated-mie.csv"),package="popcycle")
+  }
+  return(read.csv(path))
 }

@@ -4,7 +4,7 @@
 \alias{merge_and_reanalyze}
 \title{Merge databases after refiltering and reanalyze OPP.}
 \usage{
-merge_and_reanalyze(dir_old, dir_new)
+merge_and_reanalyze(dir_old, dir_new, mie_table = NULL)
 }
 \arguments{
 \item{dir_old}{Directory with old popcycle databases. Database files will be
@@ -16,6 +16,8 @@ searched for recursively. For each database file it is expected that there
 will be corresponding OPP directories in the same location, with a naming
 scheme of <cruise>_opp/. <cruise> should match the cruise stored in the
 metadata table.}
+
+\item{mie_table}{Mie theory lookup table to use in place of installed table.}
 }
 \value{
 None

@@ -10,7 +10,8 @@ classify.opp.files(
   opp.files,
   vct.dir,
   gating.id = NULL,
-  vct.table = NULL
+  vct.table = NULL,
+  mie.table = NULL
 )
 }
 \arguments{
@@ -23,10 +24,18 @@ classify.opp.files(
 \item{vct.dir}{VCT file output directory.}
 
 \item{gating.id}{Optionally provide the ID for gating parameters. If NULL,
-the existing gating parameters will be used.}
+vct.table will be used to determine gating parameters. If vct.table is null,
+the latest gating parameters in the database will be used. gating.id takes
+precedence over vct.table.}
 
-\item{vct.table}{Optionally provide the VCT table. If NULL,
-the existing gating parameters will be used.}
+\item{vct.table}{Optionally provide a previous VCT table that will be used to
+gating parameters by date range. If NULL, gating.id will be used for all
+files. If gating.id is NULL, the latest gating parameters in the database
+will be used.}
+
+\item{mie.table}{Optionally provide the Mie theory table. If NULL,
+the installed Mie Theory lookup table will be used. This table should be
+identical to one produced by read_mie_csv().}
 }
 \value{
 None

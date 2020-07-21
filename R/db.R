@@ -925,75 +925,15 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
 #' Save VCT aggregate population statistics for one file to vct table.
 #'
 #' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @param opp OPP data frame with pop column.
-#' @param gating.id ID for entry in gating table.
-#' @param filter.id ID for entry in filter table.
-#' @param quantile Filtering quantile for this file
+#' @param vct_stats DataFrame of VCT statistics created by prep_vct_stats()
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.vct.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
-#'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
-#'                "0f3c89d5-b6a9-4959-95a8-dd2af73f82b9", 97.5)
+#' save.vct.stats(db, vct_stats)
 #' }
-#' @importFrom dplyr %>%
 #' @export
-save.vct.stats <- function(db, file.name, opp, gating.id,
-                           filter.id, quantile) {
-  df <- opp %>%
-    dplyr::group_by(pop) %>%
-    dplyr::summarise(
-      file=clean.file.path(file.name),
-      count=dplyr::n(),
-      chl_1q= as.numeric(quantile(chl_small, 0.25)),
-      chl_med= as.numeric(quantile(chl_small, 0.5)),
-      chl_3q= as.numeric(quantile(chl_small, 0.75)),
-      pe_1q= as.numeric(quantile(pe, 0.25)),
-      pe_med= as.numeric(quantile(pe, 0.5)),
-      pe_3q= as.numeric(quantile(pe, 0.75)),
-      fsc_1q= as.numeric(quantile(fsc_small, 0.25)),
-      fsc_med= as.numeric(quantile(fsc_small, 0.5)),
-      fsc_3q= as.numeric(quantile(fsc_small, 0.75)),
-      diam_lwr_1q= as.numeric(quantile(diam_lwr, 0.25)),
-      diam_lwr_med= as.numeric(quantile(diam_lwr, 0.5)),
-      diam_lwr_3q= as.numeric(quantile(diam_lwr, 0.75)),
-      diam_mid_1q= as.numeric(quantile(diam_mid, 0.25)),
-      diam_mid_med= as.numeric(quantile(diam_mid, 0.5)),
-      diam_mid_3q= as.numeric(quantile(diam_mid, 0.75)),
-      diam_upr_1q= as.numeric(quantile(diam_upr, 0.25)),
-      diam_upr_med= as.numeric(quantile(diam_upr, 0.5)),
-      diam_upr_3q= as.numeric(quantile(diam_upr, 0.75)),
-      Qc_lwr_1q= as.numeric(quantile(Qc_lwr, 0.25)),
-      Qc_lwr_med= as.numeric(quantile(Qc_lwr, 0.5)),
-      Qc_lwr_mean= mean(Qc_lwr),
-      Qc_lwr_3q= as.numeric(quantile(Qc_lwr, 0.75)),
-      Qc_mid_1q= as.numeric(quantile(Qc_mid, 0.25)),
-      Qc_mid_med= as.numeric(quantile(Qc_mid, 0.5)),
-      Qc_mid_mean= mean(Qc_mid),
-      Qc_mid_3q= as.numeric(quantile(Qc_mid, 0.75)),
-      Qc_upr_1q= as.numeric(quantile(Qc_upr, 0.25)),
-      Qc_upr_med= as.numeric(quantile(Qc_upr, 0.5)),
-      Qc_upr_mean= mean(Qc_upr),
-      Qc_upr_3q= as.numeric(quantile(Qc_upr, 0.75)),
-      gating_id=gating.id,
-      filter_id=filter.id,
-      quantile=quantile
-    )
-  cols <- c( "file", "pop", "count",
-             "chl_1q","chl_med", "chl_3q",
-             "pe_1q","pe_med", "pe_3q",
-             "fsc_1q","fsc_med", "fsc_3q",
-             "diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
-             "diam_mid_1q","diam_mid_med","diam_mid_3q",
-             "diam_upr_1q","diam_upr_med","diam_upr_3q",
-             "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
-             "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
-             "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
-             "gating_id", "filter_id", "quantile")
-
-  df.reorder <- as.data.frame(df)[cols]
-  sql.dbWriteTable(db, name="vct", value=df.reorder)
+save.vct.stats <- function(db, vct_stats) {
+  sql.dbWriteTable(db, name="vct", value=vct_stats)
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
@@ -1590,6 +1530,7 @@ copy_outlier_table <- function(db_from, db_to) {
 #' @param db SQLite3 database file path.
 #' @param inst Instrument serial. If not provided will attempt to read from db.
 #' @return Data frame of aggregate statistics.
+#' @importFrom dplyr %>%
 #' @export
 get.stat.table <- function(db, inst=NULL) {
   if (is.null(inst)) {

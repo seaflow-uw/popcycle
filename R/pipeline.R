@@ -42,13 +42,14 @@ evaluate.evt <- function(db, evt.dir, opp.dir, vct.dir, evt.file) {
 #'   will be corresponding OPP directories in the same location, with a naming
 #'   scheme of <cruise>_opp/. <cruise> should match the cruise stored in the
 #'   metadata table.
+#' @param mie_table Mie theory lookup table to use in place of installed table.
 #' @return None
 #' @examples
 #' \dontrun{
 #' merge_and_reanalyze(dir_old, dir_new)
 #' }
 #' @export
-merge_and_reanalyze <- function(dir_old, dir_new) {
+merge_and_reanalyze <- function(dir_old, dir_new, mie_table=NULL) {
   common_dbs <- find_common_dbs(dir_old, dir_new)
 
   if (nrow(common_dbs)) {
@@ -98,7 +99,10 @@ merge_and_reanalyze <- function(dir_old, dir_new) {
       vct_dir <- file.path(working_dir, paste0(cruise, "_vct"))
       opp_files <- get.opp.files(common$new_path, outliers=F)
       # Predict diameter, carbon quota, classify
-      classify.opp.files(db=common$new_path, opp.dir=opp_dir,  opp.files=opp_files, vct.dir=vct_dir, vct.table=joined_vct)
+      classify.opp.files(
+        db=common$new_path, opp.dir=opp_dir,  opp.files=opp_files,
+        vct.dir=vct_dir, vct.table=joined_vct, mie.table=mie_table
+      )
     }
   }
 }
