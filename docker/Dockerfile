@@ -13,9 +13,8 @@ ARG INSTALL_NCPUS=4
 # Make sure arrow uses pre-built binary libraries if possible and builds with
 # compression support.
 ARG LIBARROW_BINARY=true
-ARG LIBARROW_MINIMAL=false
 
-COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION LICENSE make_docs.R NAMESPACE README.md setup.R setup-deps-only.R /popcycle/
+COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION LICENSE make_docs.R NAMESPACE README.md setup.R /popcycle/
 COPY --chown=${ARG_USER}:${ARG_USER} ./R /popcycle/R
 COPY --chown=${ARG_USER}:${ARG_USER} ./executable_scripts /popcycle/executable_scripts
 COPY --chown=${ARG_USER}:${ARG_USER} ./man /popcycle/man
