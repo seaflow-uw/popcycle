@@ -859,6 +859,25 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
   return(file.list[start.index:end.index])
 }
 
+#' Get POSIXct date from SFL table for file IDs.
+#'
+#' @param db SQLite3 database file path.
+#' @param file_ids Character vector of file IDs.
+#' @return Tibble with columns "date" and "file_id", with same order as file_ids.
+#' @examples
+#' \dontrun{
+#' df <- get_file_dates(db, file_ids)
+#' }
+#' @export
+get_file_dates <- function(db, file_ids) {
+  sfl <- tibble::as_tibble(get.sfl.table(db))
+  sfl <- dplyr::select(sfl, date, file_id=file)
+  sfl$date <- lubridate::ymd_hms(sfl$date)
+  files <- tibble::tibble(file_id=file_ids)
+  result <- dplyr::left_join(files, sfl, by="file_id")
+  return(result[, c("date", "file_id")])
+}
+
 #' Get ISO8601 datetime strings (e.g. 2018-07-13T22:24:40+00:00) for OPP files.
 #'
 #' @param db SQLite3 database file path.
@@ -1349,67 +1368,6 @@ sql.dbWriteTable <- function(db, name, value) {
     DBI::dbDisconnect(con)
     stop(e)
   })
-}
-
-#' Convert a date string to format suitable for popcycle db date comparison.
-#'
-#' @param date.string Date text in format YYYY-MM-DD HH:MM.
-#' @return Date text as YYYY-MM-DDTHH:MM:00.
-#' @examples
-#' \dontrun{
-#' db.date <- date.to.db.date("2014-01-24 13:03")
-#' }
-#' @export
-date.to.db.date <- function(date.string) {
-  return(POSIXct.to.db.date(string.to.POSIXct(date.string)))
-}
-
-#' Returns a POSIXct object for a human readable date string.
-#'
-#' @param date.string Date in format YYYY-MM-DD HH:MM.
-#' @return POSIXct object.
-#' @examples
-#' \dontrun{
-#' date.ct <- string.to.POSIXct("2014-01-24 13:03")
-#' }
-#' @export
-string.to.POSIXct <- function(date.string) {
-  # Make POSIXct objects in GMT time zone
-  date.ct <- as.POSIXct(strptime(date.string, format="%Y-%m-%d %H:%M", tz="GMT"))
-  if (is.na(date.ct)) {
-    stop(paste("wrong format for date.string parameter : ", date.string,
-               "instead of ", "%Y-%m-%d %H:%M"))
-  }
-  return(date.ct)
-}
-
-#' Convert a POSIXct date objectformat suitable for popcycle db date comparison.
-#'
-#' @param date.ct POSIXct date object.
-#' @return Date text as YYYY-MM-DDTHH:MM:00.
-#' @examples
-#' \dontrun{
-#' db.date <- POSIXct.to.db.date(date.ct)
-#' }
-#' @export
-POSIXct.to.db.date <- function(date.ct) {
-  return(format(date.ct, "%Y-%m-%dT%H:%M:00"))
-}
-
-#' Get current UTC datetime as RFC3339 string suitable for entry into db
-#'
-#' @return Date text as YYYY-MM-DDTHH:MM:SS+00:00."
-#' @examples
-#' \dontrun{
-#' datetime.str <- RFC3339.now()
-#' }
-#' @export
-RFC3339.now <- function() {
-  # Now in local time POSIXct
-  now.local <- Sys.time()
-  # Change timezone to UTC
-  attr(now.local, "tzone") <- "UTC"
-  return(format(now.local, format="%FT%H:%M:%S+00:00"))
 }
 
 #' Find common database files between two directories.

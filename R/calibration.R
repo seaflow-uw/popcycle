@@ -50,14 +50,3 @@ size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
 
   return(opp)
 }
-
-#' Read Mie theory calibration file
-#'
-#' @return A dataframe of Mie theory conversion values
-#' @export
-read_mie_csv <- function(path=NULL) {
-  if (is.null(path)) {
-    path <- system.file("scatter", paste0("calibrated-mie.csv"),package="popcycle")
-  }
-  return(read.csv(path))
-}

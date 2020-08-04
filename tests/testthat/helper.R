@@ -32,6 +32,10 @@ setUp <- function() {
   x$db.bare <- file.path(x$tmp.dir, "testcruise_bare.db")
   x$opp.input.dir <- "../testdata/opp"
   x$vct.input.dir <- "../testdata/vct"
+  # For get.vct* tests
+  file.copy("../testdata/getvct/HOT303.db", x$tmp.dir, copy.mode=F)
+  x$db.getvct <- file.path(x$tmp.dir, "HOT303.db")
+  x$get.vct.input.dir <- "../testdata/getvct"
 
   return(x)
 }

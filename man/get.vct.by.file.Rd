@@ -2,22 +2,26 @@
 % Please edit documentation in R/files.R
 \name{get.vct.by.file}
 \alias{get.vct.by.file}
-\title{Get data frame of per particle population classifications by file and quantile}
+\title{Get a tibble of per particle population classifications by file and quantile}
 \usage{
-get.vct.by.file(vct.dir, file.name, quantile)
+get.vct.by.file(db, vct.dir, file.name, col_select = NULL)
 }
 \arguments{
+\item{db}{SQLite3 database file path.}
+
 \item{vct.dir}{VCT file directory.}
 
 \item{file.name}{File name with julian day directory.}
 
-\item{quantile}{Filtering quantile for this file}
+\item{quantile}{Filtering quantile for this file. If NULL, all quantiles are
+returned.}
 }
 \value{
-Data frame of per particle population classifications.
+Tibble of per particle population classifications. If no data is
+  found a tibble with zero rows will be returned.
 }
 \description{
-Get data frame of per particle population classifications by file and quantile
+Get a tibble of per particle population classifications by file and quantile
 }
 \examples{
 \dontrun{

@@ -318,33 +318,116 @@ save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_al
   }
 }
 
-#' Get data frame of per particle population classifications by file and quantile
+#' Get a tibble of per particle population classifications by file and quantile
 #'
+#' @param db SQLite3 database file path.
 #' @param vct.dir VCT file directory.
 #' @param file.name File name with julian day directory.
-#' @param quantile Filtering quantile for this file
-#' @return Data frame of per particle population classifications.
+#' @param quantile Filtering quantile for this file. If NULL, all quantiles are
+#'   returned.
+#' @return Tibble of per particle population classifications. If no data is
+#'   found a tibble with zero rows will be returned.
 #' @examples
 #' \dontrun{
 #' vct <- get.vct.by.file(vct.dir, "2014_185/2014-07-04T00-00-02+00-00")
 #' }
 #' @export
-get.vct.by.file <- function(vct.dir, file.name, quantile) {
-  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct")
-  if (!file.exists(vct.file)) {
-    vct.file <- paste0(vct.file, ".gz")
-    if (!file.exists(vct.file)) {
-      stop(paste("No VCT file for ", file.name))
-    }
-  }
-  if (tools::file_ext(vct.file) == "gz") {
-    con <- gzfile(description=vct.file)
+get.vct.by.file <- function(db, vct.dir, file.name, col_select=NULL) {
+  file.name <- clean.file.path(file.name)
+  col_select <- rlang::enquo(col_select)
+  if (rlang::quo_is_null(col_select)) {
+    col_select <- NULL
   } else {
-    con <- file(description=vct.file)
+    # Alway enforce dates and file_ids as the first columns
+    col_select <- rlang::expr(c(date, file_id, {{ col_select }}))
   }
-  vct <- read.table(con, col.names=c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop"))
-  return(vct)
+  opp_stats <- tibble::as_tibble(get.opp.stats.by.file(db, file.name))
+  opp_stats <- dplyr::filter(opp_stats, quantile == 50)  # only need files and dates for one quantile
+  if (nrow(opp_stats) == 0) {
+    # No data found
+    return(tibble::tibble())
+  }
+
+  # Only keep file_id and date as datetime object
+  date_df <- dplyr::select(
+    dplyr::mutate(opp_stats, file_id=file, date=lubridate::ymd_hms(date)),
+    file_id,
+    date
+  )
+  vct_files <- list.files(vct.dir, pattern=paste0("*.vct.parquet"), full.names=TRUE)
+  # TODO this will throw an error if something in date_df isn't in vct_files
+  # do something to handle it
+  window_df <- add_window_paths(date_df, vct_files)  # associate files with parquet files
+  # TODO check for no match
+  vct_path <- window_df$window_path[1]
+  vct_df <- dplyr::filter(
+    tibble::as_tibble(arrow::read_parquet(vct_path, col_select={{ col_select }})),
+    file_id == file.name
+  )
+  return(vct_df)
 }
+
+#' Get data frame of per particle population classifications selecting by date.
+#'
+#' Datetime string formats should be in the form "2020-07-31 10:00".
+#'
+#' @param db SQLite3 database file path.
+#' @param vct.dir VCT file directory.
+#' @param start.date Start date string, inclusive.
+#' @param end.date End date string, inclusive.
+#' @param col_select col_select parameter passed to arrow::read_parquet as
+#'   tidy-selection. date and file_id are always added as the first columns.
+#'   By default all columns are returned.
+#' @return Data frame of per particle population classifications. If no data is
+#'   found a data frame with zero rows will be returned.
+#' @examples
+#' \dontrun{
+#' vct <- get.vct.by.date(db, vct.dir, "2020-07-31 10:00", "2020-07-31 12:00"
+#'                        col_select=c(ends_with("q50"), starts_with("diam_mid"))
+#' }
+#' @export
+get.vct.by.date <- function(db, vct.dir, start.date, end.date, outliers=TRUE,
+                            col_select=NULL) {
+  col_select <- rlang::enquo(col_select)
+  if (rlang::quo_is_null(col_select)) {
+    col_select <- NULL
+  } else {
+    # Alway enforce dates and file_ids as the first columns
+    col_select <- rlang::expr(c(date, file_id, {{ col_select }}))
+  }
+
+  opp_stats <- tibble::as_tibble(get.opp.stats.by.date(
+    db, start.date=start.date, end.date=end.date, outliers=outliers
+  ))
+  opp_stats <- dplyr::filter(opp_stats, quantile == 50)  # only need one quantile
+  if (nrow(opp_stats) == 0) {
+    # No data found
+    return(tibble::tibble())
+  }
+
+  # Only keep file_id and date as datetime object
+  date_df <- dplyr::select(
+    dplyr::mutate(opp_stats, file_id=file, date=lubridate::ymd_hms(date)),
+    file_id,
+    date
+  )
+  vct_files <- list.files(vct.dir, pattern=paste0("*.vct.parquet"), full.names=TRUE)
+  # TODO this will throw an error if something in date_df isn't in vct_files
+  # do something to handle it
+  window_df <- add_window_paths(date_df, vct_files)  # associate files with parquet files
+
+  dfs <- list()
+  # TODO check for files with no window file matches
+  for (vct_path in unique(window_df$window_path)) {
+    vct_df <- dplyr::filter(
+      tibble::as_tibble(arrow::read_parquet(vct_path, col_select={{ col_select }})),
+      file_id %in% window_df$file_id
+    )
+    dfs[[length(dfs)+1]] <- vct_df
+  }
+  return(dplyr::bind_rows(dfs))
+}
+
 
 #' Save VCT per particle population classification.
 #'
@@ -393,4 +476,97 @@ empty_evt <- function() {
 #' }
 empty_opp <- function() {
   return(empty_evt())
+}
+
+#' Add intervals and window paths for each date in df.
+#'
+#' @param df Dataframe with a "date" column of POSIXct dates.
+#' @param window_paths Time-windowed SeaFlow file paths.
+#' @return A copy of df with a new lubridate::interval column "interval" and a
+#'   a new character column "window_path" of a time-windowed file path matching
+#'   each date. New values are NA if a date doesn't match a time-windowed
+#'   seaflow file path.
+add_window_paths <- function(df, window_paths) {
+  if (! "date" %in% colnames(df)) {
+    stop("date column missing from df in add_window_paths()")
+  }
+  window_df <- tibble::tibble(window_path=window_paths)
+  window_df <- add_window_paths_intervals(window_df)
+  # Set all to NA, meaning not found by default
+  df$interval <- lubridate::interval(start=NA, end=NA)
+  df$window_path <- NA
+  for (i in 1:nrow(df)) {
+    matched_intervals <- lubridate::`%within%`(df$date[i], window_df$interval)
+    # If more than one interval found for a date throw an error, this should
+    # never happen.
+    if (sum(matched_intervals) > 1) {
+      stop(paste("Found more than one window file for", df[i, ]))
+    }
+    if (sum(matched_intervals) == 1) {
+      df$interval[i] <- window_df$interval[matched_intervals]
+      df$window_path[i] <- window_df$window_path[matched_intervals]
+    }
+    # else we're left with the default NA for no matches
+  }
+  return(df)
+}
+
+#' Get datetime interval for time-windowed SeaFlow file paths.
+#'
+#' @param window_df Dataframe with column "window_path" for SeaFlow
+#'   time-windowed file paths.
+#' @return A copy of window_df with a new "interval" column of
+#'   lubridate::interval, inclusive at the start boundaries and exclusive at
+#'   the end boundary.
+add_window_paths_intervals <- function(window_df) {
+  # Given a list of seaflow time-windowed file paths, return a list of
+  # lubridate::interval objects.
+  filenames <- basename(window_df$window_path)
+  pattern <- paste0("^[^.]+\\.[123456789]\\d*H\\.(vct|opp)\\.")
+  good_files <- grepl(pattern, filenames)
+  if (!all(good_files)) {
+    stop(paste0(
+      "some files dont' look like SeaFlow OPP/VCT windowed files\n",
+      paste(window_df$window_path[!good_files], collapse="\n")
+    ))
+  }
+
+  parts <- strsplit(filenames, ".", fixed=TRUE)
+  timestamps <- sapply(parts, function(x) x[1])
+  windows <- sapply(parts, function(x) x[2])
+  hours <- window_hours(windows)
+
+  # subtract 1 millisecond from the end to get exclusive interval end points
+  # at +1H
+  t0s <- parse_file_dates(timestamps)
+  t1s <- t0s + lubridate::hours(hours) - lubridate::milliseconds(1)
+  intervals <- lubridate::interval(t0s, t1s)
+  if (length(intervals) != length(window_df$window_path)) {
+    stop("length(intervals) != length(window_df$window_path) in add_window_paths_intervals()")
+  }
+  window_df$interval <- intervals
+  return(window_df)
+}
+
+window_hours <- function(windows) {
+  # Return numeric hours from time window size strings
+  # e.g. 1H for 1 hour, 10H for 10 hours
+  pattern <- "^[123456789]\\d*H$"
+  good <- grepl(pattern, windows)
+  if (!all(good)) {
+    stop(paste("some time windows are poorly formatted: ", windows[!good]))
+  }
+  hours <- as.integer(substr(windows, 1, nchar(windows)-1))
+  return(hours)
+}
+
+#' Read Mie theory calibration file
+#'
+#' @return A dataframe of Mie theory conversion values
+#' @export
+read_mie_csv <- function(path=NULL) {
+  if (is.null(path)) {
+    path <- system.file("scatter", paste0("calibrated-mie.csv"),package="popcycle")
+  }
+  return(read.csv(path))
 }

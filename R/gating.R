@@ -278,7 +278,6 @@ classify.opp <- function(opp, gates.log) {
   return(opp)
 }
 
-
 #' Classify particles for a list of OPP files.
 #'
 #' Classify a  list of OPP files. Save per file aggregate population statistics
@@ -460,48 +459,6 @@ copy_column_parts <- function(src, dst, dst_index) {
   return(dst)
 }
 
-get_window_path_intervals <- function(window_paths, file_ext="parquet") {
-  # Given a list of seaflow time-windowed file paths, return a list of
-  # lubridate::interval objects.
-  filenames <- basename(window_paths)
-  pattern <- paste0("^[^.]+\\.[123456789]\\d*H\\.(vct|opp)\\.", file_ext, "$")
-  good_files <- grepl(pattern, filenames)
-  if (!all(good_files)) {
-    stop(paste("some files dont' look like SeaFlow OPP/VCT windowed files", paths))
-  }
-  
-  parts <- strsplit(filenames, ".", fixed=TRUE)
-  timestamps <- sapply(parts, function(x) x[1])
-  windows <- sapply(parts, function(x) x[2])
-  hours <- window_hours(windows)
-  
-  # subtract 1 millisecond from the end to get exclusive interval end points
-  # at +1H
-  t0s <- parse_file_dates(timestamps)
-  t1s <- t0s + lubridate::hours(hours) - lubridate::milliseconds(1)
-  return(lubridate::interval(t0s, t1s))
-}
-
-window_hours <- function(windows) {
-  # Return numeric hours from time window size strings
-  # e.g. 1H for 1 hour, 10H for 10 hours
-  pattern <- "^[123456789]\\d*H$"
-  good <- grepl(pattern, windows)
-  if (!all(good)) {
-    stop(paste("some time windows are poorly formatted: ", windows[!good]))
-  }
-  hours <- as.integer(substr(windows, 1, nchar(windows)-1))
-  return(hours)
-}
-
-parse_file_dates <- function(file_timestamps) {
-  # Parse seaflow file timestamps as lubridate dates
-  parts <- strsplit(file_timestamps, "T", fixed=TRUE)
-  date_parts <- sapply(parts, function(x) x[1])
-  time_parts <- stringr::str_replace_all(sapply(parts, function(x) x[2]), "-", ":")
-  final_stamps <- paste(date_parts, time_parts)
-  return(lubridate::ymd_hms(final_stamps))
-}
 
 create_gating_plan <- function(file_ids_to_gate, db, opp_dir, vct_dir, gating_id=NULL, vct_table=NULL) {
   if (!is.null(gating_id) & !is.null(vct_table)) {
@@ -527,40 +484,21 @@ create_gating_plan <- function(file_ids_to_gate, db, opp_dir, vct_dir, gating_id
 add_dates <- function(df, db) {
   # Add a "date" column based on the SFL db table to a dataframe of "file_id"
   # Get SFL dates
-  sfl <- tibble::as_tibble(get.sfl.table(db))
-  sfl <- dplyr::select(sfl, date=date, file_id=file)
-  sfl$date <- lubridate::ymd_hms(sfl$date)
-  # Only keep those sfl entries in file_ids
-  df_with_dates <- sfl[sfl$file_id %in% df$file_id, ]
-  return(df_with_dates)
+  dates <- get_file_dates(db, df$file_id)
+  df$date <- dates$date
+  return(df)
 }
 
-add_opp_vct_paths <- function(df, opp_dir, vct_dir, file_ext="parquet") {
+add_opp_vct_paths <- function(df, opp_dir, vct_dir) {
   # Add time windowed paths and intervals to a dataframe with column "date"
   # Get intervals covered by each windowed OPP file
-  paths <- list.files(opp_dir, pattern=paste0("*.opp.", file_ext), full.names=TRUE)
-  intervals <- tibble::tibble(
-    window_opp_path=paths,
-    interval=get_window_path_intervals(paths, file_ext=file_ext)
-  )
-  # Find indexes into intervals$interval for each file_id to gate
-  # This returns TRUE for each interval that contains date d
-  matched <- purrr::map(df$date, function(d) {
-    return(lubridate::`%within%`(d, intervals$interval))
-  })
-  # Convert to integer indexes
-  intervals_i <- lapply(matched, function(x) {which(x)})
-  # Make sure exactly one interval was found per date
-  not_singlets <- unlist(purrr::map(intervals_i, length)) > 1
-  if (any(not_singlets)) {
-    stop(paste("Found more than one window file for", df[not_singlets, ]$file_id))
-  }
-  intervals_i <- unlist(intervals_i)
-  df$window_opp_path <- intervals$window_opp_path[intervals_i]
-  df$interval <- intervals$interval[intervals_i]
+  paths <- list.files(opp_dir, pattern=paste0("*.opp.parquet"), full.names=TRUE)
+  # Add interval and window_path column to df based on date
+  df <- add_window_paths(df, paths)
+  df <- dplyr::rename(df, window_opp_path=window_path)  # rename to be opp specific
   # Add VCT output paths
-  ext1 <- paste0("opp.", file_ext)
-  ext2 <- paste0("vct.", file_ext)
+  ext1 <- "opp.parquet"
+  ext2 <- "vct.parquet"
   df <- dplyr::mutate(
     df,
     window_vct_path=file.path(
@@ -568,7 +506,6 @@ add_opp_vct_paths <- function(df, opp_dir, vct_dir, file_ext="parquet") {
       stringr::str_replace(basename(window_opp_path), ext1, ext2)
     )
   )
-
   return(df)
 }
 
@@ -612,7 +549,6 @@ add_instrument_serial <- function(df, db) {
 prep_vct_stats <- function(vct) {
   # Now group by file_id and pop and get summary statistics for all
   # quantiles.
-  vct[, c("fsc_small", "pe", "chl_small")] <- transformData(vct[, c("fsc_small", "pe", "chl_small")])
   vct <- tibble::as_tibble(vct)
   df <- tibble::tibble()  # to store aggregated stats for all quantiles
   for (quant in popcycle:::QUANTILES) {
@@ -741,35 +677,38 @@ handle_3min_opp <- function(x, y, gating_plan, gating_params, mie=NULL) {
     # correctly, so double-check here.
     stop(paste("gating ID mismatch for", file_id, ":", gating_id, "!=", gp$id, ""))
   }
+  filter_id_from_file <- unique(opp$filter_id)
+  if (filter_id != filter_id_from_file) {
+    # Quick sanity check that OPP we're using matches what we pulled from the db
+    stop(paste("filter ID mismatch for", file_id, ":", filter_id, "!=", filter_id_from_file, ""))
+  }
   for (quantile in popcycle:::QUANTILES) {
     channels <- c("fsc_small", "pe", "chl_small")
     qcol <- paste0("q", quantile)  # name of logical column for a single quantile
     beads_col <- paste0("beads_fsc_", quantile)  # name of quantile-specific beads_fsc from filtering params
     qopp <- opp[opp[[qcol]], channels]  # quantile-specific OPP data
-    qopp_t <- transformData(qopp)
     beads_fsc <- gating_plan[[beads_col]][1]
-    qopp_t <- as.data.frame(qopp_t)  # something in carbon conversion of classify.opp doesn't like tibbles
+    qopp <- as.data.frame(qopp)  # something in carbon conversion of classify.opp doesn't like tibbles
     # First calculate diameter and carbon quota
-    qopp_t <- size.carbon.conversion(qopp_t, beads.fsc=beads_fsc, inst=inst, mie=mie)
+    qopp <- size.carbon.conversion(qopp, beads.fsc=beads_fsc, inst=inst, mie=mie)
     # Then gate
-    qopp_t <- classify.opp(qopp_t, gp$gates.log)
+    qopp <- classify.opp(qopp, gp$gates.log)
     # Select and rename quantile-specific columns. No need to keep the 
     # OPP channel data, that's still in the original OPP dataframe.
     # Add "_q<quantile>" to each new column to indicate it's quantile.
-    qopp_t <- dplyr::rename_with(
-      dplyr::select(qopp_t, !c(fsc_small, pe, chl_small)),
+    qopp <- dplyr::rename_with(
+      dplyr::select(qopp, !c(fsc_small, pe, chl_small)),
       ~ stringr::str_c(.x, paste0("_q", quantile))
     )
     # Copy new columns for this quantile's subset of rows back into opp
-    opp <- copy_column_parts(qopp_t, opp, opp[[qcol]])
+    opp <- copy_column_parts(qopp, opp, opp[[qcol]])
   }
   opp <- tibble::as_tibble(opp)
-  # Add gating and filter ID here as factors for easier record keeping
+  # Add gating ID here as factor for easier record keeping
   # downstream, and to make sure the correct gating parameters were used
   # for this file. Note the gating ID is captured from the actual gating
   # parameters used, not just the gating ID that was passed into this
   # function.
   opp$gating_id <- as.factor(gp$id)
-  opp$filter_id <- as.factor(filter_id)
   return(opp)
 }
