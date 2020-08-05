@@ -623,6 +623,10 @@ prep_vct_stats <- function(vct) {
 }
 
 handle_window_opp <- function(x, y, gating_params, mie=NULL) {
+  # First try to release unused memory that may have been left behind by a large
+  # previous OPP/VCT dataframe.
+  gc()
+
   gating_plan <- x
   window_opp_path <- y$window_opp_path[1]
   window_vct_path <- gating_plan$window_vct_path[1]
