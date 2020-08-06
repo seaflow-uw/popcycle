@@ -100,28 +100,6 @@ clean.file.path <- function(fpath) {
   return(paste(julian.day, file.name, sep="/"))
 }
 
-#' Check if file path ends with suffix
-#'
-#' @param path File path to test.
-#' @param ending String suffix to test
-#' @return TRUE or FALSE if path ends with ending. If either path or ending has
-#'   length zero or if ending is longer than path, return FALSE.
-#' @examples
-#' \dontrun{
-#' endswith("foo/bar.txt", ".txt") # TRUE
-#' endswith("foo/bar.txt", ".gz")  # FALSE
-#' }
-#' @export
-endswith <- function(path, ending) {
-  psize <- nchar(path)
-  esize <- nchar(ending)
-  if (psize > 0 && esize > 0 && psize >= esize) {
-    return(substr(path, psize - esize + 1, psize) == ending)
-  }
-
-  return(FALSE)
-}
-
 #' file_transfer
 #'
 #' @return None
