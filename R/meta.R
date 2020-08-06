@@ -13,48 +13,6 @@ var_data <- c("time", "lat", "lon",
           "abundance","abundance_se",
           "flag")
 
-var_standard_name <- c("time",
-                  "latitude",
-                  "longitude",
-                  "sea surface temperature",
-                  "sea surface salinity",
-                  "sea surface solar irradiance",
-                  "OPP confidence interval",
-                  "population",
-                  "first quartile of chlorophyll fluorescence",
-                  "median of chlorophyll fluorescence",
-                  "third quartile of chlorophyll fluorescence",
-                  "first quartile of phycoerythrin fluorescence",
-                  "median of phycoerythrin fluorescence",
-                  "third quartile of phycoerythrin fluorescence",
-                  "first quartile of forward scatter",
-                  "median of the forward scatter",
-                  "third quartile of forward scatter",
-                  "first quartile of equivalent spherical diameter using high refractive index",
-                  "median of equivalent spherical diameter using high refractive index",
-                  "third quartile of equivalent spherical diameter using high refractive index",
-                  "first quartile of equivalent spherical diameter using mid refractive index",
-                  "median of equivalent spherical diameter using mid refractive index",
-                  "third quartile of equivalent spherical diameter using mid refractive index",
-                  "first quartile of equivalent spherical diameter using low refractive index",
-                  "median of equivalent spherical diameter using low refractive index",
-                  "third quartile of equivalent spherical diameter using low refractive index",
-                  "first quartile of cellular carbon content using high refractive index",
-                  "median of cellular carbon content using high refractive index",
-                  "mean of cellular carbon content using high refractive index",
-                  "third quartile of cellular carbon content using high refractive index",
-                  "first quartile of cellular carbon content using mid refractive index",
-                  "median of cellular carbon content using mid refractive index",
-                  "mean of cellular carbon content using mid refractive index",
-                  "third quartile of cellular carbon content using mid refractive index",
-                  "first quartile of cellular carbon content using low refractive index",
-                  "median of cellular carbon content using low refractive index",
-                  "mean of cellular carbon content using low refractive index",
-                  "third quartile of cellular carbon content using low refractive index",
-                  "cell concentration",
-                  "standard error of cell aconcentration",
-                  "status flag")
-
 var_long_name <- c("time of sample collection (UTC)",
                   "latitude",
                   "longitude",
@@ -99,19 +57,19 @@ var_long_name <- c("time of sample collection (UTC)",
 
 var_comment <-  c(rep('none',3),
                   rep('uncurated data broadcasted by the ship (as is)',3),
-                  'interval confidence for OPP filtration (2.5 = permissive approach; 50 = standard approach; 97.5 = conservative approach); see https://github.com/armbrustlab/seaflow-filter for more details',
+                  'interval confidence for OPP filtration (2.5 = permissive approach; 50 = standard approach; 97.5 = conservative approach); see https://github.com/seaflow-uw/seaflow-filter for more details',
                   'prochloro (Prochlorococcus) synecho (Synechococcus) picoeuk (picoeukaryote phytoplankton) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles)',
                   rep('chlorophyll fluorescence (collected using a 692-40 bandpass filter)',3),
                   rep('phycoerythrin fluorescence (collected using a 572-27 bandpass filter)',3),
                   rep('forward angle light scatter (collected using a 457-50 bandpass filter)',3),
-                  rep('cell diameter based on Mie theory using an index of refraction of 1.41 for phytoplankton and 1.337 for seawater, see https://github.com/armbrustlab/fsc-size-calibration for more details',3),
-                  rep('cell diameter based on Mie theory using an index of refraction of 1.38 for phytoplanktonand 1.337 for seawater, see https://github.com/armbrustlab/fsc-size-calibration for more details',3),
-                  rep('cell diameter based on Mie theory using an index of refraction of 1.35 for phytoplanktonand 1.337 for seawater, see https://github.com/armbrustlab/fsc-size-calibration for more details',3),
-                  rep('carbon content based on the equation fgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter (Mie-based, using refractive index of 1.41 for phytoplankton) assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details',4),
-                  rep('carbon content based on the equation fgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter (Mie-based, using refractive index of 1.38 for phytoplankton) assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details',4),
-                  rep('carbon content based on the equation fgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter (Mie-based, using refractive index of 1.35 for phytoplankton) assuming spherical particle; see https://github.com/armbrustlab/fsc-poc-calibration for more details',4),
-                  'cell abundance, see https://github.com/armbrustlab/seaflow-virtualcore for more details',
-                  'standard error of cell abundance based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/armbrustlab/seaflow-virtualcore for more details',
+                  rep('cell diameter based on Mie theory using an index of refraction of 1.41 for phytoplankton and 1.337 for seawater, see https://github.com/seaflow-uw/fsc-size-calibration for more details',3),
+                  rep('cell diameter based on Mie theory using an index of refraction of 1.38 for phytoplanktonand 1.337 for seawater, see https://github.com/seaflow-uw/fsc-size-calibration for more details',3),
+                  rep('cell diameter based on Mie theory using an index of refraction of 1.36 for phytoplanktonand 1.337 for seawater, see https://github.com/seaflow-uw/fsc-size-calibration for more details',3),
+                  rep('carbon content based on the equation fgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter (Mie-based, using refractive index of 1.41 for phytoplankton) assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
+                  rep('carbon content based on the equation fgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter (Mie-based, using refractive index of 1.38 for phytoplankton) assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
+                  rep('carbon content based on the equation fgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter (Mie-based, using refractive index of 1.35 for phytoplankton) assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
+                  'cell abundance, see https://github.com/seaflow-uw/seaflow-virtualcore for more details',
+                  'standard error of cell abundance based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/seaflow-uw/seaflow-virtualcore for more details',
                   'outliers (0 = Quality data; 1 = issue related to instrument performance; 2 = issue related to OPP filtration; 3 = issue related to population classification)')
 
 var_unit <- c("%Y-%m-%dT%H:%M:%S",
@@ -128,36 +86,21 @@ var_unit <- c("%Y-%m-%dT%H:%M:%S",
               rep("cells per microliter",2),
               "unitless")
 
-var_keywords <- c("time+UTC+date",
-                "latitude",
-                "longitude",
-                "temperature+sst",
-                "salinity+sss",
-                "light+irradiance+PAR",
-                "interval+confidence",
-                "Prochlorococcus+Synechococcus+Crocosphaera+picoeukaryotes+phytoplankton+picophytoplankton+unknown",
-                rep("red+fluorescence+chlorophyll",3),
-                rep("orange+fluorescence+chlorophyll",3),
-                rep("forward+angle+light+scatter+FSC+FALS",3),
-                rep("size+diameter",9),
-                rep("quotas+carbon+biomass+POC",12),
-                rep("abundance+concentration+density",2),
-                "none")
-
 var_sensor <- c("SeaFlow",
                 rep("data broadcasted by ship", 2),
                 rep("data broadcasted by ship", 3),
                 rep("SeaFlow",35))
 
 var_discipline <- c(rep("", 3),
-                   rep("physics+abiotic", 3),
-                   "optics+SeaFlow",
-                   "taxonomy+cytometry+SeaFlow",
-                   rep("optics+cytometry+SeaFlow",9),
-                   rep("biology+biogeochemistry+optics+cytometry+SeaFlow",21),
-                   rep("biology+biogeochemistry+SeaFlow",2),
-                   "optics+SeaFlow")
+                   rep("physics, abiotic", 3),
+                   "optics, SeaFlow",
+                   "taxonomy, cytometry, SeaFlow",
+                   rep("optics, cytometry, SeaFlow",9),
+                   rep("biology, biogeochemistry, optics, cytometry, SeaFlow",21),
+                   rep("biology, biogeochemistry, SeaFlow",2),
+                   "optics, SeaFlow")
 
+visualize <- c(rep(0, 3), rep(1, 3), rep(0, 2),  rep(1, 11), 0)
 
 
 
@@ -174,10 +117,8 @@ var_discipline <- c(rep("", 3),
 #' csv_convert(db, meta, path)
 #' }
 #' @export
-csv_convert<- function(db, meta, path, version = "v1.0") {
-
-    # meta <- googlesheets::gs_read(googlesheets::gs_title("SeaFlow\ instrument\ log", verbose = FALSE))
-
+csv_convert<- function(db, meta, path, version = "v1.3") {
+   
     cruise <- sub(".db", "",basename(db))
     print(paste("formatting stat table for cruise:", cruise))
 
@@ -187,31 +128,52 @@ csv_convert<- function(db, meta, path, version = "v1.0") {
     ship <- paste(meta[which(meta$cruise == cruise),"Ship"])
     serial <- paste(meta[which(meta$cruise == cruise),"Instrument"])
 
+    core <- paste("flow cytometry, SeaFlow, SeaFlow@UW, insitu, in-situ, biology, University of Washington, UW", official.cruise)
+
+    var_keywords <- c("time, UTC ,date",
+                    "latitude",
+                    "longitude",
+                    "temperature, sst",
+                    "salinity, sss",
+                    "light, irradiance, PAR",
+                    paste("interval, confidence", core),
+                    paste("Prochlorococcus, Synechococcus, Crocosphaera, picoeukaryotes, picoeuks, phytoplankton, picophytoplankton, unknown", core),
+                    rep(paste("red, fluorescence, chlorophyll", core),3),
+                    rep(paste("orange, fluorescence, chlorophyll", core),3),
+                    rep(paste("forward scatter, FSC, FALS", core),3),
+                    rep(paste("size, diameter, ESD", core),9),
+                    rep(paste("quotas, carbon, biomass, POC", core),12),
+                    rep(paste("abundance, concentration, count", core),2),
+                    "none")
+
+
     # data
     data <- get.stat.table(db)
     data <- data[,var_data]
-    readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_dataset_", version,".csv"))
+    
+    readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_",as.Date(Sys.time()),"_", version,".csv"))
 
     # dataset_metadata
     dataset_metadata <- dplyr::tibble(
                           dataset_short_name = paste0("SeaFlow_",official.cruise),
                           dataset_long_name = paste0("SeaFlow_",official.cruise),
-                          dataset_cruise = official.cruise,
-                          dataset_project = project,
                           dataset_version = version,
                           dataset_release_date = as.Date(Sys.time()),
                           dataset_make = "observation",
-                          dataset_source = paste0("surface seawater supplied by ship (",ship,") and analyzed by SeaFlow (serial number ", serial,")"),
-                          dataset_doi = "https://doi.org/10.5281/zenodo.XXXXX",
-                          dataset_history = paste("Data were analyzed using the R package Popcycle version", packageVersion("popcycle")),
-                          dataset_description = "SeaFlow data generated by University of Washington / Armbrust lab (ribalet@uw.edu). Visit https://armbrustlab.ocean.washington.edu/tools/seaflow for more information about the SeaFlow project",
-                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData")
+                          dataset_source = paste0("surface seawater supplied by ship (",ship,") and analyzed by SeaFlow (serial number ", serial,") using the R package Popcycle version", packageVersion("popcycle")")",
+                          official_cruise_name = official.cruise,
+                          dataset_ackowledgment = "This work was supported by grants from the Simons Foundation (#574495 to Francois Ribalet)"
+                          dataset_email = "seaflow@uw.edu, ribalet@uw.edu",
+                          dataset_description = "SeaFlow data generated by SeaFlow@UW, University of Washington (https://seaflow.netlify.app/)",
+                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData",
+                          climatology = NULL)
+    
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_", official.cruise,"_dataset_metadata_", version,".csv"))
 
     # vars_metadata
     vars_metadata <- dplyr::tibble(
                           var_short_name = var_data,
-                          var_standard_name,
+                          var_long_name,
                           var_sensor,
                           var_unit,
                           var_spatial_res = "irregular",
@@ -219,7 +181,9 @@ csv_convert<- function(db, meta, path, version = "v1.0") {
                           var_missing_value = "NA",
                           var_discipline,
                           var_keywords,
+                          visualize,
                           var_comment)
-    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata.csv"))
+
+    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata_",version,".csv"))
 
 }
