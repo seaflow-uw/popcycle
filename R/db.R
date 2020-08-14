@@ -1709,10 +1709,11 @@ transform_PSD <- function(distribution, time.step="1 hour",
 
   # Menden-Deuer, S. & Lessard conversion factors
   d <- 0.261; e <- 0.860
-  # convert size interval (factors) into data.frame
-  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(distribution)[clmn])),",")
   # select column that have PSD data
   clmn <- grep("]", names(distribution))
+  # convert size interval (factors) into data.frame
+  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(distribution)[clmn])),",")
+
 
   if(Qc.to.diam){
     #convert Qc into diam using the Menden-Deuer conversion
