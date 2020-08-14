@@ -287,7 +287,8 @@ plot_time <- function(stat, param, transform=FALSE){
 #'
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
-#' @param binwidth The width of the bins. Can be specified as a numeric value, or a function that calculates width from x. The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
+#' @param binwidth The width of the bins. Can be specified as a numeric value, or a function that calculates width from x. T
+#' The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
 #' @param transform Log transformation of the parameter"
 #' @param position Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.
 #' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
