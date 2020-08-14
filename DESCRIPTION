@@ -9,6 +9,7 @@ Depends:
 biocViews:
 Imports:
     arrow,
+    doParallel,
     flowCore,
     flowDensity,
     matrixStats,

@@ -191,7 +191,7 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   if (untransform)  df <- untransformData(df, columns=EVT.HEADER)
 
   ## open connection ##
-  if (endswith(path, ".gz")) {
+  if (endsWith(path, ".gz")) {
     con <- gzfile(description = path, open="wb")
   } else {
     con <- file(description = path, open="wb")

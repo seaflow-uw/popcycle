@@ -308,7 +308,8 @@ classify.opp <- function(opp, gates.log) {
 #' }
 #' @export
 classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
-                               gating.id=NULL, vct.table=NULL, mie.table=NULL) {
+                               gating.id=NULL, vct.table=NULL, mie.table=NULL,
+                               cores=1) {
   ptm <- proc.time()
 
   # Read installed Mie theory table if not provided
@@ -331,19 +332,38 @@ classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
     gating_params[[gid]] <- get.gating.params.by.id(db, gid)
   }
 
+  # Perform classification, save new VCT Parquet files
   # Group by input time-windowed OPP Parquet file path. Classifcation will be
   # performed for all file IDs in one parquet file at a time.
   by_window_opp_path <- dplyr::group_by(
     gating_plan,
     window_opp_path
   )
-  # Perform classification, save new VCT Parquet files
-  answer <- dplyr::group_map(
-    by_window_opp_path,
-    handle_window_opp,
-    gating_params,
-    mie=mie.table
-  )
+  cores <- min(cores, parallel::detectCores())
+  print(paste0("using ", cores, " cores"))
+  if (cores > 1) {
+    # Parallel code
+    cl <- parallel::makeCluster(cores, outfile="")
+    doParallel::registerDoParallel(cl)
+    answer <- foreach::`%dopar%`(
+      foreach::foreach(
+        df=dplyr::group_split(by_window_opp_path),
+        .inorder=TRUE,
+        .combine=dplyr::bind_rows
+      ),
+      handle_window_opp(df, NULL, gating_params, mie=mie.table)
+    )
+    parallel::stopCluster(cl)
+  } else {
+    # Serial code
+    answer <- dplyr::group_map(
+      by_window_opp_path,
+      handle_window_opp,
+      gating_params,
+      mie=mie.table,
+      .keep=TRUE
+    )
+  }
   # Save stats to DB
   vct_stats_all <- dplyr::bind_rows(answer)
   save.vct.stats(db, vct_stats_all)
@@ -622,18 +642,34 @@ prep_vct_stats <- function(vct) {
   return(df_reorder)
 }
 
+# Process a single time-windowed OPP file.
+# 
+# x is a dataframe created by create_gating_plan() that relate to processing a
+# single time-windowed OPP file.
+# 
+# y will be ignored, it is usually the group key (OPP file path) required by
+# dplry::group_map but here we get the group key from the single unique value in
+# x$window_opp_path.
+# 
+# gating_params is a named list that can be used to lookup gating parameters by
+# gating ID string.
+# 
+# mie is optionally a Mie theory lookup table dataframe to be used during VCT
+# creation.
 handle_window_opp <- function(x, y, gating_params, mie=NULL) {
   # First try to release unused memory that may have been left behind by a large
   # previous OPP/VCT dataframe.
   gc()
 
   gating_plan <- x
-  window_opp_path <- y$window_opp_path[1]
+  # It should be a column in the dataframe x, probably used as the group by
+  # key, therefore we can assume there is only one value.
+  window_opp_path <- x$window_opp_path[1]
   window_vct_path <- gating_plan$window_vct_path[1]
   window_opp_df <- arrow::read_parquet(window_opp_path)
 
   by_file_id <- dplyr::group_by(window_opp_df, file_id)
-  writeLines(paste0(lubridate::now("GMT"), ":  starting ", basename(window_opp_path)))
+  logtext <- paste0(lubridate::now("GMT"), " :: ", Sys.getpid(), " :: starting ", basename(window_opp_path))
   processed <- dplyr::group_map(
     by_file_id,
     handle_3min_opp,
@@ -661,7 +697,12 @@ handle_window_opp <- function(x, y, gating_params, mie=NULL) {
   vct_stats_df <- prep_vct_stats(window_vct_df)
   # TODO: Read existing VCT window file
   # Merge new data into existing VCT window file
-  writeLines(paste0(lubridate::now("GMT"), ":  finished ", basename(window_opp_path)))
+  logtext <- paste0(
+    logtext,
+    "\n",
+    paste0(lubridate::now("GMT"), " :: ", Sys.getpid(), " :: finished ", basename(window_opp_path))
+  )
+  writeLines(logtext)
   return(vct_stats_df)
 }
 

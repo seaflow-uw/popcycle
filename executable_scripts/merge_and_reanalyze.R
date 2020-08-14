@@ -10,7 +10,7 @@
 # as the dirB database file in a subdirectory named "<cruise>_opp" where
 # <cruise> is pulled from the metadata table. A new directory "<cruise>_vct"
 # will be created in the same location.
-usage <- "usage: merge_and_reanalyze.R dirA dirB [mie.csv]
+usage <- "usage: merge_and_reanalyze.R dirA dirB cores [mie.csv]
 
 - dirA should contain the popcycle databases to pull tables from.
 - dirB should contain popcycle databases to copy tables to. Database files will
@@ -18,12 +18,13 @@ usage <- "usage: merge_and_reanalyze.R dirA dirB [mie.csv]
   as the dirB database file in a subdirectory named '<cruise>_opp' where
   <cruise> is pulled from the metadata table. A new directory '<cruise>_vct'
   will be created in the same location.
+- cores number of cores to use for analysis.
 - mie.csv is an optional Mie Theory lookup table csv that can be supplied to
   replace the one installed with this version of popcycle."
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) < 2) {
+if (length(args) < 3) {
   stop(usage, call.=FALSE)
 } else {
   if (! is.na(file.info(args[1])$isdir)) {
@@ -36,12 +37,16 @@ if (length(args) < 2) {
   } else {
     stop(paste0("Error: argument ", args[2], " is not a directory"), call.=FALSE)
   }
-  if (length(args) == 3) {
-    mie <- popcycle::read_mie_csv(args[3])
-    writeLines(paste0("using Mie theory file ", args[3]))
+  cores <- as.integer(args[3])
+  if (is.na(cores)) {
+    stop(usage, call.=FALSE)
+  }
+  if (length(args) > 3) {
+    mie <- popcycle::read_mie_csv(args[4])
+    print(paste0("using Mie theory file ", args[4]))
   } else {
     mie <- NULL
   }
 }
 
-popcycle::merge_and_reanalyze(dir_from, dir_to, mie=mie)
+popcycle::merge_and_reanalyze(dir_from, dir_to, cores=cores, mie=mie)
