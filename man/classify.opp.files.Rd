@@ -11,7 +11,8 @@ classify.opp.files(
   vct.dir,
   gating.id = NULL,
   vct.table = NULL,
-  mie.table = NULL
+  mie.table = NULL,
+  cores = 1
 )
 }
 \arguments{

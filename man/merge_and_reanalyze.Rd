@@ -4,7 +4,7 @@
 \alias{merge_and_reanalyze}
 \title{Merge databases after refiltering and reanalyze OPP.}
 \usage{
-merge_and_reanalyze(dir_old, dir_new, mie_table = NULL)
+merge_and_reanalyze(dir_old, dir_new, mie_table = NULL, cores = 1)
 }
 \arguments{
 \item{dir_old}{Directory with old popcycle databases. Database files will be
@@ -18,6 +18,8 @@ scheme of <cruise>_opp/. <cruise> should match the cruise stored in the
 metadata table.}
 
 \item{mie_table}{Mie theory lookup table to use in place of installed table.}
+
+\item{cores}{Number of cores to use for VCT creation.}
 }
 \value{
 None
