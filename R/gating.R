@@ -657,10 +657,6 @@ prep_vct_stats <- function(vct) {
 # mie is optionally a Mie theory lookup table dataframe to be used during VCT
 # creation.
 handle_window_opp <- function(x, y, gating_params, mie=NULL) {
-  # First try to release unused memory that may have been left behind by a large
-  # previous OPP/VCT dataframe.
-  gc()
-
   gating_plan <- x
   # It should be a column in the dataframe x, probably used as the group by
   # key, therefore we can assume there is only one value.
@@ -678,10 +674,14 @@ handle_window_opp <- function(x, y, gating_params, mie=NULL) {
     mie,
     .keep=TRUE
   )
+  rm(window_opp_df)
+  gc()
   # Remove empty dataframes from processed
   processed <- Filter(function(df) {nrow(df) > 0}, processed)
   # Combine all 3 minute OPPs into one new time-windowed OPP
   window_vct_df <- dplyr::bind_rows(processed)
+  rm(processed)
+  gc()
   # Turn all pop columns into factors if not already
   window_vct_df <- dplyr::mutate_at(
     window_vct_df,
@@ -692,9 +692,19 @@ handle_window_opp <- function(x, y, gating_params, mie=NULL) {
   # and gating_plan matching per file. Make sure there's only one
   # of each per file and they match.
   dir.create(dirname(window_vct_path), showWarnings=FALSE, recursive=TRUE)
+  if (file.exists(window_vct_path)) {
+    old_vct_df <- arrow::read_parquet(window_vct_path)
+    window_vct_df <- merge_old_new_vct(old_vct_df, window_vct_df)
+    rm(old_vct_df)
+    gc()
+  }
+  # Sort by ascending date
+  window_vct_df <- dplyr::arrange(window_vct_df, date)
   arrow::write_parquet(window_vct_df, window_vct_path)
   # Prepare VCT stats dataframe
   vct_stats_df <- prep_vct_stats(window_vct_df)
+  rm(window_vct_df)
+  gc()
   # TODO: Read existing VCT window file
   # Merge new data into existing VCT window file
   logtext <- paste0(
@@ -756,4 +766,17 @@ handle_3min_opp <- function(x, y, gating_plan, gating_params, mie=NULL) {
   # function.
   opp$gating_id <- as.factor(gp$id)
   return(opp)
+}
+
+
+#' Merge two VCT dataframes by adding rows for novel file_id in old into new.
+#' @param old_vct_df VCT to pull novel file_id entries from.
+#' @param new_vct_df VCT into which novel file_id entries will be added.
+#' @return new_vct_df with novel file_id entries from old_vct_df.
+merge_old_new_vct <- function(old_vct_df, new_vct_df) {
+  merged <- dplyr::bind_rows(
+    new_vct_df,
+    dplyr::anti_join(old_vct_df, new_vct_df, by="file_id")
+  )
+  return(merged)
 }
