@@ -1430,8 +1430,16 @@ find_common_dbs <- function(dir_a, dir_b) {
 #' copy_tables(db_from, db_to)
 #' }
 copy_tables <- function(db_from, db_to, tables) {
-  for (table_name in tables) {
+  # If dbs are the same file do nothing. This prevents erroneously erasing
+  # tables then trying to copy from the just deleted tables.
+  db_from <- normalizePath(db_from, mustWork=T)
+  db_to <- normalizePath(db_to, mustWork=T)
+  if (db_from == db_to) {
+    print("Not copying db tables, db files are the same")
+    return()
+  }
 
+  for (table_name in tables) {
     # Make sure columns match for table to copy
     col_from <- colnames(sql.dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
     col_to <- colnames(sql.dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
@@ -1464,6 +1472,14 @@ copy_tables <- function(db_from, db_to, tables) {
 #' copy_outlier_table(db_from, db_to)
 #' }
 copy_outlier_table <- function(db_from, db_to) {
+  db_from <- normalizePath(db_from, mustWork=T)
+  db_to <- normalizePath(db_to, mustWork=T)
+  # If dbs are the same file do nothing.
+  if (db_from == db_to) {
+    print("Not copying outlier tables, db files are the same")
+    return()
+  }
+
   src <- get.outlier.table(db_from)
   dest <- get.outlier.table(db_to)
   joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
