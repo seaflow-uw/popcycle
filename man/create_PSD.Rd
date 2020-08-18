@@ -9,7 +9,7 @@ create_PSD(db, vct.dir, breaks, quantile = 50)
 \arguments{
 \item{db}{SQLite3 database file path.}
 
-\item{vct.dir}{VCT file directory..}
+\item{vct.dir}{VCT file directory.}
 
 \item{breaks}{Breaks must be a vector of values defining the breaks for the size distribution.}
 

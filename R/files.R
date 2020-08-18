@@ -548,3 +548,100 @@ read_mie_csv <- function(path=NULL) {
   }
   return(read.csv(path))
 }
+
+#' Read Abundance calibration file
+#'
+#' @return A dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
+#' @export
+read_calib_csv <- function(path=NULL) {
+  if (is.null(path)) {
+    path <- system.file("abundance", paste0("abundance-calibration.csv"),package="popcycle")
+  }
+  return(read.csv(path))
+}
+
+
+#' Manipulate the size distribution created by FCSplankton::create_PSD(). 
+#' Calculate the sum of particles in each size class over specific temporal resolution; transform the header
+#'
+#' @param distribution Particle size disitribution created by FCSplankton::create_PSD().
+#'  i.e., a tibble of size distribution over time. First column must be time (POSIXt class object);
+#'  Second column must name of the population; other columns represent the different size classes. 
+#'  Size classes can represent either diameter or carbon quota (assuming spherical particles).
+#' @param time.step Time step over which to sum the number of particles in each size class. Default 1 hour, must be higher than 3 minutes
+#' @param Qc.to.diam Convert carbon quotas to diameter as described in
+#'  Menden-Deuer, S. and Lessard, E. J. Carbon to volume relationships for dinoflagellates, diatoms, and other protist plankton.
+#'  Limnol. Oceanogr. 45, 569–579 (2000).
+#' @param abundance.to.biomass Calculate carbon biomass in each population (i.e. cell abundance x Qc)
+#' @param interval.to.geomean Transform size class intervals to geometric mean values 
+#' (i.e. convert breaks (min, max] to geometric mean defined as sqrt(mean*max). 
+#' @return Size distribution 
+#' @name transform_PSD
+#' @examples
+#' \dontrun{
+#' distribution <- transform_PSD(distribution, time.step="1 hour")
+#' }
+#' @export
+transform_PSD <- function(distribution, time.step="1 hour", 
+                                        Qc.to.diam=FALSE, 
+                                        interval.to.geomean=FALSE,
+                                        abundance.to.biomass=FALSE){
+  
+  # Check that 'time' is a POSIXt class object 
+  if(! lubridate::is.POSIXt(distribution$date)){
+  print("Date is not recognized as POSIXt class")
+  stop
+  }
+
+  # Check that 'pop' column is there 
+  if(!any(names(distribution)=='pop')){
+    print("column 'pop' is missing")
+  stop
+  }
+
+   # Calculate the mean in each size class over new time interval
+  if(!is.null(time.step)){
+    distribution <- distribution %>%
+                      group_by(date = cut(date, breaks=time.step), pop) %>%
+                      summarise(across(lat:lon, mean), across(volume, sum), across(contains("]"), sum))
+  }                    
+
+
+
+  # Menden-Deuer, S. & Lessard conversion factors
+  d <- 0.261; e <- 0.860
+  # select column that have PSD data
+  clmn <- grep("]", names(distribution))
+  # convert size interval (factors) into data.frame
+  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(distribution)[clmn])),",")
+
+
+  if(Qc.to.diam){
+    #convert Qc into diam using the Menden-Deuer conversion
+    b <- lapply(breaks, function(x) round(2*(3/(4*pi)*(as.numeric(x)/d)^(1/e))^(1/3),6))
+    colnames(distribution)[clmn] <- sub("\\)","\\]", sub("c","",as.character(b)))
+  }
+
+  if(interval.to.geomean){
+    # transform size class intervals to mean values (i.e. convert breaks (min, max] to geom mean). 
+    if(Qc.to.diam){
+      midval <- unlist(list(lapply(b, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
+    }else{
+      midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
+      }
+    colnames(distribution)[clmn] <- round(midval,4)
+  }
+  
+  if(abundance.to.biomass){
+    # calculate biomass in each bin (pgC / L)
+    midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
+    distribution[,clmn] <-  t(diag(midval) %*%  t(as.matrix(distribution[,clmn])))
+  }
+
+
+  # time converted to factor needs to be converted back to POSIXt
+  distribution$date <- as.POSIXct(distribution$date, tz='GMT')
+
+  return(distribution)
+
+}

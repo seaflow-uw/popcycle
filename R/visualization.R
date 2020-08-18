@@ -5,7 +5,7 @@
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for plot()
 #' @return None
-#' @usage plot_cyt(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
+#' @usage plot_cyt(evtopp, para.x = "fsc_small", para.y = "chl_small")
 #' @export plot_cyt
 
 plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
@@ -57,7 +57,7 @@ fp <- subset(filter.params, quantile == 50)
         if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
         if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
 
-        def.par <- par(no.readonly = TRUE) # save default, for resetting...
+        def.par <- par(no.readonly = TRUE) # save default, for resetting.
 
         par(mfrow=c(2,3),pty="s")
 
@@ -101,7 +101,7 @@ fp <- subset(filter.params, quantile == 50)
 #' @param xlim limits for x-axis.
 #' @param ylim limits for y-axis.
 #' @return None
-#' @usage plot_cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
+#' @usage plot_cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small")
 #' @export plot_cytogram
 plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T, xlim=NULL, ylim=NULL) {
 
@@ -168,7 +168,7 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter"
 #' @return None
-#' @usage plot_map(stat, param, ...)
+#' @usage plot_map(stat, param)
 #' @export plot_map
 plot_map <- function(stat, param, transform=FALSE){
 
@@ -315,6 +315,7 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transfor
 
         if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10")
 
-        return(p)
+  return(p)
 
-  }
+}
+

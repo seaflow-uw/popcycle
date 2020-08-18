@@ -38,7 +38,7 @@ size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
     }
 
     # find closest matches in Mie lookup table
-    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter)
+    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter, all.inside = TRUE)
 
     #convert scatter to diameter and Qc
     for(quant in c("_lwr","_mid","_upr")){
@@ -49,4 +49,58 @@ size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
     }
 
   return(opp)
+}
+
+#' Calibrate abundance based on Influx data
+#'
+#' @param stat The stat table returned from get.stat.table()
+#' @param cruisename Name of the cruise (returned from get.mata.table()).
+#' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
+#' @return the stat table witrh corrected abundancce if available
+#' @export
+stat.calibration <- function(stat, cruisename, calib=NULL){
+
+    if (is.null(calib)) {
+        calib <- read_calib_csv()
+    }
+
+  # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
+  for(phyto in c("prochloro", "synecho")){
+    c <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
+    if(nrow(c) > 0){ 
+      print(paste("Calibrated abundance for", phyto))
+      id <- which(stat$pop == phyto)
+      stat[id,c("abundance")]  <- stat[id,c("abundance")] * c$a + c$b  # cells µL-1
+    }
+  }  
+  
+  return(stat)
+}
+
+
+
+#' Calibrate abundance based on Influx data
+#'
+#' @param stat The size distribution returned from create_PSD()
+#' @param cruisename Name of the cruise (returned from get.mata.table()).
+#' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
+#' @return the stat table with corrected abundancce if available
+#' @export
+PSD.calibration <- function(PSD, cruisename, calib=NULL){
+
+    if (is.null(calib)) {
+        calib <- read_calib_csv()
+    }
+
+  # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
+  for(phyto in c("prochloro", "synecho")){
+    c <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
+    if(nrow(c) > 0){ 
+      print(paste("Calibrated abundance for", phyto))
+      id <- which(PSD$pop == phyto)
+      PSD[id,clmn] <- PSD[id,clmn] * c$a + (PSD[id,clmn] / rowSums(PSD[id,clmn])) * c$b  # cells µL-1
+    }
+  }
+
+  return(PSD)
 }
