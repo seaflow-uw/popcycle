@@ -91,6 +91,8 @@ PSD.calibration <- function(PSD, cruisename, calib=NULL){
     if (is.null(calib)) {
         calib <- read_calib_csv()
     }
+  # select column that have PSD data
+  clmn <- grep("]", names(PSD))
 
   # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
   for(phyto in c("prochloro", "synecho")){
