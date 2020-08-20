@@ -561,10 +561,10 @@ read_calib_csv <- function(path=NULL) {
 }
 
 
-#' Manipulate the size distribution created by FCSplankton::create_PSD(). 
+#' Manipulate the size distribution created by create_PSD(). 
 #' Calculate the sum of particles in each size class over specific temporal resolution; transform the header
 #'
-#' @param distribution Particle size disitribution created by FCSplankton::create_PSD().
+#' @param PSD Particle size disitribution created by create_PSD().
 #'  i.e., a tibble of size distribution over time. First column must be time (POSIXt class object);
 #'  Second column must name of the population; other columns represent the different size classes. 
 #'  Size classes can represent either diameter or carbon quota (assuming spherical particles).
@@ -579,31 +579,31 @@ read_calib_csv <- function(path=NULL) {
 #' @name transform_PSD
 #' @examples
 #' \dontrun{
-#' distribution <- transform_PSD(distribution, time.step="1 hour")
+#' PSD <- transform_PSD(PSD, time.step="1 hour")
 #' }
 #' @export
-transform_PSD <- function(distribution, time.step="1 hour", 
+transform_PSD <- function(PSD, time.step="1 hour", 
                                         Qc.to.diam=FALSE, 
                                         interval.to.geomean=FALSE,
                                         abundance.to.biomass=FALSE){
   
   # Check that 'time' is a POSIXt class object 
-  if(! lubridate::is.POSIXt(distribution$date)){
+  if(! lubridate::is.POSIXt(PSD$date)){
   print("Date is not recognized as POSIXt class")
   stop
   }
 
   # Check that 'pop' column is there 
-  if(!any(names(distribution)=='pop')){
+  if(!any(names(PSD)=='pop')){
     print("column 'pop' is missing")
   stop
   }
 
    # Calculate the mean in each size class over new time interval
   if(!is.null(time.step)){
-    distribution <- distribution %>%
+    PSD  <- PSD  %>%
                       group_by(date = cut(date, breaks=time.step), pop) %>%
-                      summarise(across(lat:lon, mean), across(volume, sum), across(contains("]"), sum))
+                      summarise_all(mean)
   }                    
 
 
@@ -611,15 +611,15 @@ transform_PSD <- function(distribution, time.step="1 hour",
   # Menden-Deuer, S. & Lessard conversion factors
   d <- 0.261; e <- 0.860
   # select column that have PSD data
-  clmn <- grep("]", names(distribution))
+  clmn <- grep("]", names(PSD ))
   # convert size interval (factors) into data.frame
-  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(distribution)[clmn])),",")
+  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(PSD )[clmn])),",")
 
 
   if(Qc.to.diam){
     #convert Qc into diam using the Menden-Deuer conversion
     b <- lapply(breaks, function(x) round(2*(3/(4*pi)*(as.numeric(x)/d)^(1/e))^(1/3),6))
-    colnames(distribution)[clmn] <- sub("\\)","\\]", sub("c","",as.character(b)))
+    colnames(PSD )[clmn] <- sub("\\)","\\]", sub("c","",as.character(b)))
   }
 
   if(interval.to.geomean){
@@ -629,19 +629,128 @@ transform_PSD <- function(distribution, time.step="1 hour",
     }else{
       midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
       }
-    colnames(distribution)[clmn] <- round(midval,4)
+    colnames(PSD )[clmn] <- round(midval,4)
   }
   
   if(abundance.to.biomass){
     # calculate biomass in each bin (pgC / L)
     midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
-    distribution[,clmn] <-  t(diag(midval) %*%  t(as.matrix(distribution[,clmn])))
+    PSD [,clmn] <-  t(diag(midval) %*%  t(as.matrix(PSD [,clmn])))
   }
 
 
   # time converted to factor needs to be converted back to POSIXt
-  distribution$date <- as.POSIXct(distribution$date, tz='GMT')
+  PSD $date <- as.POSIXct(PSD $date, tz='GMT')
+
+  return(PSD )
+
+}
+
+#' Clean the stat table by selecting the closest refractive index to the reference diameter for a particular population,
+#' keep only the clean data (flag ==0 ) and remove percentile column
+#'
+#' @param db SQLite3 database file path.
+#' @param pop Name of the population. Can be either "prochloro", "synecho", "picoeuk", "croco"
+#' @param ref_diam Diameter value (in micron)
+#' @return A cleaned stat table with corrected refractive index
+#' @export
+
+
+get.clean.stat.table <- function(db, pop="prochloro", ref_diam=0.54){
+
+  cruise <- sub(".db","",basename(db))
+  print(cruise)
+  stat <- as_tibble(get.stat.table(db))
+  stat <- stat.calibration(stat, cruise)
+
+  ### Select the appropriate refractive index for each population
+  ri <- tibble(lwr=1.055, mid=1.032, upr=1.017)
+
+  # Select the appropriate refractive index
+  ref <- as.numeric(ref_diam)
+  phyto <- as.character(pop)
+
+  p  <- stat %>%
+        filter(flag == 0, quantile == 2.5, pop == phyto) %>%
+        select(diam_lwr_med, diam_mid_med, diam_upr_med) %>%
+        summarise_all(mean)
+  best <- which(abs(p - ref) == min(abs(p - ref)))
+  refrac <- c("lwr","mid","upr")[best[1]]
+        
+  if(is.na(refrac)) refrac <- "mid" # case when there is no population of interest
+
+  print(paste0("best refractive index for ",phyto," : ",ri[refrac] ," (",refrac, ")"))
+            
+  # choice of refractive index for Prochloro, Synecho, picoeuk and Croco, respectively
+  n <- c(refrac, refrac, "lwr","lwr") 
+
+  # select the appropriate data
+  clean <- tibble()
+  i <- 1
+  for(phyto in c("prochloro","synecho","picoeuk","croco")){
+    p <- stat %>%
+          filter(flag == 0, quantile == 2.5, pop == phyto) %>%
+          select(time,lat,lon, pop, abundance, contains(c(paste0(n[i],"_med"),paste0(n[i],"_mean")))) %>%
+          rename(diam = contains(paste0("diam_",n[i],"_med")), Qc = contains(paste0("Qc_",n[i],"_med"))) %>%
+          mutate(biomass = abundance * Qc) %>%
+          select(!ends_with("mean"))
+    clean <- clean %>% bind_rows(p)
+    i <- i + 1
+  }
+
+  return(clean)
+
+}
+
+
+#' Clean the Particle size disitrubution by selecting the closest refractive index to the reference diameter for a particular population,
+#' keep only the clean data (flag ==0 ) 
+#'
+#' @param PSD Particle size disitribution created by create_PSD().
+#' @param pop Name of the population. Can be either "prochloro", "synecho", "picoeuk", "croco"
+#' @param ref_diam Diameter value (in micron)
+#' @return A cleaned Particle Size distribution with corrected refractive index
+#' @export
+#' 
+
+get.clean.PSD <- function(PSD, pop="prochloro", ref_diam=0.54){
+
+  ref <- as.numeric(ref_diam)
+  phyto <- as.character(pop)
+
+  ### Select the appropriate refractive index for each population
+  ri <- tibble(lwr=1.055, mid=1.032, upr=1.017)
+
+  # Select the appropriate refractive index 
+  pre.dist <- transform_PSD(PSD, time.step=NULL, Qc.to.diam=TRUE, interval.to.geomean=TRUE, abundance.to.biomass=FALSE)
+  pre.dist <- subset(pre.dist, flag==0)
+  
+  clmn <- grep("]", names(PSD)) # select column that contains the number of cells per diameters
+  p_lwr <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "lwr",clmn])
+    id_lwr <- which(p_lwr == max(p_lwr))
+  p_mid <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "mid",clmn])
+    id_mid <- which(p_mid == max(p_mid))
+  p_upr <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "upr",clmn])
+    id_upr <- which(p_upr == max(p_upr))
+  
+  diam <- as.numeric(colnames(pre.dist[,clmn]))
+  diff <- abs(ref - diam[c(id_lwr, id_mid, id_upr)])
+  best <- which(diff == min(diff))
+  refrac <- c("lwr","mid","upr")[best[1]]
+
+  if(is.na(refrac)) refrac <- "mid" # case when there is no population of interest
+
+  print(paste0("best refractive index for ",phyto," : ",ri[refrac] ," (",refrac, ")"))
+ 
+  ## Apply best refractive index for each population
+  # High refractive index for large cells (Qc_lwr, diam_lwr)
+  distribution <- PSD %>%
+          filter(pop == "prochloro" & n == refrac | 
+                pop == "synecho" & n == refrac | 
+                pop == "picoeuk" & n == "lwr" | 
+                pop == "croco" & n == "lwr") %>%
+          filter(flag ==0) %>%
+          select(!c(n, opp_evt_ratio, flag))
 
   return(distribution)
-
 }

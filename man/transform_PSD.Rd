@@ -2,11 +2,11 @@
 % Please edit documentation in R/files.R
 \name{transform_PSD}
 \alias{transform_PSD}
-\title{Manipulate the size distribution created by FCSplankton::create_PSD(). 
+\title{Manipulate the size distribution created by create_PSD(). 
 Calculate the sum of particles in each size class over specific temporal resolution; transform the header}
 \usage{
 transform_PSD(
-  distribution,
+  PSD,
   time.step = "1 hour",
   Qc.to.diam = FALSE,
   interval.to.geomean = FALSE,
@@ -14,7 +14,7 @@ transform_PSD(
 )
 }
 \arguments{
-\item{distribution}{Particle size disitribution created by FCSplankton::create_PSD().
+\item{PSD}{Particle size disitribution created by create_PSD().
 i.e., a tibble of size distribution over time. First column must be time (POSIXt class object);
 Second column must name of the population; other columns represent the different size classes. 
 Size classes can represent either diameter or carbon quota (assuming spherical particles).}
@@ -34,11 +34,11 @@ Limnol. Oceanogr. 45, 569–579 (2000).}
 Size distribution
 }
 \description{
-Manipulate the size distribution created by FCSplankton::create_PSD(). 
+Manipulate the size distribution created by create_PSD(). 
 Calculate the sum of particles in each size class over specific temporal resolution; transform the header
 }
 \examples{
 \dontrun{
-distribution <- transform_PSD(distribution, time.step="1 hour")
+PSD <- transform_PSD(PSD, time.step="1 hour")
 }
 }

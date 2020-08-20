@@ -7,11 +7,11 @@
 PSD.calibration(PSD, cruisename, calib = NULL)
 }
 \arguments{
+\item{PSD}{Particle size disitribution created by create_PSD().}
+
 \item{cruisename}{Name of the cruise (returned from get.mata.table()).}
 
 \item{calib}{Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)}
-
-\item{stat}{The size distribution returned from create_PSD()}
 }
 \value{
 the stat table with corrected abundancce if available

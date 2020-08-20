@@ -4,12 +4,10 @@
 \alias{csv_convert}
 \title{Convert data from sqlite3 database into a csv file of curated SeaFlow data for a cruise, along with metadata files.}
 \usage{
-csv_convert(db, meta, path, version = "v1.0")
+csv_convert(db, path, version = "v1.0")
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{meta}{SeaFlow instrument log file.}
 
 \item{path}{Path to save the file.}
 

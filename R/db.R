@@ -1661,13 +1661,13 @@ create_PSD <- function(db, vct.dir, breaks, quantile = 50){
 
   ### 3. calculate cell abundance in each bin (cells / microliter)
   ## calculate the volume of virtual core for each population, 
-  # volume of virtual core is calculated based on a median value of opp_evt ratio for the entire cruise
+  # volume of SeaFlow's virtual core is calculated based on a median value of opp_evt ratio for the entire cruise
   # except for small particles (i.e prochloro and synecho) where it is calcualted based on the opp_evt_ratio at that time
   id <- which(PSD$pop == "prochloro" | PSD$pop == "synecho")
   PSD[id, "volume"] <- PSD[id, "volume"] * PSD[id,"opp_evt_ratio"]
   PSD[-c(id), "volume"] <- PSD[-c(id), "volume"] * median(PSD[["opp_evt_ratio"]][-c(id)])
   
-  ## calculate cell abundance in each bin (cells / microliter)
+  ## Normalize count by volume of SeaFlow's virtual core.
   clmn <- grep("]", names(PSD))
   PSD[,clmn] <- PSD[,clmn] / PSD[["volume"]]
 

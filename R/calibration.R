@@ -81,16 +81,16 @@ stat.calibration <- function(stat, cruisename, calib=NULL){
 
 #' Calibrate abundance based on Influx data
 #'
-#' @param stat The size distribution returned from create_PSD()
+#' @param PSD Particle size disitribution created by create_PSD().
 #' @param cruisename Name of the cruise (returned from get.mata.table()).
 #' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
 #' @return the stat table with corrected abundancce if available
 #' @export
 PSD.calibration <- function(PSD, cruisename, calib=NULL){
 
-    if (is.null(calib)) {
+  if (is.null(calib)) {
         calib <- read_calib_csv()
-    }
+  }
   # select column that have PSD data
   clmn <- grep("]", names(PSD))
 
