@@ -1667,7 +1667,7 @@ create_PSD <- function(db, vct.dir, breaks, quantile = 50){
   PSD[id, "volume"] <- PSD[id, "volume"] * PSD[id,"opp_evt_ratio"]
   PSD[-c(id), "volume"] <- PSD[-c(id), "volume"] * median(PSD[["opp_evt_ratio"]][-c(id)])
   
-  ## Normalize count by volume of SeaFlow's virtual core.
+  ## calculate cell Abundance (cells uL-1) i.e normalize count by volume of SeaFlow's virtual core.
   clmn <- grep("]", names(PSD))
   PSD[,clmn] <- PSD[,clmn] / PSD[["volume"]]
 

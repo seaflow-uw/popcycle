@@ -73,17 +73,17 @@ var_comment <-  c(rep('none',3),
                   'outliers (0 = Quality data; 1 = issue related to instrument performance; 2 = issue related to OPP filtration; 3 = issue related to population classification)')
 
 var_unit <- c("%Y-%m-%dT%H:%M:%S",
-              "decimal degree North",
-              "decimal degree East",
+              "decimal deg North",
+              "decimal deg East",
               "deg C",
               "psu",
-              "micromol photons m-2 s-1",
-              "percent",
+              "umol photons m-2 s-1",
+              "%",
               "unitless",
               rep("unitless",9),
-              rep("micrometer",9),
-              rep("picogram carbon per cell",12),
-              rep("cells per microliter",2),
+              rep("um",9),
+              rep("pgC cell-1",12),
+              rep("cells uL-1",2),
               "unitless")
 
 var_keywords <- c("time, UTC, date",
@@ -226,13 +226,13 @@ var_comment2 <-  c(rep("",3),
                 rep("carbon biomass = cell abundance x carbon quotas",4))
 
 var_unit2 <- c("%Y-%m-%dT%H:%M:%S",
-              "decimal degree North",
-              "decimal degree East",
+              "decimal deg North",
+              "decimal deg East",
               "",
-              rep("cells per microliter",4),
-              rep("micron",4),
-              rep("pgC per cell",4),
-              rep("pgC per liter",4))
+              rep("cells uL-1",4),
+              rep("um",4),
+              rep("pgC cell-1",4),
+              rep("ugC L-1",4))
 
 var_keywords2 <- c(rep("",4),
                 rep("abundance, concentration, count",4),

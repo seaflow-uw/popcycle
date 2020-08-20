@@ -633,11 +633,10 @@ transform_PSD <- function(PSD, time.step="1 hour",
   }
   
   if(abundance.to.biomass){
-    # calculate biomass in each bin (pgC / L)
+    # calculate biomass in each bin (ugC L-1) = Qc(pgC cell-1) x Abundance (cells uL-1)
     midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
     PSD [,clmn] <-  t(diag(midval) %*%  t(as.matrix(PSD [,clmn])))
   }
-
 
   # time converted to factor needs to be converted back to POSIXt
   PSD $date <- as.POSIXct(PSD $date, tz='GMT')
