@@ -1,4 +1,19 @@
-var_data <- c("time", "lat", "lon",
+#' Convert data from sqlite3 database into a csv file of curated SeaFlow data for a cruise, along with metadata files.
+#'
+#' @param db SQLite3 database file path.
+#' @param path Path to save the file.
+#' @param version Version of the dataset.
+#' @return None
+#' @examples
+#' \dontrun{
+#' csv_convert(db, meta, path)
+#' }
+#' @export
+csv_convert <- function(db, path, version = "v1.0") {
+
+    meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
+
+    var_data <- c("time", "lat", "lon",
           "temp", "salinity", "par",
           "quantile", "pop",
           "chl_1q", "chl_med", "chl_3q",
@@ -13,7 +28,7 @@ var_data <- c("time", "lat", "lon",
           "abundance","abundance_se",
           "flag")
 
-var_long_name <- c("time of sample collection (UTC)",
+    var_long_name <- c("time of sample collection (UTC)",
                   "latitude",
                   "longitude",
                   "sea surface temperature",
@@ -55,7 +70,7 @@ var_long_name <- c("time of sample collection (UTC)",
                   "standard error of cell abundance",
                   "outliers")
 
-var_comment <-  c(rep('none',3),
+    var_comment <-  c(rep('none',3),
                   rep('uncurated data broadcasted by the ship (as is)',3),
                   'interval confidence for OPP filtration (2.5 = permissive approach; 50 = standard approach; 97.5 = conservative approach); see https://github.com/seaflow-uw/seaflow-filter for more details',
                   'prochloro (Prochlorococcus) synecho (Synechococcus) picoeuk (picoeukaryote phytoplankton) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles)',
@@ -72,7 +87,7 @@ var_comment <-  c(rep('none',3),
                   'standard error of cell abundance based on uncertainties in converting sample stream pressure to flow rate, see https://github.com/seaflow-uw/seaflow-virtualcore for more details',
                   'outliers (0 = Quality data; 1 = issue related to instrument performance; 2 = issue related to OPP filtration; 3 = issue related to population classification)')
 
-var_unit <- c("%Y-%m-%dT%H:%M:%S",
+    var_unit <- c("%Y-%m-%dT%H:%M:%S",
               "decimal deg North",
               "decimal deg East",
               "deg C",
@@ -86,55 +101,10 @@ var_unit <- c("%Y-%m-%dT%H:%M:%S",
               rep("cells uL-1",2),
               "unitless")
 
-var_keywords <- c("time, UTC, date",
-                "latitude",
-                "longitude",
-                "temperature, sst",
-                "salinity, sss",
-                "light, irradiance, PAR",
-                "interval, confidence",
-                "Prochlorococcus, Synechococcus, Crocosphaera, picoeukaryotes, phytoplankton, picophytoplankton, unknown",
-                rep("red, fluorescence, chlorophyll",3),
-                rep("orange, fluorescence, chlorophyll",3),
-                rep("forward, angle, light, scatter, FSC, FALS",3),
-                rep("size, diameter",9),
-                rep("quotas, carbon, biomass, POC",12),
-                rep("abundance, concentration, density",2),
-                "none")
-
-var_sensor <- c("SeaFlow",
-                rep("data broadcasted by ship", 2),
-                rep("data broadcasted by ship", 3),
-                rep("SeaFlow",35))
-
-var_discipline <- c(rep("", 3),
-                   rep("physics, abiotic", 3),
-                   "optics, SeaFlow",
-                   "taxonomy, cytometry, SeaFlow",
-                   rep("optics, cytometry, SeaFlow",9),
-                   rep("biology, biogeochemistry, optics, cytometry, SeaFlow",21),
-                   rep("biology, biogeochemistry, SeaFlow",2),
-                   "optics, SeaFlow")
-
-visualize <- c(rep(0, 3), rep(1, 3), rep(0, 2),  rep(1, 11), 0)
-
-
-
-
-#' Convert data from sqlite3 database into a csv file of curated SeaFlow data for a cruise, along with metadata files.
-#'
-#' @param db SQLite3 database file path.
-#' @param path Path to save the file.
-#' @param version Version of the dataset.
-#' @return None
-#' @examples
-#' \dontrun{
-#' csv_convert(db, meta, path)
-#' }
-#' @export
-csv_convert <- function(db, path, version = "v1.0") {
-
-    meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
+    description <- paste("The data sets consist of SeaFlow-based cell abundance, cell size (equivalent spherical diameter),cellular carbon content and total carbon biomass for picophytoplankton populations, 
+                            namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). 
+                            SeaFlow data were collected in surface waters (≈5 m depth) from oceanographic cruises at a temporal resolution of 3 minutes (spatial resolution of 1 km for ship moving at 10 knots). 
+                            Further information can be found here https://seaflow.netlify.app/ ")
 
     cruise <- sub(".db", "",basename(db))
     print(paste("formatting stat table for cruise:", cruise))
@@ -144,25 +114,6 @@ csv_convert <- function(db, path, version = "v1.0") {
     project <- paste(meta[which(meta$cruise == cruise),"Project"])
     ship <- paste(meta[which(meta$cruise == cruise),"Ship"])
     serial <- paste(unlist(meta[which(meta$cruise == cruise),"Instrument"]))
-
-    core <- paste("flow cytometry, SeaFlow, SeaFlow@UW, insitu, in-situ, biology, University of Washington, UW", official.cruise)
-
-    var_keywords <- c("time, UTC ,date",
-                    "latitude",
-                    "longitude",
-                    "temperature, sst",
-                    "salinity, sss",
-                    "light, irradiance, PAR",
-                    paste("interval, confidence", core),
-                    paste("Prochlorococcus, Synechococcus, Crocosphaera, picoeukaryotes, picoeuks, phytoplankton, picophytoplankton, unknown", core),
-                    rep(paste("red, fluorescence, chlorophyll", core),3),
-                    rep(paste("orange, fluorescence, chlorophyll", core),3),
-                    rep(paste("forward scatter, FSC, FALS", core),3),
-                    rep(paste("size, diameter, ESD", core),9),
-                    rep(paste("quotas, carbon, biomass, POC", core),12),
-                    rep(paste("abundance, concentration, count", core),2),
-                    "none")
-
 
     # data
     data <- get.stat.table(db)
@@ -178,25 +129,21 @@ csv_convert <- function(db, path, version = "v1.0") {
                           dataset_version = version,
                           dataset_release_date = as.Date(Sys.time()),
                           dataset_make = "observation",
-                          dataset_source = paste0("surface seawater supplied by ship ",ship," and analyzed by SeaFlow (serial number ", serial,")"),
-                          dataset_doi = "https://doi.org/10.5281/zenodo.XXXXX",
+                          dataset_source = "http://doi.org/10.5281/zenodo.3445407",
+                          dataset_acknolwedgments = "Annette Hynes, Chris Berthiaume, E Virginia Armbrust, Francois Ribalet"
                           dataset_history = paste("Data were analyzed using the R package Popcycle version", packageVersion("popcycle")),
-                          dataset_description = "SeaFlow data generated by University of Washington / Armbrust lab (ribalet@uw.edu). Visit https://seaflow-uw.ocean.washington.edu/tools/seaflow for more information about the SeaFlow project",
-                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData")
+                          dataset_description = description,
+                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277 https://doi.org/10.1038/s41597-019-0292-2")
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_", official.cruise,"_dataset_metadata_", version,".csv"))
 
     # vars_metadata
     vars_metadata <- tibble::tibble(
                           var_short_name = var_data,
                           var_long_name,
-                          var_sensor,
                           var_unit,
                           var_spatial_res = "irregular",
-                          var_temporal_res = "3 minutes",
+                          var_temporal_res = "three minutes",
                           var_missing_value = "NA",
-                          var_discipline,
-                          var_keywords,
-                          visualize,
                           var_comment)
 
     readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata_",version,".csv"))
@@ -204,46 +151,6 @@ csv_convert <- function(db, path, version = "v1.0") {
 }
 
 
-
-var_data2 <- c("time", "lat", "lon", "cruise", 
-            paste0("abundance_", c("prochloro","synecho","picoeuk","croco")), 
-            paste0("diam_", c("prochloro","synecho","picoeuk","croco")), 
-            paste0("Qc_", c("prochloro","synecho","picoeuk","croco")), 
-            paste0("biomass_", c("prochloro","synecho","picoeuk","croco")))
-                
-
-var_standard_name2 <- c("time", "latitude", "longitude", "cruise ID",
-                paste0("abundance of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
-                paste0("Diameter of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
-                paste0("Carbon quotas of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
-                paste0("Carbon biomass of ", c("Prochlorococcus population","Synechococcus population","Picoeukaryote phytoplankton population","Crocospheara population")))
-                
-var_comment2 <-  c(rep("",3),
-                "cruise ID from Rolling Deck to Repository https://www.rvdata.us",
-                rep("cell abundance, cal;culated based on teh number of particles normalized by the volume of SeaFlow's virtual-core, see https://github.com/seaflow-uw/seaflow-virtualcore for more details",4),
-                rep('cell diameter based on Mie theory, see https://github.com/seaflow-uw/fsc-size-calibration for more details',4),
-                rep('carbon content based on the equation pgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
-                rep("carbon biomass = cell abundance x carbon quotas",4))
-
-var_unit2 <- c("%Y-%m-%dT%H:%M:%S",
-              "decimal deg North",
-              "decimal deg East",
-              "",
-              rep("cells uL-1",4),
-              rep("um",4),
-              rep("pgC cell-1",4),
-              rep("ugC L-1",4))
-
-var_keywords2 <- c(rep("",4),
-                rep("abundance, concentration, count",4),
-                rep("size, diameter",4),
-                rep("quotas , cellular content, carbon, POC",4),
-                rep("carbon biomass, POC",4))
-
-var_sensor2 <- "SeaFlow"
-
-var_discipline2 <- c(rep("", 4),
-                   rep("biology, biogeochemistry, optics, cytometry, SeaFlow",16))
 
 #' Convert Seaflow data from all cruises into Simons CMAP friendly format.
 #'
@@ -259,6 +166,45 @@ var_discipline2 <- c(rep("", 4),
 #' @export
 cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
 
+
+    var_short_name <- c("cruise", 
+            paste0("abundance_", c("prochloro","synecho","picoeuk","croco")), 
+            paste0("diam_", c("prochloro","synecho","picoeuk","croco")), 
+            paste0("Qc_", c("prochloro","synecho","picoeuk","croco")), 
+            paste0("biomass_", c("prochloro","synecho","picoeuk","croco")))
+                
+
+    var_standard_name <- c("cruise ID",
+                paste0("abundance of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
+                paste0("Diameter of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
+                paste0("Carbon quotas of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
+                paste0("Carbon biomass of ", c("Prochlorococcus population","Synechococcus population","Picoeukaryote phytoplankton population","Crocospheara population")))
+                
+    var_comment <-  c("cruise ID from Rolling Deck to Repository https://www.rvdata.us",
+                rep("cell abundance, cal;culated based on teh number of particles normalized by the volume of SeaFlow's virtual-core, see https://github.com/seaflow-uw/seaflow-virtualcore for more details",4),
+                rep('cell diameter based on Mie theory, see https://github.com/seaflow-uw/fsc-size-calibration for more details',4),
+                rep('carbon content based on the equation pgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
+                rep("carbon biomass = cell abundance x carbon quotas",4))
+
+    var_unit <- c("",
+              rep("cells uL-1",4),
+              rep("um",4),
+              rep("pgC cell-1",4),
+              rep("ugC L-1",4))
+
+    core <- paste("insitu", "in-situ", "cruise", "reprocessed", "biology", "biogeochemistry", "optics", "flow-cytometry", "flow cytometer", "seaflow", "phytoplankton", "armbrust lab", "francois ribalet", "UW", "University of Washington", "UofW", sep=",")
+
+    var_sensor <- "SeaFlow"
+
+    visualize <- c(0, rep(1,16))
+
+    var_discipline <- c("",rep("biology+biogeochemistry+optics+cytometry",16))
+
+    description <- paste("The data sets consist of SeaFlow-based cell abundance, cell size (equivalent spherical diameter),cellular carbon content and total carbon biomass for picophytoplankton populations, 
+                            namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). 
+                            SeaFlow data were collected in surface waters (≈5 m depth) from oceanographic cruises at a temporal resolution of 3 minutes (spatial resolution of 1 km for ship moving at 10 knots). 
+                            Further information can be found here https://seaflow.netlify.app/ ")
+
     meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
     today <- as.Date(Sys.time())
 
@@ -266,7 +212,7 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
     for(db in path.to.dbs){
        
         ### 1. Format DATA
-        # db <- path.to.dbs[24]
+        # db <- path.to.dbs[22]
         cruise <- sub(".db","",basename(db))
 
         # clean stat table
@@ -287,32 +233,43 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
     readr::write_csv(data, paste0(path,"/SeaFlow_dataset_",version,"_", today,".csv"))
 
     ## 2. dataset_metadata
+    list.cruises <- paste(unique(data$cruise), collapse = ",")
+
     dataset_metadata <- tibble::tibble(
-                          dataset_short_name = "all SeaFlow cruises",
-                          dataset_long_name = "Abundance, cell size, carbon quotas and biomass of Prochlorococcus, Synechooccus, Crocospheara and small picoeuks (< 5 micron)",
+                          dataset_short_name = "all_SeaFlow_cruises",
+                          dataset_long_name = "SeaFlow-based abundance, cell size, carbon quotas and biomass of Prochlorococcus, Synechooccus, Crocospheara and small picoeuks (< 5 micron)",
                           dataset_version = version,
                           dataset_release_date = today,
                           dataset_make = "observation",
-                          dataset_source = "SeaFlow serial_id 740, 751 and 989",
-                          dataset_doi = "https://doi.org/10.5281/zenodo.XXXXX",
+                          dataset_source = "SeaFlow@UW, University of Washington, https://seaflow.netlify.app/",
+                          dataset_distributor = "http://doi.org/10.5281/zenodo.3445407", 
+                          dataset_acknolwedgments = "Annette Hynes, Chris Berthiaume, E Virginia Armbrust, Francois Ribalet"
                           dataset_history = paste("Data were analyzed using the R package Popcycle version", packageVersion("popcycle")),
-                          dataset_description = "SeaFlow data generated by University of Washington / Armbrust lab (ribalet@uw.edu). Visit https://seaflow-uw.ocean.washington.edu/tools/seaflow for more information about the SeaFlow project",
-                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData")
-    
+                          dataset_description = description,
+                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277 https://doi.org/10.1038/s41597-019-0292-2")
+                          climatology,
+                          cruise_names = list.cruises)
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_dataset_metadata_", version,".csv"))
+    
+    var_keywords <- c("",
+                rep(paste("abundance,concentration,count", core, list.cruises, sep=","),4),
+                rep(paste("size,diameter", core, list.cruises, sep=","),4),
+                rep(paste("quotas,cellular content,carbon,POC", core, list.cruises, sep=","), 4),
+                rep(paste("carbon biomass,POC", core, list.cruises, sep=","),4))
+
 
     ## 3. vars_metadata
     vars_metadata <- tibble::tibble(
-                          var_short_name = var_data2,
-                          var_standard_name2,
-                          var_sensor2,
-                          var_unit2,
+                          var_short_name,
+                          var_standard_name,
+                          var_sensor,
+                          var_unit,
                           var_spatial_res = "irregular",
-                          var_temporal_res = "3 minutes",
-                          var_missing_value = "NA",
-                          var_discipline2,
-                          var_keywords2,
-                          var_comment2)
+                          var_temporal_res = "three minutes",
+                          var_discipline,
+                          visualize,
+                          var_keywords,
+                          var_comment)
 
     readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata_", version,".csv"))
 
