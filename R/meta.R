@@ -134,7 +134,7 @@ visualize <- c(rep(0, 3), rep(1, 3), rep(0, 2),  rep(1, 11), 0)
 #' @export
 csv_convert <- function(db, path, version = "v1.0") {
 
-    meta <- googlesheets4::sheets_read(as_sheets_id('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0', verbose = FALSE))
+    meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
 
     cruise <- sub(".db", "",basename(db))
     print(paste("formatting stat table for cruise:", cruise))
@@ -172,7 +172,7 @@ csv_convert <- function(db, path, version = "v1.0") {
     readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_",as.Date(Sys.time()),"_", version,".csv"))
 
     # dataset_metadata
-    dataset_metadata <- dplyr::tibble(
+    dataset_metadata <- tibble::tibble(
                           dataset_short_name = paste0("SeaFlow_",official.cruise),
                           dataset_long_name = paste0("SeaFlow_",official.cruise),
                           dataset_version = version,
@@ -186,7 +186,7 @@ csv_convert <- function(db, path, version = "v1.0") {
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_", official.cruise,"_dataset_metadata_", version,".csv"))
 
     # vars_metadata
-    vars_metadata <- dplyr::tibble(
+    vars_metadata <- tibble::tibble(
                           var_short_name = var_data,
                           var_long_name,
                           var_sensor,
@@ -259,10 +259,10 @@ var_discipline2 <- c(rep("", 4),
 #' @export
 cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
 
-    meta <- googlesheets4::sheets_read(as_sheets_id('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0', verbose = FALSE))
+    meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
     today <- as.Date(Sys.time())
 
-    data <- tibble()
+    data <- tibble::tibble()
     for(db in path.to.dbs){
        
         ### 1. Format DATA
@@ -276,10 +276,10 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
         cruise.name <- paste(meta[which(meta$cruise == cruise),"Cruise ID"])
         depth <- 5
         clean.wide <- clean %>% 
-                mutate(cruise = cruise.name, depth) %>% 
-                pivot_wider(names_from = pop, values_from = c(abundance, diam, Qc, biomass), id_cols=c(time, lat, lon, depth, cruise))  
+                dplyr::mutate(cruise = cruise.name, depth) %>% 
+                tidyr::pivot_wider(names_from = pop, values_from = c(abundance, diam, Qc, biomass), id_cols=c(time, lat, lon, depth, cruise))  
 
-       data <- data %>% bind_rows(clean.wide)
+       data <- data %>% dplyr::bind_rows(clean.wide)
 
     }
 
@@ -287,7 +287,7 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
     readr::write_csv(data, paste0(path,"/SeaFlow_dataset_",version,"_", today,".csv"))
 
     ## 2. dataset_metadata
-    dataset_metadata <- dplyr::tibble(
+    dataset_metadata <- tibble::tibble(
                           dataset_short_name = "all SeaFlow cruises",
                           dataset_long_name = "Abundance, cell size, carbon quotas and biomass of Prochlorococcus, Synechooccus, Crocospheara and small picoeuks (< 5 micron)",
                           dataset_version = version,
@@ -302,7 +302,7 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_dataset_metadata_", version,".csv"))
 
     ## 3. vars_metadata
-    vars_metadata <- dplyr::tibble(
+    vars_metadata <- tibble::tibble(
                           var_short_name = var_data2,
                           var_standard_name2,
                           var_sensor2,

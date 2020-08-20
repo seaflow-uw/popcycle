@@ -1575,7 +1575,7 @@ create_PSD <- function(db, vct.dir, breaks, quantile = 50){
   
   ### 1. create PSD for each timepoint 
   i <- 1
-  distribution <- tibble()
+  distribution <- tibble::tibble()
   for(file.name in vct.list){
 
     #file.name <- vct.list[20]
@@ -1649,15 +1649,15 @@ create_PSD <- function(db, vct.dir, breaks, quantile = 50){
 
   ## Retrive OPP table
   # retrieve opp/evt
-  opp <- as_tibble(get.opp.table(db))
+  opp <- tibble::as_tibble(get.opp.table(db))
   opp <- opp %>% dplyr::filter(quantile == QUANT)
     
   ## merge all metadata
-  meta <- as_tibble(merge(sfl.all, opp, by="file")[c("time", "lat","lon","volume","opp_evt_ratio","flag")])
+  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "lat","lon","volume","opp_evt_ratio","flag")])
     
   ## merge metadata with PSD
-  PSD <- as_tibble(merge(distribution, meta, by.x="date",by.y="time",all.x=T)) %>%
-          relocate(contains("]"), .after=flag) # reorder column
+  PSD <- tibble::as_tibble(merge(distribution, meta, by.x="date",by.y="time",all.x=T)) %>%
+          dplyr::relocate(contains("]"), .after=flag) # reorder column
 
   ### 3. calculate cell abundance in each bin (cells / microliter)
   ## calculate the volume of virtual core for each population, 

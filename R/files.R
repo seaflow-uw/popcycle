@@ -602,8 +602,8 @@ transform_PSD <- function(PSD, time.step="1 hour",
    # Calculate the mean in each size class over new time interval
   if(!is.null(time.step)){
     PSD  <- PSD  %>%
-                      group_by(date = cut(date, breaks=time.step), pop) %>%
-                      summarise_all(mean)
+              dplyr::group_by(date = cut(date, breaks=time.step), pop) %>%
+              dplyr::summarise_all(mean)
   }                    
 
 
@@ -659,20 +659,20 @@ get.clean.stat.table <- function(db, pop="prochloro", ref_diam=0.54){
 
   cruise <- sub(".db","",basename(db))
   print(cruise)
-  stat <- as_tibble(get.stat.table(db))
+  stat <- tibble::as_tibble(get.stat.table(db))
   stat <- stat.calibration(stat, cruise)
 
   ### Select the appropriate refractive index for each population
-  ri <- tibble(lwr=1.055, mid=1.032, upr=1.017)
+  ri <- tibble::tibble(lwr=1.055, mid=1.032, upr=1.017)
 
   # Select the appropriate refractive index
   ref <- as.numeric(ref_diam)
   phyto <- as.character(pop)
 
   p  <- stat %>%
-        filter(flag == 0, quantile == 2.5, pop == phyto) %>%
-        select(diam_lwr_med, diam_mid_med, diam_upr_med) %>%
-        summarise_all(mean)
+        dplyr::filter(flag == 0, quantile == 2.5, pop == phyto) %>%
+        dplyr::select(diam_lwr_med, diam_mid_med, diam_upr_med) %>%
+        dplyr::summarise_all(mean)
   best <- which(abs(p - ref) == min(abs(p - ref)))
   refrac <- c("lwr","mid","upr")[best[1]]
         
@@ -684,16 +684,16 @@ get.clean.stat.table <- function(db, pop="prochloro", ref_diam=0.54){
   n <- c(refrac, refrac, "lwr","lwr") 
 
   # select the appropriate data
-  clean <- tibble()
+  clean <- tibble::tibble()
   i <- 1
   for(phyto in c("prochloro","synecho","picoeuk","croco")){
     p <- stat %>%
-          filter(flag == 0, quantile == 2.5, pop == phyto) %>%
-          select(time,lat,lon, pop, abundance, contains(c(paste0(n[i],"_med"),paste0(n[i],"_mean")))) %>%
-          rename(diam = contains(paste0("diam_",n[i],"_med")), Qc = contains(paste0("Qc_",n[i],"_med"))) %>%
-          mutate(biomass = abundance * Qc) %>%
-          select(!ends_with("mean"))
-    clean <- clean %>% bind_rows(p)
+          dplyr::filter(flag == 0, quantile == 2.5, pop == phyto) %>%
+          dplyr::select(time,lat,lon, pop, abundance, contains(c(paste0(n[i],"_med"),paste0(n[i],"_mean")))) %>%
+          dplyr::rename(diam = contains(paste0("diam_",n[i],"_med")), Qc = contains(paste0("Qc_",n[i],"_med"))) %>%
+          dplyr::mutate(biomass = abundance * Qc) %>%
+          dplyr::select(!ends_with("mean"))
+    clean <- clean %>% dplyr::bind_rows(p)
     i <- i + 1
   }
 
@@ -718,7 +718,7 @@ get.clean.PSD <- function(PSD, pop="prochloro", ref_diam=0.54){
   phyto <- as.character(pop)
 
   ### Select the appropriate refractive index for each population
-  ri <- tibble(lwr=1.055, mid=1.032, upr=1.017)
+  ri <- tibble::tibble(lwr=1.055, mid=1.032, upr=1.017)
 
   # Select the appropriate refractive index 
   pre.dist <- transform_PSD(PSD, time.step=NULL, Qc.to.diam=TRUE, interval.to.geomean=TRUE, abundance.to.biomass=FALSE)
@@ -744,12 +744,12 @@ get.clean.PSD <- function(PSD, pop="prochloro", ref_diam=0.54){
   ## Apply best refractive index for each population
   # High refractive index for large cells (Qc_lwr, diam_lwr)
   distribution <- PSD %>%
-          filter(pop == "prochloro" & n == refrac | 
+          dplyr::filter(pop == "prochloro" & n == refrac | 
                 pop == "synecho" & n == refrac | 
                 pop == "picoeuk" & n == "lwr" | 
                 pop == "croco" & n == "lwr") %>%
-          filter(flag ==0) %>%
-          select(!c(n, opp_evt_ratio, flag))
+          dplyr::filter(flag ==0) %>%
+          dplyr::select(!c(n, opp_evt_ratio, flag))
 
   return(distribution)
 }
