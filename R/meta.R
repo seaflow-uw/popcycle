@@ -13,48 +13,6 @@ var_data <- c("time", "lat", "lon",
           "abundance","abundance_se",
           "flag")
 
-var_standard_name <- c("time",
-                  "latitude",
-                  "longitude",
-                  "sea surface temperature",
-                  "sea surface salinity",
-                  "sea surface solar irradiance",
-                  "OPP confidence interval",
-                  "population",
-                  "first quartile of chlorophyll fluorescence",
-                  "median of chlorophyll fluorescence",
-                  "third quartile of chlorophyll fluorescence",
-                  "first quartile of phycoerythrin fluorescence",
-                  "median of phycoerythrin fluorescence",
-                  "third quartile of phycoerythrin fluorescence",
-                  "first quartile of forward scatter",
-                  "median of the forward scatter",
-                  "third quartile of forward scatter",
-                  "first quartile of equivalent spherical diameter using high refractive index",
-                  "median of equivalent spherical diameter using high refractive index",
-                  "third quartile of equivalent spherical diameter using high refractive index",
-                  "first quartile of equivalent spherical diameter using mid refractive index",
-                  "median of equivalent spherical diameter using mid refractive index",
-                  "third quartile of equivalent spherical diameter using mid refractive index",
-                  "first quartile of equivalent spherical diameter using low refractive index",
-                  "median of equivalent spherical diameter using low refractive index",
-                  "third quartile of equivalent spherical diameter using low refractive index",
-                  "first quartile of cellular carbon content using high refractive index",
-                  "median of cellular carbon content using high refractive index",
-                  "mean of cellular carbon content using high refractive index",
-                  "third quartile of cellular carbon content using high refractive index",
-                  "first quartile of cellular carbon content using mid refractive index",
-                  "median of cellular carbon content using mid refractive index",
-                  "mean of cellular carbon content using mid refractive index",
-                  "third quartile of cellular carbon content using mid refractive index",
-                  "first quartile of cellular carbon content using low refractive index",
-                  "median of cellular carbon content using low refractive index",
-                  "mean of cellular carbon content using low refractive index",
-                  "third quartile of cellular carbon content using low refractive index",
-                  "cell concentration",
-                  "standard error of cell aconcentration",
-                  "status flag")
-
 var_long_name <- c("time of sample collection (UTC)",
                   "latitude",
                   "longitude",
@@ -158,6 +116,7 @@ var_discipline <- c(rep("", 3),
                    rep("biology, biogeochemistry, SeaFlow",2),
                    "optics, SeaFlow")
 
+visualize <- c(rep(0, 3), rep(1, 3), rep(0, 2),  rep(1, 11), 0)
 
 
 
@@ -186,18 +145,36 @@ csv_convert <- function(db, path, version = "v1.0") {
     ship <- paste(meta[which(meta$cruise == cruise),"Ship"])
     serial <- paste(unlist(meta[which(meta$cruise == cruise),"Instrument"]))
 
+    core <- paste("flow cytometry, SeaFlow, SeaFlow@UW, insitu, in-situ, biology, University of Washington, UW", official.cruise)
+
+    var_keywords <- c("time, UTC ,date",
+                    "latitude",
+                    "longitude",
+                    "temperature, sst",
+                    "salinity, sss",
+                    "light, irradiance, PAR",
+                    paste("interval, confidence", core),
+                    paste("Prochlorococcus, Synechococcus, Crocosphaera, picoeukaryotes, picoeuks, phytoplankton, picophytoplankton, unknown", core),
+                    rep(paste("red, fluorescence, chlorophyll", core),3),
+                    rep(paste("orange, fluorescence, chlorophyll", core),3),
+                    rep(paste("forward scatter, FSC, FALS", core),3),
+                    rep(paste("size, diameter, ESD", core),9),
+                    rep(paste("quotas, carbon, biomass, POC", core),12),
+                    rep(paste("abundance, concentration, count", core),2),
+                    "none")
+
+
     # data
     data <- get.stat.table(db)
     data <- stat.calibration(data, cruise)
     data <- data[,var_data]
-    readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_dataset_", version,".csv"))
+    
+    readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_",as.Date(Sys.time()),"_", version,".csv"))
 
     # dataset_metadata
     dataset_metadata <- dplyr::tibble(
                           dataset_short_name = paste0("SeaFlow_",official.cruise),
                           dataset_long_name = paste0("SeaFlow_",official.cruise),
-                          dataset_cruise = official.cruise,
-                          dataset_project = project,
                           dataset_version = version,
                           dataset_release_date = as.Date(Sys.time()),
                           dataset_make = "observation",
@@ -211,7 +188,7 @@ csv_convert <- function(db, path, version = "v1.0") {
     # vars_metadata
     vars_metadata <- dplyr::tibble(
                           var_short_name = var_data,
-                          var_standard_name,
+                          var_long_name,
                           var_sensor,
                           var_unit,
                           var_spatial_res = "irregular",
@@ -219,8 +196,10 @@ csv_convert <- function(db, path, version = "v1.0") {
                           var_missing_value = "NA",
                           var_discipline,
                           var_keywords,
+                          visualize,
                           var_comment)
-    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata.csv"))
+
+    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata_",version,".csv"))
 
 }
 
