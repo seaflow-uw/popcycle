@@ -13,7 +13,7 @@ csv_convert <- function(db, path, version = "v1.0") {
 
     meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
 
-    var_data <- c("time", "lat", "lon",
+    var_short_name <- c("time", "lat", "lon",
           "temp", "salinity", "par",
           "quantile", "pop",
           "chl_1q", "chl_med", "chl_3q",
@@ -70,7 +70,7 @@ csv_convert <- function(db, path, version = "v1.0") {
                   "standard error of cell abundance",
                   "outliers")
 
-    var_comment <-  c(rep('none',3),
+    var_comment <-  c(rep('',3),
                   rep('uncurated data broadcasted by the ship (as is)',3),
                   'interval confidence for OPP filtration (2.5 = permissive approach; 50 = standard approach; 97.5 = conservative approach); see https://github.com/seaflow-uw/seaflow-filter for more details',
                   'prochloro (Prochlorococcus) synecho (Synechococcus) picoeuk (picoeukaryote phytoplankton) beads (internal standard) croco (Crocosphaera-like particles) unknown (unclassified particles)',
@@ -101,10 +101,7 @@ csv_convert <- function(db, path, version = "v1.0") {
               rep("cells uL-1",2),
               "unitless")
 
-    description <- paste("The data sets consist of SeaFlow-based cell abundance, cell size (equivalent spherical diameter),cellular carbon content and total carbon biomass for picophytoplankton populations, 
-                            namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). 
-                            SeaFlow data were collected in surface waters (≈5 m depth) from oceanographic cruises at a temporal resolution of 3 minutes (spatial resolution of 1 km for ship moving at 10 knots). 
-                            Further information can be found here https://seaflow.netlify.app/ ")
+    description <- paste("The data set consists of SeaFlow-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for picophytoplankton populations, namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). SeaFlow is an underway flow cytometer that provides continuous shipboard observations of the optical properties of the smallest phytoplankton. The instrument collects the equivalent of 1 sample every 3 minutes or every 1 km (for a ship moving at 10 knots) from the ship’s flow-through seawater system. Since 2010, the instrument has been operated for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. Further information can be found here https://seaflow.netlify.app/")
 
     cruise <- sub(".db", "",basename(db))
     print(paste("formatting stat table for cruise:", cruise))
@@ -128,17 +125,18 @@ csv_convert <- function(db, path, version = "v1.0") {
                           dataset_long_name = paste0("SeaFlow_",official.cruise),
                           dataset_version = version,
                           dataset_release_date = as.Date(Sys.time()),
-                          dataset_make = "observation",
-                          dataset_source = "http://doi.org/10.5281/zenodo.3445407",
-                          dataset_acknolwedgments = "Annette Hynes, Chris Berthiaume, E Virginia Armbrust, Francois Ribalet"
+                          dataset_source = paste("SeaFlow@UW, University of Washington, https://seaflow.netlify.app/"),
+                          dataset_distributor = paste("http://doi.org/10.5281/zenodo.2678021"), 
+                          dataset_acknolwedgments = paste("Annette Hynes, Chris Berthiaume, E Virginia Armbrust, Francois Ribalet"),
                           dataset_history = paste("Data were analyzed using the R package Popcycle version", packageVersion("popcycle")),
                           dataset_description = description,
-                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277 https://doi.org/10.1038/s41597-019-0292-2")
+                          dataset_references = paste("Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277 https://doi.org/10.1038/s41597-019-0292-2"))
+    
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_", official.cruise,"_dataset_metadata_", version,".csv"))
 
     # vars_metadata
     vars_metadata <- tibble::tibble(
-                          var_short_name = var_data,
+                          var_short_name,
                           var_long_name,
                           var_unit,
                           var_spatial_res = "irregular",
@@ -200,12 +198,11 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
 
     var_discipline <- c("",rep("biology+biogeochemistry+optics+cytometry",16))
 
-    description <- paste("The data sets consist of SeaFlow-based cell abundance, cell size (equivalent spherical diameter),cellular carbon content and total carbon biomass for picophytoplankton populations, 
-                            namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). 
-                            SeaFlow data were collected in surface waters (≈5 m depth) from oceanographic cruises at a temporal resolution of 3 minutes (spatial resolution of 1 km for ship moving at 10 knots). 
-                            Further information can be found here https://seaflow.netlify.app/ ")
+    description <- paste("The data set consists of SeaFlow-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for picophytoplankton populations, namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). SeaFlow is an underway flow cytometer that provides continuous shipboard observations of the optical properties of the smallest phytoplankton. The instrument collects the equivalent of 1 sample every 3 minutes or every 1 km (for a ship moving at 10 knots) from the ship’s flow-through seawater system. Since 2010, the instrument has been operated for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. Further information can be found here https://seaflow.netlify.app/")
 
+    # load metadata to get offical cruise name
     meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
+
     today <- as.Date(Sys.time())
 
     data <- tibble::tibble()
@@ -223,7 +220,8 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
         depth <- 5
         clean.wide <- clean %>% 
                 dplyr::mutate(cruise = cruise.name, depth) %>% 
-                tidyr::pivot_wider(names_from = pop, values_from = c(abundance, diam, Qc, biomass), id_cols=c(time, lat, lon, depth, cruise))  
+                tidyr::pivot_wider(names_from = pop, values_from = c(abundance, diam, Qc, biomass), id_cols=c(time, lat, lon, depth, cruise)) %>%
+                dplyr::mutate(dplyr::across(dplyr::contains(c("abundance", "biomass")), ~ tidyr::replace_na(.x, 0))) # replace NA by O for abundance and biomass
 
        data <- data %>% dplyr::bind_rows(clean.wide)
 
@@ -241,14 +239,15 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
                           dataset_version = version,
                           dataset_release_date = today,
                           dataset_make = "observation",
-                          dataset_source = "SeaFlow@UW, University of Washington, https://seaflow.netlify.app/",
-                          dataset_distributor = "http://doi.org/10.5281/zenodo.3445407", 
-                          dataset_acknolwedgments = "Annette Hynes, Chris Berthiaume, E Virginia Armbrust, Francois Ribalet"
+                          dataset_source = paste("SeaFlow@UW, University of Washington, https://seaflow.netlify.app/"),
+                          dataset_distributor = paste("http://doi.org/10.5281/zenodo.2678021"), 
+                          dataset_acknolwedgments = paste("Annette Hynes, Chris Berthiaume, E Virginia Armbrust and Francois Ribalet"),
                           dataset_history = paste("Data were analyzed using the R package Popcycle version", packageVersion("popcycle")),
                           dataset_description = description,
-                          dataset_references = "Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277 https://doi.org/10.1038/s41597-019-0292-2")
-                          climatology,
+                          dataset_references = paste("Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277, https://doi.org/10.1038/s41597-019-0292-2"),
+                          climatology="",
                           cruise_names = list.cruises)
+                          
     readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_dataset_metadata_", version,".csv"))
     
     var_keywords <- c("",
