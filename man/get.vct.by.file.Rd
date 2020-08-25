@@ -13,8 +13,9 @@ get.vct.by.file(db, vct.dir, file.name, col_select = NULL)
 
 \item{file.name}{File name with julian day directory.}
 
-\item{quantile}{Filtering quantile for this file. If NULL, all quantiles are
-returned.}
+\item{col_select}{col_select parameter passed to arrow::read_parquet as
+tidy-selection. date and file_id are always added as the first columns.
+By default all columns are returned.}
 }
 \value{
 Tibble of per particle population classifications. If no data is

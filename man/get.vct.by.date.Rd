@@ -22,6 +22,9 @@ get.vct.by.date(
 
 \item{end.date}{End date string, inclusive.}
 
+\item{outliers}{If TRUE, remove outliers. Otherwise don't perform outlier
+filtering.}
+
 \item{col_select}{col_select parameter passed to arrow::read_parquet as
 tidy-selection. date and file_id are always added as the first columns.
 By default all columns are returned.}

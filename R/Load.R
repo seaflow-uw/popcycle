@@ -243,33 +243,35 @@ concatenate.evt <- function(evt.list, evt.dir, n=100000, min.fsc=0, min.pe=0, mi
 
 #' Concatenate OPP files
 #'
+#' @param db SQLite3 database file path.
 #' @param opp.list List of OPP files.
 #' @param opp.dir Path to OPP files.
 #' @param n Number of rows to return.
 #' @param min.fsc, min.pe, min.chl Minimum value for fsc_small, pe and chl_small respectively
 #' @return A dataframe with n rows.
 #' @export
-concatenate.opp <- function(opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0, min.chl=0, transform=TRUE,...){
+concatenate.opp <- function(db, opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0, min.chl=0, ...){
   n <- as.numeric(n)
   DF <- NULL
   i <- 0
   for (file in opp.list){
-        message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
+    message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
 
-        tryCatch({
-          df <- get.opp.by.file(opp.dir, file, transform=transform)
-          df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
-          df <- df[round(seq(1,nrow(df), length.out=round(n/length(opp.list)))),]
+    tryCatch({
+      df <- get.opp.by.file(db, opp.dir, file)
+      df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
+      df <- df[round(seq(1,nrow(df), length.out=round(n/length(opp.list)))),]
+      if (any(is.na(df))) {
+        next
+      }
+      DF <- dplyr::bind_rows(DF, df)
+    }, error = function(e) {
+      cat(paste("Error with file", file, ":", e))
+    })
 
-            if(any(is.na(df))) next
-            DF <- rbind(DF, df)
-            }, error = function(e) {
-              cat(paste("Error with file", file, ":", e))
-          })
+    i <- i + 1
+    flush.console()
+  }
 
-          i <- i + 1
-          flush.console()
-          }
-
-      return(DF)
+  return(DF)
 }

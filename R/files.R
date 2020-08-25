@@ -181,119 +181,121 @@ get.evt.by.file <- function(evt.dir, file.name, transform=FALSE) {
   return(evts[[1]])
 }
 
-#' Get OPP data frame by file and quantile.
+#' Get a tibble of filtered particles by file and quantile
 #'
+#' @param db SQLite3 database file path.
 #' @param opp.dir OPP file directory.
-#' @param file.name File name with julian day directory. Can be a single
-#'   file name or vector of file names.
-#' @param quantile Filtering quantile for this file
-#' @param channel Channels to keep in returned data frame. Can be a single name
-#'   or a vector. Choosing fewer channels can significantly speed up retrieval.
-#' @param transform Linearize OPP data.
-#' @param vct.dir VCT file directory. If not specified returned data frame will
-#'   not have a pop column.
-#' @param pop If specified, the returned data frame will only contain entries
-#'   for this population.
-#' @return Data frame of OPP data for all files in file.name. If vct.dir is
-#'   specified the data frame will have a per particle population annotations
-#'   in a pop column.
+#' @param file.name File name with julian day directory.
+#' @param col_select col_select parameter passed to arrow::read_parquet as
+#'   tidy-selection. date and file_id are always added as the first columns.
+#'   By default all columns are returned.
+#' @return Tibble of filtered particles for one file. If no data is found a
+#'   tibble with zero rows will be returned.
 #' @examples
 #' \dontrun{
 #' opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
-#' opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00",
-#'                        channel=c("fsc_small", "chl_small", "pe"),
-#'                        transform=F, vct.dir=vct.dir)
 #' }
 #' @export
-get.opp.by.file <- function(opp.dir, file.name, quantile=NULL, channel=NULL,
-                            transform=TRUE, vct.dir=NULL, pop=NULL) {
-  if (length(file.name) == 0) {
-    return(empty_opp())
+get.opp.by.file <- function(db, opp.dir, file.name, col_select=NULL) {
+  file.name <- clean.file.path(file.name)
+  col_select <- rlang::enquo(col_select)
+  if (rlang::quo_is_null(col_select)) {
+    col_select <- NULL
+  } else {
+    # Alway enforce dates and file_ids as the first columns
+    col_select <- rlang::expr(c(date, file_id, {{ col_select }}))
   }
-  file.name.clean <- unlist(lapply(file.name, clean.file.path))
-  opp.files <- paste0(file.name.clean, ".opp")
-
-  opp.reader <- function(f) {
-    multi_quantile <- FALSE
-    path <- NULL
-    # Check if this is an opp with a quantile bitflags column
-    tmp_path <- file.path(opp.dir, f)
-    if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
-      multi_quantile <- TRUE
-      columns <- c(EVT.HEADER, "bitflags")
-      path <- tmp_path
-    }
-    # Check for opp split into per-quantile files
-    if (! is.null(quantile) & ! multi_quantile) {
-      tmp_path <- file.path(opp.dir, quantile, f)
-      if (file.exists(tmp_path) | file.exists(paste0(tmp_path, ".gz"))) {
-        # It is split-quantile file, set appropriate path and columns
-        path <- tmp_path
-        columns <- EVT.HEADER
-      }
-    }
-
-    opp <- readSeaflow(path, channel=channel, transform=transform, columns=columns)
-    if (multi_quantile) {
-      opp <- decode_bit_flags(opp)
-      if (! is.null(quantile)) {
-        # Select for one quantile and drop quantile flag columns
-        qcolumn <- paste0("q", quantile)
-        opp <- opp[opp[qcolumn] == TRUE, EVT.HEADER]
-      }
-    }
-    return(opp)
+  opp_stats <- tibble::as_tibble(get.opp.stats.by.file(db, file.name))
+  opp_stats <- dplyr::filter(opp_stats, quantile == 50)  # only need files and dates for one quantile
+  if (nrow(opp_stats) == 0) {
+    # No data found
+    return(tibble::tibble())
   }
 
-  opps <- lapply(opp.files, opp.reader)
-  opps.bound <- dplyr::bind_rows(opps)
-
-  if (! is.null(quantile)) {
-    if (!is.null(pop) & is.null(vct.dir)) {
-      print("no vct data found, returning all opp instead")
-    }
-
-    if (! is.null(vct.dir) ) {
-      vcts <- lapply(file.name.clean, function(f) get.vct.by.file(vct.dir, f, quantile))
-      vcts.bound <- dplyr::bind_rows(vcts)
-      opps.bound <- cbind(opps.bound, vcts.bound)
-      if (! is.null(pop)) {
-        opps.bound <- opps.bound[opps.bound$pop == pop, ]
-      }
-    }
-  }
-
-  return(opps.bound)
+  # Only keep file_id and date as datetime object
+  date_df <- dplyr::select(
+    dplyr::mutate(opp_stats, file_id=file, date=lubridate::ymd_hms(date)),
+    file_id,
+    date
+  )
+  opp_files <- list.files(opp.dir, pattern=paste0("*.opp.parquet"), full.names=TRUE)
+  # TODO this will throw an error if something in date_df isn't in opp_files
+  # do something to handle it
+  window_df <- add_window_paths(date_df, opp_files)  # associate files with parquet files
+  # TODO check for no match
+  opp_path <- window_df$window_path[1]
+  opp_df <- dplyr::filter(
+    tibble::as_tibble(arrow::read_parquet(opp_path, col_select={{ col_select }})),
+    file_id == file.name
+  )
+  # Remove unused levels in factors
+  opp_df <- dplyr::mutate_if(opp_df, is.factor, forcats::fct_drop)
+  return(opp_df)
 }
 
-#' Save OPP as a gzipped LabView format binary file
+#' Get data frame of filtered particles selecting by date.
 #'
-#' @param opp OPP data frame of filtered particles.
-#' @param opp.dir Output directory. Julian day sub-directories will be
-#'   automatically created.
-#' @param file.name File name with julian day directory.
-#' @param untransform Convert linear data to log.
-#' @param require_all_quantiles Only write if all quantiles have focused particles
-#' @return None
+#' Datetime string formats should be in the form "2020-07-31 10:00".
+#'
+#' @param db SQLite3 database file path.
+#' @param opp.dir OPP file directory.
+#' @param start.date Start date string, inclusive.
+#' @param end.date End date string, inclusive.
+#' @param outliers If TRUE, remove outliers. Otherwise don't perform outlier
+#'   filtering.
+#' @param col_select col_select parameter passed to arrow::read_parquet as
+#'   tidy-selection. date and file_id are always added as the first columns.
+#'   By default all columns are returned.
+#' @return Data frame of filtered particles. If no data is found a data frame
+#'   with zero rows will be returned.
 #' @examples
 #' \dontrun{
-#' save.opp.file(opp, opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
+#' opp <- get.opp.by.date(db, opp.dir, "2020-07-31 10:00", "2020-07-31 12:00"
+#'                        col_select=c("fsc_small"))
 #' }
 #' @export
-save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_all_quantiles=TRUE) {
-  in_all_quantiles <- TRUE
-  for (quantile in QUANTILES) {
-    qcolumn <- paste0("q", quantile)
-    in_all_quantiles <- in_all_quantiles & any(opp[, qcolumn])
+get.opp.by.date <- function(db, opp.dir, start.date, end.date, outliers=TRUE,
+                            col_select=NULL) {
+  col_select <- rlang::enquo(col_select)
+  if (rlang::quo_is_null(col_select)) {
+    col_select <- NULL
+  } else {
+    # Alway enforce dates and file_ids as the first columns
+    col_select <- rlang::expr(c(date, file_id, {{ col_select }}))
   }
-  if (nrow(opp) > 0) {
-    if ((require_all_quantiles & in_all_quantiles) | ! require_all_quantiles) {
-      opp <- encode_bit_flags(opp)
-      opp.file <- paste0(file.path(opp.dir, clean.file.path(file.name)), ".opp.gz")
-      dir.create(dirname(opp.file), showWarnings=F, recursive=T)
-      writeSeaflow(opp[, c(EVT.HEADER, "bitflags")], opp.file, untransform=untransform)
-    }
+
+  opp_stats <- tibble::as_tibble(get.opp.stats.by.date(
+    db, start.date=start.date, end.date=end.date, outliers=outliers
+  ))
+  opp_stats <- dplyr::filter(opp_stats, quantile == 50)  # only need one quantile
+  if (nrow(opp_stats) == 0) {
+    # No data found
+    return(tibble::tibble())
   }
+
+  # Only keep file_id and date as datetime object
+  date_df <- dplyr::select(
+    dplyr::mutate(opp_stats, file_id=file, date=lubridate::ymd_hms(date)),
+    file_id,
+    date
+  )
+  opp_files <- list.files(opp.dir, pattern=paste0("*.opp.parquet"), full.names=TRUE)
+  # TODO this will throw an error if something in date_df isn't in opp_files
+  # do something to handle it
+  window_df <- add_window_paths(date_df, opp_files)  # associate files with parquet files
+
+  dfs <- list()
+  # TODO check for files with no window file matches
+  for (opp_path in unique(window_df$window_path)) {
+    opp_df <- dplyr::filter(
+      tibble::as_tibble(arrow::read_parquet(opp_path, col_select={{ col_select }})),
+      file_id %in% window_df$file_id
+    )
+    dfs[[length(dfs)+1]] <- opp_df
+  }
+  # Concatenate and remove unused levels in factors
+  df <- dplyr::mutate_if(dplyr::bind_rows(dfs), is.factor, forcats::fct_drop)
+  return(df)
 }
 
 #' Get a tibble of per particle population classifications by file and quantile
@@ -301,8 +303,9 @@ save.opp.file <- function(opp, opp.dir, file.name, untransform=FALSE, require_al
 #' @param db SQLite3 database file path.
 #' @param vct.dir VCT file directory.
 #' @param file.name File name with julian day directory.
-#' @param quantile Filtering quantile for this file. If NULL, all quantiles are
-#'   returned.
+#' @param col_select col_select parameter passed to arrow::read_parquet as
+#'   tidy-selection. date and file_id are always added as the first columns.
+#'   By default all columns are returned.
 #' @return Tibble of per particle population classifications. If no data is
 #'   found a tibble with zero rows will be returned.
 #' @examples
@@ -342,6 +345,7 @@ get.vct.by.file <- function(db, vct.dir, file.name, col_select=NULL) {
     tibble::as_tibble(arrow::read_parquet(vct_path, col_select={{ col_select }})),
     file_id == file.name
   )
+  vct_df <- dplyr::mutate_if(vct_df, is.factor, forcats::fct_drop)
   return(vct_df)
 }
 
@@ -353,6 +357,8 @@ get.vct.by.file <- function(db, vct.dir, file.name, col_select=NULL) {
 #' @param vct.dir VCT file directory.
 #' @param start.date Start date string, inclusive.
 #' @param end.date End date string, inclusive.
+#' @param outliers If TRUE, remove outliers. Otherwise don't perform outlier
+#'   filtering.
 #' @param col_select col_select parameter passed to arrow::read_parquet as
 #'   tidy-selection. date and file_id are always added as the first columns.
 #'   By default all columns are returned.
@@ -403,33 +409,9 @@ get.vct.by.date <- function(db, vct.dir, start.date, end.date, outliers=TRUE,
     )
     dfs[[length(dfs)+1]] <- vct_df
   }
-  return(dplyr::bind_rows(dfs))
-}
-
-
-#' Save VCT per particle population classification.
-#'
-#' File will be saved to vct.dir as a gzipped text file, one line per particle.
-#'
-#' @param vct List of per particle population classifications.
-#' @param vct.dir Output directory for VCT files.
-#' @param file.name File name with julian day directory.
-#' @param quantile Filtering quantile for this file
-#' @return None
-#' @examples
-#' \dontrun{
-#' save.vct.file(db, vct.dir, "2014_185/2014-07-04T00-00-02+00-00", 97.5)
-#' }
-#' @export
-save.vct.file <- function(vct, vct.dir, file.name, quantile) {
-  # Make sure we define the order here in case it changes somewhere upstream.
-  # This should match the column order defined wherever vct files are read.
-  vct <- vct[, c("diam_lwr", "Qc_lwr", "diam_mid", "Qc_mid", "diam_upr", "Qc_upr", "pop")]
-  vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct.gz")
-  dir.create(dirname(vct.file), showWarnings=F, recursive=T)
-  con <- gzfile(vct.file, "w")
-  write.table(vct, con, row.names=F, col.names=F, quote=F)
-  close(con)
+  # Concatenate and remove unused levels in factors
+  df <- dplyr::mutate_if(dplyr::bind_rows(dfs), is.factor, forcats::fct_drop)
+  return(df)
 }
 
 #' Create an empty EVT data frame
