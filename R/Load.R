@@ -272,6 +272,8 @@ concatenate.opp <- function(db, opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0
     i <- i + 1
     flush.console()
   }
+  # Remove unused levels in factors
+  DF <- dplyr::mutate_if(DF, is.factor, forcats::fct_drop)
 
   return(DF)
 }
