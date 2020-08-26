@@ -1,11 +1,11 @@
 Package: popcycle
-Title: Popcycle: A R package for analysis of continuous SeaFlow data
+Title: Popcycle: An R package providing reproducible analytical methods to uniformly process and curate SeaFlow data
 Version: 3.2.1
 Author: Francois Ribalet, Chris Berthiaume
 Maintainer: Francois Ribalet <ribalet@uw.edu>
 Description: Seaflow analysis using R/SQLite.
 Depends:
-    R (>= 3.4.0)
+    R (>= 3.6.0)
 biocViews:
 Imports:
     arrow,
@@ -26,6 +26,6 @@ Suggests:
     testthat,
     roxygen2
 License: GPL-2
-URL: http://seaflow.ocean.washington.edu
+URL: https://github.com/seaflow-uw
 RoxygenNote: 7.1.1
 Encoding: UTF-8
