@@ -44,8 +44,8 @@ filter.notch <- function(evt, filter.params) {
 
   # linearize the LOG transformed data
   lin <- FALSE
-  id <- which(colnames(evt) == "pulse_width" | colnames(evt) == "time" | colnames(evt) =="pop")
-  if (!any(max(evt[,-c(id)]) > 10^3.5)) {
+  columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
+  if (!any(max(evt[, columns]) > 10^3.5)) {
     evt <- untransformData(evt)
     lin <- TRUE
   }

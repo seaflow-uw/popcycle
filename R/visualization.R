@@ -34,9 +34,9 @@ plot_filter_cytogram <- function(evt, filter.params) {
 
 
   # linearize the LOG transformed data
-  id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
-  if (!any(max(evt[,c(id)]) > 10^3.5)) {
-    evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
+  columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
+  if (!any(max(evt[, columns]) > 10^3.5)) {
+    evt <- untransformData(evt)
   }
 
   # Filtering noise

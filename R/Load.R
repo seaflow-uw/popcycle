@@ -16,16 +16,10 @@ transformData <- function(df, columns=NULL) {
   if (nrow(df) == 0) {
     return(df)
   }
-  if (! is.null(columns)) {
-    df[, columns] <- 10^((df[, columns]/2^16)*3.5)
-  } else {
-    id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) == "pop")
-    if (length(id)) {
-      df[,-c(id)] <- 10^((df[,-c(id)]/2^16)*3.5)
-    } else {
-      df[, ] <- 10^((df[, ]/2^16)*3.5)
-    }
+  if (is.null(columns)) {
+    columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
   }
+  df[, columns] <- 10^((df[, columns]/2^16)*3.5)
   return(df)
 }
 
@@ -45,16 +39,10 @@ untransformData <- function(df, columns=NULL) {
   if (nrow(df) == 0) {
     return(df)
   }
-  if (! is.null(columns)) {
-    df[, columns] <-(log10(df[, columns])/3.5)*2^16
-  } else {
-    id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
-    if (length(id)) {
-      df[,-c(id)] <-(log10(df[,-c(id)])/3.5)*2^16
-    } else {
-      df[, ] <-(log10(df)/3.5)*2^16
-    }
+  if (is.null(columns)) {
+    columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
   }
+  df[, columns] <-(log10(df[, columns])/3.5)*2^16
   return(df)
 }
 

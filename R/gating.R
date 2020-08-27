@@ -555,9 +555,9 @@ add_filter_params <- function(df, db) {
   # Assume that one set of filter parameters has been used for all rows in df
   fp <- get.filter.params.latest(db)
   df$filter_id <- fp$id[1]
-  df$beads_fsc_2.5 <- transformData(data.frame(fsc=fp[fp$quantile == 2.5, "beads.fsc.small"]))$fsc[1]
-  df$beads_fsc_50 <- transformData(data.frame(fsc=fp[fp$quantile == 50, "beads.fsc.small"]))$fsc[1]
-  df$beads_fsc_97.5 <- transformData(data.frame(fsc=fp[fp$quantile == 97.5, "beads.fsc.small"]))$fsc[1]
+  df$beads_fsc_2.5 <- transformData(data.frame(fsc=fp[fp$quantile == 2.5, "beads.fsc.small"]), columns=c("fsc"))$fsc[1]
+  df$beads_fsc_50 <- transformData(data.frame(fsc=fp[fp$quantile == 50, "beads.fsc.small"]), columns=c("fsc"))$fsc[1]
+  df$beads_fsc_97.5 <- transformData(data.frame(fsc=fp[fp$quantile == 97.5, "beads.fsc.small"]), columns=c("fsc"))$fsc[1]
   return(df)
 }
 
