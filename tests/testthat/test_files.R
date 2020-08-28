@@ -110,69 +110,39 @@ test_that("Read labview EVT files", {
   tearDown(x)
 })
 
-test_that("Read labview OPP files", {
+test_that("Read OPP by file", {
   x <- setUp()
 
-  channels <- c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big")
-
-  # One quantile, transformed
-  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", quantile=50)
-  expect_equal(ncol(df), 10)
-  expect_equal(nrow(df), 107)
-  expected_sums <- c(
-    413.35093502168854, 410.45717544547233, 1951.124319299778,
-    6251.102515268681, 234.86005461006755, 6557.753813745059, 2703.541071303222,
-    5721.067919195299
-  )
-  got_sums <- sapply(df[, channels], sum)
-  names(got_sums) <- NULL
-  expect_equal(got_sums, expected_sums)
-  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
-
-  # One quantile, not transformed
-  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", quantile=50, transform=F)
-  expect_equal(ncol(df), 10)
-  expect_equal(nrow(df), 107)
-  expected_sums <- c(
-    694080, 648336, 1561520, 3539380,
-    676080, 857646, 1601660, 3462285
-  )
-  got_sums <- sapply(df[, channels], sum)
-  names(got_sums) <- NULL
-  expect_equal(got_sums, expected_sums)
-  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
-
-  # All quantiles, transformed
-  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
-  expect_equal(ncol(df), 13)
+  df <- get.opp.by.file(x$db.full, x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
   expect_equal(nrow(df), 426)
-  expected_sums <- c(
-    1116.5279899908082, 1076.6376079584306, 2760.1829439907083,
-    24882.364162830487, 894.2637461609878, 7987.663691702378, 3800.890090453811,
-    22769.586012202057, 423, 107, 85
-  )
-  got_sums <- sapply(df[, c(channels, "q2.5", "q50", "q97.5")], sum)
-  names(got_sums) <- NULL
-  
-  expect_equal(got_sums, expected_sums)
-  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
-
-  # All quantiles, not transformed
-  df <- get.opp.by.file(x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=F)
-  expect_equal(ncol(df), 13)
+  df <- get.opp.by.file(x$db.full, x$opp.input.dir, "2014_185/2014-07-04T00-00-02+00-00",
+                        col_select=c("D1"))
   expect_equal(nrow(df), 426)
-  expected_sums <- c(
-    1114848, 945376, 1804048, 14090639,
-    2522848, 1395742, 3485061, 13783246, 423, 107, 85
-  )
-  got_sums <- sapply(df[, c(channels, "q2.5", "q50", "q97.5")], sum)
-  names(got_sums) <- NULL
-  expect_equal(got_sums, expected_sums)
-  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  expect_equal(names(df), c("date", "file_id", "D1"))
 
-  # Two OPP files at once
-  df <- get.opp.by.file(x$opp.input.dir, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"), quantile=50)
-  expect_equal(nrow(df), 285)
+  tearDown(x)
+})
+
+test_that("Read OPP by date", {
+  x <- setUp()
+
+  df <- get.opp.by.date(x$db.full, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:02")
+  expect_equal(nrow(df), 426)
+  df <- get.opp.by.date(x$db.full, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:02",
+                        col_select=c("D1"))
+  expect_equal(names(df), c("date", "file_id", "D1"))
+  expect_equal(nrow(df), 426)
+  df <- get.opp.by.date(x$db.full, x$opp.input.dir, "2014-07-04 00:03", "2014-07-04 00:06")
+  expect_equal(nrow(df), 495)
+  df <- get.opp.by.date(x$db.full, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(nrow(df), 921)
+
+  save.outliers(x$db.full, data.frame(file=c("2014_185/2014-07-04T00-00-02+00-00"), flag=1))
+  df <- get.opp.by.date(x$db.full, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:04")
+  expect_equal(nrow(df), 495)
+  df <- get.opp.by.date(x$db.full, x$opp.input.dir, "2014-07-04 00:00", "2014-07-04 00:04",
+                        outliers=FALSE)
+  expect_equal(nrow(df), 921)
 
   tearDown(x)
 })
