@@ -1,17 +1,19 @@
 #' Convert data from sqlite3 database into a csv file of curated SeaFlow data for a cruise, along with metadata files.
 #'
 #' @param db SQLite3 database file path.
+#' @param meta metadata containing cruise ID (provided by googlesheet "SeaFlow log instrument")
 #' @param path Path to save the file.
 #' @param version Version of the dataset.
 #' @return None
 #' @examples
 #' \dontrun{
-#' csv_convert(db, meta, path)
+#'# load metadata to get offical cruise name
+#'  meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
+#' csv_convert(db,meta, path)
 #' }
 #' @export
-csv_convert <- function(db, path, version = "v1.0") {
+csv_convert <- function(db, meta, path, version = "v1.0") {
 
-    meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
 
     var_short_name <- c("time", "lat", "lon",
           "temp", "salinity", "par",
@@ -115,9 +117,10 @@ csv_convert <- function(db, path, version = "v1.0") {
     # data
     data <- get.stat.table(db)
     data <- stat.calibration(data, cruise)
-    data <- data[,var_data]
+    data <- data[,var_short_name]
     
-    readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_",as.Date(Sys.time()),"_", version,".csv"))
+    #readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_",as.Date(Sys.time()),"_", version,".csv"))
+    arrow::write_parquet(data, paste0(path,"/SeaFlow_", official.cruise,"_", version,"_",as.Date(Sys.time()),".parquet"))
 
     # dataset_metadata
     dataset_metadata <- tibble::tibble(
@@ -157,12 +160,8 @@ csv_convert <- function(db, path, version = "v1.0") {
 #' @param path Path to save the file.
 #' @param version Version of the dataset.
 #' @return None
-#' @examples
-#' \dontrun{
-#' csv_convert(db, meta, path)
-#' }
 #' @export
-cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
+cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
 
 
     var_short_name <- c("cruise", 
@@ -199,9 +198,6 @@ cmap_convert <- function(path.to.dbs, path, version = "v1.3") {
     var_discipline <- c("",rep("biology+biogeochemistry+optics+cytometry",16))
 
     description <- paste("The data set consists of SeaFlow-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for picophytoplankton populations, namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). SeaFlow is an underway flow cytometer that provides continuous shipboard observations of the optical properties of the smallest phytoplankton. The instrument collects the equivalent of 1 sample every 3 minutes or every 1 km (for a ship moving at 10 knots) from the ship’s flow-through seawater system. Since 2010, the instrument has been operated for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. Further information can be found here https://seaflow.netlify.app/")
-
-    # load metadata to get offical cruise name
-    meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
 
     today <- as.Date(Sys.time())
 

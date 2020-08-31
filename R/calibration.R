@@ -66,11 +66,11 @@ stat.calibration <- function(stat, cruisename, calib=NULL){
 
   # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
   for(phyto in c("prochloro", "synecho")){
-    c <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
-    if(nrow(c) > 0){ 
+    corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
+    if(nrow(corr) > 0){ 
       print(paste("Calibrated abundance for", phyto))
       id <- which(stat$pop == phyto)
-      stat[id,c("abundance")]  <- stat[id,c("abundance")] * c$a + c$b  # cells µL-1
+      stat[id,c("abundance")]  <- stat[id,c("abundance")] * corr$a + corr$b  # cells µL-1
     }
   }  
   
@@ -96,11 +96,11 @@ PSD.calibration <- function(PSD, cruisename, calib=NULL){
 
   # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
   for(phyto in c("prochloro", "synecho")){
-    c <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
-    if(nrow(c) > 0){ 
+    corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
+    if(nrow(corr) > 0){ 
       print(paste("Calibrated abundance for", phyto))
       id <- which(PSD$pop == phyto)
-      PSD[id,clmn] <- PSD[id,clmn] * c$a + (PSD[id,clmn] / rowSums(PSD[id,clmn])) * c$b  # cells µL-1
+      PSD[id,clmn] <- PSD[id,clmn] * corr$a + (PSD[id,clmn] / rowSums(PSD[id,clmn])) * corr$b  # cells µL-1
     }
   }
 

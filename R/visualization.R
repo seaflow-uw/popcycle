@@ -191,15 +191,12 @@ plot_map <- function(stat, param, transform=FALSE){
 
 #' Plot cruise track on a map.
 #'
-#' @param sfl sfl table from get.sfl.table function
+#' @param stat a dataframe that contains columns "lat" and "lon"
 #' @param param Parameter to display
-#' @param bin An integer representing the time interval (in hour) into which time is to be averaged
 #' @return None
 #' @usage plot_cruisetrack(stat, param)
 #' @export plot_cruisetrack
-plot_cruisetrack <- function(sfl, param, bin=NULL){
-
-  sfl$date <- as.POSIXct(sfl$date, format="%FT%T", tz="GMT")
+plot_cruisetrack <- function(stat, param){
 
   geo <- list(
     showland = TRUE,
@@ -230,19 +227,11 @@ plot_cruisetrack <- function(sfl, param, bin=NULL){
     )
   )
 
-  if(!is.null(bin)) {
-    sfl <- sfl %>%
-        group_by(date= cut(date, breaks=paste(bin, "hour"))) %>%
-        summarise_all(mean)
-    sfl <- data.frame(sfl)
-  }
-
-  p <- plotly::plot_geo(sfl, lat = ~lat, lon = ~lon, color = sfl[,param], colors = viridis::viridis_pal(option = "D")(100), alpha=0.5) %>%
+  p <- plotly::plot_geo(stat, lat = ~lat, lon = ~lon, color = stat[,param], colors = viridis::viridis_pal(option = "D")(100), alpha=0.5) %>%
         plotly::colorbar(title = paste(param)) %>%
         plotly::layout(showlegend=T, geo = geo)
 
   return(p)
-
 }
 
 
