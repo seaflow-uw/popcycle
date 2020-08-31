@@ -952,7 +952,19 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
 #' }
 #' @export
 save.vct.stats <- function(db, vct_stats) {
-  sql.dbWriteTable(db, name="vct", value=vct_stats)
+  # Make sure duplicate entries keyed by file are overwritten with new vct
+  # stats. This can happen when using a new gating ID for the same file.
+  # Get current VCT table
+  old_vct_stats <- get.vct.table(db)
+  old_vct_stats$date <- NULL  # date is not in VCT table, this is added from SFL
+  # Only keep rows in old that don't have a matching file in new
+  only_old <- dplyr::anti_join(old_vct_stats, vct_stats, by=c("file"))
+  # Merge old and new
+  merged_vct_stats <- dplyr::bind_rows(only_old, vct_stats)
+  # Erase existing table
+  reset.vct.stats.table(db)
+  # Save table with new results
+  sql.dbWriteTable(db, name="vct", value=merged_vct_stats)
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
