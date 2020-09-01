@@ -172,15 +172,15 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
                 
 
     var_standard_name <- c("cruise ID",
-                paste0("abundance of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
-                paste0("Diameter of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
-                paste0("Carbon quotas of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
+                paste0("Abundance of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
+                paste0("Average diameter of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
+                paste0("Average carbon quotas of ", c("Prochlorococcus-like particles","Synechococcus-like particles","Picoeukaryote phytoplankton","Crocospheara-like particles")), 
                 paste0("Carbon biomass of ", c("Prochlorococcus population","Synechococcus population","Picoeukaryote phytoplankton population","Crocospheara population")))
                 
     var_comment <-  c("cruise ID from Rolling Deck to Repository https://www.rvdata.us",
-                rep("cell abundance, cal;culated based on teh number of particles normalized by the volume of SeaFlow's virtual-core, see https://github.com/seaflow-uw/seaflow-virtualcore for more details",4),
-                rep('cell diameter based on Mie theory, see https://github.com/seaflow-uw/fsc-size-calibration for more details',4),
-                rep('carbon content based on the equation pgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
+                rep("number of particles normalized by the volume of SeaFlow's virtual-core, see https://github.com/seaflow-uw/seaflow-virtualcore for more details",4),
+                rep('derived from forward light scatter using the Mie theory, see https://github.com/seaflow-uw/fsc-size-calibration for more details',4),
+                rep('carbon content, based on the equation pgC cell-1 = 0.261 x Volume^0.860, where Volume is calculated from cell diameter assuming spherical particle; see https://github.com/seaflow-uw/fsc-poc-calibration for more details',4),
                 rep("carbon biomass = cell abundance x carbon quotas",4))
 
     var_unit <- c("",
