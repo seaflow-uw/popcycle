@@ -44,7 +44,7 @@ filter.notch <- function(evt, filter.params) {
 
   # linearize the LOG transformed data
   lin <- FALSE
-  columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
+  columns <- unlist(lapply(evt, is.numeric)) 
   if (!any(max(evt[, columns]) > 10^3.5)) {
     evt <- untransformData(evt)
     lin <- TRUE
