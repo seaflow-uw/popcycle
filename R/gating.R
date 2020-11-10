@@ -278,7 +278,6 @@ classify.opp <- function(opp, gates.log) {
   return(opp)
 }
 
-
 #' Classify particles for a list of OPP files.
 #'
 #' Classify a  list of OPP files. Save per file aggregate population statistics
@@ -290,9 +289,16 @@ classify.opp <- function(opp, gates.log) {
 #' @param opp.files List of OPP files to classify. Include julian day directory.
 #' @param vct.dir VCT file output directory.
 #' @param gating.id Optionally provide the ID for gating parameters. If NULL,
-#'   the existing gating parameters will be used.
-#' @param vct.table Optionally provide the VCT table. If NULL,
-#'   the existing gating parameters will be used.
+#'  vct.table will be used to determine gating parameters. If vct.table is null,
+#'  the latest gating parameters in the database will be used. gating.id takes
+#'  precedence over vct.table.
+#' @param vct.table Optionally provide a previous VCT table that will be used to
+#'   gating parameters by date range. If NULL, gating.id will be used for all
+#'   files. If gating.id is NULL, the latest gating parameters in the database
+#'   will be used.
+#' @param mie.table Optionally provide the Mie theory table. If NULL,
+#'   the installed Mie Theory lookup table will be used. This table should be
+#'   identical to one produced by read_mie_csv().
 #' @return None
 #' @examples
 #' \dontrun{
@@ -302,81 +308,67 @@ classify.opp <- function(opp, gates.log) {
 #' }
 #' @export
 classify.opp.files <- function(db, opp.dir, opp.files, vct.dir,
-                               gating.id=NULL, vct.table=NULL) {
-  if (!is.null(gating.id) & !is.null(vct.table)) {
-    stop("gating.id and vct.table are mutually exclusive parameters")
+                               gating.id=NULL, vct.table=NULL, mie.table=NULL,
+                               cores=1) {
+  ptm <- proc.time()
+
+  # Read installed Mie theory table if not provided
+  if (is.null(mie.table)) {
+    mie.table <- read_mie_csv()
   }
-  if (!is.null(gating.id)) {
-    # Use provided gating.id for all files
-    gating.params <- get.gating.params.by.id(db, gating.id)
-    if (length(gating.params$gates.log) == 0) {
-      stop("No gate paramters yet; no gating.")
-    }
+  # Clean up opp.files to produce only file IDs
+  file_ids_to_gate <- unlist(lapply(opp.files, clean.file.path))
+
+  # Get gating IDs for each file_id, add dates, input file paths,
+  # output file paths, etc. All information needed to perform gating should
+  # be captured in gating_plan
+  gating_plan <- create_gating_plan(
+    file_ids_to_gate, db, opp.dir, vct.dir, gating_id=gating.id, vct_table=vct.table
+  )
+  # Get all gating params for easy lookup later without talking to the db every
+  # file_id
+  gating_params <- list()
+  for (gid in unique(gating_plan$gating_id)) {
+    gating_params[[gid]] <- get.gating.params.by.id(db, gid)
   }
-  if (is.null(gating.id) & is.null(vct.table)) {
-    # No guidance on what gating parameters to used has been supplied.
-    # Default to using the latest gating parameters for all files
-    gating.params <- get.gating.params.latest(db)
+
+  # Perform classification, save new VCT Parquet files
+  # Group by input time-windowed OPP Parquet file path. Classifcation will be
+  # performed for all file IDs in one parquet file at a time.
+  by_window_opp_path <- dplyr::group_by(
+    gating_plan,
+    window_opp_path
+  )
+  cores <- min(cores, parallel::detectCores())
+  print(paste0("using ", cores, " cores"))
+  if (cores > 1) {
+    # Parallel code
+    cl <- parallel::makeCluster(cores, outfile="")
+    doParallel::registerDoParallel(cl)
+    answer <- foreach::`%dopar%`(
+      foreach::foreach(
+        df=dplyr::group_split(by_window_opp_path),
+        .inorder=TRUE,
+        .combine=dplyr::bind_rows
+      ),
+      handle_window_opp(df, NULL, gating_params, mie=mie.table)
+    )
+    parallel::stopCluster(cl)
+  } else {
+    # Serial code
+    answer <- dplyr::group_map(
+      by_window_opp_path,
+      handle_window_opp,
+      gating_params,
+      mie=mie.table,
+      .keep=TRUE
+    )
   }
-  if (is.null(gating.id) & !is.null(vct.table)) {
-    opp_gates <- get.opp.gates(db, opp.files, vct.table)
-  }
-
-  # Always assume the latest filter parameters are the ones used to generate
-  # the current OPP data
-  filter.params <- get.filter.params.latest(db)
-  if (is.null(filter.params)) {
-    stop("No DB filter entries")
-  }
-  # Take from first quantile row, should be the same for all quantiles
-  filter.id <- filter.params$id[1]
-
-  # Get instrument serial number
-  inst <- get.inst(db)
-
-  i <- 0
-  errors <- list()
-  for (opp.file in opp.files) {
-    message(round(100*i/length(opp.files)), "% completed \r", appendLF=FALSE)
-
-    # delete old vct entries if they exist so we keep file/particle distinct
-    # There should only be one vct entry in the db for each population/file
-    # combination.
-    delete.vct.stats.by.file(db, opp.file)
-    delete.vct.by.file(vct.dir, opp.file)
-
-    # get gating parameters (only if gating.id is NULL)
-    if (is.null(gating.id) & !is.null(vct.table)) {
-      id.gating <- opp_gates[opp_gates$file == opp.file, "gating_id"]
-      gating.params <- get.gating.params.by.id(db, id.gating)
-    }
-
-    tryCatch({
-      for (quantile in QUANTILES) {
-        #print(paste("Loading", opp.file))
-        opp <- get.opp.by.file(opp.dir, opp.file, quantile)
-
-        #print(paste("Classifying", opp.file))
-        # First calculate diameter and carbon quota
-        beads.fsc <- as.numeric(transformData(data.frame(fsc=filter.params[which(filter.params$quantile == quantile),"beads.fsc.small"])))
-        opp <- size.carbon.conversion(opp, beads.fsc=beads.fsc, inst=inst)
-
-        # Then gate
-        opp <- classify.opp(opp, gating.params$gates.log)
-
-        # store vct
-        #print("Uploading labels to the database")
-        save.vct.stats(db, opp.file, opp, gating.params$id,
-                       filter.id, quantile)
-        save.vct.file(opp, vct.dir, opp.file, quantile)
-      }
-    }, error = function(e) {
-      cat(paste0("Error with file ", opp.file, ": ", e))
-    })
-
-    i <- i + 1
-    flush.console()
-  }
+  # Save stats to DB
+  vct_stats_all <- dplyr::bind_rows(answer)
+  save.vct.stats(db, vct_stats_all)
+  deltat <- proc.time() - ptm
+  writeLines(paste0("Classified ", length(opp.files), " in ", deltat[["elapsed"]], " seconds"))
 }
 
 #' Get per file gating IDs to use for regating based on previous gating.
@@ -452,4 +444,339 @@ rle_starts <- function(rle_result) {
     i <- i + 1
   }
   return(starts)
+}
+
+copy_column_parts <- function(src, dst, dst_index) {
+  src_types <- sapply(src, typeof)
+  for (i in seq_along(src_types)) {
+    col_name <- names(src_types)[i]
+    col_type <- src_types[[i]]
+    if (!(col_name %in% names(dst))) {
+      # Initially set all values to NA with same type as src column
+      # Fill in values at dst_index with real data from src
+      if (col_type == "double") {
+        dst[[col_name]] <- as.double(NA)
+        dst[dst_index, col_name] <- src[[col_name]]
+      }  else if (col_type == "integer") {
+        if (class(src[[col_name]]) == "factor") {
+          # Convert factor to character
+          dst[[col_name]] <- as.character(NA)
+          dst[dst_index, col_name] <- as.character(src[[col_name]])
+        } else if (class(src[[col_name]]) == "integer") {
+          dst[[col_name]] <- as.integer(NA)
+          dst[dst_index, col_name] <- src[[col_name]]
+        } else {
+          stop(paste("unsupported column type used in copy_column_parts()", col_name, col_type))
+        }
+      } else if (col_type == "character") {
+        dst[[col_name]] <- as.character(NA)
+        dst[dst_index, col_name] <- src[[col_name]]
+      } else {
+        stop(paste("unsupported column type used in copy_column_parts()", col_name, col_type))
+      }
+    }
+  }
+  return(dst)
+}
+
+
+create_gating_plan <- function(file_ids_to_gate, db, opp_dir, vct_dir, gating_id=NULL, vct_table=NULL) {
+  if (!is.null(gating_id) & !is.null(vct_table)) {
+    stop("gating.id and vct.table are mutually exclusive parameters")
+  }
+  
+  # Start with a dataframe of file_ids
+  df <- tibble::tibble(file_id=file_ids_to_gate)
+  # Add dates from DB and only keep files in DB based on row file_id
+  df <- add_dates(df, db)
+  # Add time-windowed OPP and VCT file paths and intervals based on row date
+  df <- add_opp_vct_paths(df, opp_dir, vct_dir)
+  # Add gating IDs based on row file_id or date
+  df <- add_gating_ids(df, db, gating_id, vct_table)
+  # Add filter_id and per-quantile fsc bead pos from filter parameters
+  df <- add_filter_params(df, db)
+  # Add instrument serial number
+  df <- add_instrument_serial(df, db)
+  
+  return(df)
+}
+
+add_dates <- function(df, db) {
+  # Add a "date" column based on the SFL db table to a dataframe of "file_id"
+  # Get SFL dates
+  dates <- get_file_dates(db, df$file_id)
+  df$date <- dates$date
+  return(df)
+}
+
+add_opp_vct_paths <- function(df, opp_dir, vct_dir) {
+  # Add time windowed paths and intervals to a dataframe with column "date"
+  # Get intervals covered by each windowed OPP file
+  paths <- list.files(opp_dir, pattern=paste0("*.opp.parquet"), full.names=TRUE)
+  # Add interval and window_path column to df based on date
+  df <- add_window_paths(df, paths)
+  df <- dplyr::rename(df, window_opp_path=window_path)  # rename to be opp specific
+  # Add VCT output paths
+  ext1 <- "opp.parquet"
+  ext2 <- "vct.parquet"
+  df <- dplyr::mutate(
+    df,
+    window_vct_path=file.path(
+      vct_dir,
+      stringr::str_replace(basename(window_opp_path), ext1, ext2)
+    )
+  )
+  return(df)
+}
+
+add_gating_ids <- function(df, db, gating_id, vct_table) {
+  # Add a "gating_id" column to a dataframe with a "file_id" column
+  if (is.null(gating_id) & is.null(vct_table)) {
+    # No guidance on what gating parameters to used has been supplied.
+    # Default to using the latest gating parameters for all files
+    gating_id <- get.gating.params.latest(db)$id
+    df$gating_id <- gating_id
+  } else if (!is.null(gating_id)) {
+    # Use provided gating_id for all files
+    df$gating_id <- gating_id
+  } else if (!is.null(vct_table)) {
+    # Get gates by date range based on vct_table parameter
+    opp_gates <- get.opp.gates(db, df$file_id, vct_table)
+    if (any(opp_gates$file != df$file_id)) {
+      stop("opp file_id mismatch when determining gating IDs from VCT table")
+    }
+    df$gating_id <- as.character(opp_gates$gating_id)  # make sure it's not a factor
+  }
+  return(df)
+}
+
+add_filter_params <- function(df, db) {
+  # Add "filter_id", "beads_fsc_2.5", "beads_fsc_50", "beads_fsc_97.5" columns
+  # Assume that one set of filter parameters has been used for all rows in df
+  fp <- get.filter.params.latest(db)
+  df$filter_id <- fp$id[1]
+  df$beads_fsc_2.5 <- transformData(data.frame(fsc=fp[fp$quantile == 2.5, "beads.fsc.small"]), columns=c("fsc"))$fsc[1]
+  df$beads_fsc_50 <- transformData(data.frame(fsc=fp[fp$quantile == 50, "beads.fsc.small"]), columns=c("fsc"))$fsc[1]
+  df$beads_fsc_97.5 <- transformData(data.frame(fsc=fp[fp$quantile == 97.5, "beads.fsc.small"]), columns=c("fsc"))$fsc[1]
+  return(df)
+}
+
+add_instrument_serial <- function(df, db) {
+  df$inst <- get.inst(db)
+  return(df)
+}
+
+prep_vct_stats <- function(vct) {
+  # Now group by file_id and pop and get summary statistics for all
+  # quantiles.
+  vct <- tibble::as_tibble(vct)
+  df <- tibble::tibble()  # to store aggregated stats for all quantiles
+  for (quant in popcycle:::QUANTILES) {
+    qcol <- paste0("q", quant)
+    qvct <- vct[vct[[qcol]], ]  # Only keep rows for this quantile
+    # Remove quantile suffix for quantile-specific columns for this
+    # quantile
+    qsuffix <- paste0("_q", quant)
+    qvct <- dplyr::rename_with(
+      qvct,
+      function(.x) {
+        stringr::str_replace(.x, paste0(qsuffix, "$"), "")
+      },
+      ends_with(qsuffix)
+    )
+    agg <- dplyr::summarize(
+      dplyr::group_by(qvct, file_id, pop),
+      count=dplyr::n(),
+      chl_1q=as.numeric(quantile(chl_small, 0.25)),
+      chl_med=as.numeric(quantile(chl_small, 0.5)),
+      chl_3q=as.numeric(quantile(chl_small, 0.75)),
+      pe_1q=as.numeric(quantile(pe, 0.25)),
+      pe_med=as.numeric(quantile(pe, 0.5)),
+      pe_3q=as.numeric(quantile(pe, 0.75)),
+      fsc_1q=as.numeric(quantile(fsc_small, 0.25)),
+      fsc_med=as.numeric(quantile(fsc_small, 0.5)),
+      fsc_3q=as.numeric(quantile(fsc_small, 0.75)),
+      diam_lwr_1q=as.numeric(quantile(diam_lwr, 0.25)),
+      diam_lwr_med=as.numeric(quantile(diam_lwr, 0.5)),
+      diam_lwr_3q=as.numeric(quantile(diam_lwr, 0.75)),
+      diam_mid_1q=as.numeric(quantile(diam_mid, 0.25)),
+      diam_mid_med=as.numeric(quantile(diam_mid, 0.5)),
+      diam_mid_3q=as.numeric(quantile(diam_mid, 0.75)),
+      diam_upr_1q=as.numeric(quantile(diam_upr, 0.25)),
+      diam_upr_med=as.numeric(quantile(diam_upr, 0.5)),
+      diam_upr_3q=as.numeric(quantile(diam_upr, 0.75)),
+      Qc_lwr_1q=as.numeric(quantile(Qc_lwr, 0.25)),
+      Qc_lwr_med=as.numeric(quantile(Qc_lwr, 0.5)),
+      Qc_lwr_mean=mean(Qc_lwr),
+      Qc_lwr_3q=as.numeric(quantile(Qc_lwr, 0.75)),
+      Qc_mid_1q=as.numeric(quantile(Qc_mid, 0.25)),
+      Qc_mid_med=as.numeric(quantile(Qc_mid, 0.5)),
+      Qc_mid_mean=mean(Qc_mid),
+      Qc_mid_3q=as.numeric(quantile(Qc_mid, 0.75)),
+      Qc_upr_1q=as.numeric(quantile(Qc_upr, 0.25)),
+      Qc_upr_med=as.numeric(quantile(Qc_upr, 0.5)),
+      Qc_upr_mean=mean(Qc_upr),
+      Qc_upr_3q=as.numeric(quantile(Qc_upr, 0.75)),
+      gating_id=dplyr::first(gating_id),
+      filter_id=dplyr::first(filter_id),
+      quantile=quant,
+      .groups="drop"  # see https://www.tidyverse.org/blog/2020/05/dplyr-1-0-0-last-minute-additions/#summarise-and-grouping
+    )
+    agg <- dplyr::rename(agg, file=file_id)
+    df <- dplyr::bind_rows(df, agg)
+  }
+  cols <- c(
+    "file", "pop", "count",
+    "chl_1q","chl_med", "chl_3q",
+    "pe_1q","pe_med", "pe_3q",
+    "fsc_1q","fsc_med", "fsc_3q",
+    "diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
+    "diam_mid_1q","diam_mid_med","diam_mid_3q",
+    "diam_upr_1q","diam_upr_med","diam_upr_3q",
+    "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
+    "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
+    "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
+    "gating_id", "filter_id", "quantile"
+  )
+  df_reorder <- df[cols]
+  return(df_reorder)
+}
+
+# Process a single time-windowed OPP file.
+# 
+# x is a dataframe created by create_gating_plan() that relate to processing a
+# single time-windowed OPP file.
+# 
+# y will be ignored, it is usually the group key (OPP file path) required by
+# dplry::group_map but here we get the group key from the single unique value in
+# x$window_opp_path.
+# 
+# gating_params is a named list that can be used to lookup gating parameters by
+# gating ID string.
+# 
+# mie is optionally a Mie theory lookup table dataframe to be used during VCT
+# creation.
+handle_window_opp <- function(x, y, gating_params, mie=NULL) {
+  gating_plan <- x
+  # It should be a column in the dataframe x, probably used as the group by
+  # key, therefore we can assume there is only one value.
+  window_opp_path <- x$window_opp_path[1]
+  window_vct_path <- gating_plan$window_vct_path[1]
+  window_opp_df <- arrow::read_parquet(window_opp_path)
+
+  by_file_id <- dplyr::group_by(window_opp_df, file_id)
+  logtext <- paste0(lubridate::now("GMT"), " :: ", Sys.getpid(), " :: starting ", basename(window_opp_path))
+  processed <- dplyr::group_map(
+    by_file_id,
+    handle_3min_opp,
+    gating_plan,
+    gating_params,
+    mie,
+    .keep=TRUE
+  )
+  rm(window_opp_df)
+  gc()
+  # Remove empty dataframes from processed
+  processed <- Filter(function(df) {nrow(df) > 0}, processed)
+  # Combine all 3 minute OPPs into one new time-windowed OPP
+  window_vct_df <- dplyr::bind_rows(processed)
+  rm(processed)
+  gc()
+  # Turn all pop columns into factors if not already
+  window_vct_df <- dplyr::mutate_at(
+    window_vct_df,
+    dplyr::vars(starts_with("pop_q")),
+    as.factor
+  )
+  # TODO: add a check for gating_id and filter_id in window_vct_df
+  # and gating_plan matching per file. Make sure there's only one
+  # of each per file and they match.
+  dir.create(dirname(window_vct_path), showWarnings=FALSE, recursive=TRUE)
+  if (file.exists(window_vct_path)) {
+    old_vct_df <- arrow::read_parquet(window_vct_path)
+    window_vct_df <- merge_old_new_vct(old_vct_df, window_vct_df)
+    rm(old_vct_df)
+    gc()
+  }
+  # Sort by ascending date
+  window_vct_df <- dplyr::arrange(window_vct_df, date)
+  arrow::write_parquet(window_vct_df, window_vct_path)
+  # Prepare VCT stats dataframe
+  vct_stats_df <- prep_vct_stats(window_vct_df)
+  rm(window_vct_df)
+  gc()
+  # TODO: Read existing VCT window file
+  # Merge new data into existing VCT window file
+  logtext <- paste0(
+    logtext,
+    "\n",
+    paste0(lubridate::now("GMT"), " :: ", Sys.getpid(), " :: finished ", basename(window_opp_path))
+  )
+  writeLines(logtext)
+  return(vct_stats_df)
+}
+
+handle_3min_opp <- function(x, y, gating_plan, gating_params, mie=NULL) {
+  file_id <- as.character(y$file_id[1])
+  opp <- x
+  gating_plan <- gating_plan[gating_plan$file_id == file_id, ]
+  if (nrow(gating_plan) == 0) {
+    return(tibble::tibble())  # filter out from returned list later
+  }
+  inst <- gating_plan$inst[1]  
+  filter_id <- as.character(gating_plan$filter_id[1])
+  gating_id <- as.character(gating_plan$gating_id[1])
+  gp <- gating_params[[gating_id]]
+  if (gp$id != gating_id) {
+    # It's really important that this lookup of gating parameters is done
+    # correctly, so double-check here.
+    stop(paste("gating ID mismatch for", file_id, ":", gating_id, "!=", gp$id, ""))
+  }
+  filter_id_from_file <- unique(opp$filter_id)
+  if (filter_id != filter_id_from_file) {
+    # Quick sanity check that OPP we're using matches what we pulled from the db
+    stop(paste("filter ID mismatch for", file_id, ":", filter_id, "!=", filter_id_from_file, ""))
+  }
+  for (quantile in popcycle:::QUANTILES) {
+    channels <- c("fsc_small", "pe", "chl_small")
+    qcol <- paste0("q", quantile)  # name of logical column for a single quantile
+    beads_col <- paste0("beads_fsc_", quantile)  # name of quantile-specific beads_fsc from filtering params
+    qopp <- opp[opp[[qcol]], channels]  # quantile-specific OPP data
+    beads_fsc <- gating_plan[[beads_col]][1]
+    qopp <- as.data.frame(qopp)  # something in carbon conversion of classify.opp doesn't like tibbles
+    # First calculate diameter and carbon quota
+    qopp <- size.carbon.conversion(qopp, beads.fsc=beads_fsc, inst=inst, mie=mie)
+    # Then gate
+    qopp <- classify.opp(qopp, gp$gates.log)
+    # Select and rename quantile-specific columns. No need to keep the 
+    # OPP channel data, that's still in the original OPP dataframe.
+    # Add "_q<quantile>" to each new column to indicate it's quantile.
+    qopp <- dplyr::rename_with(
+      dplyr::select(qopp, !c(fsc_small, pe, chl_small)),
+      ~ stringr::str_c(.x, paste0("_q", quantile))
+    )
+    # Copy new columns for this quantile's subset of rows back into opp
+    opp <- copy_column_parts(qopp, opp, opp[[qcol]])
+  }
+  opp <- tibble::as_tibble(opp)
+  # Add gating ID here as factor for easier record keeping
+  # downstream, and to make sure the correct gating parameters were used
+  # for this file. Note the gating ID is captured from the actual gating
+  # parameters used, not just the gating ID that was passed into this
+  # function.
+  opp$gating_id <- as.factor(gp$id)
+  return(opp)
+}
+
+
+#' Merge two VCT dataframes by adding rows for novel file_id in old into new.
+#' @param old_vct_df VCT to pull novel file_id entries from.
+#' @param new_vct_df VCT into which novel file_id entries will be added.
+#' @return new_vct_df with novel file_id entries from old_vct_df.
+merge_old_new_vct <- function(old_vct_df, new_vct_df) {
+  merged <- dplyr::bind_rows(
+    new_vct_df,
+    dplyr::anti_join(old_vct_df, new_vct_df, by="file_id")
+  )
+  return(merged)
 }

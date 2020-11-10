@@ -5,7 +5,7 @@
 #' @param para.y Channel to use as y axis.
 #' @param ... Additional parameters for plot()
 #' @return None
-#' @usage plot_cyt(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
+#' @usage plot_cyt(evtopp, para.x = "fsc_small", para.y = "chl_small")
 #' @export plot_cyt
 
 plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
@@ -30,64 +30,64 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 
 plot_filter_cytogram <- function(evt, filter.params) {
     
-fp <- subset(filter.params, quantile == 50)
+  fp <- subset(filter.params, quantile == 50)
 
 
-    # linearize the LOG transformed data
-    id <- which(colnames(evt) == "fsc_small" | colnames(evt) == "chl_small" | colnames(evt) =="pe" | colnames(evt) =="fsc_perp" | colnames(evt) =="D1" | colnames(evt) =="D2")
-    if (!any(max(evt[,c(id)]) > 10^3.5)) {
-      evt[,c(id)] <- (log10(evt[,c(id)])/3.5)*2^16
-    }
+  # linearize the LOG transformed data
+  columns <- unlist(lapply(evt, is.numeric)) 
+  if (!any(max(evt[, columns]) > 10^3.5)) {
+    evt <- untransformData(evt)
+  }
 
-    # Filtering noise
-    evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
+  # Filtering noise
+  evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
 
-    # Fltering aligned particles (D1 = D2)
-    aligned <- subset(evt., D2 < D1 + fp$width & D1 < D2 + fp$width)
+  # Fltering aligned particles (D1 = D2)
+  aligned <- subset(evt., D2 < D1 + fp$width & D1 < D2 + fp$width)
 
-    # Filtering focused particles (fsc_small > D * notch)
-    opp <- filter.notch(evt, filter.params)
+  # Filtering focused particles (fsc_small > D * notch)
+  opp <- filter.notch(evt, filter.params)
 
-        ################
-        ### PLOTTING ###
-        ################
-        percent.opp <- round(100*nrow(opp)/nrow(evt.),2)
-        percent.noise <- round(100-100*nrow(evt.)/nrow(evt),0)
+  ################
+  ### PLOTTING ###
+  ################
+  percent.opp <- round(100*nrow(opp)/nrow(evt.),2)
+  percent.noise <- round(100-100*nrow(evt.)/nrow(evt),0)
 
-        if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
-        if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
+  if(nrow(evt.) > 10000)  evt. <- evt.[round(seq(1,nrow(evt.), length.out=10000)),]
+  if(nrow(aligned) > 10000)  aligned <- aligned[round(seq(1,nrow(aligned), length.out=10000)),]
 
-        def.par <- par(no.readonly = TRUE) # save default, for resetting...
+  def.par <- par(no.readonly = TRUE) # save default, for resetting.
 
-        par(mfrow=c(2,3),pty="s")
+  par(mfrow=c(2,3),pty="s")
 
-        plot_cyt(evt., "D1", "D2")
-        mtext("Alignment", side=3, line=3, font=2, col=2)
-        abline(b=1, a=fp$width, col="red",lwd=2)
-        abline(b=1, a=-fp$width, col="red",lwd=2)
-        mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=1,font=2)
+  plot_cyt(evt., "D1", "D2")
+  mtext("Alignment", side=3, line=3, font=2, col=2)
+  abline(b=1, a=fp$width, col="red",lwd=2)
+  abline(b=1, a=-fp$width, col="red",lwd=2)
+  mtext(paste0("Noise = ", percent.noise, "%" ), side=3, line=1,font=2)
 
-        plot_cyt(aligned, "fsc_small", "D1")
-        mtext("Focus", side=3, line=3, font=2,col=2)
-        abline(b=fp$notch.small.D1, a=fp$offset.small.D1,col=2)
-        abline(b=fp$notch.large.D1, a=fp$offset.large.D1,col=3)
-        points(fp$beads.fsc.small,fp$beads.D1, cex=2, pch=16)
+  plot_cyt(aligned, "fsc_small", "D1")
+  mtext("Focus", side=3, line=3, font=2,col=2)
+  abline(b=fp$notch.small.D1, a=fp$offset.small.D1,col=2)
+  abline(b=fp$notch.large.D1, a=fp$offset.large.D1,col=3)
+  points(fp$beads.fsc.small,fp$beads.D1, cex=2, pch=16)
 
-        plot_cyt(aligned, "fsc_small", "D2")
-        mtext("Focus", side=3, line=3, font=2,col=2)
-        abline(b=fp$notch.small.D2, a=fp$offset.small.D2,col=2)
-        abline(b=fp$notch.large.D2, a=fp$offset.large.D2,col=3)
-        points(fp$beads.fsc.small,fp$beads.D2, cex=2, pch=16)
+  plot_cyt(aligned, "fsc_small", "D2")
+  mtext("Focus", side=3, line=3, font=2,col=2)
+  abline(b=fp$notch.small.D2, a=fp$offset.small.D2,col=2)
+  abline(b=fp$notch.large.D2, a=fp$offset.large.D2,col=3)
+  points(fp$beads.fsc.small,fp$beads.D2, cex=2, pch=16)
 
-        plot_cyt(opp, "fsc_small", "pe"); abline(v=fp$beads.fsc.small, lty=2, col="grey")
-        mtext("OPP", side=3, line=1, font=2, col=2)
-        plot_cyt(opp, "fsc_small","chl_small"); abline(v=fp$beads.fsc.small, lty=2, col="grey")
-        mtext("OPP", side=3, line=1, font=2, col=2)
-        plot_cyt(opp, "chl_small","pe")
-        mtext("OPP", side=3, line=1, font=2, col=2)
-        mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-2,font=2,col=1)
+  plot_cyt(opp, "fsc_small", "pe"); abline(v=fp$beads.fsc.small, lty=2, col="grey")
+  mtext("OPP", side=3, line=1, font=2, col=2)
+  plot_cyt(opp, "fsc_small","chl_small"); abline(v=fp$beads.fsc.small, lty=2, col="grey")
+  mtext("OPP", side=3, line=1, font=2, col=2)
+  plot_cyt(opp, "chl_small","pe")
+  mtext("OPP", side=3, line=1, font=2, col=2)
+  mtext(paste("OPP =", percent.opp,"% EVT"), outer=T,side=1, line=-2,font=2,col=1)
 
-        par(def.par)
+  par(def.par)
 }
 
 
@@ -101,18 +101,18 @@ fp <- subset(filter.params, quantile == 50)
 #' @param xlim limits for x-axis.
 #' @param ylim limits for y-axis.
 #' @return None
-#' @usage plot_cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
+#' @usage plot_cytogram(evtopp, para.x = "fsc_small", para.y = "chl_small")
 #' @export plot_cytogram
 plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T, xlim=NULL, ylim=NULL) {
 
   if(!any(names(evtopp) == "file")) evtopp[,"file"] <- ""
 
   p <- evtopp %>%
-          ggplot2::ggplot() +
-          ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y), bins=bins, color=NA) +
-          viridis::scale_fill_viridis() +
-          ggplot2::theme_bw()+
-          ggplot2::facet_wrap( ~ file)
+        ggplot2::ggplot() +
+        ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y), bins=bins, color=NA) +
+        viridis::scale_fill_viridis() +
+        ggplot2::theme_bw()+
+        ggplot2::facet_wrap( ~ file)
 
       if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
       }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
@@ -137,27 +137,27 @@ plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bi
 #' @export plot_vct_cytogram
 plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", transform=T, xlim=NULL, ylim=NULL) {
 
-    group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
+  group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
-    if(!any(names(opp) == "pop")) opp[,"pop"] <- "unknown"
-    if(!any(names(opp) == "file")) opp[,"file"] <- ""
-    opp$pop <- factor(opp$pop, levels = names(group.colors))
+  if(!any(names(opp) == "pop")) opp[,"pop"] <- "unknown"
+  if(!any(names(opp) == "file")) opp[,"file"] <- ""
+  opp$pop <- factor(opp$pop, levels = names(group.colors))
 
-    p <- opp %>%
-          ggplot2::ggplot() +
-          ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y, fill = "pop", alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
-          ggplot2::theme_bw() +
-          ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
-          ggplot2::scale_fill_manual(values=group.colors) +
-          ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
-          ggplot2::scale_color_manual(values=group.colors) +
-          ggplot2::guides(color="none", alpha="none", fill= ggplot2::guide_legend(override.aes = list(size=2, alpha=0.5),title="population")) +
-          ggplot2::facet_wrap(~ file)
+  p <- opp %>%
+        ggplot2::ggplot() +
+        ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y, fill = "pop", alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
+        ggplot2::theme_bw() +
+        ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
+        ggplot2::scale_fill_manual(values=group.colors) +
+        ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
+        ggplot2::scale_color_manual(values=group.colors) +
+        ggplot2::guides(color="none", alpha="none", fill= ggplot2::guide_legend(override.aes = list(size=2, alpha=0.5),title="population")) +
+        ggplot2::facet_wrap(~ file)
 
-          if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
-          }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
+        if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
+        }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
 
-      return(p)
+ return(p)
 
 }
 
@@ -168,17 +168,17 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter"
 #' @return None
-#' @usage plot_map(stat, param, ...)
+#' @usage plot_map(stat, param)
 #' @export plot_map
 plot_map <- function(stat, param, transform=FALSE){
 
   p <- stat %>%
-      ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes_string("lon", "lat", color=param), size=1, alpha=0.5,show.legend=T) +
-      ggplot2::borders("world", colour = "black", fill = "gray80") +
-      ggplot2::labs(x="Longitude", y= "Latitude") +
-      ggplot2::coord_fixed(ratio = 1, xlim = range(stat[,"lon"], na.rm=T), ylim = range(stat[,"lat"], na.rm=T)) +
-      ggplot2::facet_wrap(~ pop) +
-      ggplot2::theme_bw()
+        ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes_string("lon", "lat", color=param), size=1, alpha=0.5,show.legend=T) +
+        ggplot2::borders("world", colour = "black", fill = "gray80") +
+        ggplot2::labs(x="Longitude", y= "Latitude") +
+        ggplot2::coord_fixed(ratio = 1, xlim = range(stat[,"lon"], na.rm=T), ylim = range(stat[,"lat"], na.rm=T)) +
+        ggplot2::facet_wrap(~ pop) +
+        ggplot2::theme_bw()
 
   if(transform) p <- p + ggplot2::scale_color_gradientn(colours=viridis::viridis(100), trans="log10", name=paste(param))
   if(!transform) p <- p + ggplot2::scale_color_gradientn(colours=viridis::viridis(100), name=paste(param))
@@ -191,15 +191,12 @@ plot_map <- function(stat, param, transform=FALSE){
 
 #' Plot cruise track on a map.
 #'
-#' @param sfl sfl table from get.sfl.table function
+#' @param stat a dataframe that contains columns "lat" and "lon"
 #' @param param Parameter to display
-#' @param bin An integer representing the time interval (in hour) into which time is to be averaged
 #' @return None
 #' @usage plot_cruisetrack(stat, param)
 #' @export plot_cruisetrack
-plot_cruisetrack <- function(sfl, param, bin=NULL){
-
-  sfl$date <- as.POSIXct(sfl$date, format="%FT%T", tz="GMT")
+plot_cruisetrack <- function(stat, param){
 
   geo <- list(
     showland = TRUE,
@@ -230,19 +227,11 @@ plot_cruisetrack <- function(sfl, param, bin=NULL){
     )
   )
 
-  if(!is.null(bin)) {
-    sfl <- sfl %>%
-        group_by(date= cut(date, breaks=paste(bin, "hour"))) %>%
-        summarise_all(mean)
-    sfl <- data.frame(sfl)
-  }
-
-  p <- plotly::plot_geo(sfl, lat = ~lat, lon = ~lon, color = sfl[,param], colors = viridis::viridis_pal(option = "D")(100), alpha=0.5) %>%
+  p <- plotly::plot_geo(stat, lat = ~lat, lon = ~lon, color = stat[,param], colors = viridis::viridis_pal(option = "D")(100), alpha=0.5) %>%
         plotly::colorbar(title = paste(param)) %>%
         plotly::layout(showlegend=T, geo = geo)
 
-    return(p)
-
+  return(p)
 }
 
 
@@ -267,14 +256,14 @@ plot_time <- function(stat, param, transform=FALSE){
   stat2$pop <- factor(stat2$pop, levels = names(group.colors))
 
   p <- stat2 %>%
-      ggplot2::ggplot() +
-      #ggplot2::geom_vline(xintercept=as.POSIXct(ifelse(stat2$par != min(stat2$par,na.rm=T), stat2$time, 0),origin="1970-01-01",tz="GMT"), col="lightgrey",alpha=0.01, lwd=2) +  # only works for curated PAR
-      ggplot2::geom_linerange(ggplot2::aes(x=time,ymin=lwr, ymax=upr), color="grey") +
-      ggplot2::geom_point(ggplot2::aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
-      ggplot2::theme_bw() +
-      ggplot2::labs(y=param) +
-      ggplot2::scale_fill_manual(values=group.colors) +
-      ggplot2::facet_grid( pop ~ ., scale="free_y")
+        ggplot2::ggplot() +
+        #ggplot2::geom_vline(xintercept=as.POSIXct(ifelse(stat2$par != min(stat2$par,na.rm=T), stat2$time, 0),origin="1970-01-01",tz="GMT"), col="lightgrey",alpha=0.01, lwd=2) +  # only works for curated PAR
+        ggplot2::geom_linerange(ggplot2::aes(x=time,ymin=lwr, ymax=upr), color="grey") +
+        ggplot2::geom_point(ggplot2::aes(x=time,y=mid, fill=pop), pch=21, size=3, alpha=0.25, show.legend=F) +
+        ggplot2::theme_bw() +
+        ggplot2::labs(y=param) +
+        ggplot2::scale_fill_manual(values=group.colors) +
+        ggplot2::facet_grid( pop ~ ., scale="free_y")
 
   if(transform) p <- p + ggplot2::scale_y_continuous(trans="log10")
 
@@ -287,7 +276,8 @@ plot_time <- function(stat, param, transform=FALSE){
 #'
 #' @param evtopp EVT or OPP data frame.
 #' @param para.x Channel to use as x axis.
-#' @param binwidth The width of the bins. Can be specified as a numeric value, or a function that calculates width from x. The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
+#' @param binwidth The width of the bins. Can be specified as a numeric value, or a function that calculates width from x. T
+#' The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
 #' @param transform Log transformation of the parameter"
 #' @param position Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.
 #' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
@@ -303,17 +293,18 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transfor
   if(!any(names(evtopp) == "file")) evtopp[,"file"] <- NA
   evtopp$pop <- factor(evtopp$pop, levels = names(group.colors))
 
-    p <- evtopp %>%
-        ggplot2::ggplot() + ggplot2::geom_histogram(ggplot2::aes_string(para.x, fill="pop"),binwidth=binwidth, alpha=0.5, color=NA, position=position) +
-        ggplot2::theme_bw() +
-        ggplot2::scale_fill_manual(values=group.colors) +
-        ggplot2::guides(fill=ggplot2::guide_legend(title="population"))
+  p <- evtopp %>%
+      ggplot2::ggplot() + ggplot2::geom_histogram(ggplot2::aes_string(para.x, fill="pop"),binwidth=binwidth, alpha=0.5, color=NA, position=position) +
+      ggplot2::theme_bw() +
+      ggplot2::scale_fill_manual(values=group.colors) +
+      ggplot2::guides(fill=ggplot2::guide_legend(title="population"))
 
-        if(free){p <- p + ggplot2::facet_wrap(~ file, scale="free_y")
-        }else{ p <- p + ggplot2::facet_wrap(~ file)}
+  if(free){p <- p + ggplot2::facet_wrap(~ file, scale="free_y")
+  }else{ p <- p + ggplot2::facet_wrap(~ file)}
 
-        if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10")
+  if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10")
 
-        return(p)
+  return(p)
 
-  }
+}
+

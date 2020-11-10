@@ -16,16 +16,10 @@ transformData <- function(df, columns=NULL) {
   if (nrow(df) == 0) {
     return(df)
   }
-  if (! is.null(columns)) {
-    df[, columns] <- 10^((df[, columns]/2^16)*3.5)
-  } else {
-    id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) == "pop")
-    if (length(id)) {
-      df[,-c(id)] <- 10^((df[,-c(id)]/2^16)*3.5)
-    } else {
-      df[, ] <- 10^((df[, ]/2^16)*3.5)
-    }
+  if (is.null(columns)) {
+    columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
   }
+  df[, columns] <- 10^((df[, columns]/2^16)*3.5)
   return(df)
 }
 
@@ -45,16 +39,10 @@ untransformData <- function(df, columns=NULL) {
   if (nrow(df) == 0) {
     return(df)
   }
-  if (! is.null(columns)) {
-    df[, columns] <-(log10(df[, columns])/3.5)*2^16
-  } else {
-    id <- which(colnames(df) == "pulse_width" | colnames(df) == "time" | colnames(df) =="pop")
-    if (length(id)) {
-      df[,-c(id)] <-(log10(df[,-c(id)])/3.5)*2^16
-    } else {
-      df[, ] <-(log10(df)/3.5)*2^16
-    }
+  if (is.null(columns)) {
+    columns <- (names(df) %in% c("D1", "D2", "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small", "chl_big"))
   }
+  df[, columns] <-(log10(df[, columns])/3.5)*2^16
   return(df)
 }
 
@@ -191,7 +179,7 @@ writeSeaflow <- function(df, path, untransform=TRUE) {
   if (untransform)  df <- untransformData(df, columns=EVT.HEADER)
 
   ## open connection ##
-  if (endswith(path, ".gz")) {
+  if (endsWith(path, ".gz")) {
     con <- gzfile(description = path, open="wb")
   } else {
     con <- file(description = path, open="wb")
@@ -243,33 +231,37 @@ concatenate.evt <- function(evt.list, evt.dir, n=100000, min.fsc=0, min.pe=0, mi
 
 #' Concatenate OPP files
 #'
+#' @param db SQLite3 database file path.
 #' @param opp.list List of OPP files.
 #' @param opp.dir Path to OPP files.
 #' @param n Number of rows to return.
 #' @param min.fsc, min.pe, min.chl Minimum value for fsc_small, pe and chl_small respectively
 #' @return A dataframe with n rows.
 #' @export
-concatenate.opp <- function(opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0, min.chl=0, transform=TRUE,...){
+concatenate.opp <- function(db, opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0, min.chl=0, ...){
   n <- as.numeric(n)
   DF <- NULL
   i <- 0
   for (file in opp.list){
-        message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
+    message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
 
-        tryCatch({
-          df <- get.opp.by.file(opp.dir, file, transform=transform)
-          df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
-          df <- df[round(seq(1,nrow(df), length.out=round(n/length(opp.list)))),]
+    tryCatch({
+      df <- get.opp.by.file(db, opp.dir, file)
+      df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
+      df <- df[round(seq(1,nrow(df), length.out=round(n/length(opp.list)))),]
+      if (any(is.na(df))) {
+        next
+      }
+      DF <- dplyr::bind_rows(DF, df)
+    }, error = function(e) {
+      cat(paste("Error with file", file, ":", e))
+    })
 
-            if(any(is.na(df))) next
-            DF <- rbind(DF, df)
-            }, error = function(e) {
-              cat(paste("Error with file", file, ":", e))
-          })
+    i <- i + 1
+    flush.console()
+  }
+  # Remove unused levels in factors
+  DF <- dplyr::mutate_if(DF, is.factor, forcats::fct_drop)
 
-          i <- i + 1
-          flush.console()
-          }
-
-      return(DF)
+  return(DF)
 }

@@ -29,14 +29,16 @@ flowrate <- function(stream_pressure, inst=inst){
 #' @param opp Table that contains fsc_small values (transformed data).
 #' @param beads.fsc Values of the fsc_small for beads (transformed data).
 #' @param inst Instrument serial number
+#' @param mie Optional Mie theory lookup dataframe
 #' @return A dataframe with cell size and carbon cell quotas
 #' @export
-size.carbon.conversion <- function(opp, beads.fsc, inst){
-
-  mie <- read.csv(system.file("scatter", paste0("calibrated-mie.csv"),package="popcycle"))
+size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
+    if (is.null(mie)) {
+        mie <- read_mie_csv()
+    }
 
     # find closest matches in Mie lookup table
-    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter)
+    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter, all.inside = TRUE)
 
     #convert scatter to diameter and Qc
     for(quant in c("_lwr","_mid","_upr")){
@@ -47,4 +49,60 @@ size.carbon.conversion <- function(opp, beads.fsc, inst){
     }
 
   return(opp)
+}
+
+#' Calibrate abundance based on Influx data
+#'
+#' @param stat The stat table returned from get.stat.table()
+#' @param cruisename Name of the cruise (returned from get.mata.table()).
+#' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
+#' @return the stat table witrh corrected abundancce if available
+#' @export
+stat.calibration <- function(stat, cruisename, calib=NULL){
+
+    if (is.null(calib)) {
+        calib <- read_calib_csv()
+    }
+
+  # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
+  for(phyto in c("prochloro", "synecho")){
+    corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
+    if(nrow(corr) > 0){ 
+      print(paste("Calibrated abundance for", phyto))
+      id <- which(stat$pop == phyto)
+      stat[id,c("abundance")]  <- stat[id,c("abundance")] * corr$a + corr$b  # cells µL-1
+    }
+  }  
+  
+  return(stat)
+}
+
+
+
+#' Calibrate abundance based on Influx data
+#'
+#' @param PSD Particle size disitribution created by create_PSD().
+#' @param cruisename Name of the cruise (returned from get.mata.table()).
+#' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
+#' @return the stat table with corrected abundancce if available
+#' @export
+PSD.calibration <- function(PSD, cruisename, calib=NULL){
+
+  if (is.null(calib)) {
+        calib <- read_calib_csv()
+  }
+  # select column that have PSD data
+  clmn <- grep("]", names(PSD))
+
+  # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
+  for(phyto in c("prochloro", "synecho")){
+    corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
+    if(nrow(corr) > 0){ 
+      print(paste("Calibrated abundance for", phyto))
+      id <- which(PSD$pop == phyto)
+      PSD[id,clmn] <- PSD[id,clmn] * corr$a + (PSD[id,clmn] / rowSums(PSD[id,clmn])) * corr$b  # cells µL-1
+    }
+  }
+
+  return(PSD)
 }

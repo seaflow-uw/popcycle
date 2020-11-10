@@ -25,80 +25,125 @@ evaluate.evt <- function(db, evt.dir, opp.dir, vct.dir, evt.file) {
   classify.opp.files(db, opp.dir, evt.file, vct.dir)
 }
 
-#' Merge databases after refiltering and reanalyze OPP.
+#' Reclassify based on iformation in separate database.
 #'
-#' This functions automates reanalysis that occurs downstream from raw particle
+#' This functions automates realysis that occurs downstream from raw particle
 #' filtration, e.g. gating, diameter, carbon. It will clear the gating, poly,
-#' and metadata tables in databases in dir_new and copy the same tables from
-#' corresponding databases found in dir_old. It will also copy outlier flags
-#' from old databases to new for files that exist in both databases. After the
-#' new databases have been updated, OPP particles will be reclassified and
-#' diameters and carbon quotas will be recalculated.
-#' @param dir_old Directory with old popcycle databases. Database files will be
-#'   searched for recursively. Only the database files are used. Other results
-#'   files are ignored.
-#' @param dir_new Directory with new filtered results. Database files will be
-#'   searched for recursively. For each database file it is expected that there
-#'   will be corresponding OPP directories in the same location, with a naming
-#'   scheme of <cruise>_opp/. <cruise> should match the cruise stored in the
-#'   metadata table.
+#' and metadata tables in the target database and copy the same tables from
+#' old_db. It will also copy outlier flags from old_db to the target database
+# for files that exist in both databases. After the target database has been
+#' updated, OPP particles will be reanalyzed.
+#' @param old_db Database file from which to pull gating parameters, metadata,
+#'   and outlier flags.
+#' @param target_dir Directory with target database file and OPP data. There
+#'   must be a database file in target_dir with the same name as old_db. There
+#'   should also be an OPP directory with name <cruise>_opp where <cruise> is
+#'   the cruise name stored in the metadata table of old_db.
+#' @param cores Number of cores to use for VCT creation.
+#' @param mie Mie theory lookup table CSV file to use in place of installed table.
+#' @param backup If backup is TRUE, create a dated backup copy of database file
+#'   and VCT directory found in target_dir before making changes.
 #' @return None
 #' @examples
 #' \dontrun{
-#' merge_and_reanalyze(dir_old, dir_new)
+#' reclassify(old_db, target_dir, mie="mie.csv", cores=4, backup=TRUE)
 #' }
 #' @export
-merge_and_reanalyze <- function(dir_old, dir_new) {
-  common_dbs <- find_common_dbs(dir_old, dir_new)
+reclassify <- function(old_db, target_dir, mie=NULL, cores=1, backup=TRUE) {
+  # Database file to pull information from
+  print(paste0("Input db = ", old_db))
 
-  if (nrow(common_dbs)) {
-    print(paste0("Found ", nrow(common_dbs), " common database file(s)"))
-    print(common_dbs)
+  # Configure target paths
+  print(paste0("Target directory = ", target_dir))
+  db <- file.path(target_dir, basename(old_db))
+  if (!file.exists(db)) {
+    stop(paste0("Matching db file doesn't exist in ", target_dir))
+  }
+  print(paste0("Target db = ", db))
+  cruise <- get.cruise(db)
+  opp_dir <- file.path(target_dir, paste0(cruise, "_opp"))
+  vct_dir <- file.path(target_dir, paste0(cruise, "_vct"))
+  if (!dir.exists(opp_dir)) {
+    stop(paste0("OPP directory ", opp_dir, " not found"))
+  }
+  print(paste0("Target OPP directory = ", opp_dir))
+  print(paste0("Target VCT directory = ", vct_dir))
 
-    # Copy tables needed to reanalyze after refiltering
-    # Then regate
-    for (i in seq(nrow(common_dbs))) {
-      common <- common_dbs[i, ]
+  # Get mie table
+  mie_table <- popcycle::read_mie_csv(mie)
+  if (!is.null(mie)) {
+    print(paste0("Mie table = ", mie))
+  } else {
+    print(paste0("Using installed Mie table"))
+  }
 
-      print(paste0("Merging ", common$old_path, " into ", common$new_path))
-      copy_tables(common$old_path, common$new_path, c("metadata","gating", "poly"))
-      # Outlier table is a bit trickier because the file set may have changed
-      # after new filtering.
-      copy_outlier_table(common$old_path, common$new_path)
-
-      print(paste0("Extracting VCT table from ", common$old_path))
-      old_vct_table <- get.vct.table(common$old_path)
-      # Sometimes a VCT table has entries for OPP files that are not in the
-      # latest set of OPP files for that database for whatever reason.
-      # i.e. Some VCT table entries may have become out of sync with the OPP
-      # table and contain references to files only found in previous filtering
-      # runs. It's important to remove those VCT entries here before reanalysis
-      # because they may refer to outdated gating parameters which should not
-      # be used, and these gating parameters may overlap in time with other more
-      # recently defined gating parameters. This will break the time-range based
-      # gating that will happen in classify.opp.files. Do a merge to make sure
-      # that only VCT entries for OPP files returned by
-      # get.opp.files(old_db, outliers=F) are considered.
-      old_opp_files <- get.opp.files(common$old_path, outliers=F)
-      # This will remove VCT entries not in old_opp_files
-      joined_vct <- merge(
-        x=old_vct_table, y=data.frame(file=old_opp_files),
-        by="file", all.x=F, all.y=T, sort=F
+  # Backup existing database file
+  if (backup) {
+    backup_db <- paste0(
+      file.path(target_dir, basename(db)),
+      ".backup-",
+      lubridate::today()
+    )
+    print(paste0("Creating backup of target db at ", backup_db))
+    file.copy(db, backup_db)
+  }
+  # Erase or backup existing VCT directory
+  if (dir.exists(vct_dir)) {
+    if (backup) {
+      backup_vct_dir <- paste0(
+        file.path(target_dir, basename(vct_dir)),
+        ".backup-",
+        lubridate::today()
       )
-      # This will remove opp file entries not in VCT
-      joined_vct <- joined_vct[!is.na(joined_vct$gating_id), ]
-      # The merge step may reorder things so make sure everything is still
-      # sorted by ascending date
-      joined_vct <- joined_vct[order(joined_vct$date), ]
-
-      print(paste0("Classifying with ", common$new_path))
-      working_dir <- dirname(common$new_path)
-      cruise <- get.cruise(common$new_path)
-      opp_dir <- file.path(working_dir, paste0(cruise, "_opp"))
-      vct_dir <- file.path(working_dir, paste0(cruise, "_vct"))
-      opp_files <- get.opp.files(common$new_path, outliers=F)
-      # Predict diameter, carbon quota, classify
-      classify.opp.files(db=common$new_path, opp.dir=opp_dir,  opp.files=opp_files, vct.dir=vct_dir, vct.table=joined_vct)
+      print(paste0("Creating backup of preexisting target VCT directory at ", backup_vct_dir))
+      file.rename(vct_dir, backup_vct_dir)
+    } else {
+      print(paste0("Erasing preexisting target VCT directory at ", vct_dir))
+      unlink(vct_dir, recursive=TRUE)
     }
   }
+
+  print(paste0("Getting gating ID date ranges from VCT table in input db ", old_db))
+  old_vct_table <- get.vct.table(old_db)
+  # Sometimes a VCT table has entries for OPP files that are not in the
+  # latest set of OPP files for that database for whatever reason.
+  # i.e. Some VCT table entries may have become out of sync with the OPP
+  # table and contain references to files only found in previous filtering
+  # runs. It's important to remove those VCT entries here before reanalysis
+  # because they may refer to outdated gating parameters which should not
+  # be used, and these gating parameters may overlap in time with other more
+  # recently defined gating parameters. This will break the time-range based
+  # gating that will happen in classify.opp.files. Do a merge to make sure
+  # that only VCT entries for OPP files returned by
+  # get.opp.files(old_db, outliers=F) are considered.
+  old_opp_files <- get.opp.files(old_db, outliers=F)
+  # This will remove VCT entries not in old_opp_files
+  joined_vct <- merge(
+    x=old_vct_table, y=data.frame(file=old_opp_files),
+    by="file", all.x=F, all.y=T, sort=F
+  )
+  # This will remove opp file entries not in VCT
+  joined_vct <- joined_vct[!is.na(joined_vct$gating_id), ]
+  # The merge step may reorder things so make sure everything is still
+  # sorted by ascending date
+  joined_vct <- joined_vct[order(joined_vct$date), ]
+
+  # Reset the vct table in the current database. This will be recreated during
+  # classification.
+  print(paste0("Deleting contents of vct table in target database ", db))
+  reset.vct.stats.table(db)
+  # Copy tables needed to reclassify
+  print(paste0("Merging metadata, gating, poly, and outlier tables from input db ", old_db, " into target db ", db))
+  copy_tables(old_db, db, c("metadata", "gating", "poly"))
+  # Outlier table is a bit trickier because the file set may have changed after
+  # new filtering.
+  copy_outlier_table(old_db, db)
+
+  print(paste0("Classifying with target db ", db))
+  opp_files <- get.opp.files(db, outliers=F)
+  # Predict diameter, carbon quota, classify
+  classify.opp.files(
+    db=db, opp.dir=opp_dir, opp.files=opp_files,
+    vct.dir=vct_dir, vct.table=joined_vct, mie.table=mie_table, cores=cores
+  )
 }

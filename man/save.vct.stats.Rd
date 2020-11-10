@@ -4,20 +4,12 @@
 \alias{save.vct.stats}
 \title{Save VCT aggregate population statistics for one file to vct table.}
 \usage{
-save.vct.stats(db, file.name, opp, gating.id, filter.id, quantile)
+save.vct.stats(db, vct_stats)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
 
-\item{file.name}{File name with julian day directory.}
-
-\item{opp}{OPP data frame with pop column.}
-
-\item{gating.id}{ID for entry in gating table.}
-
-\item{filter.id}{ID for entry in filter table.}
-
-\item{quantile}{Filtering quantile for this file}
+\item{vct_stats}{DataFrame of VCT statistics created by prep_vct_stats()}
 }
 \value{
 None
@@ -27,8 +19,6 @@ Save VCT aggregate population statistics for one file to vct table.
 }
 \examples{
 \dontrun{
-save.vct.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
-               opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
-               "0f3c89d5-b6a9-4959-95a8-dd2af73f82b9", 97.5)
+save.vct.stats(db, vct_stats)
 }
 }

@@ -4,7 +4,7 @@
 \alias{plot_map}
 \title{Plot population distribution on a map.}
 \usage{
-plot_map(stat, param, ...)
+plot_map(stat, param)
 }
 \arguments{
 \item{stat}{Stat table from get.stat.table function}

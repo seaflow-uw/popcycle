@@ -4,7 +4,7 @@
 \alias{plot_cyt}
 \title{Plot EVT or OPP cytogram with only builtin R graphics.}
 \usage{
-plot_cyt(evtopp, para.x = "fsc_small", para.y = "chl_small", ...)
+plot_cyt(evtopp, para.x = "fsc_small", para.y = "chl_small")
 }
 \arguments{
 \item{evtopp}{EVT or OPP data frame.}

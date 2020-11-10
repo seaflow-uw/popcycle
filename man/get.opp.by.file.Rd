@@ -2,50 +2,30 @@
 % Please edit documentation in R/files.R
 \name{get.opp.by.file}
 \alias{get.opp.by.file}
-\title{Get OPP data frame by file and quantile.}
+\title{Get a tibble of filtered particles by file and quantile}
 \usage{
-get.opp.by.file(
-  opp.dir,
-  file.name,
-  quantile = NULL,
-  channel = NULL,
-  transform = TRUE,
-  vct.dir = NULL,
-  pop = NULL
-)
+get.opp.by.file(db, opp.dir, file.name, col_select = NULL)
 }
 \arguments{
+\item{db}{SQLite3 database file path.}
+
 \item{opp.dir}{OPP file directory.}
 
-\item{file.name}{File name with julian day directory. Can be a single
-file name or vector of file names.}
+\item{file.name}{File name with julian day directory.}
 
-\item{quantile}{Filtering quantile for this file}
-
-\item{channel}{Channels to keep in returned data frame. Can be a single name
-or a vector. Choosing fewer channels can significantly speed up retrieval.}
-
-\item{transform}{Linearize OPP data.}
-
-\item{vct.dir}{VCT file directory. If not specified returned data frame will
-not have a pop column.}
-
-\item{pop}{If specified, the returned data frame will only contain entries
-for this population.}
+\item{col_select}{col_select parameter passed to arrow::read_parquet as
+tidy-selection. date and file_id are always added as the first columns.
+By default all columns are returned.}
 }
 \value{
-Data frame of OPP data for all files in file.name. If vct.dir is
-  specified the data frame will have a per particle population annotations
-  in a pop column.
+Tibble of filtered particles for one file. If no data is found a
+  tibble with zero rows will be returned.
 }
 \description{
-Get OPP data frame by file and quantile.
+Get a tibble of filtered particles by file and quantile
 }
 \examples{
 \dontrun{
 opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
-opp <- get.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00",
-                       channel=c("fsc_small", "chl_small", "pe"),
-                       transform=F, vct.dir=vct.dir)
 }
 }

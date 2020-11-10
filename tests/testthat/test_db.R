@@ -3,19 +3,19 @@ library(popcycle)
 
 source("helper.R")
 
-test_that("Load / Delete SFL", {
-  x <- setUp()
+# test_that("Load / Delete SFL", {
+#   x <- setUp()
 
-  # Load SFL data
-  save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
-  sfl <- get.sfl.table(x$db)
-  expect_true(nrow(sfl) == 8)
-  reset.sfl.table(x$db)
-  sfl <- get.sfl.table(x$db)
-  expect_true(nrow(sfl) == 0)
+#   # Load SFL data
+#   save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
+#   sfl <- get.sfl.table(x$db)
+#   expect_true(nrow(sfl) == 8)
+#   reset.sfl.table(x$db)
+#   sfl <- get.sfl.table(x$db)
+#   expect_true(nrow(sfl) == 0)
 
-  tearDown(x)
-})
+#   tearDown(x)
+# })
 
 test_that("Save and retrieve filter params", {
   x <- setUp()
@@ -63,6 +63,32 @@ test_that("Save and retrieve filter params", {
   # Skip id and date when comparing
   expect_equal(oldest[, 3:ncol(oldest)], filter.params1)
   expect_equal(latest[, 3:ncol(latest)], filter.params2)
+
+  tearDown(x)
+})
+
+test_that("Add dates to file IDs", {
+  x <- setUp()
+
+  file_ids <- c(
+    "2014_185/2014-07-04T00-09-02+00-00",
+    "2014_185/2014-07-04T00-03-02+00-00",
+    "2014_186/2014-07-05T00-03-02+00-00"  # not in SFL
+  )
+  expect <- tibble::tibble(
+    date=c(
+      lubridate::ymd_hms("2014-07-04T00:09:02+00:00"),
+      lubridate::ymd_hms("2014-07-04T00:03:02+00:00"),
+      NA
+    ),
+    file_id=c(
+      "2014_185/2014-07-04T00-09-02+00-00",
+      "2014_185/2014-07-04T00-03-02+00-00",
+      "2014_186/2014-07-05T00-03-02+00-00"
+    )
+  )
+  got <- get_file_dates(x$db.bare, file_ids)
+  expect_equal(got, expect)
 
   tearDown(x)
 })
@@ -156,91 +182,91 @@ test_that("Retrieve VCT stats by date", {
   tearDown(x)
 })
 
-test_that("Retrieve OPP by file", {
-  x <- setUp()
+# test_that("Retrieve OPP by file", {
+#   x <- setUp()
 
-  # Without VCT, transformed
-  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50)
-  expect_equal(nrow(opp), 285)
-  expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
+#   # Without VCT, transformed
+#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50)
+#   expect_equal(nrow(opp), 285)
+#   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
-  # Without VCT, not transformed
-  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, transform=F)
-  expect_equal(nrow(opp), 285)
-  expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
+#   # Without VCT, not transformed
+#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, transform=F)
+#   expect_equal(nrow(opp), 285)
+#   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
-  # With VCT
-  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, vct.dir=x$vct.input.dir)
-  expect_true("pop" %in% names(opp))
+#   # With VCT
+#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, vct.dir=x$vct.input.dir)
+#   expect_true("pop" %in% names(opp))
 
-  # All quantiles
-  opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1], transform=F)
-  expect_equal(nrow(opp), 426)
+#   # All quantiles
+#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1], transform=F)
+#   expect_equal(nrow(opp), 426)
 
-  tearDown(x)
-})
+#   tearDown(x)
+# })
 
-test_that("Retrieve OPP by date", {
-  x <- setUp()
+# test_that("Retrieve OPP by date", {
+#   x <- setUp()
 
-  # Without VCT, transformed
-  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(nrow(opp), 285)
-  expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
+#   # Without VCT, transformed
+#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
+#   expect_equal(nrow(opp), 285)
+#   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
-  # Without VCT, transformed
-  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:03", "2014-07-04 00:17")
-  expect_equal(nrow(opp), 178)
-  expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
+#   # Without VCT, transformed
+#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:03", "2014-07-04 00:17")
+#   expect_equal(nrow(opp), 178)
+#   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
 
-  # Without VCT, not transformed
-  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
-                         transform=F)
-  expect_equal(nrow(opp), 285)
-  expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
+#   # Without VCT, not transformed
+#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
+#                          transform=F)
+#   expect_equal(nrow(opp), 285)
+#   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
 
-  # With VCT
-  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
-                         vct.dir=x$vct.input.dir)
-  expect_true("pop" %in% names(opp))
+#   # With VCT
+#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
+#                          vct.dir=x$vct.input.dir)
+#   expect_true("pop" %in% names(opp))
 
-  # With/Without outliers
-  outliers_df <- data.frame( 
-    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
-    flag=c(1, 3),
-    stringsAsFactors=FALSE
-  )
-  save.outliers(x$db.full, outliers_df)
-  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(nrow(opp), 107)
-  opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
-  expect_equal(nrow(opp), 285)
+#   # With/Without outliers
+#   outliers_df <- data.frame( 
+#     file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
+#     flag=c(1, 3),
+#     stringsAsFactors=FALSE
+#   )
+#   save.outliers(x$db.full, outliers_df)
+#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
+#   expect_equal(nrow(opp), 107)
+#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
+#   expect_equal(nrow(opp), 285)
 
-  tearDown(x)
-})
+#   tearDown(x)
+# })
 
-test_that("Retrieve split-quantile OPP file", {
-  x <- setUp()
+# test_that("Retrieve split-quantile OPP file", {
+#   x <- setUp()
 
-  # First get a multi-quantile OPP file
-  opp_file <- get.opp.files(x$db.full)[1]
-  opp <- get.opp.by.file(x$opp.input.dir, opp_file, transform=F)
-  expect_equal(nrow(opp), 426)
-  opp50 <- opp[opp["q50"] == TRUE, popcycle:::EVT.HEADER]
+#   # First get a multi-quantile OPP file
+#   opp_file <- get.opp.files(x$db.full)[1]
+#   opp <- get.opp.by.file(x$opp.input.dir, opp_file, transform=F)
+#   expect_equal(nrow(opp), 426)
+#   opp50 <- opp[opp["q50"] == TRUE, popcycle:::EVT.HEADER]
 
-  # Save it manually as an old style split-quantile file
-  opp_dir <- file.path(x$tmp.dir, "splitopp")
-  out_path <- paste0(file.path(opp_dir, "50", opp_file), ".opp.gz")
-  dir.create(dirname(out_path), showWarnings=F, recursive=T)
-  writeSeaflow(opp50, out_path, untransform=F)
+#   # Save it manually as an old style split-quantile file
+#   opp_dir <- file.path(x$tmp.dir, "splitopp")
+#   out_path <- paste0(file.path(opp_dir, "50", opp_file), ".opp.gz")
+#   dir.create(dirname(out_path), showWarnings=F, recursive=T)
+#   writeSeaflow(opp50, out_path, untransform=F)
 
-  # Read it back and make sure it's the same
-  opp_again <- get.opp.by.file(opp_dir, opp_file, quantile=50, transform=F)
-  rownames(opp50) <- NULL  # reset row names to match opp_again
-  expect_true(identical(opp50, opp_again))
+#   # Read it back and make sure it's the same
+#   opp_again <- get.opp.by.file(opp_dir, opp_file, quantile=50, transform=F)
+#   rownames(opp50) <- NULL  # reset row names to match opp_again
+#   expect_true(identical(opp50, opp_again))
 
-  tearDown(x)
-})
+#   tearDown(x)
+# })
 
 test_that("Retrieve EVT file names by date", {
   x <- setUp()

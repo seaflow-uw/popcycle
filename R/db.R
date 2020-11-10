@@ -859,6 +859,25 @@ get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
   return(file.list[start.index:end.index])
 }
 
+#' Get POSIXct date from SFL table for file IDs.
+#'
+#' @param db SQLite3 database file path.
+#' @param file_ids Character vector of file IDs.
+#' @return Tibble with columns "date" and "file_id", with same order as file_ids.
+#' @examples
+#' \dontrun{
+#' df <- get_file_dates(db, file_ids)
+#' }
+#' @export
+get_file_dates <- function(db, file_ids) {
+  sfl <- tibble::as_tibble(get.sfl.table(db))
+  sfl <- dplyr::select(sfl, date, file_id=file)
+  sfl$date <- lubridate::ymd_hms(sfl$date)
+  files <- tibble::tibble(file_id=file_ids)
+  result <- dplyr::left_join(files, sfl, by="file_id")
+  return(result[, c("date", "file_id")])
+}
+
 #' Get ISO8601 datetime strings (e.g. 2018-07-13T22:24:40+00:00) for OPP files.
 #'
 #' @param db SQLite3 database file path.
@@ -925,75 +944,27 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
 #' Save VCT aggregate population statistics for one file to vct table.
 #'
 #' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @param opp OPP data frame with pop column.
-#' @param gating.id ID for entry in gating table.
-#' @param filter.id ID for entry in filter table.
-#' @param quantile Filtering quantile for this file
+#' @param vct_stats DataFrame of VCT statistics created by prep_vct_stats()
 #' @return None
 #' @examples
 #' \dontrun{
-#' save.vct.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
-#'                opp, "d3afb1ea-ad20-46cf-866d-869300fe17f4",
-#'                "0f3c89d5-b6a9-4959-95a8-dd2af73f82b9", 97.5)
+#' save.vct.stats(db, vct_stats)
 #' }
-#' @importFrom dplyr %>%
 #' @export
-save.vct.stats <- function(db, file.name, opp, gating.id,
-                           filter.id, quantile) {
-  df <- opp %>%
-    dplyr::group_by(pop) %>%
-    dplyr::summarise(
-      file=clean.file.path(file.name),
-      count=dplyr::n(),
-      chl_1q= as.numeric(quantile(chl_small, 0.25)),
-      chl_med= as.numeric(quantile(chl_small, 0.5)),
-      chl_3q= as.numeric(quantile(chl_small, 0.75)),
-      pe_1q= as.numeric(quantile(pe, 0.25)),
-      pe_med= as.numeric(quantile(pe, 0.5)),
-      pe_3q= as.numeric(quantile(pe, 0.75)),
-      fsc_1q= as.numeric(quantile(fsc_small, 0.25)),
-      fsc_med= as.numeric(quantile(fsc_small, 0.5)),
-      fsc_3q= as.numeric(quantile(fsc_small, 0.75)),
-      diam_lwr_1q= as.numeric(quantile(diam_lwr, 0.25)),
-      diam_lwr_med= as.numeric(quantile(diam_lwr, 0.5)),
-      diam_lwr_3q= as.numeric(quantile(diam_lwr, 0.75)),
-      diam_mid_1q= as.numeric(quantile(diam_mid, 0.25)),
-      diam_mid_med= as.numeric(quantile(diam_mid, 0.5)),
-      diam_mid_3q= as.numeric(quantile(diam_mid, 0.75)),
-      diam_upr_1q= as.numeric(quantile(diam_upr, 0.25)),
-      diam_upr_med= as.numeric(quantile(diam_upr, 0.5)),
-      diam_upr_3q= as.numeric(quantile(diam_upr, 0.75)),
-      Qc_lwr_1q= as.numeric(quantile(Qc_lwr, 0.25)),
-      Qc_lwr_med= as.numeric(quantile(Qc_lwr, 0.5)),
-      Qc_lwr_mean= mean(Qc_lwr),
-      Qc_lwr_3q= as.numeric(quantile(Qc_lwr, 0.75)),
-      Qc_mid_1q= as.numeric(quantile(Qc_mid, 0.25)),
-      Qc_mid_med= as.numeric(quantile(Qc_mid, 0.5)),
-      Qc_mid_mean= mean(Qc_mid),
-      Qc_mid_3q= as.numeric(quantile(Qc_mid, 0.75)),
-      Qc_upr_1q= as.numeric(quantile(Qc_upr, 0.25)),
-      Qc_upr_med= as.numeric(quantile(Qc_upr, 0.5)),
-      Qc_upr_mean= mean(Qc_upr),
-      Qc_upr_3q= as.numeric(quantile(Qc_upr, 0.75)),
-      gating_id=gating.id,
-      filter_id=filter.id,
-      quantile=quantile
-    )
-  cols <- c( "file", "pop", "count",
-             "chl_1q","chl_med", "chl_3q",
-             "pe_1q","pe_med", "pe_3q",
-             "fsc_1q","fsc_med", "fsc_3q",
-             "diam_lwr_1q","diam_lwr_med","diam_lwr_3q",
-             "diam_mid_1q","diam_mid_med","diam_mid_3q",
-             "diam_upr_1q","diam_upr_med","diam_upr_3q",
-             "Qc_lwr_1q","Qc_lwr_med","Qc_lwr_mean","Qc_lwr_3q",
-             "Qc_mid_1q","Qc_mid_med","Qc_mid_mean","Qc_mid_3q",
-             "Qc_upr_1q","Qc_upr_med","Qc_upr_mean","Qc_upr_3q",
-             "gating_id", "filter_id", "quantile")
-
-  df.reorder <- as.data.frame(df)[cols]
-  sql.dbWriteTable(db, name="vct", value=df.reorder)
+save.vct.stats <- function(db, vct_stats) {
+  # Make sure duplicate entries keyed by file are overwritten with new vct
+  # stats. This can happen when using a new gating ID for the same file.
+  # Get current VCT table
+  old_vct_stats <- get.vct.table(db)
+  old_vct_stats$date <- NULL  # date is not in VCT table, this is added from SFL
+  # Only keep rows in old that don't have a matching file in new
+  only_old <- dplyr::anti_join(old_vct_stats, vct_stats, by=c("file"))
+  # Merge old and new
+  merged_vct_stats <- dplyr::bind_rows(only_old, vct_stats)
+  # Erase existing table
+  reset.vct.stats.table(db)
+  # Save table with new results
+  sql.dbWriteTable(db, name="vct", value=merged_vct_stats)
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
@@ -1411,67 +1382,6 @@ sql.dbWriteTable <- function(db, name, value) {
   })
 }
 
-#' Convert a date string to format suitable for popcycle db date comparison.
-#'
-#' @param date.string Date text in format YYYY-MM-DD HH:MM.
-#' @return Date text as YYYY-MM-DDTHH:MM:00.
-#' @examples
-#' \dontrun{
-#' db.date <- date.to.db.date("2014-01-24 13:03")
-#' }
-#' @export
-date.to.db.date <- function(date.string) {
-  return(POSIXct.to.db.date(string.to.POSIXct(date.string)))
-}
-
-#' Returns a POSIXct object for a human readable date string.
-#'
-#' @param date.string Date in format YYYY-MM-DD HH:MM.
-#' @return POSIXct object.
-#' @examples
-#' \dontrun{
-#' date.ct <- string.to.POSIXct("2014-01-24 13:03")
-#' }
-#' @export
-string.to.POSIXct <- function(date.string) {
-  # Make POSIXct objects in GMT time zone
-  date.ct <- as.POSIXct(strptime(date.string, format="%Y-%m-%d %H:%M", tz="GMT"))
-  if (is.na(date.ct)) {
-    stop(paste("wrong format for date.string parameter : ", date.string,
-               "instead of ", "%Y-%m-%d %H:%M"))
-  }
-  return(date.ct)
-}
-
-#' Convert a POSIXct date objectformat suitable for popcycle db date comparison.
-#'
-#' @param date.ct POSIXct date object.
-#' @return Date text as YYYY-MM-DDTHH:MM:00.
-#' @examples
-#' \dontrun{
-#' db.date <- POSIXct.to.db.date(date.ct)
-#' }
-#' @export
-POSIXct.to.db.date <- function(date.ct) {
-  return(format(date.ct, "%Y-%m-%dT%H:%M:00"))
-}
-
-#' Get current UTC datetime as RFC3339 string suitable for entry into db
-#'
-#' @return Date text as YYYY-MM-DDTHH:MM:SS+00:00."
-#' @examples
-#' \dontrun{
-#' datetime.str <- RFC3339.now()
-#' }
-#' @export
-RFC3339.now <- function() {
-  # Now in local time POSIXct
-  now.local <- Sys.time()
-  # Change timezone to UTC
-  attr(now.local, "tzone") <- "UTC"
-  return(format(now.local, format="%FT%H:%M:%S+00:00"))
-}
-
 #' Find common database files between two directories.
 #'
 #' Directories will be search recursively and files will be matched by
@@ -1532,8 +1442,16 @@ find_common_dbs <- function(dir_a, dir_b) {
 #' copy_tables(db_from, db_to)
 #' }
 copy_tables <- function(db_from, db_to, tables) {
-  for (table_name in tables) {
+  # If dbs are the same file do nothing. This prevents erroneously erasing
+  # tables then trying to copy from the just deleted tables.
+  db_from <- normalizePath(db_from, mustWork=T)
+  db_to <- normalizePath(db_to, mustWork=T)
+  if (db_from == db_to) {
+    print("Not copying db tables, db files are the same")
+    return()
+  }
 
+  for (table_name in tables) {
     # Make sure columns match for table to copy
     col_from <- colnames(sql.dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
     col_to <- colnames(sql.dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
@@ -1566,6 +1484,14 @@ copy_tables <- function(db_from, db_to, tables) {
 #' copy_outlier_table(db_from, db_to)
 #' }
 copy_outlier_table <- function(db_from, db_to) {
+  db_from <- normalizePath(db_from, mustWork=T)
+  db_to <- normalizePath(db_to, mustWork=T)
+  # If dbs are the same file do nothing.
+  if (db_from == db_to) {
+    print("Not copying outlier tables, db files are the same")
+    return()
+  }
+
   src <- get.outlier.table(db_from)
   dest <- get.outlier.table(db_to)
   joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
@@ -1590,6 +1516,7 @@ copy_outlier_table <- function(db_from, db_to) {
 #' @param db SQLite3 database file path.
 #' @param inst Instrument serial. If not provided will attempt to read from db.
 #' @return Data frame of aggregate statistics.
+#' @importFrom dplyr %>%
 #' @export
 get.stat.table <- function(db, inst=NULL) {
   if (is.null(inst)) {
@@ -1629,4 +1556,132 @@ get.stat.table <- function(db, inst=NULL) {
   }
 
   return(stat)
+}
+
+#' Create particle size distribution
+#'
+#' @param db SQLite3 database file path.
+#' @param vct.dir VCT file directory.
+#' @param breaks Breaks must be a vector of values defining the breaks for the size distribution.
+#' @param quantile OPP Filtering quantile.
+#' @return Size distribution
+#' @examples
+#' \dontrun{
+#'  
+#' breaks <- # for Qc
+#' min <- 0.003 # minimum quotas (3 fgC / cell)
+#' delta <- 1/18 # to define the width of each bin
+#' m <- 300 # number of bins
+#' breaks <- round(min*2^(((1:m)-1)*delta),4) # log2 space bin
+#' print(breaks)
+#'
+#' distribution <- create_PSD(db, vct.dir, breaks, quantile = 50)
+#' }
+#' @export 
+create_PSD <- function(db, vct.dir, breaks, quantile = 50){
+
+  QUANT <- as.numeric(quantile)
+
+  # Get list of files, with list of outliers
+  vct.list <- list.files(vct.dir, "parquet", full.names=T)
+  
+  ### 1. create PSD for each timepoint 
+  i <- 1
+  distribution <- tibble::tibble()
+  for(file.name in vct.list){
+
+    #file.name <- vct.list[20]
+    message(round(100*i/length(vct.list)), "% completed \r", appendLF=FALSE)
+
+    ## retrieve PSD data
+    # Select data for QUANT
+    if(QUANT == 2.5){
+      vct <- arrow::read_parquet(file.name, col_select=c("date", c(!contains("diam") & contains('q2.5')))) %>% dplyr::filter(q2.5)
+      vct <- dplyr::rename(vct, Qc_lwr = Qc_lwr_q2.5, Qc_mid = Qc_mid_q2.5, Qc_upr = Qc_upr_q2.5, pop = pop_q2.5)    
+    }
+    if(QUANT == 50){ 
+      vct <- arrow::read_parquet(file.name, col_select=c("date", c(!contains("diam") & contains('q50')))) %>% dplyr::filter(q50)
+      vct <- dplyr::rename(vct, Qc_lwr = Qc_lwr_q50, Qc_mid = Qc_mid_q50, Qc_upr = Qc_upr_q50, pop = pop_q50)    
+    }
+    if(QUANT == 97.5){
+      vct <- arrow::read_parquet(file.name, col_select=c("date", c(!contains("diam") & contains('q97.5')))) %>% dplyr::filter(q97.5)
+      vct <- dplyr::rename(vct, Qc_lwr = Qc_lwr_q97.5, Qc_mid = Qc_mid_q97.5, Qc_upr = Qc_upr_q97.5, pop = pop_q97.5)    
+    }
+
+    ## Get particle count in each bin 
+    # group by population and by breaks
+    # for each refractive index
+
+    psd_lwr <-  vct %>% 
+            dplyr::group_by(date, pop, breaks=cut(Qc_lwr, breaks), .drop=F) %>% 
+            dplyr::count(breaks) %>%
+            tidyr::pivot_wider(names_from = breaks, values_from = n) 
+    psd_lwr <- psd_lwr %>% tibble::add_column(n='lwr', .after="pop")
+
+    psd_mid <-  vct %>% 
+            dplyr::group_by(date, pop=pop, breaks=cut(Qc_mid, breaks), .drop=F) %>% 
+            dplyr::count(breaks) %>%
+            tidyr::pivot_wider(names_from = breaks, values_from = n) 
+    psd_mid <- psd_mid %>% tibble::add_column(n='mid', .after="pop")
+
+    psd_upr <- vct %>% 
+            dplyr::group_by(date, pop=pop, breaks=cut(Qc_upr, breaks), .drop=F) %>% 
+            dplyr::count(breaks) %>%
+            tidyr::pivot_wider(names_from = breaks, values_from = n) 
+    psd_upr <- psd_upr %>% tibble::add_column(n='upr', .after="pop")
+
+    # add data of each refractive index
+    psd <- dplyr::bind_rows(psd_lwr, psd_mid, psd_upr)
+
+    # bind data together
+    distribution <- dplyr::bind_rows(distribution, psd)
+
+    i <- i + 1
+    flush.console()
+  }
+
+  ### 2. Retrieve metadata
+  ## Retrieve SFL table
+  sfl <- get.sfl.table(db)
+  # format time
+  sfl$time <- as.POSIXct(sfl$date, format="%FT%T", tz="UTC")
+  # retrieve flow rate (mL min-1) of detectable volume
+  fr <- flowrate(sfl$stream_pressure, inst= get.inst(db))$flow_rate
+  # convert to microL min-1
+  fr <- fr * 1000
+  # acquisition time (min)
+  acq.time <- sfl$file_duration/60
+  # volume in microL
+  sfl$volume <- round(fr * acq.time , 0)
+    
+  ## Retrive Outlier table
+  outliers <- get.outlier.table(db)
+  # merge with sfl
+  sfl.all <- merge(sfl, outliers, by="file")
+
+  ## Retrive OPP table
+  # retrieve opp/evt
+  opp <- tibble::as_tibble(get.opp.table(db))
+  opp <- opp %>% dplyr::filter(quantile == QUANT)
+    
+  ## merge all metadata
+  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "lat","lon","volume","opp_evt_ratio","flag")])
+    
+  ## merge metadata with PSD
+  PSD <- tibble::as_tibble(merge(distribution, meta, by.x="date",by.y="time",all.x=T)) %>%
+          dplyr::relocate(contains("]"), .after=flag) # reorder column
+
+  ### 3. calculate cell abundance in each bin (cells / microliter)
+  ## calculate the volume of virtual core for each population, 
+  # volume of SeaFlow's virtual core is calculated based on a median value of opp_evt ratio for the entire cruise
+  # except for small particles (i.e prochloro and synecho) where it is calcualted based on the opp_evt_ratio at that time
+  id <- which(PSD$pop == "prochloro" | PSD$pop == "synecho")
+  PSD[id, "volume"] <- PSD[id, "volume"] * PSD[id,"opp_evt_ratio"]
+  PSD[-c(id), "volume"] <- PSD[-c(id), "volume"] * median(PSD[["opp_evt_ratio"]][-c(id)])
+  
+  ## calculate cell Abundance (cells uL-1) i.e normalize count by volume of SeaFlow's virtual core.
+  clmn <- grep("]", names(PSD))
+  PSD[,clmn] <- PSD[,clmn] / PSD[["volume"]]
+
+return(PSD)
 }

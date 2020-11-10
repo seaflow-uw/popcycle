@@ -5,17 +5,19 @@
 \title{Concatenate OPP files}
 \usage{
 concatenate.opp(
+  db,
   opp.list,
   opp.dir,
   n = 1e+05,
   min.fsc = 0,
   min.pe = 0,
   min.chl = 0,
-  transform = TRUE,
   ...
 )
 }
 \arguments{
+\item{db}{SQLite3 database file path.}
+
 \item{opp.list}{List of OPP files.}
 
 \item{opp.dir}{Path to OPP files.}
