@@ -1563,6 +1563,8 @@ get.stat.table <- function(db, inst=NULL) {
 #' @param db SQLite3 database file path.
 #' @param vct.dir VCT file directory.
 #' @param breaks Breaks must be a vector of values defining the breaks for the size distribution.
+#' @param data.col VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If 
+#'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
 #' @param quantile OPP Filtering quantile.
 #' @return Size distribution
 #' @examples
@@ -1578,9 +1580,19 @@ get.stat.table <- function(db, inst=NULL) {
 #' distribution <- create_PSD(db, vct.dir, breaks, quantile = 50)
 #' }
 #' @export 
-create_PSD <- function(db, vct.dir, breaks, quantile = 50){
+create_PSD <- function(db, vct.dir, breaks, data_col, quantile = 50){
+  # Check data column requested for validity and for presence of multiple refractive indexes
+  refractive_cols <- c("Qc", "diam")
+  channel_cols <- c("fsc_small", "chl_small", "pe")
+  
+  if (! (data_col %in% c(refractive_cols, channel_cols))) {
+    stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
+  }
+  refractive <- data_col %in% refractive_cols
 
   QUANT <- as.numeric(quantile)
+  qstr <- paste0("q", QUANT)
+  qsuffix <- paste0("_", qstr)
 
   # Get list of files, with list of outliers
   vct.list <- list.files(vct.dir, "parquet", full.names=T)
@@ -1594,44 +1606,59 @@ create_PSD <- function(db, vct.dir, breaks, quantile = 50){
     message(round(100*i/length(vct.list)), "% completed \r", appendLF=FALSE)
 
     ## retrieve PSD data
-    # Select data for QUANT
-    if(QUANT == 2.5){
-      vct <- arrow::read_parquet(file.name, col_select=c("date", c(!contains("diam") & contains('q2.5')))) %>% dplyr::filter(q2.5)
-      vct <- dplyr::rename(vct, Qc_lwr = Qc_lwr_q2.5, Qc_mid = Qc_mid_q2.5, Qc_upr = Qc_upr_q2.5, pop = pop_q2.5)    
+    # Get date, quantile boolean column, data columns, and pop columns from file
+    if (refractive) {
+      vct <- arrow::read_parquet(
+        file.name,
+        col_select=c("date", all_of(qstr), c(starts_with(data_col) & ends_with(qsuffix)), paste0("pop", qsuffix))
+      )
+    } else {
+      vct <- arrow::read_parquet(file.name, col_select=c("date", all_of(qstr), data_col, paste0("pop", qsuffix)))
     }
-    if(QUANT == 50){ 
-      vct <- arrow::read_parquet(file.name, col_select=c("date", c(!contains("diam") & contains('q50')))) %>% dplyr::filter(q50)
-      vct <- dplyr::rename(vct, Qc_lwr = Qc_lwr_q50, Qc_mid = Qc_mid_q50, Qc_upr = Qc_upr_q50, pop = pop_q50)    
-    }
-    if(QUANT == 97.5){
-      vct <- arrow::read_parquet(file.name, col_select=c("date", c(!contains("diam") & contains('q97.5')))) %>% dplyr::filter(q97.5)
-      vct <- dplyr::rename(vct, Qc_lwr = Qc_lwr_q97.5, Qc_mid = Qc_mid_q97.5, Qc_upr = Qc_upr_q97.5, pop = pop_q97.5)    
-    }
+    # Filter for only one quantile
+    vct <- dplyr::filter(vct, get(qstr))
+    # Remove any quantile suffixes from column names
+    vct <- dplyr::rename_with(
+      vct,
+      function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
+      ends_with(qsuffix)
+    )
 
     ## Get particle count in each bin 
     # group by population and by breaks
     # for each refractive index
-
-    psd_lwr <-  vct %>% 
-            dplyr::group_by(date, pop, breaks=cut(Qc_lwr, breaks), .drop=F) %>% 
-            dplyr::count(breaks) %>%
-            tidyr::pivot_wider(names_from = breaks, values_from = n) 
-    psd_lwr <- psd_lwr %>% tibble::add_column(n='lwr', .after="pop")
-
-    psd_mid <-  vct %>% 
-            dplyr::group_by(date, pop=pop, breaks=cut(Qc_mid, breaks), .drop=F) %>% 
-            dplyr::count(breaks) %>%
-            tidyr::pivot_wider(names_from = breaks, values_from = n) 
-    psd_mid <- psd_mid %>% tibble::add_column(n='mid', .after="pop")
-
-    psd_upr <- vct %>% 
-            dplyr::group_by(date, pop=pop, breaks=cut(Qc_upr, breaks), .drop=F) %>% 
-            dplyr::count(breaks) %>%
-            tidyr::pivot_wider(names_from = breaks, values_from = n) 
-    psd_upr <- psd_upr %>% tibble::add_column(n='upr', .after="pop")
-
-    # add data of each refractive index
-    psd <- dplyr::bind_rows(psd_lwr, psd_mid, psd_upr)
+    if (refractive) {
+      psds <- list()
+      for (refractive_level in c("lwr", "mid", "upr")) {
+        refrac_col <- paste0(data_col, "_", refractive_level)
+        col_sym <- dplyr::sym(refrac_col)
+        psds[[length(psds)+1]] <-  vct %>% 
+          dplyr::group_by(date, pop, breaks=cut(!!col_sym, breaks), .drop=F) %>%
+          dplyr::count(breaks)
+        # Check that no values are outside of breaks range. This will show up as a
+        # break value of NA
+        if (any(is.na(psd$breaks))) {
+          stop(paste("data detected outside breaks range in file =", file.name, "column =", refrac_col, "quantile=", QUANT))
+        }
+        psd <- psd %>%
+          tidyr::pivot_wider(names_from = breaks, values_from = n) %>%
+          tibble::add_column(n=refractive_level, .after="pop")
+      }
+      # add data of each refractive index
+      psd <- dplyr::bind_rows(psds)
+    } else {
+      # This data column doesn't have multiple refractive indexes
+      col_sym <- dplyr::sym(data_col)
+      psd <- vct %>% 
+        dplyr::group_by(date, pop, breaks=cut(!!col_sym, breaks), .drop=F) %>%
+        dplyr::count(breaks)
+      # Check that no values are outside of breaks range. This will show up as a
+      # break value of NA
+      if (any(is.na(psd$breaks))) {
+        stop(paste("data detected outside breaks range in file =", file.name, "column =", data_col, "quantile=", QUANT))
+      }
+      psd <- psd %>% tidyr::pivot_wider(names_from = breaks, values_from = n)
+    }
 
     # bind data together
     distribution <- dplyr::bind_rows(distribution, psd)
@@ -1666,7 +1693,7 @@ create_PSD <- function(db, vct.dir, breaks, quantile = 50){
     
   ## merge all metadata
   meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "lat","lon","volume","opp_evt_ratio","flag")])
-    
+
   ## merge metadata with PSD
   PSD <- tibble::as_tibble(merge(distribution, meta, by.x="date",by.y="time",all.x=T)) %>%
           dplyr::relocate(contains("]"), .after=flag) # reorder column
