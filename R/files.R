@@ -593,15 +593,15 @@ transform_PSD <- function(PSD, time.step="1 hour",
   # Menden-Deuer, S. & Lessard conversion factors
   d <- 0.261; e <- 0.860
   # select column that have PSD data
-  clmn <- grep("]", names(PSD ))
+  clmn <- grep("]", names(PSD))
   # convert size interval (factors) into data.frame
-  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(PSD )[clmn])),",")
+  breaks <- strsplit(sub("\\]","",sub("\\(","",colnames(PSD)[clmn])),",")
 
 
   if(Qc.to.diam){
     #convert Qc into diam using the Menden-Deuer conversion
     b <- lapply(breaks, function(x) round(2*(3/(4*pi)*(as.numeric(x)/d)^(1/e))^(1/3),6))
-    colnames(PSD )[clmn] <- sub("\\)","\\]", sub("c","",as.character(b)))
+    colnames(PSD)[clmn] <- sub("\\)","\\]", sub("c","",as.character(b)))
   }
 
   if(interval.to.geomean){
@@ -611,19 +611,19 @@ transform_PSD <- function(PSD, time.step="1 hour",
     }else{
       midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
       }
-    colnames(PSD )[clmn] <- round(midval,4)
+    colnames(PSD)[clmn] <- round(midval,4)
   }
   
   if(abundance.to.biomass){
     # calculate biomass in each bin (ugC L-1) = Qc(pgC cell-1) x Abundance (cells uL-1)
     midval <- unlist(list(lapply(breaks, function(x) sqrt(mean(as.numeric(x))*max(as.numeric(x))))))
-    PSD [,clmn] <-  t(diag(midval) %*%  t(as.matrix(PSD [,clmn])))
+    PSD[,clmn] <-  t(diag(midval) %*%  t(as.matrix(PSD[,clmn])))
   }
 
   # time converted to factor needs to be converted back to POSIXt
-  PSD $date <- as.POSIXct(PSD $date, tz='GMT')
+  PSD$date <- as.POSIXct(PSD$date, tz='GMT')
 
-  return(PSD )
+  return(PSD)
 
 }
 
@@ -707,11 +707,11 @@ get.clean.PSD <- function(PSD, pop="prochloro", ref_diam=0.54){
   pre.dist <- subset(pre.dist, flag==0)
   
   clmn <- grep("]", names(PSD)) # select column that contains the number of cells per diameters
-  p_lwr <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "lwr",clmn])
+  p_lwr <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "lwr",clmn], na.rm=T)
     id_lwr <- which(p_lwr == max(p_lwr))
-  p_mid <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "mid",clmn])
+  p_mid <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "mid",clmn], na.rm=T)
     id_mid <- which(p_mid == max(p_mid))
-  p_upr <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "upr",clmn])
+  p_upr <- colSums(pre.dist[pre.dist$pop==phyto & pre.dist$n == "upr",clmn], na.rm=T)
     id_upr <- which(p_upr == max(p_upr))
   
   diam <- as.numeric(colnames(pre.dist[,clmn]))
