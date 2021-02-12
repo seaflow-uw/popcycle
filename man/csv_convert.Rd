@@ -4,10 +4,12 @@
 \alias{csv_convert}
 \title{Convert data from sqlite3 database into a csv file of curated SeaFlow data for a cruise, along with metadata files.}
 \usage{
-csv_convert(db, path, version = "v1.0")
+csv_convert(db, meta, path, version = "v1.0")
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
+
+\item{meta}{metadata containing cruise ID (provided by googlesheet "SeaFlow log instrument")}
 
 \item{path}{Path to save the file.}
 
@@ -21,6 +23,8 @@ Convert data from sqlite3 database into a csv file of curated SeaFlow data for a
 }
 \examples{
 \dontrun{
-csv_convert(db, meta, path)
+# load metadata to get offical cruise name
+ meta <- googlesheets4::range_read('https://docs.google.com/spreadsheets/d/1Tsi7OWIZWfCQJqLDpId2aG_i-8Cp-p63PYjjvDkOtH4/edit#gid=0')
+csv_convert(db,meta, path)
 }
 }

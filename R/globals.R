@@ -22,3 +22,8 @@ instrument.id <- "740"
 
 # This package's name
 .pkg.name <- "popcycle"
+
+# Load and attach the magrittr pipe for use internally in this package
+#' @importFrom magrittr "%>%"
+dummyPipeFunction <- function() {
+}
