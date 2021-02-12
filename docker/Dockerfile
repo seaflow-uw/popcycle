@@ -1,5 +1,8 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_11
+FROM bioconductor/bioconductor_docker:RELEASE_3_12
 
+
+# Install only dependencies
+ARG DEPS_ONLY=false
 # Ncpus argument devtools::install*() or install.packges() to allow parallel
 # installation
 ARG INSTALL_NCPUS=4
