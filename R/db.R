@@ -1209,13 +1209,13 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
     stop("save.sfl requires sfl.file")
   }
 
-  args <- c("db", "create")
-  if (! is.null(cruise)) {
-    args <- c(args, "-c", cruise)
-  }
-  if (! is.null(inst)) {
-    args <- c(args, "-s", inst)
-  }
+  args <- c("db", "import-sfl", "-f")
+  # if (! is.null(cruise)) {
+  #   args <- c(args, "-c", cruise)
+  # }
+  # if (! is.null(inst)) {
+  #   args <- c(args, "-s", inst)
+  # }
   args <- c(args, normalizePath(sfl.file), normalizePath(db))
 
   system2("seaflowpy", args, stdout=TRUE, stderr=TRUE)
