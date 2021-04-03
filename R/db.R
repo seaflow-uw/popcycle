@@ -1209,7 +1209,7 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
     stop("save.sfl requires sfl.file")
   }
 
-  args <- c("db", "create", "-f")
+  args <- c("db", "create")
   if (! is.null(cruise)) {
     args <- c(args, "-c", cruise)
   }
