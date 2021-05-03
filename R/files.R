@@ -542,6 +542,17 @@ read_calib_csv <- function(path=NULL) {
   return(read.csv(path))
 }
 
+#' Read table of indexes of refraction for cruise and population combinations
+#'
+#' @return A dataframe of with columns for cruise and each population's index of refraction alias
+#' @export
+read_refraction_csv <- function(path=NULL) {
+  if (is.null(path)) {
+    path <- system.file("scatter", paste0("RefracIndices_percruise.csv"), package="popcycle")
+  }
+  return(read.csv(path))
+}
+
 
 #' Manipulate the size distribution created by create_PSD(). 
 #' Calculate the sum of particles in each size class over specific temporal resolution; transform the header
