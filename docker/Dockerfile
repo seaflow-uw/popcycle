@@ -1,5 +1,9 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_12
 
+RUN apt-get update \
+    && apt-get install sqlite3 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install only dependencies
 ARG DEPS_ONLY=false
