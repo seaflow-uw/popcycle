@@ -418,8 +418,11 @@ dated_msg("Wrote reduced parquet in ", deltat[["elapsed"]], " seconds")
 # deltat <- proc.time() - ptm
 # dated_msg("Wrote reduced CSV in ", deltat[["elapsed"]], " seconds")
 
-data.table::setDTthreads(1)  # turn off data.table multi-threading
+# data.table multi-threading temporarily enabled for grouping
+orig_threads <- data.table::getDTthreads()
+data.table::setDTthreads(cores)
 hourly <- group_psd_by_time(psd_reduced, time_expr="1 hours", use_data.table=!no_data.table)
+data.table::setDTthreads(orig_threads)
 dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly), " "), ", MB = ", object.size(hourly) / 2**20)
 ptm <- proc.time()
 arrow::write_parquet(hourly, paste0(out, ".hourly.parquet"))
