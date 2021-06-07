@@ -140,6 +140,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
   # Count cells in each group
   if (use_data.table) {
     # data.table is much faster at this group by than dplyr, sometimes < 1s vs ~30s
+    data.table::setDTthreads(1)  # turn off data.table multi-threading
     vct <- data.table::as.data.table(vct)
     coord_cols <- stringr::str_subset(names(vct), "_coord$")
     group_cols <- c("date", coord_cols, "pop")
@@ -417,6 +418,7 @@ dated_msg("Wrote reduced parquet in ", deltat[["elapsed"]], " seconds")
 # deltat <- proc.time() - ptm
 # dated_msg("Wrote reduced CSV in ", deltat[["elapsed"]], " seconds")
 
+data.table::setDTthreads(1)  # turn off data.table multi-threading
 hourly <- group_psd_by_time(psd_reduced, time_expr="1 hours", use_data.table=!no_data.table)
 dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly), " "), ", MB = ", object.size(hourly) / 2**20)
 ptm <- proc.time()
