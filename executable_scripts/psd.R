@@ -398,33 +398,33 @@ psd <- create_PSD(
 )
 dated_msg("Full PSD dim = ", stringr::str_flatten(dim(psd), " "), ", MB = ", object.size(psd) / 2**20)
 ptm <- proc.time()
-arrow::write_parquet(psd, paste0(cruise, ".", out, ".full.parquet"))
+arrow::write_parquet(psd, paste0(out, ".full.parquet"))
 deltat <- proc.time() - ptm
 dated_msg("Wrote full parquet in ", deltat[["elapsed"]], " seconds")
 # ptm <- proc.time()
-# readr::write_csv(psd %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(cruise, ".", out, ".full.csv.gz"))
+# readr::write_csv(psd %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(out, ".full.csv.gz"))
 # deltat <- proc.time() - ptm
 # dated_msg("Wrote full CSV in ", deltat[["elapsed"]], " seconds")
 
 psd_reduced <- make_reduced_psd(psd)
 dated_msg("Reduced PSD dim = ", stringr::str_flatten(dim(psd_reduced), " "), ", MB = ", object.size(psd_reduced) / 2**20)
 ptm <- proc.time()
-arrow::write_parquet(psd_reduced, paste0(cruise, ".", out, ".reduced.parquet"))
+arrow::write_parquet(psd_reduced, paste0(out, ".reduced.parquet"))
 deltat <- proc.time() - ptm
 dated_msg("Wrote reduced parquet in ", deltat[["elapsed"]], " seconds")
 # ptm <- proc.time()
-# readr::write_csv(psd_reduced %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(cruise, ".", out, ".reduced.csv.gz"))
+# readr::write_csv(psd_reduced %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(out, ".reduced.csv.gz"))
 # deltat <- proc.time() - ptm
 # dated_msg("Wrote reduced CSV in ", deltat[["elapsed"]], " seconds")
 
 hourly <- group_psd_by_time(psd_reduced, time_expr="1 hours", use_data.table=!no_data.table)
 dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly), " "), ", MB = ", object.size(hourly) / 2**20)
 ptm <- proc.time()
-arrow::write_parquet(hourly, paste0(cruise, ".", out, ".hourly.parquet"))
+arrow::write_parquet(hourly, paste0(out, ".hourly.parquet"))
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly parquet in ", deltat[["elapsed"]], " seconds")
 ptm <- proc.time()
-readr::write_csv(hourly %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(cruise, ".", out, ".hourly.csv.gz"))
+readr::write_csv(hourly %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(out, ".hourly.csv.gz"))
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly CSV in ", deltat[["elapsed"]], " seconds")
 
