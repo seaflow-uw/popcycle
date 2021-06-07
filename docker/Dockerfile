@@ -6,7 +6,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install only dependencies
-ARG DEPS_ONLY=false
+ARG DEPS_ONLY=true
 # Ncpus argument devtools::install*() or install.packages() to allow parallel
 # installation
 ARG INSTALL_NCPUS=4
@@ -17,13 +17,19 @@ ARG LIBARROW_BINARY=true
 # R user and user R library location
 ARG ARG_USER=rstudio
 
-COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION LICENSE make_docs.R NAMESPACE README.md setup.R /popcycle/
+USER ${ARG_USER}
+
+# Install dependencies in its own layer
+COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION setup.R /popcycle/
+WORKDIR /popcycle/
+RUN Rscript setup.R
+
+# Install the package itself
+ARG DEPS_ONLY=false
+COPY --chown=${ARG_USER}:${ARG_USER} LICENSE make_docs.R NAMESPACE README.md /popcycle/
 COPY --chown=${ARG_USER}:${ARG_USER} ./R /popcycle/R
 COPY --chown=${ARG_USER}:${ARG_USER} ./executable_scripts /popcycle/executable_scripts
 COPY --chown=${ARG_USER}:${ARG_USER} ./man /popcycle/man
 COPY --chown=${ARG_USER}:${ARG_USER} ./inst /popcycle/inst
 COPY --chown=${ARG_USER}:${ARG_USER} ./tests /popcycle/tests
-
-USER ${ARG_USER}
-WORKDIR /popcycle/
 RUN Rscript setup.R
