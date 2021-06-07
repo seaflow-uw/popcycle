@@ -300,12 +300,18 @@ create_meta <- function(db, quantile) {
   return(meta)
 }
 
+make_reduced_psd <- function(psd) {
+  psd %>%
+    dplyr::select(date, fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, pop, n, n_per_uL_calibrated, volume_adjusted) %>%
+    dplyr::rename(volume=volume_adjusted, n_per_uL=n_per_uL_calibrated)
+}
+
 group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
   # data.table is twice as fast for this operation as dplyr in testing on HOT310
   if (use_data.table) {
     psd <- data.table::setDT(psd)
     grouped <- psd[,
-        .(n_per_uL=(sum(n_per_uL * volume)/sum(volume))),
+        .(n_per_uL = (sum(n_per_uL * volume) / sum(volume)), volume = sum(volume)),
         keyby=.(date=lubridate::floor_date(date, time_expr), fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, pop)
     ]
     grouped <- tibble::as_tibble(grouped)
@@ -313,15 +319,9 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
   grouped <- psd %>%
     dplyr::group_by(date=lubridate::floor_date(date, time_expr), fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, pop) %>%
     dplyr::arrange(by_group=TRUE) %>%
-    dplyr::summarise(n_per_uL = sum(n_per_uL * volume) / sum(volume), .groups="drop")
+    dplyr::summarise(n_per_uL = sum(n_per_uL * volume) / sum(volume), volume = sum(volume), .groups="drop")
   }
   return(grouped)
-}
-
-make_reduced_psd <- function(psd) {
-  psd %>%
-    dplyr::select(date, fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, pop, n, n_per_uL_calibrated, volume_adjusted) %>%
-    dplyr::rename(volume=volume_adjusted, n_per_uL=n_per_uL_calibrated)
 }
 
 dated_msg <- function(...) {
@@ -417,7 +417,7 @@ dated_msg("Wrote reduced parquet in ", deltat[["elapsed"]], " seconds")
 # deltat <- proc.time() - ptm
 # dated_msg("Wrote reduced CSV in ", deltat[["elapsed"]], " seconds")
 
-hourly <- group_psd_by_time(psd, time_expr="1 hours", use_data.table=!no_data.table)
+hourly <- group_psd_by_time(psd_reduced, time_expr="1 hours", use_data.table=!no_data.table)
 dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly), " "), ", MB = ", object.size(hourly) / 2**20)
 ptm <- proc.time()
 arrow::write_parquet(hourly, paste0(cruise, ".", out, ".hourly.parquet"))
