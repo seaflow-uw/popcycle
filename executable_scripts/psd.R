@@ -54,14 +54,6 @@ create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, co
         create_PSD_one_file(vct_file, quantile, refracs, grid, log_base=log_base, meta=meta, calib=calib, use_data.table=use_data.table)
       )
     },
-    error=function(e) {
-      message(e)
-      return(NA)
-    },
-    warnings=function(e) {
-      message(w)
-      return(NULL)
-    },
     finally={
       parallel::stopCluster(cl)
     })
@@ -78,8 +70,8 @@ create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, co
 
 create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL,
                                 meta=NULL, calib=NULL, use_data.table=TRUE) {
-  if (!is.null(calib) && length(unique(calib$cruise)) != 1) {
-    stop("calibration table must be limited to one cruise")
+  if (!is.null(calib) && length(unique(calib$cruise)) == 0) {
+    stop("calibration table is empty")
   }
   if (nrow(refracs) != 1) {
     stop("refracs should only contain one row")
@@ -215,15 +207,20 @@ get_vct_range <- function(vct_dirs, data_col, quantile, cores = 1)  {
     # Parallel code
     cl <- parallel::makeCluster(cores, outfile="")
     doParallel::registerDoParallel(cl)
-    answer <- foreach::`%dopar%`(
-      foreach::foreach(
-        vct_file=vct_files,
-        .inorder=TRUE,
-        .packages=c("magrittr"),
-        .export=c("get_vct_range_one_file")
-      ),
-      get_vct_range_one_file(vct_file, data_col, quantile)
-    )
+    answer <- tryCatch({
+      foreach::`%dopar%`(
+        foreach::foreach(
+          vct_file=vct_files,
+          .inorder=TRUE,
+          .packages=c("magrittr"),
+          .export=c("get_vct_range_one_file")
+        ),
+        get_vct_range_one_file(vct_file, data_col, quantile)
+      )
+    },
+    finally={
+      parallel::stopCluster(cl)
+    })
     answer <- purrr::flatten_dbl(answer)
     parallel::stopCluster(cl)
   } else {
@@ -387,9 +384,18 @@ meta <- meta_full[, c("time", "volume", "opp_evt_ratio")]
 refracs <- popcycle::read_refraction_csv()
 refracs <- refracs[refracs$cruise == cruise, ]
 refracs$cruise <- NULL
+if (nrow(refracs) == 0) {
+  stop(paste0("refractive index table has no entry for ", cruise))
+}
+if (nrow(refracs) > 1) {
+  stop(paste0("refractive index table has multiple entries for ", cruise))
+}
 
 calib_all <- popcycle::read_calib_csv()
 calib <- calib_all[calib_all$cruise == cruise, ]
+if (length(unique(calib$cruise)) == 0) {
+  stop(paste0("calibration table has no entry for ", cruise))
+}
 
 grid <- create_grid(bins, log_base=2, log_answers=FALSE)
 
