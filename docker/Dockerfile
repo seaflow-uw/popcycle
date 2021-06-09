@@ -1,12 +1,11 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_12
+FROM bioconductor/bioconductor_docker:RELEASE_3_13
 
 RUN apt-get update \
     && apt-get install sqlite3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install only dependencies
-ARG DEPS_ONLY=true
+
 # Ncpus argument devtools::install*() or install.packages() to allow parallel
 # installation
 ARG INSTALL_NCPUS=4
@@ -20,6 +19,7 @@ ARG ARG_USER=rstudio
 USER ${ARG_USER}
 
 # Install dependencies in its own layer
+ARG DEPS_ONLY=true
 COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION setup.R /popcycle/
 WORKDIR /popcycle/
 RUN Rscript setup.R
