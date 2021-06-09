@@ -62,6 +62,8 @@ create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, co
     counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base, meta=meta, calib=calib, use_data.table=use_data.table))
   }
   counts <- dplyr::bind_rows(counts_list)
+  rm(counts_list)
+  invisible(gc())
 
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
@@ -145,13 +147,10 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
   }
 
   # Add metadata
-  # Filter by flag
   # Adjust abundance by virtual core size (opp/evt ratio)
   if (!is.null(meta)) {
     vct_summary <- dplyr::left_join(vct_summary, meta, by=c("date" = "time"))
-    if ("flag" %in% colnames(meta)) {
-        vct_summary <- vct_summary %>% dplyr::filter(flag == 0)
-    }
+
     # TODO: Check for NA, i.e. date in vct_summary but not meta, stop
     vct_summary$volume_adjusted <- vct_summary$volume
     prosyn_idx <- which(vct_summary$pop == "prochloro" | vct_summary$pop == "synecho")
@@ -187,8 +186,6 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
       vct_summary <- dplyr::bind_rows(corrected)
     }
   }
-
-  gc()
 
   return(vct_summary)
 }
@@ -292,7 +289,7 @@ create_meta <- function(db, quantile) {
   opp <- opp[opp$quantile == quantile, ]
 
   ## merge all metadata
-  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "lat","lon","volume","opp_evt_ratio","flag")])
+  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "volume", "opp_evt_ratio", "flag")])
   meta$flag <- as.factor(meta$flag)
 
   return(meta)
@@ -300,6 +297,7 @@ create_meta <- function(db, quantile) {
 
 make_reduced_psd <- function(psd) {
   psd %>%
+    dplyr::filter(flag == 0) %>%
     dplyr::select(date, fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, pop, n, n_per_uL_calibrated, volume_adjusted) %>%
     dplyr::rename(volume=volume_adjusted, n_per_uL=n_per_uL_calibrated)
 }
@@ -403,6 +401,7 @@ psd <- create_PSD(
   db, vct_files, quantile_, refracs, grid, log_base=NULL, cores=cores, 
   meta=meta_flag, calib=calib, use_data.table=!no_data.table
 )
+invisible(gc())
 dated_msg("Full PSD dim = ", stringr::str_flatten(dim(psd), " "), ", MB = ", object.size(psd) / 2**20)
 ptm <- proc.time()
 arrow::write_parquet(psd, paste0(out, ".full.parquet"))
@@ -414,6 +413,8 @@ dated_msg("Wrote full parquet in ", deltat[["elapsed"]], " seconds")
 # dated_msg("Wrote full CSV in ", deltat[["elapsed"]], " seconds")
 
 psd_reduced <- make_reduced_psd(psd)
+rm(psd)
+invisible(gc())
 dated_msg("Reduced PSD dim = ", stringr::str_flatten(dim(psd_reduced), " "), ", MB = ", object.size(psd_reduced) / 2**20)
 ptm <- proc.time()
 arrow::write_parquet(psd_reduced, paste0(out, ".reduced.parquet"))
@@ -429,6 +430,8 @@ orig_threads <- data.table::getDTthreads()
 data.table::setDTthreads(cores)
 hourly <- group_psd_by_time(psd_reduced, time_expr="1 hours", use_data.table=!no_data.table)
 data.table::setDTthreads(orig_threads)
+rm(psd_reduced)
+invisible(gc())
 dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly), " "), ", MB = ", object.size(hourly) / 2**20)
 ptm <- proc.time()
 arrow::write_parquet(hourly, paste0(out, ".hourly.parquet"))
