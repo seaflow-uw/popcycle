@@ -356,7 +356,7 @@ if (length(p$args) < 2) {
   no_data.table <- p$options$no_data.table
 }
 
-message(Sys.time())
+dated_msg("Start")
 message("Configuration:")
 message("--------------")
 message(paste0("db = ", db))
@@ -396,6 +396,8 @@ if (length(unique(calib$cruise)) == 0) {
 }
 
 grid <- create_grid(bins, log_base=2, log_answers=FALSE)
+grid_df <- tibble::tibble(fsc_small=grid$fsc_small, pe=grid$pe, chl_small=grid$chl_small, Qc=grid$Qc)
+arrow::write_parquet(grid_df, paste0(out, ".grid.parquet"))
 
 psd <- create_PSD(
   db, vct_files, quantile_, refracs, grid, log_base=NULL, cores=cores, 
@@ -442,5 +444,4 @@ readr::write_csv(hourly %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly CSV in ", deltat[["elapsed"]], " seconds")
 
-print(Sys.time())
-print("Finished")
+dated_msg("Finished")
