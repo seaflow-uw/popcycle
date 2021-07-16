@@ -110,7 +110,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     stop("missing picoeuk defintition from refracs")
   }
   for (popname in names(refracs)) {
-    refrac_alias <- refracs[, popname]
+    refrac_alias <- refracs[[1, "prochloro"]]
     pop_idx <- vct$pop == popname
     vct[pop_idx, "Qc"] <- vct[pop_idx, paste0("Qc_", refrac_alias)]
   }
@@ -184,6 +184,9 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
         }
       )
       vct_summary <- dplyr::bind_rows(corrected)
+    } else {
+      # No calibration performed
+      vct_summary["n_per_uL_calibrated"] <- vct_summary["n_per_uL"]
     }
   }
 
@@ -379,21 +382,28 @@ meta_full <- create_meta(db, as.numeric(quantile_))
 meta_flag <- meta_full[, c("time", "volume", "opp_evt_ratio", "flag")]
 meta <- meta_full[, c("time", "volume", "opp_evt_ratio")]
 
+dated_msg("Retrieving refractive index table")
 refracs <- popcycle::read_refraction_csv()
 refracs <- refracs[refracs$cruise == cruise, ]
+dated_msg(paste0(capture.output(refracs), collapse="\n"))
 refracs$cruise <- NULL
 if (nrow(refracs) == 0) {
-  stop(paste0("refractive index table has no entry for ", cruise))
+  dated_msg(paste0("refractive index table has no entry for ", cruise, ", using mid for Pro/Syn, lwr for Pico/Croco"))
+  refracs <- tibble::as_tibble(data.frame(prochloro="mid", synecho="mid", croco="lwr", picoeuk="lwr"))
 }
+dated_msg(paste0(capture.output(refracs), collapse="\n"))
 if (nrow(refracs) > 1) {
   stop(paste0("refractive index table has multiple entries for ", cruise))
 }
 
+dated_msg("Retrieving influx calibration table")
 calib_all <- popcycle::read_calib_csv()
 calib <- calib_all[calib_all$cruise == cruise, ]
 if (length(unique(calib$cruise)) == 0) {
-  stop(paste0("calibration table has no entry for ", cruise))
+  dated_msg(paste0("calibration table has no entry for ", cruise, ", no calibration will be applied"))
+  calib <- NULL
 }
+dated_msg(paste0(capture.output(calib), collapse="\n"))
 
 grid <- create_grid(bins, log_base=2, log_answers=FALSE)
 grid_df <- tibble::tibble(fsc_small=grid$fsc_small, pe=grid$pe, chl_small=grid$chl_small, Qc=grid$Qc)
