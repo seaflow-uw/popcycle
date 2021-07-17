@@ -22,7 +22,10 @@ USER ${ARG_USER}
 ARG DEPS_ONLY=true
 COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION setup.R /popcycle/
 WORKDIR /popcycle/
-RUN Rscript setup.R
+# For some reason reading the popcycle db broke (RSqlite?) unless Rcpp is updated
+# to the latest version (1.0.7 as of this message).
+RUN Rscript setup.R \
+    && Rscript --slave -e 'install.packages("Rcpp")'
 
 # Install the package itself
 ARG DEPS_ONLY=false
@@ -32,4 +35,5 @@ COPY --chown=${ARG_USER}:${ARG_USER} ./executable_scripts /popcycle/executable_s
 COPY --chown=${ARG_USER}:${ARG_USER} ./man /popcycle/man
 COPY --chown=${ARG_USER}:${ARG_USER} ./inst /popcycle/inst
 COPY --chown=${ARG_USER}:${ARG_USER} ./tests /popcycle/tests
+
 RUN Rscript setup.R
