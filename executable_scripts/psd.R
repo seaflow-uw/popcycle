@@ -30,7 +30,7 @@ create_grid <- function(bins=85, channel_range=c(1, 3200), Qc_range=c(0.002, 160
 }
 
 create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, cores=1,
-                       meta=NULL, calib=NULL, use_data.table=TRUE) {
+                       meta=NULL, calib=NULL, use_data.table=TRUE, verbose=FALSE) {
   ptm <- proc.time()
 
   cores <- min(cores, parallel::detectCores(), length(vct_files))
@@ -51,7 +51,7 @@ create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, co
           .packages=c("magrittr"),
           .export=c("create_PSD_one_file")
         ),
-        create_PSD_one_file(vct_file, quantile, refracs, grid, log_base=log_base, meta=meta, calib=calib, use_data.table=use_data.table)
+        create_PSD_one_file(vct_file, quantile, refracs, grid, log_base=log_base, meta=meta, calib=calib, use_data.table=use_data.table, verbose=verbose)
       )
     },
     finally={
@@ -59,7 +59,7 @@ create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, co
     })
   } else {
     # Serial code
-    counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base, meta=meta, calib=calib, use_data.table=use_data.table))
+    counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base, meta=meta, calib=calib, use_data.table=use_data.table, verbose=verbose))
   }
   counts <- dplyr::bind_rows(counts_list)
   rm(counts_list)
@@ -71,7 +71,8 @@ create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, co
 }
 
 create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL,
-                                meta=NULL, calib=NULL, use_data.table=TRUE) {
+                                meta=NULL, calib=NULL, use_data.table=TRUE, verbose=FALSE) {
+  diag_text <- list(vct_file)  # for verbose diagnostics
   if (!is.null(calib) && length(unique(calib$cruise)) == 0) {
     stop("calibration table is empty")
   }
@@ -109,11 +110,14 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
   } else {
     stop("missing picoeuk defintition from refracs")
   }
+  refrac_status <- list("  refractive indexes used:")
   for (popname in names(refracs)) {
-    refrac_alias <- refracs[[1, "prochloro"]]
+    refrac_alias <- refracs[[1, popname]]
+    refrac_status[[length(refrac_status)+1]] <- paste0(popname, "=", refrac_alias)
     pop_idx <- vct$pop == popname
     vct[pop_idx, "Qc"] <- vct[pop_idx, paste0("Qc_", refrac_alias)]
   }
+  diag_text[[length(diag_text)+1]] <- paste(refrac_status, collapse=" ")
 
   # Assign each particle to a cell in the grid for each dimension
   for (dim in names(grid)) {
@@ -173,6 +177,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
               stop(paste0("more than one abundance calibration entry found for ", phyto))
             }
             if (nrow(corr) > 0) {
+              diag_text[[length(diag_text)+1]] <<- paste0("  calibrating ", phyto, " using a=", calib[["a"]][1], " b=", calib[["b"]][1])
               idx <- which(x$pop == phyto)
               abund <- x[idx, "n_per_uL"]
               if (length(idx) > 0) {
@@ -187,7 +192,12 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     } else {
       # No calibration performed
       vct_summary["n_per_uL_calibrated"] <- vct_summary["n_per_uL"]
+      diag_text[[length(diag_text)+1]] <- "  no calibration performed"
     }
+  }
+
+  if (verbose) {
+    message(paste(diag_text, collapse="\n"))
   }
 
   return(vct_summary)
@@ -344,6 +354,8 @@ parser <- optparse::add_option(parser, c("--bins"), type="integer", default=85,
   metavar="N")
 parser <- optparse::add_option(parser, c("--no-data.table"), action="store_true", default=FALSE,
   help="Don't use data.table for performance-critical aggregation [default %default]")
+parser <- optparse::add_option(parser, c("--verbose"), action="store_true", default=FALSE,
+  help="Print extra diagnostic messages [default %default]")
 
 p <- optparse::parse_args2(parser)
 if (length(p$args) < 2) {
@@ -357,6 +369,7 @@ if (length(p$args) < 2) {
   cores <- p$options$workers
   out <- p$options$out
   no_data.table <- p$options$no_data.table
+  verbose <- p$options$verbose
 }
 
 dated_msg("Start")
@@ -369,11 +382,14 @@ message(paste0("quantile = ", quantile_))
 message(paste0("workers = ", cores))
 message(paste0("out = ", out))
 message(paste0("no-data.table = ", no_data.table))
+message(paste0("verbose = ", verbose))
 message("--------------")
 if (!dir.exists(vct_dir) || !file.exists(db)) {
   message(paste0("vct_dir or db does not exist"))
   quit(save=FALSE)
 }
+# Create output directory tree
+dir.create(dirname(out), recursive=T)
 
 cruise <- popcycle::get.cruise(db)
 vct_files <- list.files(vct_dir, "\\.parquet$", full.names=T)
@@ -411,7 +427,7 @@ arrow::write_parquet(grid_df, paste0(out, ".grid.parquet"))
 
 psd <- create_PSD(
   db, vct_files, quantile_, refracs, grid, log_base=NULL, cores=cores, 
-  meta=meta_flag, calib=calib, use_data.table=!no_data.table
+  meta=meta_flag, calib=calib, use_data.table=!no_data.table, verbose=verbose
 )
 invisible(gc())
 dated_msg("Full PSD dim = ", stringr::str_flatten(dim(psd), " "), ", MB = ", object.size(psd) / 2**20)
