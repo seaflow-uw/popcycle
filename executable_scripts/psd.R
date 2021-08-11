@@ -33,46 +33,16 @@ create_grid <- function(bins=85, channel_range=c(1, 3200), Qc_range=c(0.002, 160
   return(grid)
 }
 
-create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, cores=1, remove_boundary_points=FALSE,
+create_PSD <- function(db, vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
                        use_data.table=TRUE, verbose=FALSE) {
   ptm <- proc.time()
-
-  cores <- min(cores, parallel::detectCores(), length(vct_files))
-  cores <- max(cores, 1)
-
   quantile <- as.numeric(quantile)
-
-  ### Create PSD for each timepoint 
-  if (cores > 1) {
-    # Parallel code
-    cl <- parallel::makeCluster(cores, outfile="")
-    doParallel::registerDoParallel(cl)
-    counts_list <- tryCatch({
-      foreach::`%dopar%`(
-        foreach::foreach(
-          vct_file=vct_files,
-          .inorder=TRUE,
-          .packages=c("magrittr"),
-          .export=c("create_PSD_one_file")
-        ),
-        create_PSD_one_file(vct_file, quantile, refracs, grid, log_base=log_base,
-                            remove_boundary_points=remove_boundary_points,
-                            use_data.table=use_data.table, verbose=verbose)
-      )
-    },
-    finally={
-      parallel::stopCluster(cl)
-    })
-  } else {
-    # Serial code
-    counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base,
-                                                               remove_boundary_points=remove_boundary_points,
-                                                               use_data.table=use_data.table, verbose=verbose))
-  }
+  counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base,
+                                                             remove_boundary_points=remove_boundary_points,
+                                                             use_data.table=use_data.table, verbose=verbose))
   counts <- dplyr::bind_rows(counts_list)
   rm(counts_list)
   invisible(gc())
-
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
   return(counts)
@@ -153,7 +123,10 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     }
 
     # Label by index into grid
-    vct[paste0(dim, "_coord")] <- as.integer(cut(values, grid[[dim]], labels=FALSE, include.lowest=TRUE, right=FALSE))
+    vct[paste0(dim, "_coord")] <- as.integer(cut(values, grid[[dim]], labels=FALSE, right=FALSE))
+    if (any(is.na(vct[paste0(dim, "_coord")]))) {
+      stop(paste0("create_PSD_one_file: ", dim, " value out of range in ", vct_file))
+    }
 
     # Convert index into grid into lower boundary for each bin
     # vct[paste0(dim, "_coord")] <- grid[[dim]][vct[[paste0(dim, "_coord")]]]
@@ -182,45 +155,14 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
   return(vct_summary)
 }
 
-get_vct_range <- function(vct_dirs, data_col, quantile, cores = 1)  {
+get_vct_range <- function(vct_dirs, data_col, quantile)  {
   ptm <- proc.time()
-
-  cores <- min(cores, parallel::detectCores())
-
-  # TODO: incorporate outlier files
-
   # Get vector of file paths
   vct_files <- purrr::flatten_chr(purrr::map(vct_dirs, ~ list.files(., "\\.parquet$", full.names=T)))
-
-  if (cores > 1) {
-    # Parallel code
-    cl <- parallel::makeCluster(cores, outfile="")
-    doParallel::registerDoParallel(cl)
-    answer <- tryCatch({
-      foreach::`%dopar%`(
-        foreach::foreach(
-          vct_file=vct_files,
-          .inorder=TRUE,
-          .packages=c("magrittr"),
-          .export=c("get_vct_range_one_file")
-        ),
-        get_vct_range_one_file(vct_file, data_col, quantile)
-      )
-    },
-    finally={
-      parallel::stopCluster(cl)
-    })
-    answer <- purrr::flatten_dbl(answer)
-    parallel::stopCluster(cl)
-  } else {
-    # Serial code
-    answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_col, quantile))
-    answer <- purrr::flatten_dbl(answer)
-  }
-
+  answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_col, quantile))
+  answer <- purrr::flatten_dbl(answer)
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
-
   return(c(min(answer), max(answer)))
 }
 
@@ -449,9 +391,6 @@ parser <- optparse::add_option(parser, c("--remove-boundary-points"), action="st
   help="Remove particles at the per-file boundary of fsc_small, chl_small, pe, diam, Qc [default %default]")
 parser <- optparse::add_option(parser, c("--verbose"), action="store_true", default=FALSE,
   help="Print extra diagnostic messages [default %default]")
-parser <- optparse::add_option(parser, c("--workers"), type="integer", default=1,
-  help="Number of worker processes to start [default %default]",
-  metavar="N")
 
 p <- optparse::parse_args2(parser)
 if (length(p$args) < 2) {
@@ -466,7 +405,6 @@ if (length(p$args) < 2) {
   quantile_ <- p$options$quantile
   remove_boundary_points <- p$options$remove_boundary_points
   verbose <- p$options$verbose
-  cores <- p$options$workers
 }
 
 dated_msg("Start")
@@ -480,7 +418,6 @@ message(paste0("out = ", out))
 message(paste0("quantile = ", quantile_))
 message(paste0("remove-boundary-points = ", remove_boundary_points))
 message(paste0("verbose = ", verbose))
-message(paste0("workers = ", cores))
 
 message("--------------")
 if (!dir.exists(vct_dir) || !file.exists(db)) {
@@ -527,7 +464,7 @@ arrow::write_parquet(grid_df, paste0(out, ".grid.parquet"))
 # Create the full gridded data file
 # ---------------------------------
 psd <- create_PSD(
-  db, vct_files, quantile_, refracs, grid, log_base=NULL, cores=cores,
+  db, vct_files, quantile_, refracs, grid, log_base=NULL,
   remove_boundary_points=remove_boundary_points, use_data.table=!no_data.table,
   verbose=verbose
 )
@@ -548,7 +485,7 @@ invisible(gc())
 psd <- psd %>% dplyr::filter(flag == 0)
 # data.table multi-threading temporarily enabled for grouping
 orig_threads <- data.table::getDTthreads()
-data.table::setDTthreads(cores)
+data.table::setDTthreads(1)
 hourly <- group_psd_by_time(psd, time_expr="1 hours", use_data.table=!no_data.table)
 data.table::setDTthreads(orig_threads)
 psd <- tibble::as_tibble(psd)
