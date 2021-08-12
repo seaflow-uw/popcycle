@@ -2,52 +2,48 @@
 % Please edit documentation in R/psd.R
 \name{create_PSD}
 \alias{create_PSD}
-\title{Create particle size distributions as cell abundance for many files in VCT directories}
+\title{Create particle size distributions as particle counts and Qc sums for many VCT files}
 \usage{
 create_PSD(
-  dbs,
-  vct_dirs,
-  data_col,
+  vct_files,
   quantile,
-  bins,
-  minval,
-  maxval,
-  maxval_headroom = 1e-06,
-  log_base = 2,
-  cores = 1
+  refracs,
+  grid,
+  log_base = NULL,
+  remove_boundary_points = FALSE,
+  use_data.table = TRUE,
+  verbose = FALSE
 )
 }
 \arguments{
-\item{dbs}{Vector of SQLite3 database file paths.}
+\item{vct_files}{VCT files to grid.}
 
-\item{vct_dirs}{Vector of VCT file directory paths, matching dbs.}
+\item{quantile}{OPP filtering quantile.}
 
-\item{data_col}{VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
-Qc or diam is selected, the refractive index is indicated in the extra column "n".}
+\item{refracs}{Dataframe of refractive indices to use for each population. Column names
+should be population names used in classification, values should be mid, lwr, upr.}
 
-\item{quantile}{OPP Filtering quantile.}
+\item{grid}{Named list of break points to use for gridding. Names should be fsc_small, pe,
+chl_small, Qc, diam.}
 
-\item{bins}{Number of bins in distribution.}
+\item{log_base}{If the break points are logged values, provide the base here to properly
+log the VCT data before gridding. If break points are not log use NULL.}
 
-\item{minval}{Value of smallest bin. Exclusive so set lower than lowest expected value.}
+\item{remove_boundary_points}{Remove min and max particles by fsc_small, pe, chl_small, Qc,
+diam before gridding.}
 
-\item{maxval}{Value of largest bin. Inclusive. To account for floating point imprecision
-a small value of maxval_headroom will be added to maxval automatically.}
+\item{use_data.table}{Use data.table for performance speedup, otherwise use dplyr.}
 
-\item{maxval_headroom}{Amount to add to maxval to account for floating point imprecision.}
-
-\item{log_base}{Log base to use when creating log-spaced bins for distribution.}
-
-\item{cores}{Number of worker processes to create.}
+\item{verbose}{Message extra diagnostic information.}
 }
 \value{
-List of size distribution dataframes, named for their VCT directory.
+Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
+  locations, and population. Each grid coordinate is an integer index into the corresponding
+  grid breaks vector. The break point at that location defines the inclusive lower bound
+  of the bin, and the next break point in the sequence defines the exclusive upper bound.
+  Data columns summarizing each group are n for particle count and Qc_sum for the the sum
+  of Qc.
 }
 \description{
-Create particle size distributions as cell abundance for many files in VCT directories
-}
-\examples{
-\dontrun{
-psds <- create_PSD(dbs, vct_dirs, "fsc_small", quantile = 50, bins = 40, minval = 1, maxval = 3500)
-}
+Create particle size distributions as particle counts and Qc sums for many VCT files
 }

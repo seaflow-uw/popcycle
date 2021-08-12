@@ -23,7 +23,7 @@ instrument.id <- "740"
 # This package's name
 .pkg.name <- "popcycle"
 
-# Load and attach the magrittr pipe for use internally in this package
+# Import symbols to make dplyr and data.table convenience syntax work
 #' @importFrom magrittr "%>%"
-dummyPipeFunction <- function() {
-}
+#' @importFrom data.table .N
+1

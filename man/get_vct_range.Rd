@@ -4,7 +4,7 @@
 \alias{get_vct_range}
 \title{Find min/max for a data column / quantile pair in many VCT directories}
 \usage{
-get_vct_range(vct_dirs, data_col, quantile, cores = 1)
+get_vct_range(vct_dirs, data_col, quantile)
 }
 \arguments{
 \item{vct_dirs}{Vector of VCT file directory paths.}
@@ -13,17 +13,10 @@ get_vct_range(vct_dirs, data_col, quantile, cores = 1)
 Qc or diam is selected, the refractive index is indicated in the extra column "n".}
 
 \item{quantile}{OPP Filtering quantile.}
-
-\item{cores}{Number of worker processes to create.}
 }
 \value{
 Two item numeric vector of c(min_val, max_val)
 }
 \description{
 Find min/max for a data column / quantile pair in many VCT directories
-}
-\examples{
-\dontrun{
-minmax <- get_vct_range(vct_dirs, "fsc_small", quantile = 50)
-}
 }

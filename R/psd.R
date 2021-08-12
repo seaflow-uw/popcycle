@@ -1,189 +1,370 @@
-#' Create particle size distributions as cell abundance for many files in VCT directories
+#' Create particle size distributions as particle counts and Qc sums for many VCT files
 #'
-#' @param dbs Vector of SQLite3 database file paths.
-#' @param vct_dirs Vector of VCT file directory paths, matching dbs.
-#' @param data_col VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
-#'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
-#' @param quantile OPP Filtering quantile.
-#' @param bins Number of bins in distribution.
-#' @param minval Value of smallest bin. Exclusive so set lower than lowest expected value.
-#' @param maxval Value of largest bin. Inclusive. To account for floating point imprecision
-#'   a small value of maxval_headroom will be added to maxval automatically.
-#' @param maxval_headroom Amount to add to maxval to account for floating point imprecision.
-#' @param log_base Log base to use when creating log-spaced bins for distribution.
-#' @param cores Number of worker processes to create.
-#' @return List of size distribution dataframes, named for their VCT directory.
-#' @examples
-#' \dontrun{
-#' psds <- create_PSD(dbs, vct_dirs, "fsc_small", quantile = 50, bins = 40, minval = 1, maxval = 3500)
-#' }
+#' @param vct_files VCT files to grid.
+#' @param quantile OPP filtering quantile.
+#' @param refracs Dataframe of refractive indices to use for each population. Column names
+#'   should be population names used in classification, values should be mid, lwr, upr.
+#' @param grid Named list of break points to use for gridding. Names should be fsc_small, pe,
+#'   chl_small, Qc, diam.
+#' @param log_base If the break points are logged values, provide the base here to properly
+#'   log the VCT data before gridding. If break points are not log use NULL.
+#' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
+#'   diam before gridding.
+#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
+#' @param verbose Message extra diagnostic information.
+#' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
+#'   locations, and population. Each grid coordinate is an integer index into the corresponding
+#'   grid breaks vector. The break point at that location defines the inclusive lower bound
+#'   of the bin, and the next break point in the sequence defines the exclusive upper bound.
+#'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
+#'   of Qc.
 #' @export
-create_PSD <- function(dbs, vct_dirs, data_col, quantile, bins, minval, maxval, maxval_headroom = 1e-6, log_base = 2, cores = 1) {
+create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
+                       use_data.table=TRUE, verbose=FALSE) {
   ptm <- proc.time()
-
-  if (length(dbs) != length(vct_dirs)) {
-    stop("number of DB files not equalt to number of VCT directories")
-  }
-  vct_dirs <- normalizePath(vct_dirs)  # prevent a lot of trouble later
-  vct_files <- purrr::flatten_chr(purrr::map(vct_dirs, ~ list.files(., "\\.parquet$", full.names=T)))
-
-  cores <- min(cores, parallel::detectCores(), length(vct_files))
-  cores <- max(cores, 1)
-
-  # Check data column requested for validity and for presence of multiple refractive indexes
-  refractive_cols <- c("Qc", "diam")
-  channel_cols <- c("fsc_small", "chl_small", "pe")
-  if (! (data_col %in% c(refractive_cols, channel_cols))) {
-    stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
-  }
-  refractive <- data_col %in% refractive_cols
-  QUANT <- as.numeric(quantile)
-
-  ### Create PSD for each timepoint 
-  if (cores > 1) {
-    # Parallel code
-    cl <- parallel::makeCluster(cores, outfile="")
-    doParallel::registerDoParallel(cl)
-    answer <- foreach::`%dopar%`(
-      foreach::foreach(
-        vct_file=vct_files,
-        .inorder=TRUE,
-        .packages=c("magrittr"),
-        .export=c("create_PSD_one_file")
-      ),
-      create_PSD_one_file(vct_file, data_col, quantile, bins, minval, maxval, maxval_headroom, log_base)
-    )
-    parallel::stopCluster(cl)
-  } else {
-    # Serial code
-    answer <- purrr::map(vct_files, ~ create_PSD_one_file(., data_col, quantile, bins, minval, maxval, maxval_headroom, log_base))
-  }
-  psds <- dplyr::bind_rows(answer)
-
-  ### Calculate cell abundance
-  PSDs <- list()
-  for (i in seq_along(dbs)) {
-    db_file <- dbs[[i]]
-    vct_dir <- vct_dirs[[i]]
-
-    # Subset distribution down to a single directory/db
-    distribution <- psds %>% dplyr::filter(dir == vct_dir)
-
-    # Final double check that the vct_dir and dir from dataframe match up
-    dir1_from_df <- unique(as.vector(distribution$dir))
-    dir2_from_df <- unique(dirname(as.vector(distribution$file)))
-    if (dir1_from_df != vct_dir || dir2_from_df != vct_dir) {
-      stop(paste("VCT directories and files became misaligned during PSD calculation. ", vct_dir, dir1_from_df, dir2_from_df))
-    }
-    # Now safe to remove file and dir columns
-    distribution <- distribution %>%  dplyr::select(-c(file, dir))
-
-    ### Calculate cell abundance in each bin (cells / microliter)
-    PSDs[[i]] <- psd_abundance(db_file, distribution, quantile)
-  }
-
-  # Name the list with VCT directory
-  names(PSDs) <- vct_dirs
-
+  quantile <- as.numeric(quantile)
+  counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base,
+                                                             remove_boundary_points=remove_boundary_points,
+                                                             use_data.table=use_data.table, verbose=verbose))
+  counts <- dplyr::bind_rows(counts_list)
+  rm(counts_list)
+  invisible(gc())
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
-  return(PSDs)
+  return(counts)
 }
 
-#' Create particle size distribution as raw counts for one VCT file
+#' Create particle size distribution as particle counts and Qc sums for one VCT file
 #'
 #' @param vct_file VCT file path.
-#' @param data_col VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
-#'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
-#' @param quantile OPP Filtering quantile.
-#' @param bins Number of bins in distribution.
-#' @param minval Value of smallest bin. Exclusive so set lower than lowest expected value.
-#' @param maxval Value of largest bin. Inclusive. To account for floating point imprecision
-#'   a small value of maxval_headroom will be added to maxval automatically.
-#' @param maxval_headroom Amount to add to maxval to account for floating point imprecision.
-#' @param log_base Log base to use when creating log-spaced bins for distribution.
-#' @return Size distribution dataframe.
-#' @examples
-#' \dontrun{
-#' psd <- create_PSD_one_file(vct_file, "fsc_small", quantile = 50, bins = 40, minval = 1, maxval = 3500)
-#' }
-#' @export
-create_PSD_one_file <- function(vct_file, data_col, quantile, bins, minval, maxval, maxval_headroom = 1e-6, log_base = 2) {
-  # Check data column requested for validity and for presence of multiple refractive indexes
-  refractive_cols <- c("Qc", "diam")
-  channel_cols <- c("fsc_small", "chl_small", "pe")
-
-  if (! (data_col %in% c(refractive_cols, channel_cols))) {
-    stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
+#' @param quantile OPP filtering quantile.
+#' @param refracs Dataframe of refractive indices to use for each population. Column names
+#'   should be population names used in classification, values should be mid, lwr, upr.
+#' @param grid Named list of break points to use for gridding. Names should be fsc_small, pe,
+#'   chl_small, Qc, diam.
+#' @param log_base If the break points are logged values, provide the base here to properly
+#'   log the VCT data before gridding. If break points are not log use NULL.
+#' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
+#'   diam before gridding.
+#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
+#' @param verbose Message extra diagnostic information.
+#' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
+#'   locations, and population. Each grid coordinate is an integer index into the corresponding
+#'   grid breaks vector. The break point at that location defines the inclusive lower bound
+#'   of the bin, and the next break point in the sequence defines the exclusive upper bound.
+#'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
+#'   of Qc.
+create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
+                                use_data.table=TRUE, verbose=FALSE) {
+  diag_text <- list(vct_file)  # for verbose diagnostics
+  if (nrow(refracs) != 1) {
+    stop("refracs should only contain one row")
   }
-  refractive <- data_col %in% refractive_cols
 
-  breaks <- create_breaks(bins, minval, maxval + maxval_headroom, log_base)
-
-  QUANT <- as.numeric(quantile)
-  qstr <- paste0("q", QUANT)
+  qstr <- paste0("q", quantile)
   qsuffix <- paste0("_", qstr)
 
-  if (refractive) {
-      vct <- arrow::read_parquet(
-        vct_file,
-        col_select=c("date", all_of(qstr), c(starts_with(data_col) & ends_with(qsuffix)), paste0("pop", qsuffix))
-      )
-    } else {
-      vct <- arrow::read_parquet(vct_file, col_select=c("date", all_of(qstr), all_of(data_col), paste0("pop", qsuffix)))
-    }
-    # Filter for only one quantile
-    vct <- dplyr::filter(vct, get(qstr))
-    # Remove any quantile suffixes from column names
-    vct <- dplyr::rename_with(
-      vct,
+  # Read the VCT parquet file, only grabbing columns needed to analyze one quantile
+  vct <- arrow::read_parquet(
+      vct_file,
+      col_select=c(date, all_of(qstr), fsc_small, pe, chl_small, ends_with(qsuffix))
+    ) %>%
+    dplyr::filter(get(qstr)) %>%         # select one quantile of data
+    dplyr::select(-c(all_of(qstr))) %>%  # remove quantile boolean column
+    dplyr::rename_with(                  # Remove quantile suffix from columns
       function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
       ends_with(qsuffix)
     )
 
-    ## Get particle count in each bin 
-    # group by population and by breaks
-    # for each refractive index
-    if (refractive) {
-      psds <- list()
-      for (refractive_level in c("lwr", "mid", "upr")) {
-        refrac_col <- paste0(data_col, "_", refractive_level)
-        col_sym <- dplyr::sym(refrac_col)
-        refrac_psd <- vct %>% 
-          dplyr::group_by(date, pop, breaks=cut(!!col_sym, breaks), .drop=F) %>%
-          dplyr::count(breaks)
-        # Check that no values are outside of breaks range. This will show up as a
-        # break value of NA
-        if (any(is.na(refrac_psd$breaks))) {
-          stop(paste("data detected outside breaks range in file =", vct_file, "column =", refrac_col, "quantile=", QUANT))
-        }
-        refrac_psd <- refrac_psd %>%
-          tidyr::pivot_wider(names_from = breaks, values_from = n) %>%
-          tibble::add_column(n=refractive_level, .after="pop")
-        psds[[length(psds)+1]] <- refrac_psd
-      }
-      # add data of each refractive index
-      psd <- dplyr::bind_rows(psds)
-    } else {
-      # This data column doesn't have multiple refractive indexes
-      col_sym <- dplyr::sym(data_col)
-      psd <- vct %>% 
-        dplyr::group_by(date, pop, breaks=cut(!!col_sym, breaks), .drop=F) %>%
-        dplyr::count(breaks)
-      # Check that no values are outside of breaks range. This will show up as a
-      # break value of NA
-      if (any(is.na(psd$breaks))) {
-        stop(paste("data detected outside breaks range in file =", vct_file, "column =", data_col, "quantile=", QUANT))
-      }
-      psd <- psd %>% tidyr::pivot_wider(names_from = breaks, values_from = n)
-    }
-    # Add VCT file and directory to dataframe
-    # Remove grouping
-    psd <- psd %>%
-      tibble::add_column(file=as.factor(vct_file), dir=as.factor(dirname(vct_file)), .before=1) %>%
-      dplyr::ungroup()
+  # Create new "diam" and "Qc" columns with the correct refractive index for
+  # each population
+  refrac_status <- list("  refractive indexes used:")  # verbose output for refractive indices
+  for (popname in names(refracs)) {
+    refrac_alias <- refracs[[1, popname]]
+    # Track which refractive index we used for this pop
+    refrac_status[[length(refrac_status)+1]] <- paste0(popname, "=", refrac_alias)
+    pop_idx <- vct$pop == popname
+    vct[pop_idx, "Qc"] <- vct[pop_idx, paste0("Qc_", refrac_alias)]
+    vct[pop_idx, "diam"] <- vct[pop_idx, paste0("diam_", refrac_alias)]
+  }
+  diag_text[[length(diag_text)+1]] <- paste(refrac_status, collapse=" ")
+  if (any(is.na(vct$Qc)) || any(is.na(vct$diam))) {
+    stop(paste0("create_PSD_one_file: missing refractive index for at least one population in ", vct_file))
+  }
 
-    return(psd)
+  # Remove particles at the max value for any of the three basic detectors
+  if (remove_boundary_points) {
+    max_prop <- 0.2  # max proportion of boundary points before error
+    orig_len <- nrow(vct)
+    vct <- vct %>%
+      dplyr::filter(
+        fsc_small > min(fsc_small),
+        fsc_small < max(fsc_small),
+        chl_small > min(chl_small),
+        chl_small < max(chl_small),
+        pe > min(pe),
+        pe < max(pe),
+        diam > min(diam),
+        diam < max(diam),
+        Qc > min(Qc),
+        Qc < max(Qc)
+      )
+    if(orig_len - nrow(vct) > max_prop * orig_len) {
+      stop(paste0("create_PSD_one_file: too many boundary points removed in ", vct_file))
+    }
+  }
+
+  # Assign each particle to a cell in the grid for each dimension
+  for (dim in names(grid)) {
+    if (is.null(log_base)) {
+      values <- vct[[dim]]
+    } else {
+      values <- log(vct[[dim]], log_base)
+    }
+
+    # Label by index into grid
+    vct[paste0(dim, "_coord")] <- as.integer(cut(values, grid[[dim]], labels=FALSE, right=FALSE))
+    if (any(is.na(vct[paste0(dim, "_coord")]))) {
+      stop(paste0("create_PSD_one_file: ", dim, " value out of range in ", vct_file))
+    }
+  }
+
+  # Group by time, grid coordinates, and population
+  # Count cells in each group and sum Qc
+  if (use_data.table) {
+    # data.table is much faster at this group by than dplyr, sometimes < 1s vs ~30s
+    orig_threads <- data.table::getDTthreads()
+    data.table::setDTthreads(1)  # turn off data.table multi-threading
+    vct <- data.table::as.data.table(vct)
+    coord_cols <- stringr::str_subset(names(vct), "_coord$")
+    group_cols <- c("date", coord_cols, "pop")
+    vct_summary <- vct[, list(n=.N, Qc_sum=sum(Qc)), keyby=group_cols]
+    data.table::setDTthreads(orig_threads)  # reset data.table multi-threading
+    vct_summary <- tibble::as_tibble(vct_summary)
+  } else {
+    vct_summary <- vct %>% 
+      dplyr::group_by(date, dplyr::across(ends_with("_coord")), pop ) %>%
+      dplyr::summarise(n=dplyr::n(), Qc_sum=sum(Qc), .groups="drop")
+  }
+
+  if (verbose) {
+    message(paste(diag_text, collapse="\n"))
+  }
+
+  return(vct_summary)
+}
+
+#' Group gridded particle data at a lower time resolution
+#'
+#' @param psd Gridded data created by create_PSD().
+#' @param time_expr Time expression passed to lubridate::floor_date to
+#'   lower time resolution.
+#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
+#' @return A tibble of psd with reduced time resolution.
+#' @export
+group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
+  # data.table is twice as fast for this operation as dplyr in testing on HOT310
+  if (use_data.table) {
+    # This is a side-effect, converting psd by reference to a data.table, and
+    # as such this effect will persist after the functions exits. Not great, but
+    # this object can very large and I'd rather not make a copy.
+    psd <- data.table::setDT(psd)
+    grouped <- psd[,
+                   list(n=sum(n), Qc_sum=sum(Qc_sum)),
+                   keyby=list(date=lubridate::floor_date(date, time_expr), fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, diam_coord, pop)
+                   ]
+    grouped <- tibble::as_tibble(grouped)
+  } else {
+    grouped <- psd %>%
+      dplyr::group_by(date=lubridate::floor_date(date, time_expr), fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, diam_coord, pop) %>%
+      dplyr::arrange(by_group=TRUE) %>%
+      dplyr::summarise(n=sum(n), Qc_sum=sum(Qc_sum), .groups="drop")
+  }
+  return(grouped)
+}
+
+#' Add volume-normalized abundance to gridded SeaFlow data
+#'
+#' @param psd Gridded data created by create_PSD().
+#' @param volumes Volume dataframe at the same time resolution as psd, usually created by
+#'   create_voulme_table().
+#' @param calib Optional influx calibration dataframe used to adjust data by population.
+#'   Columns should be pop, a, b.
+#' @return psd with volume-normalized abundance columns for n_per_uL and Qc_sum_per_uL.
+#'   If calib is provided n and Qc_sum will be adjusted for populations in calib.
+#' @export
+add_adundance <- function(psd, volumes, calib=NULL) {
+  # Calibrate to influx data if provided
+  if (!is.null(calib)) {
+    if (length(unique(calib$cruise)) == 0) {
+      stop("calibration table is empty")
+    }
+    psd$n <- as.double(psd$n) # to ensure a consistent column type
+    corrected <- lapply(
+      psd %>% dplyr::group_by(date) %>% dplyr::group_split(),
+      function(x) {
+        for (phyto in c("prochloro", "synecho")) {
+          corr <- calib %>% dplyr::filter(pop == phyto)
+          if (nrow(corr) > 1) {
+            stop(paste0("more than one abundance calibration entry found for ", phyto))
+          }
+          if (nrow(corr) > 0) {
+            a <- calib[["a"]][1]
+            b <- calib[["b"]][1]
+            pop_idx <- x$pop == phyto
+            n_vals <- x[pop_idx, "n"]
+            Qc_sum_vals <- x[pop_idx, "Qc_sum"]
+            x[pop_idx, "n"] <- a * n_vals + (b * (n_vals / sum(n_vals)))
+            x[pop_idx, "Qc_sum"] <- a * Qc_sum_vals + (b * (Qc_sum_vals / sum(Qc_sum_vals)))
+          }
+        }
+        return(x)
+      }
+    )
+    psd <- dplyr::bind_rows(corrected)
+  }
+
+  # Calculate abundance
+  psd <- dplyr::left_join(psd, volumes, by="date")
+  pop_idx <- psd$pop == "prochloro" | psd$pop == "synecho"
+
+  psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_global"]
+  psd[, "Qc_sum_per_uL"] <- psd[, "Qc_sum"] / psd[, "volume_global"]
+
+  psd[pop_idx, "n_per_uL"] <- psd[pop_idx, "n"] / psd[pop_idx, "volume_file"]
+  psd[pop_idx, "Qc_sum_per_uL"] <- psd[pop_idx, "Qc_sum"] / psd[pop_idx, "volume_file"]
+
+  psd <- psd %>% dplyr::select(-c(volume, volume_file, volume_global))
+
+  return(psd)
+}
+
+#' Create a metadata tibble for one quantile from the SFL table.
+#'
+#' @param db popcycle database file.
+#' @param quantile OPP filtering quantile to use.
+#' @return A tibble of date, volume, opp_evt_ratio, flag
+#' @export
+create_meta <- function(db, quantile) {
+  quantile <- as.numeric(quantile)
+
+  ### Retrieve metadata
+  ## Retrieve SFL table
+  sfl <- get.sfl.table(db)
+  # format time
+  sfl$time <- as.POSIXct(sfl$date, format="%FT%T", tz="UTC")
+  # retrieve flow rate (mL min-1) of detectable volume
+  fr <- flowrate(sfl$stream_pressure, inst=get.inst(db))$flow_rate
+  # convert to microL min-1
+  fr <- fr * 1000
+  # acquisition time (min)
+  acq.time <- sfl$file_duration/60
+  # volume in microL
+  sfl$volume <- round(fr * acq.time , 0)
+
+  ## Retrive Outlier table
+  outliers <- get.outlier.table(db)
+  # merge with sfl
+  sfl.all <- merge(sfl, outliers, by="file")
+
+  ## Retrive OPP table
+  # retrieve opp/evt
+  opp <- tibble::as_tibble(get.opp.table(db))
+  opp <- opp[opp$quantile == quantile, ]
+
+  ## merge all metadata
+  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "volume", "opp_evt_ratio", "flag")])
+  meta$flag <- as.factor(meta$flag)
+  meta <- meta %>% dplyr::rename(date=time)
+
+  return(meta)
+}
+
+#' Create a tibble of volumes that can be used to calculate SeaFlow abundances
+#'
+#' @param meta Metadata dataframe created by create_meta()
+#' @param time_expr Time expression passed to lubridate::floor_date to group datetimes
+#'   before calculating volumes. If NULL volumes are returned at their original time
+#'   resolution.
+#' @return A tibble of volumes, per-file OPP/EVT ratio adjusted volumes, and global median
+#'   OPP/EVT ratio adjusted volumes.
+#' @export
+create_volume_table <- function(meta, time_expr="1 hour") {
+  meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio, flag)
+  meta <- meta %>%
+    dplyr::mutate(
+      volume_file = volume * opp_evt_ratio,
+      volume_global = volume * median(opp_evt_ratio)
+    )
+  if (!is.null(time_expr)) {
+    meta <- meta %>%
+      dplyr::mutate(date=lubridate::floor_date(date, time_expr)) %>%
+      dplyr::group_by(date) %>%
+      dplyr::arrange(by_group=TRUE) %>%
+      dplyr::summarise(
+        volume=sum(volume),
+        volume_file=sum(volume_file),
+        volume_global=sum(volume_global)
+      )
+  }
+
+  return(tibble::as_tibble(meta))
+}
+
+#' Create the breaks to use to grid VCT data.
+#'
+#' @param bins Number of bins between breaks.
+#' @param channel_range Vector of range to use for standard SeaFlow channel breaks.
+#' @param Qc_range Vector of range to use for Qc breaks.
+#' @param diam_range Vector of range to use for diam breaks.
+#' #' @param log_base Log base to use when creating log-spaced bins for distribution.
+#'   If NULL the breaks will not be log-spaced.
+#' @param log_answers If log_base is provided, this determines whether the break
+#'   values themselves are log values or not. e.g. if TRUE breaks may be
+#'   [1, 2, 3], if FALSE breaks may be [10, 100, 1000].
+#' @return Named list defining breaks for use with cut(). Each item has length == bins + 1.
+#' @export
+create_grid <- function(bins=85, channel_range=c(1, 3200), Qc_range=c(0.002, 1600),
+                        diam_range=c(0.1, 37), log_base=NULL, log_answers=TRUE) {
+  if (length(channel_range) != 2) {
+    stop("create_grid: channel_range must be a two-item numeric list or vector")
+  }
+  if (length(Qc_range) != 2) {
+    stop("create_grid: Qc_range must be a two-item numeric list or vector")
+  }
+  if (length(diam_range) != 2) {
+    stop("create_grid: diam_range must be a two-item numeric list or vector")
+  }
+  grid <- list()
+  grid$fsc_small <- create_breaks(bins, channel_range[[1]], channel_range[[2]], log_base, log_answers)
+  grid$pe <- create_breaks(bins, channel_range[[1]], channel_range[[2]], log_base, log_answers)
+  grid$chl_small <- create_breaks(bins, channel_range[[1]], channel_range[[2]], log_base, log_answers)
+  grid$Qc <- create_breaks(bins, Qc_range[[1]], Qc_range[[2]], log_base, log_answers)
+  grid$diam <- create_breaks(bins, diam_range[[1]], diam_range[[2]], log_base, log_answers)
+  return(grid)
+}
+
+#' Create breaks vector that can be used with cut().
+#'
+#' @param bins Number of bins between breaks.
+#' @param minval Value for the minimum break (fencepost).
+#' @param maxval Value for the maximum break (fencepost).
+#' @param log_base Log base to use when creating log-spaced bins for distribution.
+#'   If NULL the breaks will not be log-spaced.
+#' @param log_answers If log_base is provided, this determines whether the break
+#'   values themselves are log values or not. e.g. if TRUE breaks may be
+#'   [1, 2, 3], if FALSE breaks may be [10, 100, 1000].
+#' @return Vector defining breaks for use with cut(), length == bins + 1
+create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE) {
+  if (!is.null(log_base)) {
+    minval <- log(minval, base=log_base)
+    maxval <- log(maxval, base=log_base)
+  }
+  b <- seq(from=minval, to=maxval, length=bins+1)
+  if (!is.null(log_base) && !log_answers) {
+    return(log_base^(b))
+  }
+  return(b)
 }
 
 #' Find min/max for a data column / quantile pair in many VCT directories
@@ -192,47 +373,16 @@ create_PSD_one_file <- function(vct_file, data_col, quantile, bins, minval, maxv
 #' @param data_col VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
 #'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
 #' @param quantile OPP Filtering quantile.
-#' @param cores Number of worker processes to create.
 #' @return Two item numeric vector of c(min_val, max_val)
-#' @examples
-#' \dontrun{
-#' minmax <- get_vct_range(vct_dirs, "fsc_small", quantile = 50)
-#' }
 #' @export
-get_vct_range <- function(vct_dirs, data_col, quantile, cores = 1)  {
+get_vct_range <- function(vct_dirs, data_col, quantile)  {
   ptm <- proc.time()
-
-  cores <- min(cores, parallel::detectCores())
-
-  # TODO: incorporate outlier files
-
   # Get vector of file paths
   vct_files <- purrr::flatten_chr(purrr::map(vct_dirs, ~ list.files(., "\\.parquet$", full.names=T)))
-
-  if (cores > 1) {
-    # Parallel code
-    cl <- parallel::makeCluster(cores, outfile="")
-    doParallel::registerDoParallel(cl)
-    answer <- foreach::`%dopar%`(
-      foreach::foreach(
-        vct_file=vct_files,
-        .inorder=TRUE,
-        .packages=c("magrittr"),
-        .export=c("get_vct_range_one_file")
-      ),
-      get_vct_range_one_file(vct_file, data_col, quantile)
-    )
-    answer <- purrr::flatten_dbl(answer)
-    parallel::stopCluster(cl)
-  } else {
-    # Serial code
-    answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_col, quantile))
-    answer <- purrr::flatten_dbl(answer)
-  }
-
+  answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_col, quantile))
+  answer <- purrr::flatten_dbl(answer)
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
-
   return(c(min(answer), max(answer)))
 }
 
@@ -243,11 +393,6 @@ get_vct_range <- function(vct_dirs, data_col, quantile, cores = 1)  {
 #'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
 #' @param quantile OPP Filtering quantile.
 #' @return Two item numeric vector of c(min_val, max_val)
-#' @examples
-#' \dontrun{
-#' minmax <- get_vct_range_one_file(vct_file, "fsc_small", quantile = 50)
-#' }
-#' @export
 get_vct_range_one_file <- function(vct_file, data_col, quantile) {
   # Check data column requested for validity and for presence of multiple refractive indexes
   refractive_cols <- c("Qc", "diam")
@@ -277,79 +422,78 @@ get_vct_range_one_file <- function(vct_file, data_col, quantile) {
   return(c(min(as.matrix(minmax)), max(as.matrix(minmax))))
 }
 
-#' Add metadata to a particle size distribution and convert raw counts to abundance
-#'
-#' @param db Popcycle database file path
-#' @param distribution Distribution dataframe created by particle_counts_one_file()
-#' @param quantile OPP Filtering quantile.
-#' @return distribution with counts converted to abundance, opp and sfl metadata merged.
-#' @examples
-#' \dontrun{
-#' psd <- psd_abundance(db, psd, 2.5)
-#' }
-#' @export
-psd_abundance <- function(db, distribution, quantile) {
-  QUANT <- as.numeric(quantile)
-
-  ### Retrieve metadata
-  ## Retrieve SFL table
-  sfl <- get.sfl.table(db)
-  # format time
-  sfl$time <- as.POSIXct(sfl$date, format="%FT%T", tz="UTC")
-  # retrieve flow rate (mL min-1) of detectable volume
-  fr <- flowrate(sfl$stream_pressure, inst= get.inst(db))$flow_rate
-  # convert to microL min-1
-  fr <- fr * 1000
-  # acquisition time (min)
-  acq.time <- sfl$file_duration/60
-  # volume in microL
-  sfl$volume <- round(fr * acq.time , 0)
+#' Show messages for rows in gridded particle data that fail validation
+#' 
+#' @param psd Gridded dataframe created by create_PSD. This function loops through
+#'   rows in this dataframe so provide a subset of a real psd dataframe for testing.
+#' @param vct VCT dataframe that covers time ranges present in psd.
+#' @param grid The grid named list used to create psd.
+#' @param refrac Dataframe of population-specific refractive indices used to create psd.
+validate_psd <- function(psd, vct, grid, refrac) {
+  qc_col <- paste0("Qc_", refrac)
+  for (i in seq_along(psd$date)) {
+    psdr <- psd[i, ]  # one row of psd data
+    vct_match <- vct %>%
+      dplyr::filter(
+        date == psdr$date,
+        fsc_small >= grid$fsc_small[psdr$fsc_small_coord],
+        fsc_small < grid$fsc_small[psdr$fsc_small_coord + 1],
+        pe >= grid$pe[psdr$pe_coord],
+        pe < grid$pe[psdr$pe_coord + 1],
+        chl_small >= grid$chl_small[psdr$chl_small_coord],
+        chl_small < grid$chl_small[psdr$chl_small_coord + 1],
+        !!dplyr::sym(qc_col) >= grid$Qc[psdr$Qc_coord],
+        !!dplyr::sym(qc_col) < grid$Qc[psdr$Qc_coord + 1],
+        pop == psdr$pop
+      )
     
-  ## Retrive Outlier table
-  outliers <- get.outlier.table(db)
-  # merge with sfl
-  sfl.all <- merge(sfl, outliers, by="file")
+    msg <- paste(c(paste0("psd_n=", psdr$n), paste0("vct_n=", nrow(vct_match)), as.character(psdr$date), psdr$fsc_small_coord, psdr$pe_coord, psdr$chl_small_coord, psdr$Qc_coord, as.character(psdr$pop)), collapse=" ")
+    if (psdr$n != nrow(vct_match)) {
+      msg <- paste0("MISMATCH: ", msg)
+    }
+    print(msg)
 
-  ## Retrive OPP table
-  # retrieve opp/evt
-  opp <- tibble::as_tibble(get.opp.table(db))
-  opp <- opp %>% dplyr::filter(quantile == QUANT)
-
-  ## merge all metadata
-  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "lat","lon","volume","opp_evt_ratio","flag")])
-
-  PSD <- tibble::as_tibble(merge(distribution, meta, by.x="date",by.y="time",all.x=T)) %>%
-    dplyr::relocate(contains("]"), .after=flag) # reorder column
-
-  ### Calculate cell abundance in each bin (cells / microliter)
-  ## calculate the volume of virtual core for each population, 
-  # volume of SeaFlow's virtual core is calculated based on a median value of opp_evt ratio for the entire cruise
-  # except for small particles (i.e prochloro and synecho) where it is calcualted based on the opp_evt_ratio at that time
-  id <- which(PSD$pop == "prochloro" | PSD$pop == "synecho")
-  PSD[id, "volume"] <- PSD[id, "volume"] * PSD[id,"opp_evt_ratio"]
-  PSD[-c(id), "volume"] <- PSD[-c(id), "volume"] * median(PSD[["opp_evt_ratio"]][-c(id)])
-  
-  ## calculate cell Abundance (cells uL-1) i.e normalize count by volume of SeaFlow's virtual core.
-  clmn <- grep("]", names(PSD))
-  PSD[,clmn] <- PSD[,clmn] / PSD[["volume"]]
-
-  return(PSD)
+    vct_Qc_sum <- sum(vct_match$Qc)
+    msg <- paste(c(paste0("psd_Qc_sum=", psdr$Qc_sum), paste0("vct_Qc_sum=", vct_Qc_sum), as.character(psdr$date), psdr$fsc_small_coord, psdr$pe_coord, psdr$chl_small_coord, psdr$Qc_coord, as.character(psdr$pop)), collapse=" ")
+    if (psdr$Qc_sum != vct_Qc_sum) {
+      msg <- paste0("MISMATCH: ", msg)
+    }
+    print(msg)
+  }
 }
 
-#' Create log-spaced breaks vector that can be used with cut().
-#'
-#' @param bins Number of bins in distribution.
-#' @param minval Value for the minimum break.
-#' @param maxval Value for the maximum break.
-#' @param log_base Log base to use when creating log-spaced bins for distribution.
-#' @return Vector defining breaks for use with cut().
-#' @examples
-#' \dontrun{
-#' breaks <- create_breaks(40, 1, 3500, 10)
-#' }
+#' Construct string labels for break points created by create_grid()
+#' 
+#' @param grid Named list of breakpoints created by create_grid().
+#' @return Named list identical to grid with numeric break points converted to strings.
 #' @export
-create_breaks <- function(bins, minval, maxval, log_base=2) {
-  delta <- log(maxval/minval, base=log_base) / (bins - 1)
-  breaks <- minval * log_base^((0:(bins-1)) * delta)
-  return(breaks)
+grid_labels <- function(grid) {
+  labels <- list()
+  for (channel in names(grid)) {
+    g <- grid[[channel]]
+    labels[[channel]] <- sapply(seq(1, length(g)-2), function(i) { paste0("[", format(round(g[i], 4), nsmall = 4), "-", format(round(g[i+1], 4), nsmall = 4), ")") })
+    i <- length(g) - 1
+    labels[[channel]] <- c(labels[[channel]], paste0("[", format(round(g[i], 4), nsmall = 4), "-", format(round(g[i+1], 4), nsmall = 4), "]"))
+  }
+  
+  return(labels)
+}
+
+#' Add string coordinate labels to a dataframe of gridded SeaFlow data
+#' 
+#' @param psd Gridded dataframe created by create_PSD.
+#' @param grid Named list of breakpoints created by create_grid().
+#' @return Named list identical to grid with numeric break points converted to character vectors.
+#' @export
+add_coord_labels <- function(psd, grid) {
+  labels <- grid_labels(grid)
+  for (col in colnames(psd)) {
+    if (endsWith(col, "_coord")) {
+      colbase <- stringr::str_replace(col, "_coord$", "")
+      newcol <- paste0(colbase, "_label")
+      psd <- psd %>%
+        dplyr::add_column("{newcol}" := labels[[colbase]][psd[[col]]], .after = col)
+    }
+  }
+  return(psd)
 }

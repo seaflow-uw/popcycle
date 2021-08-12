@@ -20,8 +20,3 @@ Two item numeric vector of c(min_val, max_val)
 \description{
 Find min/max for a data column / quantile pair in one VCT file
 }
-\examples{
-\dontrun{
-minmax <- get_vct_range_one_file(vct_file, "fsc_small", quantile = 50)
-}
-}

@@ -2,27 +2,27 @@
 % Please edit documentation in R/psd.R
 \name{create_breaks}
 \alias{create_breaks}
-\title{Create log-spaced breaks vector that can be used with cut().}
+\title{Create breaks vector that can be used with cut().}
 \usage{
-create_breaks(bins, minval, maxval, log_base = 2)
+create_breaks(bins, minval, maxval, log_base = NULL, log_answers = TRUE)
 }
 \arguments{
-\item{bins}{Number of bins in distribution.}
+\item{bins}{Number of bins between breaks.}
 
-\item{minval}{Value for the minimum break.}
+\item{minval}{Value for the minimum break (fencepost).}
 
-\item{maxval}{Value for the maximum break.}
+\item{maxval}{Value for the maximum break (fencepost).}
 
-\item{log_base}{Log base to use when creating log-spaced bins for distribution.}
+\item{log_base}{Log base to use when creating log-spaced bins for distribution.
+If NULL the breaks will not be log-spaced.}
+
+\item{log_answers}{If log_base is provided, this determines whether the break
+values themselves are log values or not. e.g. if TRUE breaks may be
+[1, 2, 3], if FALSE breaks may be [10, 100, 1000].}
 }
 \value{
-Vector defining breaks for use with cut().
+Vector defining breaks for use with cut(), length == bins + 1
 }
 \description{
-Create log-spaced breaks vector that can be used with cut().
-}
-\examples{
-\dontrun{
-breaks <- create_breaks(40, 1, 3500, 10)
-}
+Create breaks vector that can be used with cut().
 }
