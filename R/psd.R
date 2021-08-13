@@ -97,18 +97,24 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     max_prop <- 0.2  # max proportion of boundary points before error
     orig_len <- nrow(vct)
     vct <- vct %>%
-      dplyr::filter(
-        fsc_small > min(fsc_small),
-        fsc_small < max(fsc_small),
-        chl_small > min(chl_small),
-        chl_small < max(chl_small),
-        pe > min(pe),
-        pe < max(pe),
-        diam > min(diam),
-        diam < max(diam),
-        Qc > min(Qc),
-        Qc < max(Qc)
-      )
+      dplyr::group_by(date) %>%
+      dplyr::group_modify(function(x, y) {
+        x %>%
+          dplyr::filter(
+            fsc_small > min(fsc_small),
+            fsc_small < max(fsc_small),
+            chl_small > min(chl_small),
+            chl_small < max(chl_small),
+            pe > min(pe),
+            pe < max(pe),
+            diam > min(diam),
+            diam < max(diam),
+            Qc > min(Qc),
+            Qc < max(Qc)
+          )
+      }) %>%
+      dplyr::group_split() %>%
+      dplyr::bind_rows()
     if(orig_len - nrow(vct) > max_prop * orig_len) {
       stop(paste0("create_PSD_one_file: too many boundary points removed in ", vct_file))
     }

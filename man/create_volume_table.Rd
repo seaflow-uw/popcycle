@@ -4,12 +4,10 @@
 \alias{create_volume_table}
 \title{Create a tibble of volumes that can be used to calculate SeaFlow abundances}
 \usage{
-create_volume_table(meta, remove_flagged = FALSE, time_expr = "1 hour")
+create_volume_table(meta, time_expr = "1 hour")
 }
 \arguments{
 \item{meta}{Metadata dataframe created by create_meta()}
-
-\item{remove_flagged}{Remove all flagged outlier timepoints.}
 
 \item{time_expr}{Time expression passed to lubridate::floor_date to group datetimes
 before calculating volumes. If NULL volumes are returned at their original time
