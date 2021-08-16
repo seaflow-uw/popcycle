@@ -179,5 +179,105 @@ test_that("Grid two files", {
   tearDown(x)
 })
 
-# TODO test calib and abundance calcs
-# TODO boundary points test
+test_that("Volume table creation", {
+  meta <- tibble::tibble(
+    date=c(
+      lubridate::ymd_hms("2016-08-08 19:33:41"),
+      lubridate::ymd_hms("2016-08-08 19:36:41"),
+      lubridate::ymd_hms("2016-08-08 20:33:41"),
+      lubridate::ymd_hms("2016-08-08 20:36:41")
+    ),
+    volume=c(10000, 5000, 20000, 2000),
+    opp_evt_ratio=c(0.01, 0.02, 0.03, 0.04)
+  )
+  
+  # No time aggregation
+  volumes <- popcycle::create_volume_table(meta, time_expr=NULL)
+  want <- meta %>%
+    mutate(
+      volume_file=c(100, 100, 600, 80),
+      volume_global=c(250, 125, 500, 50)
+    )
+  expect_equal(volumes, want)
+
+  # Hourly
+  hourly <- popcycle::create_volume_table(meta)
+  want <- tibble::tibble(
+    date=c(
+      lubridate::ymd_hms("2016-08-08 19:00:00"),
+      lubridate::ymd_hms("2016-08-08 20:00:00")
+    ),
+    volume=c(15000, 22000),
+    volume_file=c(200, 680),
+    volume_global=c(375, 550)
+  )
+  expect_equal(hourly, want)
+})
+
+test_that("Abundance calcultation", {
+  psd <- tibble::tibble(
+    date=c(
+      lubridate::ymd_hms("2016-08-08 19:00:00"),
+      lubridate::ymd_hms("2016-08-08 19:00:00"),
+      lubridate::ymd_hms("2016-08-08 19:00:00"),
+      lubridate::ymd_hms("2016-08-08 20:00:00")
+    ),
+    fsc_small_coord=c(1,1,2,1), pe_coord=c(1,1,1,1), chl_small_coord=c(1,1,1,1),
+    Qc_coord=c(1,1,1,1), diam_coord=c(1,1,1,1),
+    pop=c("prochloro", "unknown", "prochloro", "synecho"),
+    n=c(1, 2, 3, 4),
+    Qc_sum=c(10, 20, 40, 40)
+  )
+  volumes <- tibble::tibble(
+    date=c(
+      lubridate::ymd_hms("2016-08-08 19:00:00"),
+      lubridate::ymd_hms("2016-08-08 20:00:00")
+    ),
+    volume=c(15000, 22000),
+    volume_file=c(200, 680),
+    volume_global=c(375, 550)
+  )
+
+  # No calibration to influx data
+  # Just testing that per-file vs global OPP / EVT ratio normalized volume is
+  # used for pro/syn vs others
+  answers <- popcycle::add_adundance(psd, volumes)
+  want <- psd %>%
+    mutate(
+      n_per_uL=c(1 / 200, 2 / 375, 3 / 200, 4 / 680),
+      Qc_sum_per_uL=c(10 / 200, 20 / 375, 40 / 200, 40 / 680)
+    )
+  expect_equal(answers, want)
+
+  # Test calibration
+  calib <- tibble::tibble(pop=c("prochloro", "synecho"), a=c(2, 3), b=c(2, 0))
+  answers <- popcycle::add_adundance(psd, volumes, calib=calib)
+  want <- psd %>%
+    mutate(
+      n=c(
+        ((1 * 2) + (2 * (1 / 4))),
+        2,
+        ((3 * 2) + (2 * (3 / 4))),
+        (4 * 3)
+      ),
+      Qc_sum=c(
+        ((10 * 2) + (2 * (10 / 50))),
+        20,
+        ((40 * 2) + (2 * (40 / 50))),
+        (40 * 3)
+      ),
+      n_per_uL=c(
+        ((1 * 2) + (2 * (1 / 4))) / 200,
+        2 / 375,
+        ((3 * 2) + (2 * (3 / 4))) / 200,
+        (4 * 3) / 680
+      ),
+      Qc_sum_per_uL=c(
+        ((10 * 2) + (2 * (10 / 50))) / 200,
+        20 / 375,
+        ((40 * 2) + (2 * (40 / 50))) / 200,
+        (40 * 3) / 680
+      )
+    )
+  expect_equal(answers, want)
+})

@@ -202,24 +202,24 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
 add_adundance <- function(psd, volumes, calib=NULL) {
   # Calibrate to influx data if provided
   if (!is.null(calib)) {
-    if (length(unique(calib$cruise)) == 0) {
+    if (nrow(calib) == 0) {
       stop("calibration table is empty")
     }
     psd$n <- as.double(psd$n) # to ensure a consistent column type
     corrected <- lapply(
       psd %>% dplyr::group_by(date) %>% dplyr::group_split(),
       function(x) {
-        for (phyto in c("prochloro", "synecho")) {
+         for (phyto in c("prochloro", "synecho")) {
           corr <- calib %>% dplyr::filter(pop == phyto)
           if (nrow(corr) > 1) {
             stop(paste0("more than one abundance calibration entry found for ", phyto))
           }
           if (nrow(corr) > 0) {
-            a <- calib[["a"]][1]
-            b <- calib[["b"]][1]
+            a <- corr[["a"]][1]
+            b <- corr[["b"]][1]
             pop_idx <- x$pop == phyto
-            n_vals <- x[pop_idx, "n"]
-            Qc_sum_vals <- x[pop_idx, "Qc_sum"]
+            n_vals <- x[pop_idx, ]$n
+            Qc_sum_vals <- x[pop_idx, ]$Qc_sum
             x[pop_idx, "n"] <- a * n_vals + (b * (n_vals / sum(n_vals)))
             x[pop_idx, "Qc_sum"] <- a * Qc_sum_vals + (b * (Qc_sum_vals / sum(Qc_sum_vals)))
           }
@@ -296,7 +296,7 @@ create_meta <- function(db, quantile) {
 #'   OPP/EVT ratio adjusted volumes.
 #' @export
 create_volume_table <- function(meta, time_expr="1 hour") {
-  meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio, flag)
+  meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio)
   meta <- meta %>%
     dplyr::mutate(
       volume_file = volume * opp_evt_ratio,
