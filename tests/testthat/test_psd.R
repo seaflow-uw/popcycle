@@ -195,9 +195,10 @@ test_that("Volume table creation", {
   volumes <- popcycle::create_volume_table(meta, time_expr=NULL)
   want <- meta %>%
     mutate(
-      volume_file=c(100, 100, 600, 80),
-      volume_global=c(250, 125, 500, 50)
-    )
+      volume_small=c(100, 100, 600, 80),
+      volume_large=c(250, 125, 500, 50)
+    ) %>%
+    select(-c(opp_evt_ratio))
   expect_equal(volumes, want)
 
   # Hourly
@@ -208,8 +209,8 @@ test_that("Volume table creation", {
       lubridate::ymd_hms("2016-08-08 20:00:00")
     ),
     volume=c(15000, 22000),
-    volume_file=c(200, 680),
-    volume_global=c(375, 550)
+    volume_small=c(200, 680),
+    volume_large=c(375, 550)
   )
   expect_equal(hourly, want)
 })
@@ -234,8 +235,8 @@ test_that("Abundance calcultation", {
       lubridate::ymd_hms("2016-08-08 20:00:00")
     ),
     volume=c(15000, 22000),
-    volume_file=c(200, 680),
-    volume_global=c(375, 550)
+    volume_small=c(200, 680),
+    volume_large=c(375, 550)
   )
 
   # No calibration to influx data
@@ -246,7 +247,8 @@ test_that("Abundance calcultation", {
     mutate(
       n_per_uL=c(1 / 200, 2 / 375, 3 / 200, 4 / 680),
       Qc_sum_per_uL=c(10 / 200, 20 / 375, 40 / 200, 40 / 680)
-    )
+    ) %>%
+    select(-c(n, Qc_sum))
   expect_equal(answers, want)
 
   # Test calibration
@@ -254,18 +256,6 @@ test_that("Abundance calcultation", {
   answers <- popcycle::add_adundance(psd, volumes, calib=calib)
   want <- psd %>%
     mutate(
-      n=c(
-        ((1 * 2) + (2 * (1 / 4))),
-        2,
-        ((3 * 2) + (2 * (3 / 4))),
-        (4 * 3)
-      ),
-      Qc_sum=c(
-        ((10 * 2) + (2 * (10 / 50))),
-        20,
-        ((40 * 2) + (2 * (40 / 50))),
-        (40 * 3)
-      ),
       n_per_uL=c(
         ((1 * 2) + (2 * (1 / 4))) / 200,
         2 / 375,
@@ -278,6 +268,7 @@ test_that("Abundance calcultation", {
         ((40 * 2) + (2 * (40 / 50))) / 200,
         (40 * 3) / 680
       )
-    )
+    ) %>%
+    select(-c(n, Qc_sum))
   expect_equal(answers, want)
 })

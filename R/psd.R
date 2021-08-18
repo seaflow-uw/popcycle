@@ -234,13 +234,14 @@ add_adundance <- function(psd, volumes, calib=NULL) {
   psd <- dplyr::left_join(psd, volumes, by="date")
   pop_idx <- psd$pop == "prochloro" | psd$pop == "synecho"
 
-  psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_global"]
-  psd[, "Qc_sum_per_uL"] <- psd[, "Qc_sum"] / psd[, "volume_global"]
+  psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_large"]
+  psd[, "Qc_sum_per_uL"] <- psd[, "Qc_sum"] / psd[, "volume_large"]
 
-  psd[pop_idx, "n_per_uL"] <- psd[pop_idx, "n"] / psd[pop_idx, "volume_file"]
-  psd[pop_idx, "Qc_sum_per_uL"] <- psd[pop_idx, "Qc_sum"] / psd[pop_idx, "volume_file"]
+  psd[pop_idx, "n_per_uL"] <- psd[pop_idx, "n"] / psd[pop_idx, "volume_small"]
+  psd[pop_idx, "Qc_sum_per_uL"] <- psd[pop_idx, "Qc_sum"] / psd[pop_idx, "volume_small"]
 
-  psd <- psd %>% dplyr::select(-c(volume, volume_file, volume_global))
+  psd <- psd %>%
+    dplyr::select(-c(n, Qc_sum, volume, volume_small, volume_large))
 
   return(psd)
 }
@@ -292,15 +293,15 @@ create_meta <- function(db, quantile) {
 #' @param time_expr Time expression passed to lubridate::floor_date to group datetimes
 #'   before calculating volumes. If NULL volumes are returned at their original time
 #'   resolution.
-#' @return A tibble of volumes, per-file OPP/EVT ratio adjusted volumes, and global median
-#'   OPP/EVT ratio adjusted volumes.
+#' @return A tibble of volumes, per-file OPP/EVT ratio adjusted volumes for small
+#'   particles, and global median OPP/EVT ratio adjusted volumes for large particles.
 #' @export
 create_volume_table <- function(meta, time_expr="1 hour") {
   meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio)
   meta <- meta %>%
     dplyr::mutate(
-      volume_file = volume * opp_evt_ratio,
-      volume_global = volume * median(opp_evt_ratio)
+      volume_small = volume * opp_evt_ratio,
+      volume_large = volume * median(opp_evt_ratio)
     )
   if (!is.null(time_expr)) {
     meta <- meta %>%
@@ -309,9 +310,11 @@ create_volume_table <- function(meta, time_expr="1 hour") {
       dplyr::arrange(by_group=TRUE) %>%
       dplyr::summarise(
         volume=sum(volume),
-        volume_file=sum(volume_file),
-        volume_global=sum(volume_global)
+        volume_small=sum(volume_small),
+        volume_large=sum(volume_large)
       )
+  } else {
+    meta <- meta %>% select(-c(opp_evt_ratio))
   }
 
   return(tibble::as_tibble(meta))
