@@ -6,12 +6,15 @@ source("helper.R")
 
 test_that("Grid two files", {
   x <- setUp()
+  vct_dir <- x$psd.vct.dir
+  db <- x$psd.db
+  
   bins <- 5
   quantile_ <- 97.5
   qstr <- "q97.5"
   qsuffix <- "_q97.5"
-  vct_files <- list.files(x$psd.vct.dir, "\\.parquet$", full.names=T)
-  meta <- create_meta(x$psd.db, quantile_)
+  vct_files <- list.files(vct_dir, "\\.parquet$", full.names=T)
+  meta <- create_meta(db, quantile_)
   refracs <- refracs <- tibble::tibble(
     prochloro="mid", synecho="mid", picoeuk="lwr", croco="lwr", beads="lwr", unknown="lwr"
   )
@@ -24,6 +27,12 @@ test_that("Grid two files", {
   # Don't use data.table
   psd_no_dt <- create_PSD(
     vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=FALSE
+  )
+  # Pass a vector of dates to ignore
+  ignore_dates <- meta %>% dplyr::filter(flag != 0) %>% pull(date)
+  psd_ignore_dates <- create_PSD(
+    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE,
+    ignore_dates=ignore_dates
   )
 
   # Make sure using data.table and not using data.table yields the same result.
@@ -66,6 +75,10 @@ test_that("Grid two files", {
   # All coordinate indices within range
   expect_true(min(psd %>% select(ends_with("_coord")) %>% summarise_all(range)) >= 1)
   expect_true(max(psd %>% select(ends_with("_coord")) %>% summarise_all(range)) <= bins)
+
+  # Dates are properly ignored
+  expect_equal(sum(psd_ignore_dates$n), vct %>% filter(! (date %in% ignore_dates)) %>% nrow())
+  expect_true(length(intersect(psd_ignore_dates$date, ignore_dates)) == 0)
 
   # Test a large random subset of rows to make sure n and Qc_sum add up properly
   # This is slow

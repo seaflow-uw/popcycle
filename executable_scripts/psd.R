@@ -11,6 +11,8 @@ parser <- optparse::OptionParser(usage="usage: psd.R [options] db vct_dir")
 parser <- optparse::add_option(parser, c("--bins"), type="integer", default=85,
   help="Number of bins along each dimension of the distribution [default %default]",
   metavar="N")
+parser <- optparse::add_option(parser, c("--keep-outliers"), action="store_true", default=FALSE,
+  help="Don't remove 3 minute windows flagged as outliers [default %default]")
 parser <- optparse::add_option(parser, c("--no-data.table"), action="store_true", default=FALSE,
   help="Don't use data.table for performance-critical aggregation [default %default]")
 parser <- optparse::add_option(parser, c("--out"), type="character", default="PSD",
@@ -32,6 +34,7 @@ if (length(p$args) < 2) {
   db <- normalizePath(p$args[1])
   vct_dir <- normalizePath(p$args[2])
   bins <- p$options$bins
+  keep_outliers <- p$options$keep_outliers
   no_data.table <- p$options$no_data.table
   out <- p$options$out
   quantile_ <- p$options$quantile
@@ -45,6 +48,7 @@ message("--------------")
 message(paste0("db = ", db))
 message(paste0("vct-dir = ", vct_dir))
 message(paste0("bins = ", bins))
+message(paste0("keep_outliers = ", keep_outliers))
 message(paste0("no-data.table = ", no_data.table))
 message(paste0("out = ", out))
 message(paste0("quantile = ", quantile_))
@@ -102,13 +106,16 @@ arrow::write_parquet(grid_df, paste0(out, ".grid.parquet"))
 # ---------------------------------
 # Create the full gridded data file
 # ---------------------------------
+if (!keep_outliers) {
+  ignore_dates <- meta %>% filter(flag != 0) %>% pull(date)
+} else {
+  ignore_dates <- NULL
+}
 psd <- popcycle::create_PSD(
   vct_files, quantile_, refracs, grid, log_base=NULL,
-  remove_boundary_points=remove_boundary_points, use_data.table=!no_data.table,
-  verbose=verbose
+  remove_boundary_points=remove_boundary_points, ignore_dates=ignore_dates,
+  use_data.table=!no_data.table, verbose=verbose
 )
-# Add flags
-psd <- dplyr::left_join(psd, meta %>% dplyr::select(date, flag), by="date")
 invisible(gc())
 dated_msg("Full PSD dim = ", stringr::str_flatten(dim(psd), " "), ", MB = ", object.size(psd) / 2**20)
 ptm <- proc.time()
@@ -120,7 +127,6 @@ invisible(gc())
 # -----------
 # Hourly file
 # -----------
-psd <- psd %>% dplyr::filter(flag == 0)  # Remove flagged files
 # data.table multi-threading temporarily enabled for grouping
 orig_threads <- data.table::getDTthreads()
 data.table::setDTthreads(1)
@@ -130,7 +136,9 @@ psd <- tibble::as_tibble(psd)
 invisible(gc())
 
 # Add volume-normalized abundances to hourly data
-meta <- meta %>% dplyr::filter(flag == 0)  # remove flagged files
+if (!keep_outliers) {
+  meta <- meta %>% dplyr::filter(flag == 0)  # remove flagged files
+}
 hourly_volumes <- popcycle::create_volume_table(meta, time_expr="1 hour")
 hourly_psd <- popcycle::add_adundance(hourly, hourly_volumes, calib=calib)
 
@@ -146,7 +154,7 @@ deltat <- proc.time() - ptm
 dated_msg("Wrote hourly CSV in ", deltat[["elapsed"]], " seconds")
 
 ptm <- proc.time()
-arrow::write_parquet(hourly_volumes %>% dplyr::select(date, volume_file, volume_global), paste0(out, ".hourly-volumes.parquet"))
+arrow::write_parquet(hourly_volumes %>% dplyr::select(date, volume_small, volume_large), paste0(out, ".hourly-volumes.parquet"))
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly volume parquet in ", deltat[["elapsed"]], " seconds")
 

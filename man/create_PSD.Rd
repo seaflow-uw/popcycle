@@ -11,6 +11,7 @@ create_PSD(
   grid,
   log_base = NULL,
   remove_boundary_points = FALSE,
+  ignore_dates = NULL,
   use_data.table = TRUE,
   verbose = FALSE
 )
@@ -31,6 +32,8 @@ log the VCT data before gridding. If break points are not log use NULL.}
 
 \item{remove_boundary_points}{Remove min and max particles by fsc_small, pe, chl_small, Qc,
 diam before gridding.}
+
+\item{ignore_dates}{Don't process VCT data with these dates.}
 
 \item{use_data.table}{Use data.table for performance speedup, otherwise use dplyr.}
 

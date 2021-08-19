@@ -10,6 +10,7 @@
 #'   log the VCT data before gridding. If break points are not log use NULL.
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
+#' @param ignore_dates Don't process VCT data with these dates.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
@@ -20,12 +21,15 @@
 #'   of Qc.
 #' @export
 create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                       use_data.table=TRUE, verbose=FALSE) {
+                       ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
   ptm <- proc.time()
   quantile <- as.numeric(quantile)
-  counts_list <- purrr::map(vct_files, ~ create_PSD_one_file(., quantile, refracs, grid, log_base=log_base,
-                                                             remove_boundary_points=remove_boundary_points,
-                                                             use_data.table=use_data.table, verbose=verbose))
+  counts_list <- lapply(vct_files, function(v) {
+    create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
+                        remove_boundary_points=remove_boundary_points,
+                        use_data.table=use_data.table, ignore_dates=ignore_dates,
+                        verbose=verbose)
+  })
   counts <- dplyr::bind_rows(counts_list)
   rm(counts_list)
   invisible(gc())
@@ -46,6 +50,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   log the VCT data before gridding. If break points are not log use NULL.
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
+#' @param ignore_dates Don't process VCT data with these dates.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
@@ -55,7 +60,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
 #'   of Qc.
 create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                                use_data.table=TRUE, verbose=FALSE) {
+                                ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
   diag_text <- list(vct_file)  # for verbose diagnostics
   if (nrow(refracs) != 1) {
     stop("refracs should only contain one row")
@@ -75,6 +80,11 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
       function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
       ends_with(qsuffix)
     )
+  
+  # Ignore certain dates
+  if (!is.null(ignore_dates)) {
+    vct <- vct %>% dplyr::filter(! (date %in% ignore_dates))
+  }
 
   # Create new "diam" and "Qc" columns with the correct refractive index for
   # each population
@@ -93,7 +103,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
   }
 
   # Remove particles at the max value for any of the three basic detectors
-  if (remove_boundary_points) {
+  if (remove_boundary_points && nrow(vct) > 0) {
     max_prop <- 0.2  # max proportion of boundary points before error
     orig_len <- nrow(vct)
     vct <- vct %>%
