@@ -4,10 +4,12 @@
 \alias{create_realtime_bio}
 \title{Create a population data tibble for one quantile from the VCT}
 \usage{
-create_realtime_bio(db, quantile_)
+create_realtime_bio(db, quantile_, with_abundance = FALSE)
 }
 \arguments{
 \item{db}{popcycle database file.}
+
+\item{with_abundance}{Include volume normalized "abundance" column}
 
 \item{quantile}{OPP filtering quantile to use.}
 }
