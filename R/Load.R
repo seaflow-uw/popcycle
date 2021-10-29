@@ -149,7 +149,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
     }
 
     ## Transform data to LOG scale
-    if(transform) integer.dataframe <- transformData(integer.dataframe, columns=EVT.HEADER)
+    if(transform) integer.dataframe <- transformData(integer.dataframe, columns=columns)
 
     return (integer.dataframe)
   }
