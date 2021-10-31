@@ -110,6 +110,63 @@ test_that("Read labview EVT files", {
   tearDown(x)
 })
 
+
+test_that("Read labview EVT v2 files", {
+  x <- setUp()
+
+  channels <- c("pulse_width", "chl_small", "D1", "D2", "fsc_small", "pe", "evt_rate")
+  # The expected RDS file dataframes are v1 EVT dataframes, so we need to subset
+  # down to common columns to compare to these v2 EVT dataframes.
+  comp_channels <- channels[2:6]
+
+  # Good file, uncompressed
+  df <- get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-00-02+00-00")
+  expect_equal(nrow(df), 40000)
+  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  df_expected <- readRDS(file.path(x$evtv2.input.dir, "2014_185/2014-07-04T00-00-02+00-00.notransform.rds"))
+  expect_equal(df[comp_channels], df_expected[comp_channels])
+  
+  df <- get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-00-02+00-00", transform=T)
+  expect_equal(nrow(df), 40000)
+  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+  df_expected <- readRDS(file.path(x$evtv2.input.dir, "2014_185/2014-07-04T00-00-02+00-00.transform.rds"))
+  expect_equal(df[comp_channels], df_expected[comp_channels])
+
+  # Good file, compressed
+  df <- get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-03-02+00-00")
+  expect_equal(nrow(df), 40000)
+  expect_true(any(max(df[, channels]) > 10^3.5))  # not transformed
+  df_expected <- readRDS(file.path(x$evtv2.input.dir, "2014_185/2014-07-04T00-03-02+00-00.notransform.rds"))
+  expect_equal(df[comp_channels], df_expected[comp_channels])
+
+  df <- get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-03-02+00-00", transform=T)
+  expect_equal(nrow(df), 40000)
+  expect_false(any(max(df[, channels]) > 10^3.5))  # transformed
+  df_expected <- readRDS(file.path(x$evtv2.input.dir, "2014_185/2014-07-04T00-03-02+00-00.transform.rds"))
+  expect_equal(df[comp_channels], df_expected[comp_channels])
+
+  # Two EVT files at once
+  df <- get.evt.by.file(x$evtv2.input.dir, c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00"))
+  expect_equal(nrow(df), 80000)
+
+  # size 0 file
+  expect_warning(get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-06-02+00-00"))
+
+  # No particles, header == 0
+  expect_warning(get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-09-02+00-00"))
+
+  # bad 2 byte header, should be 4
+  expect_warning(get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-12-02+00-00"))
+
+  # more data than header reports
+  expect_warning(get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-21-02+00-00"))
+
+  # less data than header reports
+  expect_warning(get.evt.by.file(x$evtv2.input.dir, "2014_185/2014-07-04T00-27-02+00-00"))
+
+  tearDown(x)
+})
+
 test_that("Read OPP by file", {
   x <- setUp()
 

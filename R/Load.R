@@ -70,89 +70,110 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
       stop(paste("The file doesn't exist;", path))
     }
   }
-  if (is.null(columns)) {
-    columns <- EVT.HEADER
-  }
 
   ## initialize dimensional parameters
-  n.bytes.header <- 4
-  n.bytes.padding <- 4
-  column.size <- 2
-  n.data.columns <- length(columns)
-  n.extra.columns <- 2  # 2 uint16 (10 and 0) at start of each row
-  n.total.columns <- n.data.columns + n.extra.columns
-
+  n.rowcnt.bytes <- 4
+  n.colcnt.bytes <- 4
+  n.colcnt.columns <- 2  # column count 32-bit int in terms of 2 byte columns
+  column.size <- 2  # column size in bytes
+  
   ## open binary file for reading
   if (tools::file_ext(path) == "gz") {
     con <- gzfile(description=path, open="rb")
   } else {
     con <- file(description=path, open="rb")
   }
-  header <- readBin(con, "integer", n = 1, size = n.bytes.header, endian = "little")
+  rowcnt <- readBin(con, "integer", n = 1, size = n.rowcnt.bytes, endian = "little")
   # Check for empty file.  If empty return an empty data frame
-  if (length(header) == 0) {
-    warning(sprintf("File %s has size zero or truncated header.", path))
+  if (length(rowcnt) == 0) {
+    warning(sprintf("File %s has size zero or truncated row count header.", path))
     close(con)
     return(data.frame())
   }
-  if (header == 0) {
+  if (count.only) {
+    return(rowcnt) #return just the event count in the header
+  }
+  if (rowcnt == 0) {
     warning(sprintf("File %s has no particle data.", path))
     close(con)
     return(data.frame())
   }
 
-  if (count.only) {
-   return(header) #return just the event count in the header
+  # Now read the next 32-bit int for advertised column count.
+  # We'll use this value to identify the version of the EVT file.
+  colcnt <- readBin(con, "integer", n = 1, size = n.colcnt.bytes, endian = "little")
+  if (colcnt == 10) {
+    # v1 EVT
+    # Seek back to before we read the column count 32-bit int
+    seek(con, where=n.rowcnt.bytes)
+    if (is.null(columns)) {
+      columns <- EVT.HEADER
+    }
+    columns_per_row <- n.colcnt.columns + length(columns)
+  } else if (colcnt == 7) {
+    # v2 EVT
+    # No need to seek back, there's only one column count 32-bit int in the file
+    if (is.null(columns)) {
+      columns <- EVT.HEADER2
+    }
+    columns_per_row <- length(columns)
   } else {
-    # read the actual events
-    n.events <- header * n.total.columns
-    expected.bytes <- n.events * column.size
-    integer.vector <- readBin(con, "integer", n = n.events, size = column.size, signed = FALSE, endian = "little")
-    received.bytes <- length(integer.vector) * column.size
+    stop(sprintf("File has an invalid column count value: %d", colcnt))
+  }
 
-    # Now read any data left. There shouldn't be any.
-    while (TRUE) {
-      extra.bytes <- readBin(con, "integer", n = 8192, size = 1, signed = FALSE, endian = "little")
-      received.bytes = received.bytes + length(extra.bytes)
-      if (length(extra.bytes) == 0) {
-        break
-      }
-    }
+  # Read the data
+  expected.bytes <- rowcnt * columns_per_row * column.size
+  integer.vector <- readBin(con, "integer", n = rowcnt * columns_per_row, size = column.size, signed = FALSE, endian = "little")
+  received.bytes <- length(integer.vector) * column.size
 
-    if (received.bytes != expected.bytes) {
-      warning(sprintf("File %s has incorrect data size. Expected %i bytes, saw %i bytes",
-                      path, expected.bytes, received.bytes))
-      close(con)
-      return(data.frame())
+  # Now read any data left. There shouldn't be any.
+  while (TRUE) {
+    extra.bytes <- readBin(con, "integer", n = 8192, size = 1, signed = FALSE, endian = "little")
+    received.bytes = received.bytes + length(extra.bytes)
+    if (length(extra.bytes) == 0) {
+      break
     }
-    # reformat the vector into a matrix -> dataframe
-    integer.matrix <- matrix(integer.vector, nrow = header, ncol = n.total.columns, byrow=TRUE)
-    # Convert to data frame dropping first two padding columns
+  }
+
+  if (received.bytes != expected.bytes) {
+    warning(sprintf("File %s has incorrect data size. Expected %i bytes, saw %i bytes",
+                    path, expected.bytes, received.bytes))
+    close(con)
+    return(data.frame())
+  }
+  # reformat the vector into a matrix -> dataframe
+  integer.matrix <- matrix(integer.vector, nrow = rowcnt, ncol = columns_per_row, byrow=TRUE)
+  # Convert to data frame
+  if (colcnt == 10) {
+    # v1 EVT, drop first two padding columns.
     # Drop=FALSE is necessary here when subsetting the matrix. Otherwise in the
     # case of a one-row matrix the subsetted matrix will have the unnecessary
     # dimension "dropped" and you'll get an integer vector back instead of a
     # matrix, which creates a completely differently shaped data.frame.
-    integer.dataframe <- data.frame(integer.matrix[,(n.extra.columns+1):n.total.columns, drop=F])
-    ## name the columns
-    names(integer.dataframe) <- columns
-    close(con)
-
-    if (nrow(integer.dataframe) != header) {
-      msg <- paste("In file", path, "the declared number of events", header,
-           "does not equal the actual number of events")
-      warning(msg)
-      return(data.frame())
-    }
-
-    if (! is.null(channel)) {
-      integer.dataframe <- integer.dataframe[, channel, drop=FALSE]
-    }
-
-    ## Transform data to LOG scale
-    if(transform) integer.dataframe <- transformData(integer.dataframe, columns=columns)
-
-    return (integer.dataframe)
+    integer.dataframe <- data.frame(integer.matrix[, (n.colcnt.columns+1):columns_per_row, drop=F])
+  } else {
+    # v2 EVT, no extra columns to drop
+    integer.dataframe <- data.frame(integer.matrix)
   }
+  ## name the columns
+  names(integer.dataframe) <- columns
+  close(con)
+
+  if (nrow(integer.dataframe) != rowcnt) {
+    msg <- paste("In file", path, "the declared number of events", rowcnt,
+                 "does not equal the actual number of events")
+    warning(msg)
+    return(data.frame())
+  }
+
+  if (! is.null(channel)) {
+    integer.dataframe <- integer.dataframe[, channel, drop=FALSE]
+  }
+
+  ## Transform data to LOG scale
+  if(transform) integer.dataframe <- transformData(integer.dataframe, columns=columns)
+
+  return (integer.dataframe)
 }
 
 #' Write an EVT or OPP binary file.
