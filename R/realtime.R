@@ -46,6 +46,7 @@ create_realtime_meta <- function(db, quantile_) {
 #' @param description Long form description of this file
 #' @export
 write_realtime_meta_tsdata <- function(meta, project, outfile, filetype="SeaFlowSFL", description="SeaFlow SFL data") {
+  meta <- meta %>% dplyr::rename(time=date)
   fh <- file(outfile, open="wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
@@ -84,6 +85,7 @@ create_realtime_bio <- function(db, quantile_, with_abundance=FALSE) {
 #' @param description Long form description of this file
 #' @export
 write_realtime_bio_tsdata <- function(bio, project, outfile, filetype="SeaFlowPop", description="SeaFlow population data") {
+  bio <- bio %>% dplyr::rename(time=date)
   fh <- file(outfile, open="wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
