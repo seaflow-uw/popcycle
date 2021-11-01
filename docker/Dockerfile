@@ -26,6 +26,10 @@ WORKDIR /popcycle/
 # to the latest version (1.0.7 as of this message).
 RUN Rscript setup.R \
     && Rscript --slave -e 'install.packages("Rcpp")'
+# As of right now, the pre-built linux binary for arrow 6.0.0.2 does not support
+# snapp compression. Downgrade to 5.0.0.2 until this is resolved.
+RUN Rscript setup.R \
+    && Rscript --slave -e 'devtools::install_version("arrow", version="5.0.0.2")'
 
 # Install the package itself
 ARG DEPS_ONLY=false
