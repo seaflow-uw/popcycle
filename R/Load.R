@@ -83,26 +83,14 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
   } else {
     con <- file(description=path, open="rb")
   }
-  rowcnt <- readBin(con, "integer", n = 1, size = n.rowcnt.bytes, endian = "little")
-  # Check for empty file.  If empty return an empty data frame
-  if (length(rowcnt) == 0) {
-    warning(sprintf("File %s has size zero or truncated row count header.", path))
+  num1 <- readBin(con, "integer", n = 1, size = n.rowcnt.bytes, endian = "little")
+  num2 <- readBin(con, "integer", n = 1, size = n.colcnt.bytes, endian = "little")
+  if (length(num1) == 0 || length(num2) == 0) {
+    warning(sprintf("File %s has a truncated header section.", path))
     close(con)
     return(data.frame())
   }
-  if (count.only) {
-    return(rowcnt) #return just the event count in the header
-  }
-  if (rowcnt == 0) {
-    warning(sprintf("File %s has no particle data.", path))
-    close(con)
-    return(data.frame())
-  }
-
-  # Now read the next 32-bit int for advertised column count.
-  # We'll use this value to identify the version of the EVT file.
-  colcnt <- readBin(con, "integer", n = 1, size = n.colcnt.bytes, endian = "little")
-  if (colcnt == 10) {
+  if (num2 == length(EVT.HEADER)) {
     # v1 EVT
     # Seek back to before we read the column count 32-bit int
     seek(con, where=n.rowcnt.bytes)
@@ -110,15 +98,32 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
       columns <- EVT.HEADER
     }
     columns_per_row <- n.colcnt.columns + length(columns)
-  } else if (colcnt == 7) {
+    rowcnt <- num1
+    version <- "v1"
+  } else if (num1 == length(EVT.HEADER2) * column.size) {
     # v2 EVT
     # No need to seek back, there's only one column count 32-bit int in the file
     if (is.null(columns)) {
       columns <- EVT.HEADER2
     }
     columns_per_row <- length(columns)
+    rowcnt <- num2
+    version <- "v2"
   } else {
-    stop(sprintf("File has an invalid column count value: %d", colcnt))
+    warning(sprintf("File %s has a invalid header section.", path))
+    close(con)
+    return(data.frame())
+  }
+
+  # Check for empty file.  If empty return an empty data frame
+  if (length(rowcnt) == 0 || rowcnt == 0) {
+    warning(sprintf("File %s has no particle data.", path))
+    close(con)
+    return(data.frame())
+  }
+  
+  if (count.only) {
+    return(rowcnt) #return just the event count in the header
   }
 
   # Read the data
@@ -144,7 +149,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
   # reformat the vector into a matrix -> dataframe
   integer.matrix <- matrix(integer.vector, nrow = rowcnt, ncol = columns_per_row, byrow=TRUE)
   # Convert to data frame
-  if (colcnt == 10) {
+  if (version == "v1") {
     # v1 EVT, drop first two padding columns.
     # Drop=FALSE is necessary here when subsetting the matrix. Otherwise in the
     # case of a one-row matrix the subsetted matrix will have the unnecessary
