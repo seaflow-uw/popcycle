@@ -285,7 +285,7 @@ plot_time <- function(stat, param, transform=FALSE){
 #' @usage plot_histogram(opp, para.x="fsc_small", transform=T)
 #' @export plot_histogram
 
-plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transform=T, position="identity", free=T){
+plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, position="identity"){
 
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
@@ -298,11 +298,6 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transfor
       ggplot2::theme_bw() +
       ggplot2::scale_fill_manual(values=group.colors) +
       ggplot2::guides(fill=ggplot2::guide_legend(title="population"))
-
-  if(free){p <- p + ggplot2::facet_wrap(~ file, scale="free_y")
-  }else{ p <- p + ggplot2::facet_wrap(~ file)}
-
-  if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10")
 
   return(p)
 
