@@ -147,7 +147,7 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
         ggplot2::ggplot() +
         ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y, fill = "pop", alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
         ggplot2::theme_bw() +
-        ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
+        #ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
         ggplot2::scale_fill_manual(values=group.colors) +
         ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
         ggplot2::scale_color_manual(values=group.colors) +
@@ -280,12 +280,12 @@ plot_time <- function(stat, param, transform=FALSE){
 #' The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
 #' @param transform Log transformation of the parameter"
 #' @param position Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.
-#' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
+#' @param xlim limits for x-axis.
 #' @return None
 #' @usage plot_histogram(opp, para.x="fsc_small", transform=T)
 #' @export plot_histogram
 
-plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, position="identity"){
+plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transform=TRUE, position="identity", xlim=NULL){
 
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
@@ -298,6 +298,9 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, position
       ggplot2::theme_bw() +
       ggplot2::scale_fill_manual(values=group.colors) +
       ggplot2::guides(fill=ggplot2::guide_legend(title="population"))
+
+  if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10", limit= xlim)
+  if(!transform) p <- p + ggplot2::scale_x_continuous(limit= xlim)
 
   return(p)
 
