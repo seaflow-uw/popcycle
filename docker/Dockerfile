@@ -1,4 +1,4 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_13
+FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
 RUN apt-get update \
     && apt-get install sqlite3 \
@@ -22,14 +22,11 @@ USER ${ARG_USER}
 ARG DEPS_ONLY=true
 COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION setup.R /popcycle/
 WORKDIR /popcycle/
-# For some reason reading the popcycle db broke (RSqlite?) unless Rcpp is updated
-# to the latest version (1.0.7 as of this message).
-RUN Rscript setup.R \
-    && Rscript --slave -e 'install.packages("Rcpp")'
-# As of right now, the pre-built linux binary for arrow 6.0.0.2 does not support
-# snapp compression. Downgrade to 5.0.0.2 until this is resolved.
-RUN Rscript setup.R \
-    && Rscript --slave -e 'devtools::install_version("arrow", version="5.0.0.2")'
+
+# Install flowDensity and flowCore separately because automatic installation
+# from DESCRIPTION was failing with the 3.13 and 3.14 bioconductor docker images
+RUN Rscript --slave -e 'BiocManager::install(c("flowCore", "flowDensity"))' \
+    && Rscript setup.R
 
 # Install the package itself
 ARG DEPS_ONLY=false
