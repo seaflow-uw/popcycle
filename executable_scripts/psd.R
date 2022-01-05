@@ -11,6 +11,8 @@ parser <- optparse::OptionParser(usage="usage: psd.R [options] db vct_dir")
 parser <- optparse::add_option(parser, c("--bins"), type="integer", default=85,
   help="Number of bins along each dimension of the distribution [default %default]",
   metavar="N")
+parser <- optparse::add_option(parser, c("--dimensions"), type="character", default="fsc_small,pe,chl_small,Qc,diam",
+  help="Comma-separated list of dimensions for grid. Qc will always be included regardless of this value. [default %default]")
 parser <- optparse::add_option(parser, c("--keep-outliers"), action="store_true", default=FALSE,
   help="Don't remove 3 minute windows flagged as outliers [default %default]")
 parser <- optparse::add_option(parser, c("--no-data.table"), action="store_true", default=FALSE,
@@ -25,6 +27,9 @@ parser <- optparse::add_option(parser, c("--remove-boundary-points"), action="st
   help="Remove particles at the per-file boundary of fsc_small, chl_small, pe, diam, Qc [default %default]")
 parser <- optparse::add_option(parser, c("--verbose"), action="store_true", default=FALSE,
   help="Print extra diagnostic messages [default %default]")
+parser <- optparse::add_option(parser, c("--volume"), type="integer", default=NULL,
+  help="Hard code a single volume value for abundance calculations, i.e. if stream pressure is unreliable [default %defalt]",
+  metavar="VOLUME")
 
 p <- optparse::parse_args2(parser)
 if (length(p$args) < 2) {
@@ -34,12 +39,28 @@ if (length(p$args) < 2) {
   db <- normalizePath(p$args[1])
   vct_dir <- normalizePath(p$args[2])
   bins <- p$options$bins
+  dimensions <- p$options$dimensions
   keep_outliers <- p$options$keep_outliers
-  no_data.table <- p$options$no_data.table
+  no_data_table <- p$options$no_data.table
   out <- p$options$out
   quantile_ <- p$options$quantile
   remove_boundary_points <- p$options$remove_boundary_points
   verbose <- p$options$verbose
+  volume <- p$options$volume
+}
+
+# Check command-line options and arguments
+possible_dimensions <- unlist(stringr::str_split("fsc_small,pe,chl_small,Qc,diam", "\\s*,\\s*"))
+dimensions <- unlist(stringr::str_split(dimensions, "\\s*,\\s*"))
+if (length(setdiff(dimensions, possible_dimensions)) > 0) {
+  stop(glue("Error: unknown dimensions {stringr::str_flatten(setdiff(dimensions, possible), ', ')}"))
+}
+if (! "Qc" %in% dimensions) {
+  dimensions[length(dimensions) + 1] <- "Qc"
+}
+
+if (!dir.exists(vct_dir) || !file.exists(db)) {
+  stop(paste0("vct_dir or db does not exist"))
 }
 
 dated_msg("Start")
@@ -48,18 +69,17 @@ message("--------------")
 message(paste0("db = ", db))
 message(paste0("vct-dir = ", vct_dir))
 message(paste0("bins = ", bins))
+message(paste0("dimensions = ", stringr::str_flatten(dimensions, ", ")))
 message(paste0("keep_outliers = ", keep_outliers))
-message(paste0("no-data.table = ", no_data.table))
+message(paste0("no-data.table = ", no_data_table))
 message(paste0("out = ", out))
 message(paste0("quantile = ", quantile_))
 message(paste0("remove-boundary-points = ", remove_boundary_points))
 message(paste0("verbose = ", verbose))
+message(paste0("volume = ", volume))
 
 message("--------------")
-if (!dir.exists(vct_dir) || !file.exists(db)) {
-  message(paste0("vct_dir or db does not exist"))
-  quit(save=FALSE)
-}
+
 # Create output directory tree
 dir.create(dirname(out), recursive=T, showWarnings=F)
 
@@ -68,6 +88,10 @@ vct_files <- list.files(vct_dir, "\\.parquet$", full.names=T)
 
 meta_full <- popcycle::create_meta(db, as.numeric(quantile_))
 meta <- meta_full[, c("date", "volume", "opp_evt_ratio", "flag")]
+if (! is.null(volume)) {
+  dated_msg(glue::glue("setting volume to {volume} in meta table"))
+  meta$volume <- volume
+}
 
 dated_msg("Retrieving refractive index table")
 refracs <- popcycle::read_refraction_csv()
@@ -99,8 +123,12 @@ if (length(unique(calib$cruise)) == 0) {
 }
 dated_msg(paste0(capture.output(calib), collapse="\n"))
 
+# Make the grid
 grid <- popcycle::create_grid(bins, log_base=2, log_answers=FALSE)
 grid_df <- tibble::tibble(fsc_small=grid$fsc_small, pe=grid$pe, chl_small=grid$chl_small, Qc=grid$Qc, diam=grid$diam)
+# Subset down to dimensions from CLI
+grid <- grid[dimensions]
+grid_df <- grid_df[dimensions]
 arrow::write_parquet(grid_df, paste0(out, ".grid.parquet"))
 
 # ---------------------------------
@@ -114,7 +142,7 @@ if (!keep_outliers) {
 psd <- popcycle::create_PSD(
   vct_files, quantile_, refracs, grid, log_base=NULL,
   remove_boundary_points=remove_boundary_points, ignore_dates=ignore_dates,
-  use_data.table=!no_data.table, verbose=verbose
+  use_data_table=!no_data_table, verbose=verbose
 )
 invisible(gc())
 dated_msg("Full PSD dim = ", stringr::str_flatten(dim(psd), " "), ", MB = ", object.size(psd) / 2**20)
@@ -130,7 +158,7 @@ invisible(gc())
 # data.table multi-threading temporarily enabled for grouping
 orig_threads <- data.table::getDTthreads()
 data.table::setDTthreads(1)
-hourly <- popcycle::group_psd_by_time(psd, time_expr="1 hours", use_data.table=!no_data.table)
+hourly <- popcycle::group_psd_by_time(psd, time_expr="1 hours", use_data_table=!no_data_table)
 data.table::setDTthreads(orig_threads)
 psd <- tibble::as_tibble(psd)
 invisible(gc())

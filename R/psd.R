@@ -11,7 +11,7 @@
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
-#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
+#' @param use_data_table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
@@ -21,13 +21,13 @@
 #'   of Qc.
 #' @export
 create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                       ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
+                       ignore_dates=NULL, use_data_table=TRUE, verbose=FALSE) {
   ptm <- proc.time()
   quantile <- as.numeric(quantile)
   counts_list <- lapply(vct_files, function(v) {
     create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
                         remove_boundary_points=remove_boundary_points,
-                        use_data.table=use_data.table, ignore_dates=ignore_dates,
+                        use_data_table=use_data_table, ignore_dates=ignore_dates,
                         verbose=verbose)
   })
   counts <- dplyr::bind_rows(counts_list)
@@ -51,7 +51,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
-#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
+#' @param use_data_table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
@@ -60,7 +60,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
 #'   of Qc.
 create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                                ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
+                                ignore_dates=NULL, use_data_table=TRUE, verbose=FALSE) {
   diag_text <- list(vct_file)  # for verbose diagnostics
   if (nrow(refracs) != 1) {
     stop("refracs should only contain one row")
@@ -80,7 +80,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
       function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
       ends_with(qsuffix)
     )
-  
+
   # Ignore certain dates
   if (!is.null(ignore_dates)) {
     vct <- vct %>% dplyr::filter(! (date %in% ignore_dates))
@@ -94,38 +94,37 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     # Track which refractive index we used for this pop
     refrac_status[[length(refrac_status)+1]] <- paste0(popname, "=", refrac_alias)
     pop_idx <- vct$pop == popname
-    vct[pop_idx, "Qc"] <- vct[pop_idx, paste0("Qc_", refrac_alias)]
-    vct[pop_idx, "diam"] <- vct[pop_idx, paste0("diam_", refrac_alias)]
+    if ("Qc" %in% names(grid)) {
+      vct[pop_idx, "Qc"] <- vct[pop_idx, paste0("Qc_", refrac_alias)]
+    }
+    if ("diam" %in% names(grid)) {
+      vct[pop_idx, "diam"] <- vct[pop_idx, paste0("diam_", refrac_alias)]
+    }
   }
-  diag_text[[length(diag_text)+1]] <- paste(refrac_status, collapse=" ")
-  if (any(is.na(vct$Qc)) || any(is.na(vct$diam))) {
+  if (("Qc" %in% names(grid)) && any(is.na(vct$Qc))) {
     stop(paste0("create_PSD_one_file: missing refractive index for at least one population in ", vct_file))
   }
+  if (("diam" %in% names(grid)) && any(is.na(vct$diam))) {
+    stop(paste0("create_PSD_one_file: missing refractive index for at least one population in ", vct_file))
+  }
+  diag_text[[length(diag_text)+1]] <- paste(refrac_status, collapse=" ")
 
-  # Remove particles at the max value for any of the three basic detectors
+  # Remove particles at the max value for any dimension
   if (remove_boundary_points && nrow(vct) > 0) {
     max_prop <- 0.2  # max proportion of boundary points before error
     orig_len <- nrow(vct)
     vct <- vct %>%
       dplyr::group_by(date) %>%
       dplyr::group_modify(function(x, y) {
-        x %>%
-          dplyr::filter(
-            fsc_small > min(fsc_small),
-            fsc_small < max(fsc_small),
-            chl_small > min(chl_small),
-            chl_small < max(chl_small),
-            pe > min(pe),
-            pe < max(pe),
-            diam > min(diam),
-            diam < max(diam),
-            Qc > min(Qc),
-            Qc < max(Qc)
-          )
+        sel <- TRUE
+        for (dim in names(grid)) {
+          sel <- sel & (x[[dim]] > min(x[[dim]])) & (x[[dim]] < max(x[[dim]]))
+        }
+        return(x[sel, ])
       }) %>%
       dplyr::group_split() %>%
       dplyr::bind_rows()
-    if(orig_len - nrow(vct) > max_prop * orig_len) {
+    if (orig_len - nrow(vct) > max_prop * orig_len) {
       stop(paste0("create_PSD_one_file: too many boundary points removed in ", vct_file))
     }
   }
@@ -147,7 +146,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
 
   # Group by time, grid coordinates, and population
   # Count cells in each group and sum Qc
-  if (use_data.table) {
+  if (use_data_table) {
     # data.table is much faster at this group by than dplyr, sometimes < 1s vs ~30s
     orig_threads <- data.table::getDTthreads()
     data.table::setDTthreads(1)  # turn off data.table multi-threading
@@ -158,8 +157,8 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     data.table::setDTthreads(orig_threads)  # reset data.table multi-threading
     vct_summary <- tibble::as_tibble(vct_summary)
   } else {
-    vct_summary <- vct %>% 
-      dplyr::group_by(date, dplyr::across(ends_with("_coord")), pop ) %>%
+    vct_summary <- vct %>%
+      dplyr::group_by(date, dplyr::across(ends_with("_coord")), pop) %>%
       dplyr::summarise(n=dplyr::n(), Qc_sum=sum(Qc), .groups="drop")
   }
 
@@ -175,24 +174,27 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
 #' @param psd Gridded data created by create_PSD().
 #' @param time_expr Time expression passed to lubridate::floor_date to
 #'   lower time resolution.
-#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
+#' @param use_data_table Use data.table for performance speedup, otherwise use dplyr.
 #' @return A tibble of psd with reduced time resolution.
 #' @export
-group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
+group_psd_by_time <- function(psd, time_expr="1 hours", use_data_table=TRUE) {
   # data.table is twice as fast for this operation as dplyr in testing on HOT310
-  if (use_data.table) {
+  if (use_data_table) {
     # This is a side-effect, converting psd by reference to a data.table, and
     # as such this effect will persist after the functions exits. Not great, but
     # this object can very large and I'd rather not make a copy.
     psd <- data.table::setDT(psd)
+    psd$date2 <- lubridate::floor_date(psd$date, time_expr)
+    group_cols <- c("date2", stringr::str_subset(names(psd), "_coord$"), "pop")
     grouped <- psd[,
                    list(n=sum(n), Qc_sum=sum(Qc_sum)),
-                   keyby=list(date=lubridate::floor_date(date, time_expr), fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, diam_coord, pop)
+                   keyby=group_cols
                    ]
     grouped <- tibble::as_tibble(grouped)
+    grouped <- grouped %>% rename(date = date2)
   } else {
     grouped <- psd %>%
-      dplyr::group_by(date=lubridate::floor_date(date, time_expr), fsc_small_coord, pe_coord, chl_small_coord, Qc_coord, diam_coord, pop) %>%
+      dplyr::group_by(date=lubridate::floor_date(date, time_expr), dplyr::across(ends_with("_coord")), pop) %>%
       dplyr::arrange(by_group=TRUE) %>%
       dplyr::summarise(n=sum(n), Qc_sum=sum(Qc_sum), .groups="drop")
   }
@@ -277,7 +279,7 @@ create_meta <- function(db, quantile) {
   # acquisition time (min)
   acq.time <- sfl$file_duration/60
   # volume in microL
-  sfl$volume <- round(fr * acq.time , 0)
+  sfl$volume <- round(fr * acq.time, 0)
 
   ## Retrive Outlier table
   outliers <- get.outlier.table(db)
@@ -381,7 +383,7 @@ create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE)
   }
   b <- seq(from=minval, to=maxval, length=bins+1)
   if (!is.null(log_base) && !log_answers) {
-    return(log_base^(b))
+    return(log_base^b)
   }
   return(b)
 }
@@ -416,7 +418,7 @@ get_vct_range_one_file <- function(vct_file, data_col, quantile) {
   # Check data column requested for validity and for presence of multiple refractive indexes
   refractive_cols <- c("Qc", "diam")
   channel_cols <- c("fsc_small", "chl_small", "pe")
-  
+
   if (! (data_col %in% c(refractive_cols, channel_cols))) {
     stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
   }
@@ -442,7 +444,7 @@ get_vct_range_one_file <- function(vct_file, data_col, quantile) {
 }
 
 #' Show messages for rows in gridded particle data that fail validation
-#' 
+#'
 #' @param psd Gridded dataframe created by create_PSD. This function loops through
 #'   rows in this dataframe so provide a subset of a real psd dataframe for testing.
 #' @param vct VCT dataframe that covers time ranges present in psd.
@@ -465,7 +467,7 @@ validate_psd <- function(psd, vct, grid, refrac) {
         !!dplyr::sym(qc_col) < grid$Qc[psdr$Qc_coord + 1],
         pop == psdr$pop
       )
-    
+
     msg <- paste(c(paste0("psd_n=", psdr$n), paste0("vct_n=", nrow(vct_match)), as.character(psdr$date), psdr$fsc_small_coord, psdr$pe_coord, psdr$chl_small_coord, psdr$Qc_coord, as.character(psdr$pop)), collapse=" ")
     if (psdr$n != nrow(vct_match)) {
       msg <- paste0("MISMATCH: ", msg)
@@ -482,7 +484,7 @@ validate_psd <- function(psd, vct, grid, refrac) {
 }
 
 #' Construct string labels for break points created by create_grid()
-#' 
+#'
 #' @param grid Named list of breakpoints created by create_grid().
 #' @return Named list identical to grid with numeric break points converted to strings.
 #' @export
@@ -494,12 +496,12 @@ grid_labels <- function(grid) {
     i <- length(g) - 1
     labels[[channel]] <- c(labels[[channel]], paste0("[", format(round(g[i], 4), nsmall = 4), "-", format(round(g[i+1], 4), nsmall = 4), "]"))
   }
-  
+
   return(labels)
 }
 
 #' Add string coordinate labels to a dataframe of gridded SeaFlow data
-#' 
+#'
 #' @param psd Gridded dataframe created by create_PSD.
 #' @param grid Named list of breakpoints created by create_grid().
 #' @return Named list identical to grid with numeric break points converted to character vectors.
