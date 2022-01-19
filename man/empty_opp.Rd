@@ -12,8 +12,3 @@ OPP data frame with no rows
 \description{
 Create an empty OPP data frame
 }
-\examples{
-\dontrun{
-evt <- empty_opp()
-}
-}

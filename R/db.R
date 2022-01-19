@@ -1,106 +1,12 @@
-
-#' Delete entries in the opp table by file name.
-#'
-#' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.opp.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-delete.opp.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM opp WHERE file == '", clean.file.path(file.name), "'")
-  sql.dbExecute(db, sql)
-}
-
-#' Delete an OPP binary file by file name.
-#'
-#' @param opp.dir OPP file directory.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.opp.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-delete.opp.by.file <- function(opp.dir, file.name) {
-  for (quantile in QUANTILES) {
-    opp.file <- paste0(file.path(opp.dir, quantile, clean.file.path(file.name)), ".opp")
-    if (file.exists(opp.file)) {
-      file.remove(opp.file)
-    }
-    if (file.exists(paste0(opp.file, ".gz"))) {
-      file.remove(paste0(opp.file, ".gz"))
-    }
-  }
-}
-
-#' Delete entries in the outlier table by file name.
-#'
-#' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.outliers.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-delete.outliers.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM outlier WHERE file == '", clean.file.path(file.name), "'")
-  sql.dbExecute(db, sql)
-}
-
-#' Delete an entry in the vct table by file name.
-#'
-#' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.vct.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-delete.vct.stats.by.file <- function(db, file.name) {
-  sql <- paste0("DELETE FROM vct WHERE file == '", clean.file.path(file.name), "'")
-  sql.dbExecute(db, sql)
-}
-
-#' Delete a VCT text file by file name.
-#'
-#' @param vct.dir VCT file directory.
-#' @param file.name File name with julian day directory.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.vct.by.file(opp.dir, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-delete.vct.by.file <- function(vct.dir, file.name) {
-  for (quantile in QUANTILES) {
-    vct.file <- paste0(file.path(vct.dir, quantile, clean.file.path(file.name)), ".vct")
-    if (file.exists(vct.file)) {
-      file.remove(vct.file)
-    }
-    if (file.exists(paste0(vct.file, ".gz"))) {
-      file.remove(paste0(vct.file, ".gz"))
-    }
-  }
-}
-
 #' Delete DB filter parameters by ID.
 #'
 #' @param db SQLite3 database file path.
-#' @param filter.id ID for filter entries.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.filter.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
-#' }
+#' @param filter_id ID for filter entries.
+#' @return Number of rows deleted.
 #' @export
-delete.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("DELETE FROM filter WHERE id == '", filter.id, "'")
-  sql.dbExecute(db, sql)
+delete_filter_params_by_id <- function(db, filter_id) {
+  sql <- paste0("DELETE FROM filter WHERE id == '", filter_id, "'")
+  sql_dbExecute(db, sql)
 }
 
 #' Delete DB gating parameters by gating ID.
@@ -108,17 +14,13 @@ delete.filter.params.by.id <- function(db, filter.id) {
 #' Any gating polygon entries in the poly table will also be deleted.
 #'
 #' @param db SQLite3 database file path.
-#' @param gating.id ID for gating and poly entries.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.gating.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
-#' }
+#' @param gating_id ID for gating and poly entries.
+#' @return Number of rows deleted.
 #' @export
-delete.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("DELETE FROM gating WHERE id == '", gating.id, "'")
-  sql.dbExecute(db, sql)
-  delete.poly.by.id(db, gating.id)
+delete_gating_params_by_id <- function(db, gating_id) {
+  sql <- paste0("DELETE FROM gating WHERE id == '", gating_id, "'")
+  sql_dbExecute(db, sql)
+  delete_poly_by_id(db, gating_id)
 }
 
 #' Delete DB poly parameters by gating ID.
@@ -127,15 +29,10 @@ delete.gating.params.by.id <- function(db, gating.id) {
 #'
 #' @param db SQLite3 database file path.
 #' @param gating.id gating_id for poly entries.
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.poly.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
-#' }
-#' @export
-delete.poly.by.id <- function(db, gating.id) {
-  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "'")
-  sql.dbExecute(db, sql)
+#' @return Number of rows deleted.
+delete_poly_by_id <- function(db, gating_id) {
+  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating_id, "'")
+  sql_dbExecute(db, sql)
 }
 
 #' Delete DB poly parameters by gating ID and population
@@ -145,379 +42,125 @@ delete.poly.by.id <- function(db, gating.id) {
 #' @param db SQLite3 database file path.
 #' @param gating.id gating_id for poly entries.
 #' @param popname Population name
-#' @return None
-#' @examples
-#' \dontrun{
-#' delete.poly.by.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4", "beads")
-#' }
-#' @export
-delete.poly.by.id.pop <- function(db, gating.id, popname) {
-  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating.id, "' AND pop == '", popname, "'")
-  sql.dbExecute(db, sql)
+#' @return Number of rows deleted.
+delete_poly_by_id_pop <- function(db, gating_id, popname) {
+  sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating_id, "' AND pop == '", popname, "'")
+  sql_dbExecute(db, sql)
 }
 
 #' Delete all rows in opp table.
 #'
 #' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.opp.stats.table(db)
-#' }
+#' @return Number of rows deleted.
 #' @export
-reset.opp.stats.table <- function(db) {
-  reset.table(db, "opp")
+reset_opp_table <- function(db) {
+  reset_table(db, "opp")
 }
 
 #' Delete all rows in vct table.
 #'
 #' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.vct.stats.table(db)
-#' }
+#' @return Number of rows deleted.
 #' @export
-reset.vct.stats.table <- function(db) {
-  reset.table(db, "vct")
+reset_vct_table <- function(db) {
+  reset_table(db, "vct")
 }
 
 
 #' Delete all rows in sfl table.
 #'
 #' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.sfl.table(db)
-#' }
+#' @return Number of rows deleted.
 #' @export
-reset.sfl.table <- function(db) {
-  reset.table(db, "sfl")
+reset_sfl_table <- function(db) {
+  reset_table(db, "sfl")
 }
 
 #' Delete all rows in filter table.
 #'
 #' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.filter.table(db)
-#' }
+#' @return Number of rows deleted.
 #' @export
-reset.filter.table <- function(db) {
-  reset.table(db, "filter")
+reset_filter_table <- function(db) {
+  reset_table(db, "filter")
 }
 
 #' Delete all rows in gating table.
 #'
 #' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.gating.table(db)
-#' }
+#' @return Number of rows deleted.
 #' @export
-reset.gating.table <- function(db) {
-  reset.table(db, "gating")
+reset_gating_table <- function(db) {
+  reset_table(db, "gating")
 }
 
 #' Delete all rows in poly table.
 #'
 #' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.poly.table(db)
-#' }
+#' @return Number of rows deleted.
 #' @export
-reset.poly.table <- function(db) {
-  reset.table(db, "poly")
+reset_poly_table <- function(db) {
+  reset_table(db, "poly")
+}
+
+#' Delete all rows in gating plan table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Number of rows deleted.
+#' @export
+reset_gating_plan_table <- function(db) {
+  reset_table(db, "gating_plan")
+}
+
+#' Delete all rows in filter plan table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Number of rows deleted.
+#' @export
+reset_filter_plan_table <- function(db) {
+  reset_table(db, "filter_plan")
+}
+
+#' Delete all rows in outlier table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Number of rows deleted.
+#' @export
+reset_outlier_table <- function(db) {
+  reset_table(db, "outlier")
+}
+
+#' Delete all rows in metadata table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Number of rows deleted.
+#' @export
+reset_metadata_table <- function(db) {
+  reset_table(db, "metadata")
 }
 
 #' Delete all rows in an arbitrary SQLite3 DB table.
 #'
 #' @param db SQLite3 database file path.
-#' @param table.name Table name.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.table(db, "opp")
-#' }
-#' @export
-
-reset.table <- function(db, table.name) {
-  sql <- paste0("DELETE FROM ", table.name)
-  sql.dbExecute(db, sql)
-}
-
-#' Delete all rows in Outlier table.
-#'
-#' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.outlier.table(db)
-#' }
-#' @export
-reset.outlier.table <- function(db) {
-  reset.table(db, "outlier")
-}
-
-
-#' Remove entries for all tables except in filter, gating, and poly tables.
-#'
-#' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.db.except.params(db)
-#' }
-#' @export
-reset.db.except.params <- function(db) {
-  reset.opp.stats.table(db)
-  reset.vct.stats.table(db)
-  reset.sfl.table(db)
-  reset.outlier.table(db)
-}
-
-#' Remove entries for all tables.
-#'
-#' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' reset.db(db)
-#' }
-#' @export
-reset.db <- function(db) {
-  reset.db.except.params(db)
-  reset.filter.table(db)
-  reset.gating.table(db)
-  reset.poly.table(db)
-}
-
-#' Get OPP aggregated filtered particle statistics by file.
-#'
-#' Requires a populated sfl table.
-#'
-#' @param db SQLite3 data file path.
-#' @param file.name File name with julian day directory.
-#' @return Data frame of OPP aggregate statistics for one file.
-#' @examples
-#' \dontrun{
-#' opp.stats <- get.opp.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-get.opp.stats.by.file <- function(db, file.name) {
-  check.for.populated.sfl(db)
-  sql <- paste0("SELECT
-    sfl.date, opp.*
-  FROM
-    sfl
-  INNER JOIN opp ON sfl.file == opp.file
-  WHERE
-    opp.file == '", clean.file.path(file.name), "'
-  ORDER BY sfl.date ASC")
-  opp <- sql.dbGetQuery(db, sql)
-  return(opp)
-}
-
-#' Get OPP aggregated filtered particle statistics by date.
-#'
-#' Requires a populated sfl table.
-#'
-#' @param db SQLite3 data file path.
-#' @param start.date Start date in format YYYY-MM-DD HH:MM.
-#' @param end.date End date in format YYYY-MM-DD HH:MM.
-#' @param outliers If TRUE, remove data flaged as outliers
-#' @return Data frame of OPP aggregate statistics for all files between
-#'   start.date and end.date inclusive.
-#' @examples
-#' \dontrun{
-#' opp.stats <- get.opp.stats.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
-#' }
-#' @export
-get.opp.stats.by.date <- function(db, start.date, end.date, outliers=TRUE) {
-  check.for.populated.sfl(db)
-  sql <- paste0(
-    "SELECT sfl.date, opp.*\n",
-    "FROM sfl\n",
-    "INNER JOIN opp ON sfl.file == opp.file\n",
-    opp_quantile_inner_join_clause(),
-    "INNER JOIN outlier ON sfl.file == outlier.file\n",
-    "WHERE\n",
-    sfl_date_where_clause(start.date, end.date)
-  )
-  if (outliers) {
-    sql <- paste0(
-      sql,
-      "AND\n",
-      "outlier.flag == ", FLAG_OK, "\n"
-    )
-  }
-  sql <- paste0(sql,  "ORDER BY sfl.date ASC")
-  opp <- sql.dbGetQuery(db, sql)
-  return(opp)
-}
-
-#' Get VCT aggregated per population statistics by file.
-#'
-#' Requires a populated sfl table.
-#'
-#' @param db SQLite3 data file path.
-#' @param file.name File name with julian day directory.
-#' @return Data frame of VCT aggregate statistics for one file.
-#' @examples
-#' \dontrun{
-#' vct.stats <- get.vct.stats.by.file(db, "2014_185/2014-07-04T00-00-02+00-00")
-#' }
-#' @export
-get.vct.stats.by.file <- function(db, file.name) {
-  check.for.populated.sfl(db)
-  sql <- paste0("
-    SELECT sfl.date, vct.*
-    FROM sfl
-    INNER JOIN vct on sfl.file == vct.file
-    WHERE vct.file == '", clean.file.path(file.name), "'
-    ORDER BY sfl.date ASC
-  ")
-  vct <- sql.dbGetQuery(db, sql)
-  return(vct)
-}
-
-#' Get VCT aggregated per population statistics by date.
-#'
-#' Requires a populated sfl table.
-#'
-#' @param db SQLite3 data file path.
-#' @param start.date Start date in format YYYY-MM-DD HH:MM.
-#' @param end.date End date in format YYYY-MM-DD HH:MM.
-#' @param outliers If TRUE, remove data flaged as outliers
-#' @return Data frame of VCT aggregate statistics for all files between
-#'   start.date and end.date inclusive.
-#' @examples
-#' \dontrun{
-#' vct.stats <- get.vct.stats.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
-#' }
-#' @export
-get.vct.stats.by.date <- function(db, start.date, end.date, outliers=TRUE) {
-  check.for.populated.sfl(db)
-  sql <- paste0(
-    "SELECT sfl.date, vct.*\n",
-    "FROM sfl\n",
-    "INNER JOIN vct on sfl.file == vct.file\n",
-    opp_quantile_inner_join_clause(),
-    "INNER JOIN outlier ON sfl.file == outlier.file\n",
-    "WHERE\n",
-    sfl_date_where_clause(start.date, end.date)
-  )
-  if (outliers) {
-    sql <- paste0(
-      sql,
-      "AND\n",
-      "outlier.flag == ", FLAG_OK, "\n"
-    )
-  }
-  sql <- paste0(sql,  "ORDER BY sfl.date ASC")
-  vct <- sql.dbGetQuery(db, sql)
-  return(vct)
-}
-
-#' Get OPP data frame by date and quantile
-#'
-#' Requires a populated sfl table.
-#'
-#' @param db SQLite3 data file path.
-#' @param opp.dir OPP file directory.
-#' @param quantile Filtering quantile for this file
-#' @param start.date Start date in format YYYY-MM-DD HH:MM.
-#' @param end.date End date in format YYYY-MM-DD HH:MM.
-#' @param channel Channels to keep in returned data frame. Can be a single name
-#'   or a vector. Choosing fewer channels can significantly speed up retrieval.
-#' @param transform Linearize OPP data.
-#' @param vct.dir VCT file directory. If not specified returned data frame will
-#'   not have a pop column.
-#' @param pop If specified, the returned data frame will only contain entries
-#'   for this population.
-#' @param outliers If TRUE, remove data flaged as outliers
-#' @return Data frame of OPP data for all files between start.date and end.date
-#'   inclusive.
-#' @examples
-#' \dontrun{
-#' opp <- get.opp.by.date(db, opp.dir, "2014-07-04 00:00", "2014-07-04 00:10")
-#' opp <- get.opp.by.date(db, opp.dir, "2014-07-04 00:00", "2014-07-04 00:10",
-#'                        channel=c("fsc_small", "chl_small", "pe"),
-#'                        transform=F, vct.dir=vct.dir)
-#' }
-#' @export
-get.opp.by.date <- function(db, opp.dir, quantile, start.date, end.date,
-                            channel=NULL, transform=TRUE, vct.dir=NULL,
-                            pop=NULL, outliers=TRUE) {
-  if(!is.null(pop) & is.null(vct.dir)) print("no vct data found, returning all opp instead")
-  opp.stats <- get.opp.stats.by.date(db, start.date=start.date, end.date=end.date, outliers=outliers)
-  # Filter for stats for one quantile
-  opp.stats <- opp.stats[opp.stats$quantile == quantile, ]
-
-  #retrieve data
-  opp <- get.opp.by.file(opp.dir, opp.stats$file, quantile=quantile, channel=channel,
-                         transform=transform, vct.dir=vct.dir, pop=pop)
-  return(opp)
-}
-
-#' Get SFL rows >= start.date and <= end.date.
-#'
-#' @param db SQLite3 database file path.
-#' @param start.date Start date in format YYYY-MM-DD HH:MM.
-#' @param end.date End date in format YYYY-MM-DD HH:MM.
-#' @return Data frame of sfl table entries between start.date and end.date
-#'   inclusive.
-#' @examples
-#' \dontrun{
-#' sfl <- get.sfl.by.date(db, "2014-07-04 00:00", "2014-07-04 00:10")
-#' }
-#' @export
-get.sfl.by.date <- function(db, start.date, end.date) {
-  sql <- paste0(
-    "SELECT * FROM sfl\n",
-    "WHERE\n",
-    sfl_date_where_clause(start.date, end.date)
-  )
-  sfl <- sql.dbGetQuery(db, sql)
-  return(sfl)
-}
-
-#' Get the latest filter parameters.
-#'
-#' @param db SQLite3 database file path.
-#' @return Data frame of latest filter parameters.
-#' @examples
-#' \dontrun{
-#' filter.params <- get.filter.params.latest(db)
-#' }
-#' @export
-get.filter.params.latest <- function(db) {
-  sql <- "SELECT * FROM filter ORDER BY date DESC LIMIT 1"
-  result <- sql.dbGetQuery(db, sql)
-  if (nrow(result) > 0) {
-    result <- get.filter.params.by.id(db, result[1, "id"])
-  }
-  return(result)
+#' @param table_name Table name.
+#' @return Number of rows deleted.
+reset_table <- function(db, table_name) {
+  sql <- paste0("DELETE FROM ", table_name)
+  sql_dbExecute(db, sql)
 }
 
 #' Get filter parameters by id.
 #'
 #' @param db SQLite3 database file path.
-#' @param filter.id ID for entry in filter table.
-#' @return Data frame of filter parameters matchign filter.id.
-#' @examples
-#' \dontrun{
-#' filter.params <- get.filter.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
-#' }
+#' @param filter_id ID for entry in filter table.
+#' @return Data frame of filter parameters matchign filter_id.
 #' @export
-get.filter.params.by.id <- function(db, filter.id) {
-  sql <- paste0("SELECT * FROM filter WHERE id = '", filter.id, "' ORDER BY quantile")
-  result <- sql.dbGetQuery(db, sql)
+get_filter_params_by_id <- function(db, filter_id) {
+  sql <- paste0("SELECT * FROM filter WHERE id = '", filter_id, "' ORDER BY quantile")
+  result <- sql_dbGetQuery(db, sql)
+  if (nrow(result) == 0) {
+    stop("no filter parameters found for ", filter_id)
+  }
   # DB column names have underscores due to sqlite column naming restrictions.
   # To get this dataframe to match filter parameter column names used
   # elsewhere in this code base and to match R variable naming style
@@ -528,44 +171,19 @@ get.filter.params.by.id <- function(db, filter.id) {
   return(result)
 }
 
-#' Get the latest gating parameters.
-#'
-#' @param db SQLite3 database file path.
-#' @return Named list where list$gates.log is a recreation of original gating
-#'   created by add.manual.classification(), add.auto.classification(), and
-#'   save.gating.params()
-#' @examples
-#' \dontrun{
-#' gating.params <- get.gating.params.latest(db)
-#' }
-#' @export
-get.gating.params.latest <- function(db) {
-  sql <- "SELECT * FROM gating ORDER BY date DESC LIMIT 1"
-  gating.df <- sql.dbGetQuery(db, sql)
-  if (nrow(gating.df) == 0) {
-    stop("No entry found in gating table")
-  }
-  answer <- get.gating.params.by.id(db, gating.df$id[1])
-  return(answer)
-}
-
 #' Get gating parameters by ID.
 #'
 #' @param db SQLite3 database file path.
-#' @param gating.id ID in gating table and poly table.
+#' @param gating_id ID in gating table and poly table.
 #' @return Named list where list$gates.log a recreation of original gating
-#'   created by add.manual.classification(), add.auto.classification(), and
-#'   save.gating.params()
-#' @examples
-#' \dontrun{
-#' gating.params <- get.gating.params.by.id(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
-#' }
+#'   created by add_manual_classification(), add_auto_classification(), and
+#'   save_gating_params()
 #' @export
-get.gating.params.by.id <- function(db, gating.id) {
-  sql <- paste0("SELECT * FROM gating WHERE id = '", gating.id, "' ORDER BY pop_order ASC")
-  gating.df <- sql.dbGetQuery(db, sql)
+get_gating_params_by_id <- function(db, gating_id) {
+  sql <- paste0("SELECT * FROM gating WHERE id = '", gating_id, "' ORDER BY pop_order ASC")
+  gating.df <- sql_dbGetQuery(db, sql)
   if (nrow(gating.df) == 0) {
-    stop(paste0("No entry found in gating table for ", gating.id))
+    stop(paste0("No entry found in gating table for ", gating_id))
   }
 
   gates.log <- list()
@@ -573,7 +191,7 @@ get.gating.params.by.id <- function(db, gating.id) {
   for (i in seq(nrow(gating.df))) {
     r <- gating.df[i, ]
     if (r$method == "manual") {
-      poly.log <- get.poly.log.by.gating.id.pop(db, gating.id, r$pop)
+      poly.log <- get_poly_log_by_gating_id_pop(db, gating_id, r$pop)
       gates.log[[r$pop]] <- list(method=r$method, poly=poly.log)
     } else if (r$method == "auto") {
       gates.log[[r$pop]] <- list(
@@ -590,32 +208,27 @@ get.gating.params.by.id <- function(db, gating.id) {
     }
   }
 
-  answer <- list(id=gating.df[1, "id"], gates.log=gates.log)
+  answer <- list(id = gating.df[1, "id"], gates.log = gates.log)
   return(answer)
 }
 
-#' Construct a gating polygon list for gating.id pop combo
+#' Construct a gating polygon list for gating_id pop combo
 #'
 #' @param db SQLite3 database file path.
-#' @param gating.id Foreign key to gating table.
+#' @param gating_id Foreign key to gating table.
 #' @param popname Population name
 #' @return List of population gating polygon coordinates.
-#' @examples
-#' \dontrun{
-#' poly.log <- get.poly.log.by.gating.id.pop(db, "d3afb1ea-ad20-46cf-866d-869300fe17f4", "beads")
-#' }
-#' @export
-get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
+get_poly_log_by_gating_id_pop <- function(db, gating_id, popname) {
   poly.log <- list()
   sql <- paste0("
     SELECT * FROM poly
     WHERE
-      gating_id = '", gating.id, "'
+      gating_id = '", gating_id, "'
       AND
       pop = '", popname, "'
     ORDER BY point_order"
   )
-  pop.poly <- sql.dbGetQuery(db, sql)
+  pop.poly <- sql_dbGetQuery(db, sql)
 
   for (c in EVT.HEADER[5:length(EVT.HEADER)]) {
     if (c %in% colnames(pop.poly)) {
@@ -631,17 +244,14 @@ get.poly.log.by.gating.id.pop <- function(db, gating.id, popname) {
 
   return(poly.log)
 }
+
 #' Get cruise name
 #'
 #' @param db SQLite3 database file path.
 #' @return Cruise name
-#' @examples
-#' \dontrun{
-#' cruise <- get.cruise(db)
-#' }
 #' @export
-get.cruise <- function(db) {
-  meta <- get.meta.table(db)
+get_cruise <- function(db) {
+  meta <- get_metadata_table(db)
   if (nrow(meta) == 0) {
     stop(paste0("No cruise name found, metadata table is empty"))
   }
@@ -652,293 +262,246 @@ get.cruise <- function(db) {
 #'
 #' @param db SQLite3 database file path.
 #' @return One serial number
-#' @examples
-#' \dontrun{
-#' inst <- get.inst(db)
-#' }
 #' @export
-get.inst <- function(db) {
-  meta <- get.meta.table(db)
+get_inst <- function(db) {
+  meta <- get_metadata_table(db)
   if (nrow(meta) == 0) {
     stop(paste0("No instrument serial found, metadata table is empty"))
   }
   return(meta$inst[1])
 }
 
-#' Get instrument serial number and cruise name
+#' Return a tibble of the metadata table of cruise and instrument serial.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame.
-#' @examples
-#' \dontrun{
-#' meta <- get.meta.table(db)
-#' }
+#' @return Tibble for metadata table
 #' @export
-get.meta.table <- function(db) {
-  sql <- "SELECT * FROM metadata;"
-  meta <- sql.dbGetQuery(db, sql)
+get_metadata_table <- function(db) {
+  meta <- sql_dbGetQuery(db, "SELECT * FROM metadata;")
+  meta <- tibble::as_tibble(meta)
   return(meta)
 }
 
-#' Return a data frame for the sfl table.
+#' Return a tibble for the sfl table.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame of sfl table.
-#' @examples
-#' \dontrun{
-#' sfl.table <- get.sfl.table(db)
-#' }
+#' @param outlier_join Left join to outlier table by file ID, adding an outlier
+#'   flag column. This function will not perform any filtering by outlier flag.
+#' @return Tibble of sfl table.
 #' @export
-get.sfl.table <- function(db) {
-  # Don't check for populated SFL table here since it should be obvious
-  # if it's populated by result. Also, this would lead to infinite recursion
-  # since check.for.populated.sfl calls this function.
-  sql <- "SELECT * FROM sfl ORDER BY date ASC"
-  sfl <- sql.dbGetQuery(db, sql)
+get_sfl_table <- function(db, outlier_join = TRUE) {
+  sfl <- sql_dbGetQuery(db, "SELECT * FROM sfl ORDER BY date ASC")
+  sfl <- sfl %>% dplyr::mutate(date = lubridate::ymd_hms(date))
+  if (outlier_join) {
+    outlier <- sql_dbGetQuery(db, "SELECT file, flag FROM outlier ORDER BY file ASC")
+    sfl <- dplyr::left_join(sfl, outlier, by = "file")
+  }
+
+  sfl <- tibble::as_tibble(sfl)
+
   return(sfl)
 }
 
-#' Return a data frame for the opp table.
+#' Return a tibble for the opp table.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame of opp table.
-#' @examples
-#' \dontrun{
-#' opp.table <- get.opp.table(db)
-#' }
+#' @param sfl_join Join to SFL table by file ID, adding a date column and
+#'   removing OPP entries with no corresponding SFL entry.
+#' @param all_sfl_columns If joining to SFL, include all SFL columns.
+#' @param outlier_join Left join to outlier table by file ID, adding an outlier
+#'   flag column. This function will not perform any filtering by outlier flag.
+#' @param particles_in_all_quantiles Only keep files that have OPP particles in
+#'   all quantiles.
+#' @return Tibble of opp table.
 #' @export
-get.opp.table <- function(db) {
-  check.for.populated.sfl(db)
-  sql <- "
-    SELECT
-      sfl.date, opp.*
-    FROM opp
-    INNER JOIN sfl ON sfl.file == opp.file
-    ORDER BY sfl.date ASC"
-  opp <- sql.dbGetQuery(db, sql)
+get_opp_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
+                          outlier_join = TRUE, particles_in_all_quantiles = TRUE) {
+  if (!sfl_join) {
+    opp <- sql_dbGetQuery(db, "SELECT * FROM OPP ORDER BY file ASC")
+  } else {
+    if (all_sfl_columns) {
+      sql <- "
+        SELECT
+          opp.*, sfl.*
+        FROM opp
+        INNER JOIN sfl ON sfl.file == opp.file
+        ORDER BY sfl.date ASC"
+      opp <- sql_dbGetQuery(db, sql)
+      opp <- opp[, !duplicated(colnames(opp))]  # remove duplicate file column
+      opp <- opp %>% dplyr::relocate(date)  # move date to first column
+    } else {
+      sql <- "
+        SELECT
+          sfl.date, opp.*
+        FROM opp
+        INNER JOIN sfl ON sfl.file == opp.file
+        ORDER BY sfl.date ASC"
+      opp <- sql_dbGetQuery(db, sql)
+    }
+    opp <- opp %>% dplyr::mutate(date = lubridate::ymd_hms(date))
+  }
+
+  # Standardize on file_id to match parquet files
+  opp <- opp %>% dplyr::rename(file_id = file)
+
+  # Convert to tibble
+  opp <- tibble::as_tibble(opp)
+
+  if (outlier_join) {
+    outlier <- get_outlier_table(db)
+    opp <- dplyr::left_join(opp, outlier, by = "file_id")
+  }
+  # Only keep files that have focused particles in all quantiles
+  if (particles_in_all_quantiles) {
+    opp <- opp %>%
+      dplyr::group_by(file_id) %>%
+      dplyr::filter(all(opp_count > 0)) %>%
+      dplyr::ungroup()
+  }
+
   return(opp)
 }
 
-#' Return a data frame for the vct table.
+#' Return a tibble for the vct table.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame of vct table.
-#' @examples
-#' \dontrun{
-#' vct.table <- get.vct.table(db)
-#' }
+#' @param sfl_join Join to SFL table by file ID, adding a date column and
+#'   removing VCT entries with no corresponding SFL entry.
+#' @param all_sfl_columns If joining to SFL, include all SFL columns.
+#' @param outlier_join Left join to outlier table by file ID, adding an outlier
+#'   flag column. This function will not perform any filtering by outlier flag.
+#' @return Tibble of vct table.
 #' @export
-get.vct.table <- function(db) {
-  check.for.populated.sfl(db)
-  sql <- "
-    SELECT
-      sfl.date, vct.*
-    FROM sfl
-    INNER JOIN vct ON sfl.file == vct.file
-    ORDER BY sfl.date ASC"
-  vct <- sql.dbGetQuery(db, sql)
+get_vct_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
+                          outlier_join = TRUE) {
+  if (!sfl_join) {
+    vct <- sql_dbGetQuery(db, "SELECT * FROM vct ORDER BY file ASC")
+  } else {
+    if (all_sfl_columns) {
+      sql <- "
+        SELECT
+          vct.*, sfl.*
+        FROM vct
+        INNER JOIN sfl ON sfl.file == vct.file
+        ORDER BY sfl.date ASC"
+      vct <- sql_dbGetQuery(db, sql)
+      vct <- vct[, !duplicated(colnames(vct))]  # remove duplicate file column
+      vct <- vct %>% dplyr::relocate(date)  # move date to first column
+    } else {
+      sql <- "
+        SELECT
+          sfl.date, vct.*
+        FROM vct
+        INNER JOIN sfl ON sfl.file == vct.file
+        ORDER BY sfl.date ASC"
+      vct <- sql_dbGetQuery(db, sql)
+    }
+    vct <- vct %>% dplyr::mutate(date = lubridate::ymd_hms(date))
+  }
+
+  # Standardize on file_id to match parquet files
+  vct <- vct %>% dplyr::rename(file_id = file)
+
+  # Convert to tibble
+  vct <- tibble::as_tibble(vct)
+
+  if (outlier_join) {
+    outlier <- get_outlier_table(db)
+    vct <- dplyr::left_join(vct, outlier, by = "file_id")
+  }
+
   return(vct)
 }
 
-#' Return a data frame for the filter table.
+#' Return a tibble for the filter table.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame of filter table.
-#' @examples
-#' \dontrun{
-#' filter.table <- get.filter.table(db)
-#' }
+#' @return Tibble of filter table.
 #' @export
-get.filter.table <- function(db) {
+get_filter_table <- function(db) {
   sql <- "SELECT * FROM filter ORDER BY date ASC"
-  result <- sql.dbGetQuery(db, sql)
+  result <- sql_dbGetQuery(db, sql)
+  result <- tibble::as_tibble(result)
   return(result)
 }
 
-#' Return a data frame for the gating table.
+#' Return a tibble for the gating table.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame of gating table.
-#' @examples
-#' \dontrun{
-#' gating.table <- get.gating.table(db)
-#' }
+#' @return Tibble of gating table.
 #' @export
-get.gating.table <- function(db) {
+get_gating_table <- function(db) {
   sql <- "SELECT * FROM gating ORDER BY date ASC"
-  gating <- sql.dbGetQuery(db, sql)
-  return(gating)
+  result <- sql_dbGetQuery(db, sql)
+  result <- tibble::as_tibble(result)
+  return(result)
+}
+
+#' Return a tibble for the gating_plan table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Tibble of gating plan table.
+#' @export
+get_gating_plan_table <- function(db) {
+  sql <- "SELECT * FROM gating_plan;"
+  result <- sql_dbGetQuery(db, sql)
+  result <- tibble::as_tibble(result) %>%
+    dplyr::mutate(start_date = lubridate::ymd_hms(start_date))
+  return(result)
+}
+
+#' Return a tibble for the filter_plan table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Tibble of filter plan table
+#' @export
+get_filter_plan_table <- function(db) {
+  sql <- "SELECT * FROM filter_plan;"
+  result <- sql_dbGetQuery(db, sql)
+  result <- tibble::as_tibble(result) %>%
+    dplyr::mutate(start_date = lubridate::ymd_hms(start_date))
+  return(result)
 }
 
 #' Return a data frame for the poly table.
 #'
 #' @param db SQLite3 database file path.
 #' @return Data frame of poly table.
-#' @examples
-#' \dontrun{
-#' poly.table <- get.poly.table(db)
-#' }
 #' @export
-get.poly.table <- function(db) {
+get_poly_table <- function(db) {
   sql <- "SELECT * FROM poly ORDER BY gating_id, pop, point_order ASC"
-  poly <- sql.dbGetQuery(db, sql)
-  return(poly)
+  result <- sql_dbGetQuery(db, sql)
+  return(result)
 }
 
-
-#' Get list of outliers.
+#' Get tibble of outliers.
 #'
 #' @param db SQLite3 database file path.
-#' @return Data frame.
-#' @examples
-#' \dontrun{
-#' outlier.table <- get.outlier.table(db)
-#' }
+#' @return Tibble of outlier table.
 #' @export
-get.outlier.table <- function(db) {
+get_outlier_table <- function(db) {
   sql <- "SELECT * FROM outlier ORDER BY file;"
-  outlier <- sql.dbGetQuery(db, sql)
-  return(outlier)
+  result <- sql_dbGetQuery(db, sql)
+  result <- tibble::as_tibble(result) %>%
+    dplyr::rename(file_id = file)
+  return(result)
 }
-
 
 #' Get aggregate statistics data frame joining sfl, opp, and vct table entries.
 #'
 #' @param db SQLite3 database file path.
 #' @return Data frame of aggregate statistics.
-#' @examples
-#' \dontrun{
-#' stat.table <- get.raw.stat.table(db)
-#' }
 #' @export
-get.raw.stat.table <- function(db) {
-  check.for.populated.sfl(db)
+get_raw_stat_table <- function(db) {
+  if (nrow(get_sfl_table(db)) == 0) {
+    stop("SFL table is empty")
+  }
   sql <- "SELECT * FROM stat;"
-  stat <- sql.dbGetQuery(db, sql)
+  stat <- sql_dbGetQuery(db, sql)
+  stat <- stat %>%
+    dplyr::rename(file_id = file)
 
   return(stat)
-}
-
-
-#' Get a list of EVT files by date range.
-#'
-#' @param db SQLite3 database file path.
-#' @param evt.dir EVT file directory.
-#' @param start.date Start date in format YYYY-MM-DD HH:MM.
-#' @param end.date End date in format YYYY-MM-DD HH:MM.
-#' @return Vector of EVT files within date range.
-#' @examples
-#' \dontrun{
-#' evt.files <- get.evt.files.by.date(db, evt.dir, "2014-07-04 00:00", "2014-07-04 00:10")
-#' }
-#' @export
-get.evt.files.by.date <- function(db, evt.dir, start.date, end.date) {
-  check.for.populated.sfl(db)
-  file.list <- get.evt.files(evt.dir)
-  file.list <- unlist(lapply(file.list, clean.file.path))
-  sfl <- get.sfl.by.date(db, start.date, end.date)
-
-  if (nrow(sfl) == 0) {
-    return(c())
-  }
-
-  start.file = sfl$file[1]
-  end.file = sfl$file[nrow(sfl)]
-
-  if(!any(file.list == start.file)) {
-    stop(paste("Could not find file", start.file))
-  }
-
-  if(!any(file.list == end.file)) {
-    stop(paste("Could not find file", end.file))
-  }
-
-  start.index = which(file.list == start.file)
-  end.index = which(file.list == end.file)
-
-  return(file.list[start.index:end.index])
-}
-
-#' Get POSIXct date from SFL table for file IDs.
-#'
-#' @param db SQLite3 database file path.
-#' @param file_ids Character vector of file IDs.
-#' @return Tibble with columns "date" and "file_id", with same order as file_ids.
-#' @examples
-#' \dontrun{
-#' df <- get_file_dates(db, file_ids)
-#' }
-#' @export
-get_file_dates <- function(db, file_ids) {
-  sfl <- tibble::as_tibble(get.sfl.table(db))
-  sfl <- dplyr::select(sfl, date, file_id=file)
-  sfl$date <- lubridate::ymd_hms(sfl$date)
-  files <- tibble::tibble(file_id=file_ids)
-  result <- dplyr::left_join(files, sfl, by="file_id")
-  return(result[, c("date", "file_id")])
-}
-
-#' Get ISO8601 datetime strings (e.g. 2018-07-13T22:24:40+00:00) for OPP files.
-#'
-#' @param db SQLite3 database file path.
-#' @param opp_files Character vector of OPP file IDs.
-#' @return DataFrame with columns "file" and "date".
-#' @examples
-#' \dontrun{
-#' opp_dates <- get.opp.dates(db, opp_files)
-#' }
-#' @export
-get.opp.dates <- function(db, opp_files) {
-  sql <- "
-    SELECT opp.file, sfl.date
-    FROM opp
-    INNER JOIN sfl ON opp.file == sfl.file
-  "
-  df <- sql.dbGetQuery(db, sql)
-  idx <- match(opp_files, df$file)
-  dates <- df[idx, "date"]
-  df <- na.omit(data.frame("file"=opp_files, "date"=dates))
-  return(df)
-}
-
-#' Get OPP file names for data with focused particles in all quantiles.
-#'
-#' @param db SQLite3 database file path.
-#' @param all.files Return all OPP files that were considered for processing,
-#'   even entries where the raw EVT was unreadable or no focused particles made
-#'   it through filtering.
-#' @param outliers If TRUE, remove data flagged as outliers
-#' @return List of OPP file names based on the latest filtering
-#'   parameters or NULL if no filtering has been done.
-#' @examples
-#' \dontrun{
-#' opp.files <- get.opp.files(db)
-#' }
-#' @export
-get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
-  check.for.populated.sfl(db)
-  sql <- "
-    SELECT DISTINCT opp.file
-    FROM opp
-    INNER JOIN sfl ON opp.file == sfl.file
-  "
-  if (! all.files) {
-    # Only return files where all quantiles produced OPP data
-    sql <- paste(sql, opp_quantile_inner_join_clause(), sep="\n")
-  }
-  if (outliers) {
-    # Only return files not flagged as outliers
-    sql2 <- paste0("
-      INNER JOIN outlier ON sfl.file == outlier.file
-      WHERE outlier.flag == ", FLAG_OK, "
-    ")
-    sql <- paste0(sql, sql2)
-  }
-  sql <- paste0(sql, "
-    ORDER BY sfl.date ASC
-  ")
-  df <- sql.dbGetQuery(db, sql)
-  return(df$file)
 }
 
 #' Save VCT aggregate population statistics for one file to vct table.
@@ -946,120 +509,96 @@ get.opp.files <- function(db, all.files=FALSE, outliers=TRUE) {
 #' @param db SQLite3 database file path.
 #' @param vct_stats DataFrame of VCT statistics created by prep_vct_stats()
 #' @return None
-#' @examples
-#' \dontrun{
-#' save.vct.stats(db, vct_stats)
-#' }
 #' @export
-save.vct.stats <- function(db, vct_stats) {
+save_vct_stats <- function(db, vct_stats) {
   # Make sure duplicate entries keyed by file are overwritten with new vct
   # stats. This can happen when using a new gating ID for the same file.
   # Get current VCT table
-  old_vct_stats <- get.vct.table(db)
+  old_vct_stats <- get_vct_table(db, outlier_join = FALSE)
   old_vct_stats$date <- NULL  # date is not in VCT table, this is added from SFL
   # Only keep rows in old that don't have a matching file in new
-  only_old <- dplyr::anti_join(old_vct_stats, vct_stats, by=c("file"))
+  only_old <- dplyr::anti_join(old_vct_stats, vct_stats, by=c("file_id"))
   # Merge old and new
   merged_vct_stats <- dplyr::bind_rows(only_old, vct_stats)
+  # Rename file_id to file to match schema
+  merged_vct_stats <- merged_vct_stats %>%
+    dplyr::rename(file = file_id)
   # Erase existing table
-  reset.vct.stats.table(db)
+  reset_vct_table(db)
   # Save table with new results
-  sql.dbWriteTable(db, name="vct", value=merged_vct_stats)
+  sql_dbWriteTable(db, name="vct", value=as.data.frame(merged_vct_stats))
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
 #'
 #' @param db SQLite3 database file path.
-#' @param file.name File name with julian day directory.
-#' @param evt_count Number of particles in EVT file.
-#' @param opp OPP data frame with pop column.
-#' @param filter.id ID for entry in filter table.
+#' @param opp_stats Data frame or tibble of OPP statistics that matches the opp
+#'   table.
 #' @return None
-#' @examples
-#' \dontrun{
-#' save.opp.stats(db, "2014_185/2014-07-04T00-00-02+00-00",
-#'                40000, opp, filter.params,
-#'                "d3afb1ea-ad20-46cf-866d-869300fe17f4", 97.5)
-#' }
 #' @export
-save.opp.stats <- function(db, file.name, all_count,
-                           evt_count, opp, filter.id) {
-  for (quantile in QUANTILES) {
-    qcolumn <- paste0("q", quantile)
-
-    if (nrow(opp)) {
-      qopp <- opp[opp[qcolumn] == TRUE, ]  # opp for this quantile
-    } else {
-      qopp <- opp  # empty dataframe
-    }
-
-    qopp <- transformData(qopp)
-    opp_count <- nrow(qopp)
-    if (evt_count == 0) {
-      opp_evt_ratio <- 0.0
-    } else {
-      opp_evt_ratio <- opp_count / evt_count
-    }
-    df <- data.frame(file=clean.file.path(file.name),
-                     all_count=all_count,
-                     opp_count=opp_count,
-                     evt_count=evt_count,
-                     opp_evt_ratio=opp_evt_ratio,
-                     filter_id=filter.id,
-                     quantile=quantile)
-    sql.dbWriteTable(db, name="opp", value=df)
-  }
-
-  # Mark in outlier table as OK
-  save.outliers(db, data.frame(file=clean.file.path(file.name), flag=FLAG_OK))
+save_opp_stats <- function(db, opp_stats) {
+  old_opp_stats <- get_opp_table(db, sfl_join = FALSE, outlier_join = FALSE)
+  old_opp_stats$date <- NULL  # date is not in OPP table, this is added from SFL
+  # Only keep rows in old that don't have a matching file in new
+  only_old <- dplyr::anti_join(old_opp_stats, opp_stats, by=c("file_id"))
+  # Merge old and new
+  merged_opp_stats <- dplyr::bind_rows(only_old, opp_stats)
+  # Rename file_id to file to match schema
+  merged_opp_stats <- merged_opp_stats %>%
+    dplyr::rename(file = file_id)
+  # Erase existing table
+  reset_opp_table(db)
+  # Save table with new results
+  sql_dbWriteTable(db, name="opp", value = as.data.frame(merged_opp_stats))
 }
 
 #' Save Outliers in the database
 #'
 #' @param db SQLite3 database file path.
-#' @param table.name Dataframe that contains the list of files flagged as outliers
+#' @param outliers Dataframe with "file_id" and "flag" for outliers. Entries for
+#'   files already in the database will be overwritten.
+#' @param overwrite Overwrite any existing file entries.
 #' @return None
-#' @examples
-#' \dontrun{
-#' save.outliers(db,  table.name)
-#' }
 #' @export
-save.outliers <- function(db, table.name) {
-  for (i in 1:nrow(table.name)) {
-    # Upsert!
-    sql <- paste0("
-      INSERT OR REPLACE INTO outlier(file,flag) VALUES('", table.name$file[i], "',", table.name$flag[i], ")
-    ")
-    sql.dbExecute(db, sql)
+save_outliers <- function(db, outliers, overwrite = TRUE) {
+  old_outliers <- get_outlier_table(db)
+  if (overwrite) {
+    # Only keep rows in old that don't have a matching file in new.
+    # i.e. overwrite mathching entries in old with entries from new
+    only_old <- dplyr::anti_join(old_outliers, outliers, by = "file_id")
+    merged_outliers <- dplyr::bind_rows(only_old, outliers) %>% dplyr::arrange(file_id)
+  } else {
+    # Only include new outliers if they aren't already in existing table
+    only_new <- dplyr::anti_join(outliers, old_outliers, by = "file_id")
+    merged_outliers <- dplyr::bind_rows(old_outliers, only_new) %>% dplyr::arrange(file_id)
   }
+  # Rename file column
+  merged_outliers <- merged_outliers %>%
+    dplyr::rename(file = file_id)
+  # Erase existing table
+  reset_outlier_table(db)
+  # Save table with new results
+  sql_dbWriteTable(db, name="outlier", value = as.data.frame(merged_outliers))
 }
 
 #' Save filter parameters to the filter table.
 #'
 #' @param db SQLite3 database file path.
-#' @param beads.fsc.small Small forward scatter of 1µm beads used to determine
-#'   filter.params
-#' @param beads.D1 D1 of 1µm beads used to determine filter.params
-#' @param beads.D1 D2 of 1µm beads used to determine filter.params
-#' @param filter.params Data frame of filtering parameters one row per
+#' @param filter_params Data frame of filtering parameters one row per
 #'   quantile. Columns should include:
 #'   quantile, beads.fsc.small, beads.D1, beads.D2, width,
 #'   notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
 #'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.
 #' @return Database filter ID string.
-#' @examples
-#' \dontrun{
-#' filter.id <- save.fitter.params(db, 1000, 2000, 3000, filter.params)
-#' }
 #' @export
-save.filter.params <- function(db, filter.params) {
+save_filter_params <- function(db, filter_params) {
   filter.id <- uuid::UUIDgenerate()  # create ID for new entries
-  date.stamp <- RFC3339.now()
+  date.stamp <- to_date_str(lubridate::now("UTC"))
   df <- data.frame()
-  for (quantile in filter.params$quantile) {
-    p <- filter.params[filter.params$quantile == quantile, ]
+  for (quantile in filter_params$quantile) {
+    p <- filter_params[filter_params$quantile == quantile, ]
     if (nrow(p) > 1) {
-      stop("Duplicate quantile rows found in parameters passed to save.filter.params()")
+      stop("Duplicate quantile rows found in parameters passed to save_filter_params()")
     }
     df <- rbind(df, cbind(id=filter.id, date=date.stamp, quantile=quantile,
                           beads_fsc_small=p$beads.fsc.small,
@@ -1075,7 +614,7 @@ save.filter.params <- function(db, filter.params) {
                           offset_large_D1=p$offset.large.D1,
                           offset_large_D2=p$offset.large.D2))
   }
-  sql.dbWriteTable(db, name="filter", value=df)
+  sql_dbWriteTable(db, name="filter", value=df)
   return(filter.id)
 }
 
@@ -1087,14 +626,10 @@ save.filter.params <- function(db, filter.params) {
 #' @param db SQLite3 database file path.
 #' @param gates.log Named list of per population classification parameters.
 #' @return Database gating ID string.
-#' @examples
-#' \dontrun{
-#' save.gating.params(db, gates.log)
-#' }
 #' @export
-save.gating.params <- function(db, gates.log) {
+save_gating_params <- function(db, gates.log) {
   gating.id <- uuid::UUIDgenerate()  # create primary ID for new entry
-  date.stamp <- RFC3339.now()
+  date.stamp <- to_date_str(lubridate::now("UTC"))
   i <- 1  # track order population classification
   for (popname in names(gates.log)) {
     params <- gates.log[[popname]]
@@ -1111,8 +646,8 @@ save.gating.params <- function(db, gates.log) {
         scale=NA,
         minpe=NA
       )
-      sql.dbWriteTable(db, name="gating", value=df)
-      save.poly(db, params$poly, popname, gating.id)
+      sql_dbWriteTable(db, name="gating", value=df)
+      save_poly(db, params$poly, popname, gating.id)
     } else if (params$method == "auto") {
       df <- data.frame(
         id=gating.id, date=date.stamp, pop_order=i, pop=popname,
@@ -1126,7 +661,7 @@ save.gating.params <- function(db, gates.log) {
         scale=params$scale,
         minpe=params$min.pe
       )
-      sql.dbWriteTable(db, name="gating", value=df)
+      sql_dbWriteTable(db, name="gating", value=df)
     } else {
       stop(paste0("unrecognized method ", params$method))
     }
@@ -1137,18 +672,13 @@ save.gating.params <- function(db, gates.log) {
 
 #' Save gating polygon coordinates in the poly table.
 #'
-#' These entries will be linked to an entry in the gating table by gating.id.
+#' These entries will be linked to an entry in the gating table by gating_id.
 #'
 #' @param db SQLite3 database file path.
 #' @param poly.log Named list of per population gating polygons.
-#' @param gating.id Foreign key into gating table.
+#' @param gating_id Foreign key into gating table.
 #' @return None
-#' @examples
-#' \dontrun{
-#' save.poly(db, poly.log, "d3afb1ea-ad20-46cf-866d-869300fe17f4")
-#' }
-#' @export
-save.poly <- function(db, poly.log, popname, gating.id) {
+save_poly <- function(db, poly.log, popname, gating_id) {
   df <- data.frame()
   channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
                 "chl_big")
@@ -1165,60 +695,121 @@ save.poly <- function(db, poly.log, popname, gating.id) {
     df[, col] <- poly.log[, col]  # fill in defined channel coords
   }
   df$point_order <- seq(nrow(df))  # order of polygon points for this pop
-  df$gating_id <- gating.id  # last field in table
+  df$gating_id <- gating_id  # last field in table
 
-  delete.poly.by.id.pop(db, gating.id, popname)
-  sql.dbWriteTable(db, name="poly", value=df)
-
+  delete_poly_by_id_pop(db, gating_id, popname)
+  sql_dbWriteTable(db, name="poly", value=df)
 }
 
-#' Import SFL files to the database.
-#'
-#' This function calls seaflowpy sfl db.
+#' Save filter plan to db
 #'
 #' @param db SQLite3 database file path.
-#' @param cruise Cruise name. If not provided this will attempt to be
-#'   parsed from the SFL file name (<cruise>_<serial>.sfl).
-#' @param inst Instrument serial. If not provided this will attempt to be
-#'   parsed from the SFL file name (<cruise>_<serial>.sfl).
-#' @param sfl.file Single SFL file to import.
+#' @param filter_plan Data Frame with two columns: start_date and filter_id.
+#'   start_date should be a UTC POSIXct date object.
 #' @return None
-#' @examples
-#' \dontrun{
-#' save.sfl(db, sfl.file=sfl.file)
-#' }
 #' @export
-save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
-  # First check for seaflowpy_sfl in PATH
-  result <- tryCatch(
-    {
-      system2("seaflowpy", c("version"), stdout=TRUE, stderr=TRUE)
-    },
-    warning=function(w) {
-      invisible(w)
-    },
-    error=function(e) {
-      return("system2error")
+save_filter_plan <- function(db, filter_plan) {
+  if (!("start_date") %in% colnames(filter_plan)) {
+    stop("filter_plan must contain 'start_date' column")
+  }
+  if (!("filter_id") %in% colnames(filter_plan)) {
+    stop("filter_plan must contain 'filter_id' column")
+  }
+  if (nrow(filter_plan) == 0) {
+    return()
+  }
+
+  # Ensure valid date format
+  if (any(is.na(filter_plan$start_date))) {
+    stop("NA values not allowed in filter_plan table start_date ", which(is.na(filter_plan$start_date)))
+  }
+  if ("character" %in% class(filter_plan$start_date[1])) {
+    filter_plan_tmp <- filter_plan %>%
+      dplyr::mutate(start_date = lubridate::ymd_hms(start_date, quiet = T))
+    if (any(is.na(filter_plan_tmp$start_date))) {
+      stop("bad date strings found at rows ", which(is.na(filter_plan_tmp$start_date)))
     }
-  )
-  if (result == "system2error") {
-   warning("Could not run seaflowpy")
-   return()
+  } else if ("POSIXct" %in% class(filter_plan$start_date[1])) {
+    # Date should be stored as a string
+    filter_plan <- filter_plan %>%
+      dplyr::mutate(start_date = to_date_str(start_date))
+  } else {
+    stop("expected a date string or date object in date column, found ", class(filter_plan$start_date))
   }
-  if (is.null(sfl.file)) {
-    stop("save.sfl requires sfl.file")
+  # Check for filter IDs in filter table
+  filter_table <- get_filter_table(db)
+  bad_filter_ids <- setdiff(filter_plan$filter_id, filter_table$id)
+  if (length(bad_filter_ids) > 0) {
+    stop("some filter IDs not found in filter table ", bad_filter_ids)
   }
 
-  args <- c("db", "create", "-f")
-  if (! is.null(cruise)) {
-    args <- c(args, "-c", cruise)
-  }
-  if (! is.null(inst)) {
-    args <- c(args, "-s", inst)
-  }
-  args <- c(args, normalizePath(sfl.file), normalizePath(db))
+  reset_filter_plan_table(db)
+  sql_dbWriteTable(db, name = "filter_plan", value = as.data.frame(filter_plan))
+}
 
-  system2("seaflowpy", args, stdout=TRUE, stderr=TRUE)
+#' Save gating plan to db
+#'
+#' @param db SQLite3 database file path.
+#' @param gating_plan Data Frame with two columns: start_date and gating_id.
+#'   start_date should be a UTC POSIXct date object.
+#' @return None
+#' @export
+save_gating_plan <- function(db, gating_plan) {
+  if (!("start_date") %in% colnames(gating_plan)) {
+    stop("gating_plan must contain 'start_date' column")
+  }
+  if (!("gating_id") %in% colnames(gating_plan)) {
+    stop("gating_plan must contain 'gating_id' column")
+  }
+  if (nrow(gating_plan) == 0) {
+    return()
+  }
+
+  # Ensure valid date format
+  if (any(is.na(gating_plan$start_date))) {
+    stop("NA values not allowed in gating_plan table start_date ", which(is.na(gating_plan$start_date)))
+  }
+  if ("character" %in% class(gating_plan$start_date[1])) {
+    gating_plan_tmp <- gating_plan %>%
+      dplyr::mutate(start_date = lubridate::ymd_hms(start_date, quiet = T))
+    if (any(is.na(gating_plan_tmp$start_date))) {
+      stop("bad date strings found at rows ", which(is.na(gating_plan_tmp$start_date)))
+    }
+  } else if ("POSIXct" %in% class(gating_plan$start_date[1])) {
+    # Date should be stored as a string
+    gating_plan <- gating_plan %>%
+      dplyr::mutate(start_date = to_date_str(start_date))
+  } else {
+    stop("expected a date string or date object in date column, found ", class(gating_plan$start_date))
+  }
+  # Check for gating IDs in gating table
+  gating_table <- get_gating_table(db)
+  bad_gating_ids <- setdiff(gating_plan$gating_id, gating_table$id)
+  if (length(bad_gating_ids) > 0) {
+    stop("some gating IDs not found in gating table ", bad_gating_ids)
+  }
+
+  reset_gating_plan_table(db)
+  sql_dbWriteTable(db, name = "gating_plan", value = as.data.frame(gating_plan))
+}
+
+#' Save metadata to db
+#'
+#' @param db SQLite3 database file path.
+#' @param metadata One row data frame or tibble of cruise name and instrument
+#'   serial as "cruise" and "inst".
+#' @export
+save_metadata <- function(db, metadata) {
+  if (nrow(metadata) == 0) {
+    warning("metadata data frame is empty")
+    return()
+  }
+  if (nrow(metadata) > 1) {
+    stop("metadata data frame has more than one row")
+  }
+
+  reset_metadata_table(db)
+  sql_dbWriteTable(db, name = "metadata", value = as.data.frame(metadata))
 }
 
 #' Create a new, empty sqlite3 popcycle database.
@@ -1227,12 +818,8 @@ save.sfl <- function(db, sfl.file, cruise=NULL, inst=NULL) {
 #'
 #' @param db SQLite3 database file path.
 #' @return None
-#' @examples
-#' \dontrun{
-#' make.popcycle.db(db)
-#' }
 #' @export
-make.popcycle.db <- function(db) {
+make_popcycle_db <- function(db) {
   sql.file <- system.file(file.path("sql", "popcycle.sql"), package="popcycle")
   cmd <- sprintf("sqlite3 %s < %s", db, sql.file)
   status <- system(cmd)
@@ -1241,91 +828,14 @@ make.popcycle.db <- function(db) {
   }
 }
 
-#' Add a WHERE clause with date conditionals to SQL statement.
-#'
-#' Return a copy of SQL string with a WHERE clause added to find sfl.date
-#' entries between start.date and end.date inclusive. If append is FALSE, a new
-#' WHERE clause is added. If append is TRUE, conditionals are added to the end
-#' of any existing WHERE statements.
-#'
-#' @param db SQLite3 database file path.
-#' @param start.date Start date in format YYYY-MM-DD HH:MM.
-#' @param end.date End date in format YYYY-MM-DD HH:MM
-#' @return Original SQL string with new WHERE clause statements.
-#' @examples
-#' \dontrun{
-#' sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10")
-#' sql <- sfl_date_where_clause(sql, "2014-07-04 00:00", "2014-07-04 00:10",
-#'                             append=T)
-#' }
-sfl_date_where_clause <- function(start.date, end.date) {
-  if (! is.null(start.date) || ! is.null(end.date)) {
-    if (! is.null(start.date)) {
-      start.date <- paste0("sfl.date >= '", date.to.db.date(start.date), "'")
-    }
-    if (! is.null(end.date)) {
-      end.date <- paste0("sfl.date <= '", date.to.db.date(end.date), "'")
-    }
-    sql <- paste0("\n", paste(c(start.date, end.date), collapse=" AND "), "\n")
-  } else {
-    sql <- "\n"
-  }
-  return(sql);
-}
-
-#' Add an INNER JOIN to only select OPP files with data in all quantiles.
-#'
-#' Return a SQL string with an INNER JOIN to a subquery selecting for OPP files
-#' that contain data in all quantiles. The benefit of making this a subquery is
-#' the GROUP BY doesn't affect the rest of the SQL query this JOIN is embedded
-#' into.
-#'
-#' @return SQL INNER JOIN string
-#' @examples
-#' \dontrun{
-#' sql <- opp_quantile_inner_join_clause()
-#' }
-opp_quantile_inner_join_clause <- function() {
-  sql <- "
-  INNER JOIN
-    (
-      SELECT opp.file
-      FROM opp
-      WHERE opp.opp_count > 0
-      GROUP BY opp.file
-      HAVING count(opp.file) == 3
-    ) AS opp_all_quantiles ON sfl.file == opp_all_quantiles.file
-  "
-  return(sql)
-}
-
-#' Check if SFL table is populated.
-#'
-#' @param db SQLite3 database file path.
-#' @return None
-#' @examples
-#' \dontrun{
-#' check.for.populated.sfl(db)
-#' }
-check.for.populated.sfl <- function(db) {
-  if (nrow(get.sfl.table(db)) == 0) {
-    stop("SFL table is empty")
-  }
-}
-
 #' Wrapper to run dbGetQuery and clean up connection on error.
 #'
-#' Use for SELECT statements only, otherwise use sql.dbExecute.
+#' Use for SELECT statements only, otherwise use sql_dbExecute.
 #'
 #' @param db SQLite3 database file path.
 #' @param sql SQL query to run.
 #' @return Data frame returned by dbGetQuery.
-#' @examples
-#' \dontrun{
-#' sql.dbGetQuery(db, "SELECT * FROM some.table")
-#' }
-#' @export
-sql.dbGetQuery <- function(db, sql) {
+sql_dbGetQuery <- function(db, sql) {
   con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
     resp <- DBI::dbGetQuery(con, sql)
@@ -1339,22 +849,17 @@ sql.dbGetQuery <- function(db, sql) {
 
 #' Wrapper to run dbExecute and clean up connection on error.
 #'
-#' Use for any statement except SELECT, in which case use sql.dbGetQuery.
+#' Use for any statement except SELECT, in which case use sql_dbGetQuery.
 #'
 #' @param db SQLite3 database file path.
 #' @param sql SQL statement to run.
 #' @return Number of rows affected
-#' @examples
-#' \dontrun{
-#' sql.dbExecute(db, "DELETE FROM vct WHERE file == 'somefile'")
-#' }
-#' @export
-sql.dbExecute <- function(db, sql) {
+sql_dbExecute <- function(db, sql) {
   con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
-    rows <- DBI::dbExecute(con, sql)
+    resp <- DBI::dbExecute(con, sql)
     DBI::dbDisconnect(con)
-    return(rows)
+    return(resp)
   }, error=function(e) {
     DBI::dbDisconnect(con)
     stop(e)
@@ -1366,12 +871,7 @@ sql.dbExecute <- function(db, sql) {
 #' @param db SQLite3 database file path.
 #' @param name Table name.
 #' @param value Data frame to write.
-#' @examples
-#' \dontrun{
-#' sql.dbWriteTable(db, name="vct", value=df)
-#' }
-#' @export
-sql.dbWriteTable <- function(db, name, value) {
+sql_dbWriteTable <- function(db, name, value) {
   con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
   tryCatch({
     DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
@@ -1390,10 +890,6 @@ sql.dbWriteTable <- function(db, name, value) {
 #'
 #' @param dir_a, dir_b Directories to compare.
 #' @return Data Frame with columns for basename, old_path, and new_path
-#' @examples
-#' \dontrun{
-#' common <- find_common_dbs(dir_a, dir_b)
-#' }
 find_common_dbs <- function(dir_a, dir_b) {
   # First find DB files with the same basename
   dbs_a <- list.files(dir_a, recursive=TRUE, pattern=".*\\.db")
@@ -1437,10 +933,6 @@ find_common_dbs <- function(dir_a, dir_b) {
 #' @param db_to Popcycle database to copy tables to.
 #' @param tables Tables to copy.
 #' @return None
-#' @examples
-#' \dontrun{
-#' copy_tables(db_from, db_to)
-#' }
 copy_tables <- function(db_from, db_to, tables) {
   # If dbs are the same file do nothing. This prevents erroneously erasing
   # tables then trying to copy from the just deleted tables.
@@ -1453,20 +945,20 @@ copy_tables <- function(db_from, db_to, tables) {
 
   for (table_name in tables) {
     # Make sure columns match for table to copy
-    col_from <- colnames(sql.dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
-    col_to <- colnames(sql.dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
+    col_from <- colnames(sql_dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
+    col_to <- colnames(sql_dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
     if (! identical(col_from, col_to)) {
       stop(paste0("db files have differing columns for ", table_name, " table"))
     }
 
     # Clear the db_to table
-    reset.table(db_to, table_name)
+    reset_table(db_to, table_name)
 
     # Get the db_from table
-    table_from <- sql.dbGetQuery(db_from, paste0("select * from ", table_name))
+    table_from <- sql_dbGetQuery(db_from, paste0("select * from ", table_name))
 
     # Save to db_to table
-    sql.dbWriteTable(db_to, name=table_name, value=table_from)
+    sql_dbWriteTable(db_to, name=table_name, value=table_from)
   }
 }
 
@@ -1479,10 +971,6 @@ copy_tables <- function(db_from, db_to, tables) {
 #' @param db_from Popcycle database to copy flags > 0 from.
 #' @param db_to Popcycle database to copy flags > 0 to.
 #' @return None
-#' @examples
-#' \dontrun{
-#' copy_outlier_table(db_from, db_to)
-#' }
 copy_outlier_table <- function(db_from, db_to) {
   db_from <- normalizePath(db_from, mustWork=T)
   db_to <- normalizePath(db_to, mustWork=T)
@@ -1492,8 +980,8 @@ copy_outlier_table <- function(db_from, db_to) {
     return()
   }
 
-  src <- get.outlier.table(db_from)
-  dest <- get.outlier.table(db_to)
+  src <- get_outlier_table(db_from) %>% dplyr::rename(file = file_id)
+  dest <- get_outlier_table(db_to) %>% dplyr::rename(file = file_id)
   joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
   # So we don't screw anything up and because merge may reorder rows by "by"
   # column, enforce a common sort order by "file" on both dataframes we'll use
@@ -1507,8 +995,8 @@ copy_outlier_table <- function(db_from, db_to) {
     stop("copy_outlier_table produced an incorrect result")
   }
   dest$flag <- as.integer(new_dest_flags)
-  reset.table(db_to, "outlier")
-  sql.dbWriteTable(db_to, name="outlier", value=dest)
+  reset_table(db_to, "outlier")
+  sql_dbWriteTable(db_to, name="outlier", value=dest)
 }
 
 #' Get aggregate statistics data frame along with estimates of cell abundance.
@@ -1517,13 +1005,13 @@ copy_outlier_table <- function(db_from, db_to) {
 #' @param inst Instrument serial. If not provided will attempt to read from db.
 #' @return Data frame of aggregate statistics.
 #' @export
-get.stat.table <- function(db, inst=NULL) {
+get_stat_table <- function(db, inst=NULL) {
   if (is.null(inst)) {
-    inst <- get.inst(db)
+    inst <- get_inst(db)
   }
 
-  stat <- get.raw.stat.table(db)
-  outliers <- get.outlier.table(db)
+  stat <- get_raw_stat_table(db)
+  outliers <- get_outlier_table(db)
 
   #merge stat table with outlier table
   stat <- merge(stat, outliers, all.x=T)

@@ -1,16 +1,39 @@
 #!/usr/bin/env Rscript
-library(popcycle)
 
-args = commandArgs(trailingOnly=TRUE)
-if (length(args) < 3) {
-  stop("filter.R db evt_dir opp_dir", call.=FALSE)
+parser <- optparse::OptionParser(
+  usage = "usage: filter_files.R db evt_dir opp_dir",
+  description = "Filter all SeaFlow data for one cruise"
+)
+parser <- optparse::add_option(parser, "--cores",
+  type = "integer", default = 1, metavar = "number",
+  help = "Cores to use for processing [default %default]"
+)
+parser <- optparse::add_option(parser, "--renv",
+  type = "character", default = "", metavar = "dir",
+  help = "Optional renv directory to use. Requires the renv package."
+)
+
+p <- optparse::parse_args2(parser)
+
+if (length(p$args) < 3) {
+  optparse::print_help(parser)
+  quit(save="no")
+} else {
+  db <- p$args[1]
+  evt_dir <- p$args[2]
+  opp_dir <- p$args[3]
+  if (!file.exists(db)) {
+    stop(paste0(db, " does not exist"), call. = FALSE)
+  }
+  if (!file.exists(evt_dir)) {
+    stop(paste0(evt_dir, " does not exist"), call. = FALSE)
+  }
+  if (p$options$renv != "") {
+    proj_dir <- renv::activate(p$options$renv)
+    message("activated renv directory ", proj_dir)
+  }
 }
 
-db <- args[1]
-evt.dir <- args[2]
-opp.dir <- args[3]
+message("using popcycle version ", packageVersion("popcycle"))
 
-get.filter.params.latest(db)
-evt_files <- get.evt.files(evt.dir)
-# Filter files
-filter.evt.files(db, evt.dir, evt_files[1:length(evt_files)-1], opp.dir)
+popcycle::filter_evt_files(db, evt_dir, NULL, opp_dir, cores = p$options$cores)

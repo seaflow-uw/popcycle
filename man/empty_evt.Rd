@@ -12,8 +12,3 @@ EVT data frame with no rows
 \description{
 Create an empty EVT data frame
 }
-\examples{
-\dontrun{
-evt <- empty_evt()
-}
-}

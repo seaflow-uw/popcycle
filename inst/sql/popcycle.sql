@@ -121,6 +121,18 @@ CREATE TABLE IF NOT EXISTS poly (
   gating_id TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gating_plan (
+  start_date TEXT NOT NULL,
+  gating_id TEXT NOT NULL,
+  PRIMARY KEY (start_date, gating_id)
+);
+
+CREATE TABLE IF NOT EXISTS filter_plan (
+  start_date TEXT NOT NULL,
+  filter_id TEXT NOT NULL,
+  PRIMARY KEY (start_date, filter_id)
+);
+
 CREATE TABLE IF NOT EXISTS outlier (
   file TEXT NOT NULL,
   flag INTEGER,

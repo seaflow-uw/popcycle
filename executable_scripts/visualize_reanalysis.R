@@ -23,11 +23,11 @@ match_dbs <- function(olddir, newdir) {
 }
 
 get_opp_counts <- function(row) {
-    old_opp <- popcycle::get.opp.table(row$db.old)
+    old_opp <- popcycle::get_opp_table(row$db.old)
     old_opp <- old_opp[old_opp$quantile == 50, c("date", "opp_count")]
     old_opp$name = "old"
 
-    new_opp <- popcycle::get.opp.table(row$db.new)
+    new_opp <- popcycle::get_opp_table(row$db.new)
     new_opp <- new_opp[new_opp$quantile == 50, c("date", "opp_count")]
     new_opp$name = "new"
 
@@ -40,14 +40,14 @@ get_opp_counts <- function(row) {
 }
 
 get_pop_counts <- function(row) {
-    old_vct <- popcycle::get.vct.table(row$db.old)
+    old_vct <- popcycle::get_vct_table(row$db.old)
     old_vct <- old_vct[old_vct$quantile == 50, c("date", "count", "pop", "gating_id")]
     old_vct$name = "old"
 
-    new_vct <- popcycle::get.vct.table(row$db.new)
+    new_vct <- popcycle::get_vct_table(row$db.new)
     new_vct <- new_vct[new_vct$quantile == 50, c("date", "count", "pop", "gating_id")]
     new_vct$name = "new"
-    
+
     res <- rbind(old_vct, new_vct)
     res$dt <- lubridate::ymd_hms(res$date)
     res$cruise <- row$cruise

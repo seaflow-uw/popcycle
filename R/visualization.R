@@ -20,17 +20,17 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 #' Plot cytograms for exploring filtering parameters.
 #'
 #' @param evt EVT data frame.
-#' @param filter.params Filtering parameters in a one row data frame or named
+#' @param filter_params Filtering parameters in a one row data frame or named
 #'   list. Columns should include width, notch.small.D1, notch.small.D2,
 #'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
 #'   offset.large.D1, offset.large.D2.
 #' @return None
-#' @usage plot_filter_cytogram(evt, filter.params)
+#' @usage plot_filter_cytogram(evt, filter_params)
 #' @export plot_filter_cytogram
 
-plot_filter_cytogram <- function(evt, filter.params) {
-    
-  fp <- subset(filter.params, quantile == 50)
+plot_filter_cytogram <- function(evt, filter_params) {
+
+  fp <- subset(filter_params, quantile == 50)
 
 
   # linearize the LOG transformed data
@@ -46,7 +46,7 @@ plot_filter_cytogram <- function(evt, filter.params) {
   aligned <- subset(evt., D2 < D1 + fp$width & D1 < D2 + fp$width)
 
   # Filtering focused particles (fsc_small > D * notch)
-  opp <- filter.notch(evt, filter.params)
+  opp <- filter_evt(evt, filter_params)
 
   ################
   ### PLOTTING ###
@@ -164,7 +164,7 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
 
 #' Plot population distribution on a map.
 #'
-#' @param stat Stat table from get.stat.table function
+#' @param stat Stat table from get_stat_table function
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter"
 #' @return None
@@ -239,7 +239,7 @@ plot_cruisetrack <- function(stat, param){
 
 #' plot population dynamics over time
 #'
-#' @param stat Stat table from get.stat.table function
+#' @param stat Stat table from get_stat_table function
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter"
 #' @return None

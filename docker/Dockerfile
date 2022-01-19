@@ -1,8 +1,11 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_14
+FROM rocker/rstudio:4.1.2
 
-RUN apt-get update \
-    && apt-get install sqlite3 \
-    && apt-get clean \
+RUN apt-get update && apt-get install -y \
+    libgeos-dev \
+    libpng-dev \
+    libxml2-dev \
+    sqlite3 \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -13,28 +16,24 @@ ARG INSTALL_NCPUS=4
 # support.
 ARG LIBARROW_BINARY=true
 
-# R user and user R library location
-ARG ARG_USER=rstudio
-
-USER ${ARG_USER}
-
 # Install dependencies in its own layer
 ARG DEPS_ONLY=true
-COPY --chown=${ARG_USER}:${ARG_USER} DESCRIPTION setup.R /popcycle/
+COPY renv.lock /popcycle/
 WORKDIR /popcycle/
 
 # Install flowDensity and flowCore separately because automatic installation
 # from DESCRIPTION was failing with the 3.13 and 3.14 bioconductor docker images
-RUN Rscript --slave -e 'BiocManager::install(c("flowCore", "flowDensity"))' \
-    && Rscript setup.R
+ENV RENV_VERSION 0.15.1
+RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
+RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
+RUN R -e "renv::restore()"
 
 # Install the package itself
-ARG DEPS_ONLY=false
-COPY --chown=${ARG_USER}:${ARG_USER} LICENSE make_docs.R NAMESPACE README.md /popcycle/
-COPY --chown=${ARG_USER}:${ARG_USER} ./R /popcycle/R
-COPY --chown=${ARG_USER}:${ARG_USER} ./executable_scripts /popcycle/executable_scripts
-COPY --chown=${ARG_USER}:${ARG_USER} ./man /popcycle/man
-COPY --chown=${ARG_USER}:${ARG_USER} ./inst /popcycle/inst
-COPY --chown=${ARG_USER}:${ARG_USER} ./tests /popcycle/tests
+COPY DESCRIPTION LICENSE make_docs.R NAMESPACE README.md /popcycle/
+COPY ./R /popcycle/R
+COPY ./executable_scripts /popcycle/executable_scripts
+COPY ./man /popcycle/man
+COPY ./inst /popcycle/inst
+COPY ./tests /popcycle/tests
 
-RUN Rscript setup.R
+RUN R CMD INSTALL .

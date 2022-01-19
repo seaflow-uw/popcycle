@@ -16,8 +16,3 @@ Data Frame with columns for basename, old_path, and new_path
 Directories will be search recursively and files will be matched by
 basename. An error will be thrown if the same database file occurs more than
 }
-\examples{
-\dontrun{
-common <- find_common_dbs(dir_a, dir_b)
-}
-}

@@ -11,7 +11,7 @@
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
-#' @param use_data_table Use data.table for performance speedup, otherwise use dplyr.
+#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
@@ -21,13 +21,13 @@
 #'   of Qc.
 #' @export
 create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                       ignore_dates=NULL, use_data_table=TRUE, verbose=FALSE) {
+                       ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
   ptm <- proc.time()
   quantile <- as.numeric(quantile)
   counts_list <- lapply(vct_files, function(v) {
     create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
                         remove_boundary_points=remove_boundary_points,
-                        use_data_table=use_data_table, ignore_dates=ignore_dates,
+                        use_data.table=use_data.table, ignore_dates=ignore_dates,
                         verbose=verbose)
   })
   counts <- dplyr::bind_rows(counts_list)
@@ -51,7 +51,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
-#' @param use_data_table Use data.table for performance speedup, otherwise use dplyr.
+#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
@@ -60,7 +60,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
 #'   of Qc.
 create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                                ignore_dates=NULL, use_data_table=TRUE, verbose=FALSE) {
+                                ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
   diag_text <- list(vct_file)  # for verbose diagnostics
   if (nrow(refracs) != 1) {
     stop("refracs should only contain one row")
@@ -146,7 +146,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
 
   # Group by time, grid coordinates, and population
   # Count cells in each group and sum Qc
-  if (use_data_table) {
+  if (use_data.table) {
     # data.table is much faster at this group by than dplyr, sometimes < 1s vs ~30s
     orig_threads <- data.table::getDTthreads()
     data.table::setDTthreads(1)  # turn off data.table multi-threading
@@ -174,12 +174,12 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
 #' @param psd Gridded data created by create_PSD().
 #' @param time_expr Time expression passed to lubridate::floor_date to
 #'   lower time resolution.
-#' @param use_data_table Use data.table for performance speedup, otherwise use dplyr.
+#' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @return A tibble of psd with reduced time resolution.
 #' @export
-group_psd_by_time <- function(psd, time_expr="1 hours", use_data_table=TRUE) {
+group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
   # data.table is twice as fast for this operation as dplyr in testing on HOT310
-  if (use_data_table) {
+  if (use_data.table) {
     # This is a side-effect, converting psd by reference to a data.table, and
     # as such this effect will persist after the functions exits. Not great, but
     # this object can very large and I'd rather not make a copy.
@@ -268,33 +268,19 @@ create_meta <- function(db, quantile) {
   quantile <- as.numeric(quantile)
 
   ### Retrieve metadata
-  ## Retrieve SFL table
-  sfl <- get.sfl.table(db)
-  # format time
-  sfl$time <- as.POSIXct(sfl$date, format="%FT%T", tz="UTC")
+  meta <- get_opp_table(db, sfl_join = TRUE, all_sfl_columns = TRUE, outlier_join = TRUE)
+  meta <- meta[meta$quantile == quantile, ]
+  meta$flag <- as.factor(meta$flag)
+
   # retrieve flow rate (mL min-1) of detectable volume
-  fr <- flowrate(sfl$stream_pressure, inst=get.inst(db))$flow_rate
+  fr <- flowrate(meta$stream_pressure, inst = get_inst(db))$flow_rate
   # convert to microL min-1
   fr <- fr * 1000
   # acquisition time (min)
-  acq.time <- sfl$file_duration/60
+  acq.time <- meta$file_duration / 60
   # volume in microL
-  sfl$volume <- round(fr * acq.time, 0)
-
-  ## Retrive Outlier table
-  outliers <- get.outlier.table(db)
-  # merge with sfl
-  sfl.all <- merge(sfl, outliers, by="file")
-
-  ## Retrive OPP table
-  # retrieve opp/evt
-  opp <- tibble::as_tibble(get.opp.table(db))
-  opp <- opp[opp$quantile == quantile, ]
-
-  ## merge all metadata
-  meta <- tibble::as_tibble(merge(sfl.all, opp, by="file")[c("time", "volume", "opp_evt_ratio", "flag")])
-  meta$flag <- as.factor(meta$flag)
-  meta <- meta %>% dplyr::rename(date=time)
+  meta$volume <- round(fr * acq.time, 0)
+  meta <- meta %>% dplyr::select(c("date", "volume", "opp_evt_ratio", "flag"))
 
   return(meta)
 }

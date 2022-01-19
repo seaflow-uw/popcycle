@@ -8,7 +8,7 @@ test_that("Grid two files", {
   x <- setUp()
   vct_dir <- x$psd.vct.dir
   db <- x$psd.db
-  
+
   bins <- 5
   quantile_ <- 97.5
   qstr <- "q97.5"

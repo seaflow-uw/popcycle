@@ -4,12 +4,14 @@
 \alias{create_realtime_meta}
 \title{Create a metadata tibble for one quantile appopriate for realtime analysis}
 \usage{
-create_realtime_meta(db, quantile_)
+create_realtime_meta(db, quantile, volume = NULL)
 }
 \arguments{
 \item{db}{popcycle database file.}
 
 \item{quantile}{OPP filtering quantile to use.}
+
+\item{volume}{Use a constant volume value, overriding any calculated values.}
 }
 \value{
 A tibble of realtime SFL and OPP table data

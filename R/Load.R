@@ -46,6 +46,15 @@ untransformData <- function(df, columns=NULL) {
   return(df)
 }
 
+#' Check if an EVT data frame has been transformed.
+#'
+#' @param df EVT data frame
+#' @return Boolean indicating if df is transformed
+is_transformed <- function(df) {
+  cols <- colnames(df)[colnames(df) %in% c(CHANNELS, CHANNELS2)]
+  return(!any(max(df[, cols]) > 10^3.5))
+}
+
 #' Read an EVT or OPP binary file.
 #'
 #' Read a SeaFlow LabView binary particle data file. This file may be gzipped.
@@ -238,7 +247,7 @@ concatenate.evt <- function(evt.list, evt.dir, n=100000, min.fsc=0, min.pe=0, mi
         message(round(100*i/length(evt.list)), "% completed \r", appendLF=FALSE)
 
         tryCatch({
-          df <- get.evt.by.file(evt.dir, file, transform=transform)
+          df <- get_evt_by_file(evt.dir, file, transform=transform)
           df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
           df <- df[round(seq(1,nrow(df), length.out=round(n/length(evt.list)))),]
 
@@ -272,7 +281,7 @@ concatenate.opp <- function(db, opp.list, opp.dir, n=100000, min.fsc=0, min.pe=0
     message(round(100*i/length(opp.list)), "% completed \r", appendLF=FALSE)
 
     tryCatch({
-      df <- get.opp.by.file(db, opp.dir, file)
+      df <- get_opp_by_file(db, opp.dir, file)
       df <- subset(df, fsc_small > min.fsc & pe > min.pe & chl_small > min.chl)
       df <- df[round(seq(1,nrow(df), length.out=round(n/length(opp.list)))),]
       if (any(is.na(df))) {

@@ -21,8 +21,3 @@ The source database will remained unchanged. The destination database will
 have selected table cleared before the copy. Schemas for source and
 destination tables must match or an error is thrown.
 }
-\examples{
-\dontrun{
-copy_tables(db_from, db_to)
-}
-}

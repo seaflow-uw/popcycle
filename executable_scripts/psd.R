@@ -1,35 +1,49 @@
 #!/usr/bin/env Rscript
-library(dplyr, warn.conflicts=FALSE)
 
-dated_msg <- function(...) {
-  message(format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), ": ", ...)
-}
-
-# ---------------------------------------------------------------------------- #
-
-parser <- optparse::OptionParser(usage="usage: psd.R [options] db vct_dir")
-parser <- optparse::add_option(parser, c("--bins"), type="integer", default=85,
-  help="Number of bins along each dimension of the distribution [default %default]",
-  metavar="N")
-parser <- optparse::add_option(parser, c("--dimensions"), type="character", default="fsc_small,pe,chl_small,Qc,diam",
-  help="Comma-separated list of dimensions for grid. Qc will always be included regardless of this value. [default %default]")
-parser <- optparse::add_option(parser, c("--keep-outliers"), action="store_true", default=FALSE,
-  help="Don't remove 3 minute windows flagged as outliers [default %default]")
-parser <- optparse::add_option(parser, c("--no-data.table"), action="store_true", default=FALSE,
-  help="Don't use data.table for performance-critical aggregation [default %default]")
-parser <- optparse::add_option(parser, c("--out"), type="character", default="PSD",
-  help="Output file base path [default %default]",
-  metavar="FILE_BASE")
-parser <- optparse::add_option(parser, c("--quantile"), type="character", default="2.5",
-  help="Quantile. Choices are 2.5, 50, 97.5. [default %default]",
-  metavar="QUANTILE")
-parser <- optparse::add_option(parser, c("--remove-boundary-points"), action="store_true", default=FALSE,
-  help="Remove particles at the per-file boundary of fsc_small, chl_small, pe, diam, Qc [default %default]")
-parser <- optparse::add_option(parser, c("--verbose"), action="store_true", default=FALSE,
-  help="Print extra diagnostic messages [default %default]")
-parser <- optparse::add_option(parser, c("--volume"), type="integer", default=NULL,
-  help="Hard code a single volume value for abundance calculations, i.e. if stream pressure is unreliable [default %defalt]",
-  metavar="VOLUME")
+parser <- optparse::OptionParser(
+  usage = "usage: psd.R [options] db vct_dir",
+  description = "Create gridded particle size distribution data from VCT data"
+)
+parser <- optparse::add_option(parser, "--bins",
+  type = "integer", default = 85, metavar = "N",
+  help = "Number of bins along each dimension of the distribution [default %default]",
+)
+parser <- optparse::add_option(parser, "--dimensions",
+  type = "character", default = "fsc_small,pe,chl_small,Qc,diam",
+  help = "Comma-separated list of dimensions for grid. Qc will always be included regardless of this value. [default %default]"
+)
+parser <- optparse::add_option(parser, "--keep-outliers",
+   action = "store_true", default = FALSE,
+  help = "Don't remove 3 minute windows flagged as outliers [default %default]"
+)
+parser <- optparse::add_option(parser, "--no-data.table",
+  action = "store_true", default = FALSE,
+  help = "Don't use data.table for performance-critical aggregation [default %default]"
+)
+parser <- optparse::add_option(parser, "--out",
+  type = "character", default = "PSD", metavar = "FILE_BASE",
+  help = "Output file base path [default %default]",
+)
+parser <- optparse::add_option(parser, "--quantile",
+  type = "character", default = "2.5", metavar = "QUANTILE",
+  help = "Quantile. Choices are 2.5, 50, 97.5. [default %default]",
+)
+parser <- optparse::add_option(parser, "--remove-boundary-points",
+  action = "store_true", default = FALSE,
+  help = "Remove particles at the per-file boundary of fsc_small, chl_small, pe, diam, Qc [default %default]"
+)
+parser <- optparse::add_option(parser, "--renv",
+  type = "character", default = "", metavar = "dir",
+  help = "Optional renv directory to use. Requires the renv package."
+)
+parser <- optparse::add_option(parser, "--verbose",
+  action = "store_true", default = FALSE,
+  help = "Print extra diagnostic messages [default %default]"
+)
+parser <- optparse::add_option(parser, "--volume",
+  type = "integer", default = NULL, metavar = "QUANTILE",
+  help = "Hard code a single volume value for abundance calculations, i.e. if stream pressure or file duration is unreliable [default %defalt]",
+)
 
 p <- optparse::parse_args2(parser)
 if (length(p$args) < 2) {
@@ -41,26 +55,42 @@ if (length(p$args) < 2) {
   bins <- p$options$bins
   dimensions <- p$options$dimensions
   keep_outliers <- p$options$keep_outliers
-  no_data_table <- p$options$no_data.table
+  no_data.table <- p$options$no_data.table
   out <- p$options$out
   quantile_ <- p$options$quantile
   remove_boundary_points <- p$options$remove_boundary_points
   verbose <- p$options$verbose
   volume <- p$options$volume
+
+  if (!dir.exists(vct_dir) || !file.exists(db)) {
+    stop(paste0("vct_dir or db does not exist"))
+  }
+
+  if (p$options$renv != "") {
+    proj_dir <- renv::activate(p$options$renv)
+    message("activated renv directory ", proj_dir)
+  }
 }
 
-# Check command-line options and arguments
+message("using popcycle version ", packageVersion("popcycle"))
+
+library(dplyr, warn.conflicts=FALSE)
+
+dated_msg <- function(...) {
+  message(format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), ": ", ...)
+}
+
+# --------------------------
+# Set up dimensions for grid
+# --------------------------
 possible_dimensions <- unlist(stringr::str_split("fsc_small,pe,chl_small,Qc,diam", "\\s*,\\s*"))
 dimensions <- unlist(stringr::str_split(dimensions, "\\s*,\\s*"))
 if (length(setdiff(dimensions, possible_dimensions)) > 0) {
   stop(glue("Error: unknown dimensions {stringr::str_flatten(setdiff(dimensions, possible), ', ')}"))
 }
+# Always add Qc
 if (! "Qc" %in% dimensions) {
   dimensions[length(dimensions) + 1] <- "Qc"
-}
-
-if (!dir.exists(vct_dir) || !file.exists(db)) {
-  stop(paste0("vct_dir or db does not exist"))
 }
 
 dated_msg("Start")
@@ -71,7 +101,7 @@ message(paste0("vct-dir = ", vct_dir))
 message(paste0("bins = ", bins))
 message(paste0("dimensions = ", stringr::str_flatten(dimensions, ", ")))
 message(paste0("keep_outliers = ", keep_outliers))
-message(paste0("no-data.table = ", no_data_table))
+message(paste0("no-data.table = ", no_data.table))
 message(paste0("out = ", out))
 message(paste0("quantile = ", quantile_))
 message(paste0("remove-boundary-points = ", remove_boundary_points))
@@ -83,7 +113,7 @@ message("--------------")
 # Create output directory tree
 dir.create(dirname(out), recursive=T, showWarnings=F)
 
-cruise <- popcycle::get.cruise(db)
+cruise <- popcycle::get_cruise(db)
 vct_files <- list.files(vct_dir, "\\.parquet$", full.names=T)
 
 meta_full <- popcycle::create_meta(db, as.numeric(quantile_))
@@ -142,7 +172,7 @@ if (!keep_outliers) {
 psd <- popcycle::create_PSD(
   vct_files, quantile_, refracs, grid, log_base=NULL,
   remove_boundary_points=remove_boundary_points, ignore_dates=ignore_dates,
-  use_data_table=!no_data_table, verbose=verbose
+  use_data.table=!no_data.table, verbose=verbose
 )
 invisible(gc())
 dated_msg("Full PSD dim = ", stringr::str_flatten(dim(psd), " "), ", MB = ", object.size(psd) / 2**20)
@@ -155,10 +185,10 @@ invisible(gc())
 # -----------
 # Hourly file
 # -----------
-# data.table multi-threading temporarily enabled for grouping
+# data.table multi-threading temporarily disabled for grouping
 orig_threads <- data.table::getDTthreads()
 data.table::setDTthreads(1)
-hourly <- popcycle::group_psd_by_time(psd, time_expr="1 hours", use_data_table=!no_data_table)
+hourly <- popcycle::group_psd_by_time(psd, time_expr="1 hours", use_data.table=!no_data.table)
 data.table::setDTthreads(orig_threads)
 psd <- tibble::as_tibble(psd)
 invisible(gc())
