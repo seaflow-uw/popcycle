@@ -135,7 +135,7 @@ csv_convert <- function(db, meta, path, version = "v1.0") {
                           dataset_description = description,
                           dataset_references = paste("Ribalet F, Berthiaume C, Hynes A, Swalwell J, Carlson M, Clayton S, Hennon G, Poirier C, Shimabukuro E, White A and Armbrust EV. 2019 SeaFlow data 1.0, high-resolution abundance, size and biomass of small phytoplankton in the North Pacific. ScientificData 6:277 https://doi.org/10.1038/s41597-019-0292-2"))
     
-    readr::write_csv(dataset_metadata, path=paste0(path,"/SeaFlow_", official.cruise,"_dataset_metadata_", version,".csv"))
+    readr::write_csv(dataset_metadata, file=paste0(path,"/SeaFlow_", official.cruise,"_dataset_metadata_", version,".csv"))
 
     # vars_metadata
     vars_metadata <- tibble::tibble(
@@ -147,7 +147,7 @@ csv_convert <- function(db, meta, path, version = "v1.0") {
                           var_missing_value = "NA",
                           var_comment)
 
-    readr::write_csv(vars_metadata, path=paste0(path,"/SeaFlow_vars_metadata_",version,".csv"))
+    readr::write_csv(vars_metadata, file=paste0(path,"/SeaFlow_vars_metadata_",version,".csv"))
 
 }
 
