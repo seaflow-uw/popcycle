@@ -26,5 +26,5 @@ if (length(p$args) < 1) {
   }
 }
 
-discard <- popcycle::update_plan_table(db, popcycle::get_opp_table(db))
-discard <- popcycle::update_plan_table(db, popcycle::get_vct_table(db))
+popcycle::update_plan_table(db, popcycle::get_opp_table(db))
+popcycle::update_plan_table(db, popcycle::get_vct_table(db))

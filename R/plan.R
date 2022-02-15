@@ -5,7 +5,7 @@
 #' @param db popcycle SQLite3 database file in which to save plan table
 #' @param results_table opp or vct table
 #' @param check Report changes to be made without saving to the database
-#' @return Updated plan
+#' @return Invisibly return the updated plan
 #' @export
 update_plan_table <- function(db, results_table, check = FALSE) {
   results_table <- tibble::as_tibble(results_table)
@@ -59,7 +59,7 @@ update_plan_table <- function(db, results_table, check = FALSE) {
   } else {
     message("existing plan is already up to date")
   }
-  return(starts)
+  invisible(starts)
 }
 
 #' Create a tibble of start dates for gating IDs based vct / opp table entries.
