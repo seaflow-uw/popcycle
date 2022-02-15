@@ -28,7 +28,7 @@ To install this package using a reproducible environment with [renv](https://rst
 git clone https://github.com/seaflow-uw/popcycle
 cd popcycle
 # optionaly switch to desired ref, e.g. git checkout -b 4.0.0 4.0.0
-cp renv-.Rprofile .Rprofile
+cp renv-Rprofile .Rprofile
 R -e 'renv::restore()'
 R CMD INSTALL .
 ```
@@ -290,7 +290,7 @@ Now we're ready to set the gating for the different populations.
 
 We want gating parameters that will be applicable to *most* `opp` files from the cruise. To optimize your chance of setting the proper gating parameters, do not set them based on one randomly chosen file. Instead, merge/combine as many files as you computer can handle. In this example, we'll combine all OPP files in our test data set.
 
-```r
+```{r}
 # get the list of all OPP files from the cruise
 opp_files <- get_opp_table(db) %>%
   filter(quantile == 2.5) %>%
@@ -303,7 +303,7 @@ The first population to gate is *always* the **beads**. We use a manual gating m
 
 Note: This will open an R plot for a cytogram of the OPP data. Draw a polygon around the population (Left click to draw segment, right-click to close the segment and finalize the polygon).
 
-```r
+```{r}
 gates.log <- add_manual_classification(opp, "beads", "fsc_small", "pe")
 ```
 
@@ -321,19 +321,19 @@ In the case of `Synechococcus` and `Prochlorococcus`population, we use a semi-su
 
 This function breaks the cytogram plot into 4 quadrants by density. Using the parameter `position = c()`, select the quadrant where you observe the population. Use the examples params provided for `gates`, `scale`, and `min_pe`, but play around with them until you see optimal results. Make sure to append the updated classification onto the current by using the `gates.log = gates.log`.
 
-```r
+```{r}
 gates.log <- add_auto_classification("synecho", "fsc_small", "pe",
-                                     position = c(FALSE,TRUE), gates = c(3.0,NA),
+                                     position = c(FALSE, TRUE), gates = c(3.0, NA),
                                      scale = 0.975, min_pe = 3, gates.log = gates.log)
 
-gates.log <- add.auto.classification("prochloro", "fsc_small", "chl_small",
-                                     position = c(FALSE,TRUE), gates = c(2.0,0.5),
+gates.log <- add_auto_classification("prochloro", "fsc_small", "chl_small",
+                                     position = c(FALSE, TRUE), gates = c(2.0, 0.5),
                                      scale = 0.95, gates.log = gates.log)
 ```
 
 Once the parameters are defined for `Synechococcus` and `Prochlorococcus`population, use manual gating to cluster all the phytoplankton cells left (namely `Picoeukaryote` population) using `manual_classification`. Don’t worry about overlapping populations inside of your polygon. Since this is the last population we are gating, all other gated population will not be included.
 
-```r
+```{r}
 gates.log <- add_manual_classification(opp, "picoeuk", "fsc_small", "chl_small", gates.log)
 ```
 
@@ -341,7 +341,7 @@ gates.log <- add_manual_classification(opp, "picoeuk", "fsc_small", "chl_small",
 
 You can test your various gating parameters on the subset of files to ensure accuracy before saving the gating parameters. In this case, we will use the aggreagated OPP tibble of all files and display the output of the classification on a cytogram.
 
-```r
+```{r}
 par(mfrow = c(4,5), mar = c(1.75, 1.5, 1.5, 1.5), oma = c(0.5, 0.5, 0.5, 0.5))
 opp <- try(classify_opp(opp, gates_log))
 try(plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small"))}
@@ -351,7 +351,7 @@ try(plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small"))}
 
 Once satisfied, save the gating in the `db`. Similar to the `save_filter_params` function, `save_gating_params` saves the gating parameters and order in which the gating was performed. Every call to `save_gating_params` creates a new gating entry in the database which can be retrieved by ID. Then, save the classification. (Note, when redo-doing classification, make sure to always set the gating params for “beads” first. If you skip this step, `gates.log` will not be reset, and you classification will still contain the parameters wished to be changed).
 
-```r
+```{r}
 gating_id <- save_gating_params(db, gates.log)
 ```
 

@@ -14,7 +14,7 @@ update_plan_table(db, results_table, check = FALSE)
 \item{check}{Report changes to be made without saving to the database}
 }
 \value{
-None
+Updated plan
 }
 \description{
 Update the gating_plan or filter_plan table based on vct or opp entries
