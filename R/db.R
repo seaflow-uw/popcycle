@@ -1548,12 +1548,12 @@ get.stat.table <- function(db, inst=NULL) {
     stat[qindex, c("abundance_se")]  <- stat[qindex, "abundance"] * stat[qindex, "flow_rate_se"] / stat[qindex, "flow_rate"]           # cells µL-1
   }
 
-  # If Prochlorococcus or Synechococcus present, abundance is calculated based on individual opp_evt ratio (based on each file, not the median), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
-  id <- which(stat$pop == "prochloro" | stat$pop == "synecho")
-  if (length(id) > 0) {
-    stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
-    stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1
-  }
+  # # If Prochlorococcus or Synechococcus present, abundance is calculated based on individual opp_evt ratio (based on each file, not the median), since it provides more accurate results (see https://github.com/armbrustlab/seaflow-virtualcore)
+  # id <- which(stat$pop == "prochloro" | stat$pop == "synecho")
+  # if (length(id) > 0) {
+  #   stat[id,c("abundance")]  <- stat[id,"n_count"] / (1000* stat[id,"opp_evt_ratio"] * stat[id,"flow_rate"] * stat[id,"file_duration"]/60)   # cells µL-1
+  #   stat[id,c("abundance_se")]  <- stat[id,"abundance"] * stat[id,"flow_rate_se"] / stat[id,"flow_rate"]           # cells µL-1
+  # }
 
   return(stat)
 }
