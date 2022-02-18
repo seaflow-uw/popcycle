@@ -224,6 +224,8 @@ get_processed_particles <- function(db, data_dir, data_type, file_ids = NULL,
   if (!is.null(col_select)) {
     col_select <- c("date", "file_id", col_select[!(col_select %in% c("date", "file_id"))])
   }
+  # Make sure predicted and discovered hourly Parquet paths are comparable
+  data_dir <- normalizePath(data_dir, mustWork = TRUE)
 
   # Build file ID list
   to_get <- table_getter(db) %>%
