@@ -105,7 +105,14 @@ plot_filter_cytogram <- function(evt, filter_params) {
 #' @export plot_cytogram
 plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T, xlim=NULL, ylim=NULL) {
 
-  if(!any(names(evtopp) == "file")) evtopp[,"file"] <- ""
+  if (!any(names(evtopp) == "file")) {
+    # Try to use file_id, otherwise set to ""
+    if (any(names(evtopp) == "file_id")) {
+      evtopp[, "file"] <- evtopp[, "file_id"]
+    } else {
+      evtopp[, "file"] <- ""
+    }
+  }
 
   p <- evtopp %>%
         ggplot2::ggplot() +
@@ -140,7 +147,14 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
   if(!any(names(opp) == "pop")) opp[,"pop"] <- "unknown"
-  if(!any(names(opp) == "file")) opp[,"file"] <- ""
+  if (!any(names(opp) == "file")) {
+    # Try to use file_id, otherwise set to ""
+    if (any(names(opp) == "file_id")) {
+      opp[, "file"] <- opp[, "file_id"]
+    } else {
+      opp[, "file"] <- ""
+    }
+  }
   opp$pop <- factor(opp$pop, levels = names(group.colors))
 
   p <- opp %>%
@@ -290,7 +304,14 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transfor
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
   if(!any(names(evtopp) == "pop")) evtopp[,"pop"] <- "unknown"
-  if(!any(names(evtopp) == "file")) evtopp[,"file"] <- NA
+  if (!any(names(evtopp) == "file")) {
+    # Try to use file_id, otherwise set to NA
+    if (any(names(evtopp) == "file_id")) {
+      evtopp[, "file"] <- evtopp[, "file_id"]
+    } else {
+      evtopp[, "file"] <- NA
+    }
+  }
   evtopp$pop <- factor(evtopp$pop, levels = names(group.colors))
 
   p <- evtopp %>%

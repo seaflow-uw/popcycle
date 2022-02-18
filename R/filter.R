@@ -119,6 +119,9 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
                              cores = 1) {
   ptm <- proc.time()
 
+  # Normalize evt_dir to make sure all paths are comparable
+  evt_dir <- normalizePath(evt_dir, mustWork=TRUE)
+
   plan <- create_full_filter_plan(evt_files, db, evt_dir, opp_dir, filter_id = filter_id)
 
   message(nrow(plan), " files to filter")

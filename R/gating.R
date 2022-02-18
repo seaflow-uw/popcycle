@@ -237,6 +237,9 @@ classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL
                                mie_table = NULL, cores = 1) {
   ptm <- proc.time()
 
+  # Normalize opp_dir to make sure all paths are comparable
+  opp_dir <- normalizePath(opp_dir, mustWork=TRUE)
+
   # Read installed Mie theory table if not provided
   if (is.null(mie_table)) {
     mie_table <- read_mie_csv()

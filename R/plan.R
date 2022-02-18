@@ -97,6 +97,8 @@ starts_from_results_table <- function(tbl) {
 }
 
 create_full_filter_plan <- function(file_ids_to_filter, db, evt_dir, opp_dir, filter_id = NULL) {
+  # Normalize opp_dir to make sure all paths are comparable
+  evt_dir <- normalizePath(evt_dir, mustWork=TRUE)
   # Get EVT files and dates to filter. If no files are provided, select all EVT
   # files present in SFL.
   df <- get_evt_files(evt_dir, db = db)
@@ -124,6 +126,8 @@ create_full_filter_plan <- function(file_ids_to_filter, db, evt_dir, opp_dir, fi
 }
 
 create_full_gating_plan <- function(file_ids_to_gate, db, opp_dir, vct_dir, gating_id = NULL) {
+  # Normalize opp_dir to make sure all paths are comparable
+  opp_dir <- normalizePath(opp_dir, mustWork=TRUE)
   # Get OPP files and dates to gate. If no files are provided, select all OPP
   # files with data in all quantiles.
   df <- get_opp_table(db, sfl_join = TRUE, particles_in_all_quantiles = TRUE) %>%
