@@ -158,14 +158,14 @@ auto_classify <- function(opp, params, popname) {
     stop(paste0("No gate parameters found for ", popname))
   }
 
-  # Only keep selected unknow pop rows and remove pop column
+  # Only keep selected unknown pop rows and remove pop column
   if (is.null(params$min.pe) | is.na(params$min.pe)) {
-   row.selection = opp$pop == "unknown"
+   row.selection <- opp$pop == "unknown"
   } else {
-   row.selection = opp$pop == "unknown" & opp[,paste(params$x)] > params$min.pe
+   row.selection <- opp$pop == "unknown" & opp[,paste(params$x)] > params$min.pe
   }
 
-  x <- opp[row.selection, names(opp) != "pop"]
+  x <- opp[row.selection, sapply(opp, is.numeric)]
   # Sometimes there are no unknowns at this point so check for zero rows
   if (nrow(x) > 0) {
     fframe <- flowCore::flowFrame(as.matrix(log10(x)))
