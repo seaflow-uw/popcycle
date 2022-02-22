@@ -66,7 +66,6 @@ reset_vct_table <- function(db) {
   reset_table(db, "vct")
 }
 
-
 #' Delete all rows in sfl table.
 #'
 #' @param db SQLite3 database file path.
@@ -810,6 +809,21 @@ save_metadata <- function(db, metadata) {
 
   reset_metadata_table(db)
   sql_dbWriteTable(db, name = "metadata", value = as.data.frame(metadata))
+}
+
+#' Save SFL to db
+#'
+#' @param db SQLite3 database file path.
+#' @param sfl SFL data frame or tibble
+#' @export
+save_sfl <- function(db, sfl) {
+  if (nrow(sfl) == 0) {
+    warning("sfl data frame is empty")
+    return()
+  }
+
+  reset_sfl_table(db)
+  sql_dbWriteTable(db, name = "sfl", value = as.data.frame(sfl))
 }
 
 #' Create a new, empty sqlite3 popcycle database.

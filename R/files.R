@@ -332,6 +332,46 @@ read_refraction_csv <- function(path=NULL) {
 }
 
 
+#' Read SFL tab-delimited file
+#' @param path Path to validated tab-delimited SFL file
+#' @return A tibble with SFL data
+#' @export
+read_sfl_tsv <- function(path) {
+  sfl_data <- readr::read_delim(
+    path,
+    delim = "\t",
+    col_types = list(
+      FILE = readr::col_character(),
+      DATE = readr::col_character(),
+      `FILE DURATION` = readr::col_double(),
+      LAT = readr::col_character(),
+      LON = readr::col_character(),
+      CONDUCTIVITY = readr::col_double(),
+      SALINITY = readr::col_double(),
+      `OCEAN TEMP` = readr::col_double(),
+      PAR = readr::col_double(),
+      `BULK RED` = readr::col_double(),
+      `STREAM PRESSURE` = readr::col_double(),
+      `EVENT RATE` = readr::col_double()
+    )
+  ) %>% rename(
+    file = FILE,
+    date = DATE,
+    file_duration = `FILE DURATION`,
+    lat = LAT,
+    lon = LON,
+    conductivity = CONDUCTIVITY,
+    salinity = SALINITY,
+    ocean_tmp = `OCEAN TEMP`,  # not a typo
+    par = PAR,
+    bulk_red = `BULK RED`,
+    stream_pressure = `STREAM PRESSURE`,
+    event_rate = `EVENT RATE`
+  )
+  return(sfl_data)
+}
+
+
 #' Manipulate the size distribution created by create_PSD(). 
 #' Calculate the sum of particles in each size class over specific temporal resolution; transform the header
 #'
