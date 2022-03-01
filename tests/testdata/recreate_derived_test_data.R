@@ -16,7 +16,7 @@ evt_dir <- "evt"
 opp_dir <- file.path(wd, "opp")
 vct_dir <- file.path(wd, "vct")
 
-evt_files <- get.evt.files(evt_dir)
-filter.evt.files(db, evt_dir, evt_files, opp_dir)
-opp_files <- get.opp.files(db, outliers=F)
-classify.opp.files(db, opp_dir, opp_files, vct_dir)
+evt_files <- get_evt_files(evt_dir)
+filter_evt_files(db, evt_dir, evt_files, opp_dir)
+opp_files <- get_opp_files(db, outliers=F)
+classify_opp_files(db, opp_dir, opp_files, vct_dir)

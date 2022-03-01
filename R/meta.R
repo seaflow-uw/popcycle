@@ -115,8 +115,8 @@ csv_convert <- function(db, meta, path, version = "v1.0") {
     serial <- paste(unlist(meta[which(meta$cruise == cruise),"Instrument"]))
 
     # data
-    data <- get.stat.table(db)
-    data <- stat.calibration(data, cruise)
+    data <- get_stat_table(db)
+    data <- stat_calibration(data, cruise)
     data <- data[,var_short_name]
     
     #readr::write_csv(data, path=paste0(path,"/SeaFlow_", official.cruise, "_",as.Date(Sys.time()),"_", version,".csv"))
@@ -209,7 +209,7 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
         cruise <- sub(".db","",basename(db))
 
         # clean stat table
-        clean <- get.clean.stat.table(db, pop="prochloro", ref_diam=0.54)
+        clean <- get_clean_stat_table(db, pop="prochloro", ref_diam=0.54)
 
         # add columns for CMAP
         cruise.name <- paste(meta[which(meta$cruise == cruise),"Cruise ID"])

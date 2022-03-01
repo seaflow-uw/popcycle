@@ -7,11 +7,9 @@
 plot_cruisetrack(stat, param)
 }
 \arguments{
-\item{sfl}{sfl table from get.sfl.table function}
+\item{stat}{a dataframe that contains columns "lat" and "lon"}
 
 \item{param}{Parameter to display}
-
-\item{bin}{An integer representing the time interval (in hour) into which time is to be averaged}
 }
 \value{
 None

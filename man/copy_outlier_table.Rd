@@ -20,8 +20,3 @@ every file in the opp table. Entries in db_to with flag values in db_from
 > 0 will be updated to reflect db_from. db_from entries without a
 corresponding entry in db_to will be ignored.
 }
-\examples{
-\dontrun{
-copy_outlier_table(db_from, db_to)
-}
-}

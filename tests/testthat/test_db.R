@@ -3,20 +3,6 @@ library(popcycle)
 
 source("helper.R")
 
-# test_that("Load / Delete SFL", {
-#   x <- setUp()
-
-#   # Load SFL data
-#   save.sfl(x$db, sfl.file=x$sfl.file, cruise=x$cruise, inst=x$serial)
-#   sfl <- get.sfl.table(x$db)
-#   expect_true(nrow(sfl) == 8)
-#   reset.sfl.table(x$db)
-#   sfl <- get.sfl.table(x$db)
-#   expect_true(nrow(sfl) == 0)
-
-#   tearDown(x)
-# })
-
 test_that("Save and retrieve filter params", {
   x <- setUp()
 
@@ -53,231 +39,16 @@ test_that("Save and retrieve filter params", {
     stringsAsFactors=FALSE
   )
 
-  id1 <- save.filter.params(x$db, filter.params1)
+  id1 <- save_filter_params(x$db, filter.params1)
   Sys.sleep(2)  # filter timestamp has resolution of seconds
-  id2 <- save.filter.params(x$db, filter.params2)
+  id2 <- save_filter_params(x$db, filter.params2)
 
-  latest <- get.filter.params.latest(x$db)
-  oldest <- get.filter.params.by.id(x$db, id1)
+  oldest <- get_filter_params_by_id(x$db, id1)
+  latest <- get_filter_params_by_id(x$db, id2)
 
   # Skip id and date when comparing
   expect_equal(oldest[, 3:ncol(oldest)], filter.params1)
   expect_equal(latest[, 3:ncol(latest)], filter.params2)
-
-  tearDown(x)
-})
-
-test_that("Add dates to file IDs", {
-  x <- setUp()
-
-  file_ids <- c(
-    "2014_185/2014-07-04T00-09-02+00-00",
-    "2014_185/2014-07-04T00-03-02+00-00",
-    "2014_186/2014-07-05T00-03-02+00-00"  # not in SFL
-  )
-  expect <- tibble::tibble(
-    date=c(
-      lubridate::ymd_hms("2014-07-04T00:09:02+00:00"),
-      lubridate::ymd_hms("2014-07-04T00:03:02+00:00"),
-      NA
-    ),
-    file_id=c(
-      "2014_185/2014-07-04T00-09-02+00-00",
-      "2014_185/2014-07-04T00-03-02+00-00",
-      "2014_186/2014-07-05T00-03-02+00-00"
-    )
-  )
-  got <- get_file_dates(x$db.bare, file_ids)
-  expect_equal(got, expect)
-
-  tearDown(x)
-})
-
-test_that("Retrieve OPP stats by file", {
-  x <- setUp()
-
-  opp <- get.opp.stats.by.file(x$db.full, "2014_185/2014-07-04T00-00-02+00-00")
-  expect_equal(nrow(opp), 3)
-  expect_equal(unique(opp$file), "2014_185/2014-07-04T00-00-02+00-00")
-
-  tearDown(x)
-})
-
-test_that("Retrieve VCT stats by file", {
-  x <- setUp()
-
-  vct <- get.vct.stats.by.file(x$db.full, "2014_185/2014-07-04T00-03-02+00-00")
-  expect_equal(nrow(vct), 12)
-  expect_equal(unique(vct$file), "2014_185/2014-07-04T00-03-02+00-00")
-
-  tearDown(x)
-})
-
-test_that("Retrieve OPP stats by date", {
-  x <- setUp()
-
-  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(
-    opp$file,
-    c(rep("2014_185/2014-07-04T00-00-02+00-00", 3), rep("2014_185/2014-07-04T00-03-02+00-00", 3))
-  )
-
-  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:03", "2014-07-04 00:17")
-  expect_equal(opp$file, rep("2014_185/2014-07-04T00-03-02+00-00", 3))
-
-  # With/Without outliers
-  outliers_df <- data.frame( 
-    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
-    flag=c(1, 3),
-    stringsAsFactors=FALSE
-  )
-  save.outliers(x$db.full, outliers_df)
-  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(
-    opp$file,
-    rep("2014_185/2014-07-04T00-00-02+00-00", 3)
-  )
-  opp <- get.opp.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
-  expect_equal(
-    opp$file,
-    c(rep("2014_185/2014-07-04T00-00-02+00-00", 3), rep("2014_185/2014-07-04T00-03-02+00-00", 3))
-  )
-
-  tearDown(x)
-})
-
-test_that("Retrieve VCT stats by date", {
-  x <- setUp()
-
-  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(
-    vct$file,
-    c(rep("2014_185/2014-07-04T00-00-02+00-00", 12), rep("2014_185/2014-07-04T00-03-02+00-00", 12))
-  )
-
-  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 0:03", "2014-07-04 00:17")
-  expect_equal(
-    vct$file,
-    c(rep("2014_185/2014-07-04T00-03-02+00-00", 12))
-  )
-
-  # With/Without outliers
-  outliers_df <- data.frame( 
-    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
-    flag=c(1, 3),
-    stringsAsFactors=FALSE
-  )
-  save.outliers(x$db.full, outliers_df)
-  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04")
-  expect_equal(
-    vct$file,
-    rep("2014_185/2014-07-04T00-00-02+00-00", 12)
-  )
-  vct <- get.vct.stats.by.date(x$db.full, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
-  expect_equal(
-    vct$file,
-    c(rep("2014_185/2014-07-04T00-00-02+00-00", 12), rep("2014_185/2014-07-04T00-03-02+00-00", 12))
-  )
-
-  tearDown(x)
-})
-
-# test_that("Retrieve OPP by file", {
-#   x <- setUp()
-
-#   # Without VCT, transformed
-#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50)
-#   expect_equal(nrow(opp), 285)
-#   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
-
-#   # Without VCT, not transformed
-#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, transform=F)
-#   expect_equal(nrow(opp), 285)
-#   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
-
-#   # With VCT
-#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1:2], 50, vct.dir=x$vct.input.dir)
-#   expect_true("pop" %in% names(opp))
-
-#   # All quantiles
-#   opp <- get.opp.by.file(x$opp.input.dir, get.opp.files(x$db.full)[1], transform=F)
-#   expect_equal(nrow(opp), 426)
-
-#   tearDown(x)
-# })
-
-# test_that("Retrieve OPP by date", {
-#   x <- setUp()
-
-#   # Without VCT, transformed
-#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
-#   expect_equal(nrow(opp), 285)
-#   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
-
-#   # Without VCT, transformed
-#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:03", "2014-07-04 00:17")
-#   expect_equal(nrow(opp), 178)
-#   expect_true(!any(max(opp[, length(popcycle:::EVT.HEADER)]) > 10^3.5))
-
-#   # Without VCT, not transformed
-#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
-#                          transform=F)
-#   expect_equal(nrow(opp), 285)
-#   expect_true(any(max(opp[, seq(3, length(popcycle:::EVT.HEADER))]) > 10^3.5))
-
-#   # With VCT
-#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04",
-#                          vct.dir=x$vct.input.dir)
-#   expect_true("pop" %in% names(opp))
-
-#   # With/Without outliers
-#   outliers_df <- data.frame( 
-#     file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
-#     flag=c(1, 3),
-#     stringsAsFactors=FALSE
-#   )
-#   save.outliers(x$db.full, outliers_df)
-#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04")
-#   expect_equal(nrow(opp), 107)
-#   opp <- get.opp.by.date(x$db.full, x$opp.input.dir, 50, "2014-07-04 00:00", "2014-07-04 00:04", outlier=F)
-#   expect_equal(nrow(opp), 285)
-
-#   tearDown(x)
-# })
-
-# test_that("Retrieve split-quantile OPP file", {
-#   x <- setUp()
-
-#   # First get a multi-quantile OPP file
-#   opp_file <- get.opp.files(x$db.full)[1]
-#   opp <- get.opp.by.file(x$opp.input.dir, opp_file, transform=F)
-#   expect_equal(nrow(opp), 426)
-#   opp50 <- opp[opp["q50"] == TRUE, popcycle:::EVT.HEADER]
-
-#   # Save it manually as an old style split-quantile file
-#   opp_dir <- file.path(x$tmp.dir, "splitopp")
-#   out_path <- paste0(file.path(opp_dir, "50", opp_file), ".opp.gz")
-#   dir.create(dirname(out_path), showWarnings=F, recursive=T)
-#   writeSeaflow(opp50, out_path, untransform=F)
-
-#   # Read it back and make sure it's the same
-#   opp_again <- get.opp.by.file(opp_dir, opp_file, quantile=50, transform=F)
-#   rownames(opp50) <- NULL  # reset row names to match opp_again
-#   expect_true(identical(opp50, opp_again))
-
-#   tearDown(x)
-# })
-
-test_that("Retrieve EVT file names by date", {
-  x <- setUp()
-
-  evt.files <- get.evt.files.by.date(x$db.full, x$evt.input.dir, "2014-07-04 00:03", "2014-07-04 00:10")
-  answer <- c(
-    "2014_185/2014-07-04T00-03-02+00-00",
-    "2014_185/2014-07-04T00-06-02+00-00",
-    "2014_185/2014-07-04T00-09-02+00-00"
-  )
-  expect_equal(evt.files, answer)
 
   tearDown(x)
 })
@@ -291,31 +62,31 @@ test_that("Copy tables from one db to another", {
     inst=c(100),
     stringsAsFactors=FALSE
   )
-  reset.table(x$db.bare, "metadata")
-  sql.dbWriteTable(x$db.bare, "metadata", metadata_df)
+  reset_metadata_table(x$db.bare)
+  save_metadata(x$db.bare, metadata_df)
 
-  outliers_df <- data.frame( 
-    file=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
+  outliers_df <- data.frame(
+    file_id=c("2014_185/2014-07-04T00-03-02+00-00", "2014_185/2014-07-04T00-09-02+00-00"),
     flag=c(1, 3),
     stringsAsFactors=FALSE
   )
-  save.outliers(x$db.full, outliers_df)
+  save_outliers(x$db.full.one, outliers_df)
   # Need to initialize outlier table in dest db (bare)
-  outliers_df <- data.frame( 
-    file=get.outlier.table(x$db.full)$file,
+  outliers_df <- data.frame(
+    file_id=get_outlier_table(x$db.full.one)$file_id,
     flag=0,
     stringsAsFactors=FALSE
   )
-  save.outliers(x$db.bare, outliers_df)
+  save_outliers(x$db.bare, outliers_df)
 
-  popcycle:::copy_tables(x$db.full, x$db.bare, c("vct", "metadata"))
-  popcycle:::copy_outlier_table(x$db.full, x$db.bare)
-  src_vct <- get.vct.table(x$db.full)
-  dest_vct <- get.vct.table(x$db.bare)
-  src_metadata <- get.meta.table(x$db.full)
-  dest_metadata <- get.meta.table(x$db.bare)
-  src_outliers <- get.outlier.table(x$db.full)
-  dest_outliers <- get.outlier.table(x$db.bare)
+  popcycle:::copy_tables(x$db.full.one, x$db.bare, c("vct", "metadata"))
+  popcycle:::copy_outlier_table(x$db.full.one, x$db.bare)
+  src_vct <- get_vct_table(x$db.full.one, sfl_join = FALSE, outlier_join = FALSE)
+  dest_vct <- get_vct_table(x$db.bare, sfl_join = FALSE, outlier_join = FALSE)
+  src_metadata <- get_metadata_table(x$db.full.one)
+  dest_metadata <- get_metadata_table(x$db.bare)
+  src_outliers <- get_outlier_table(x$db.full.one)
+  dest_outliers <- get_outlier_table(x$db.bare)
   expect_equal(dest_vct, src_vct)
   expect_equal(dest_metadata, src_metadata)
   expect_equal(dest_outliers, src_outliers)
@@ -330,10 +101,10 @@ test_that("Find common dbs in two directories", {
   dir_b <- file.path(x$tmp.dir, "b", "subb")
   dir.create(dir_a, recursive=T)
   dir.create(dir_b, recursive=T)
-  make.popcycle.db(file.path(dir_a, "w.db"))
-  make.popcycle.db(file.path(dir_a, "x.db"))
-  make.popcycle.db(file.path(dir_b, "y.db"))
-  make.popcycle.db(file.path(dir_b, "x.db"))
+  make_popcycle_db(file.path(dir_a, "w.db"))
+  make_popcycle_db(file.path(dir_a, "x.db"))
+  make_popcycle_db(file.path(dir_b, "y.db"))
+  make_popcycle_db(file.path(dir_b, "x.db"))
 
   # One db in common
   common <- popcycle:::find_common_dbs(dir_a, dir_b)
@@ -353,29 +124,80 @@ test_that("Find common dbs in two directories", {
   tearDown(x)
 })
 
-test_that("Get list of OPP files", {
+test_that("Save metadata", {
   x <- setUp()
 
-  # Set an outlier
-  save.outliers(x$db.full, data.frame(file="2014_185/2014-07-04T00-00-02+00-00", flag=1))
+  new_meta <- tibble::tibble(cruise = "newcruise", inst = "999")
+  save_metadata(x$db.bare, new_meta)
+  meta2 <- get_metadata_table(x$db.bare)
+  expect_equal(as.data.frame(meta2), as.data.frame(new_meta))
+})
 
-  expect_equal(
-    get.opp.files(x$db.full, outliers=F),
-    c("2014_185/2014-07-04T00-00-02+00-00", "2014_185/2014-07-04T00-03-02+00-00")
+test_that("Save outliers, overwrite", {
+  x <- setUp()
+
+  save_outliers(
+    x$db.full.one,
+    tibble::tibble(
+      file_id = c(
+        "2014_185/2014-07-04T00-00-02+00-00",
+        "2014_185/2014-07-04T00-03-02+00-00",
+        "2014_185/2014-07-04T02-03-02+00-00"
+      ),
+      flag = 1
+    )
   )
 
   expect_equal(
-    get.opp.files(x$db.full, outliers=T),
-    c("2014_185/2014-07-04T00-03-02+00-00")
+    get_outlier_table(x$db.full.one),
+    tibble::tibble(
+      file_id = c(
+        "2014_185/2014-07-04T00-00-02+00-00",
+        "2014_185/2014-07-04T00-03-02+00-00",
+        "2014_185/2014-07-04T00-06-02+00-00",
+        "2014_185/2014-07-04T00-09-02+00-00",
+        "2014_185/2014-07-04T00-12-02+00-00",
+        "2014_185/2014-07-04T01-15-02+00-00",
+        "2014_185/2014-07-04T01-17-02+00-00",
+        "2014_185/2014-07-04T01-30-02+00-00",
+        "2014_185/2014-07-04T02-03-02+00-00"
+      ),
+      flag = c(1, 1, 0, 0, 0, 0, 0, 0, 1)
+    )
+  )
+})
+
+test_that("Save outliers, don't overwrite", {
+  x <- setUp()
+
+  save_outliers(
+    x$db.full.one,
+    tibble::tibble(
+      file_id = c(
+        "2014_185/2014-07-04T00-00-02+00-00",
+        "2014_185/2014-07-04T00-03-02+00-00",
+        "2014_185/2014-07-04T02-03-02+00-00"
+      ),
+      flag = 1
+    ),
+    overwrite = FALSE
   )
 
   expect_equal(
-    7,
-    length(get.opp.files(x$db.full, outliers=F, all.files=T))
-  )
-
-  expect_equal(
-    6,
-    length(get.opp.files(x$db.full, outliers=T, all.files=T))
+    get_outlier_table(x$db.full.one),
+    tibble::tibble(
+      file_id = c(
+        "2014_185/2014-07-04T00-00-02+00-00",
+        "2014_185/2014-07-04T00-03-02+00-00",
+        "2014_185/2014-07-04T00-06-02+00-00",
+        "2014_185/2014-07-04T00-09-02+00-00",
+        "2014_185/2014-07-04T00-12-02+00-00",
+        "2014_185/2014-07-04T01-15-02+00-00",
+        "2014_185/2014-07-04T01-17-02+00-00",
+        "2014_185/2014-07-04T01-30-02+00-00",
+        "2014_185/2014-07-04T02-03-02+00-00"
+      ),
+      flag = c(0, 0, 0, 0, 0, 0, 0, 0, 1)
+    )
   )
 })

@@ -18,7 +18,7 @@ The default is to use bins bins that cover the range of the data. You should alw
 
 \item{position}{Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.}
 
-\item{free}{Should the y-scale be free (TRUE) or fixed (FIXED)}
+\item{xlim}{limits for x-axis.}
 }
 \value{
 None

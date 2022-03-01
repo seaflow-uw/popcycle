@@ -20,17 +20,17 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 #' Plot cytograms for exploring filtering parameters.
 #'
 #' @param evt EVT data frame.
-#' @param filter.params Filtering parameters in a one row data frame or named
+#' @param filter_params Filtering parameters in a one row data frame or named
 #'   list. Columns should include width, notch.small.D1, notch.small.D2,
 #'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
 #'   offset.large.D1, offset.large.D2.
 #' @return None
-#' @usage plot_filter_cytogram(evt, filter.params)
+#' @usage plot_filter_cytogram(evt, filter_params)
 #' @export plot_filter_cytogram
 
-plot_filter_cytogram <- function(evt, filter.params) {
-    
-  fp <- subset(filter.params, quantile == 50)
+plot_filter_cytogram <- function(evt, filter_params) {
+
+  fp <- subset(filter_params, quantile == 50)
 
 
   # linearize the LOG transformed data
@@ -46,7 +46,7 @@ plot_filter_cytogram <- function(evt, filter.params) {
   aligned <- subset(evt., D2 < D1 + fp$width & D1 < D2 + fp$width)
 
   # Filtering focused particles (fsc_small > D * notch)
-  opp <- filter.notch(evt, filter.params)
+  opp <- filter_evt(evt, filter_params)
 
   ################
   ### PLOTTING ###
@@ -105,7 +105,14 @@ plot_filter_cytogram <- function(evt, filter.params) {
 #' @export plot_cytogram
 plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bins=100, transform=T, xlim=NULL, ylim=NULL) {
 
-  if(!any(names(evtopp) == "file")) evtopp[,"file"] <- ""
+  if (!any(names(evtopp) == "file")) {
+    # Try to use file_id, otherwise set to ""
+    if (any(names(evtopp) == "file_id")) {
+      evtopp[, "file"] <- evtopp[, "file_id"]
+    } else {
+      evtopp[, "file"] <- ""
+    }
+  }
 
   p <- evtopp %>%
         ggplot2::ggplot() +
@@ -140,14 +147,21 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
   if(!any(names(opp) == "pop")) opp[,"pop"] <- "unknown"
-  if(!any(names(opp) == "file")) opp[,"file"] <- ""
+  if (!any(names(opp) == "file")) {
+    # Try to use file_id, otherwise set to ""
+    if (any(names(opp) == "file_id")) {
+      opp[, "file"] <- opp[, "file_id"]
+    } else {
+      opp[, "file"] <- ""
+    }
+  }
   opp$pop <- factor(opp$pop, levels = names(group.colors))
 
   p <- opp %>%
         ggplot2::ggplot() +
         ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y, fill = "pop", alpha=quote(..count..)), colour = NA, bins=100, show.legend=T) +
         ggplot2::theme_bw() +
-        ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
+        #ggplot2::stat_density_2d(ggplot2::aes_string(para.x, para.y, color = "pop"), bins=5, show.legend=F) +
         ggplot2::scale_fill_manual(values=group.colors) +
         ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
         ggplot2::scale_color_manual(values=group.colors) +
@@ -164,7 +178,7 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
 
 #' Plot population distribution on a map.
 #'
-#' @param stat Stat table from get.stat.table function
+#' @param stat Stat table from get_stat_table function
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter"
 #' @return None
@@ -239,7 +253,7 @@ plot_cruisetrack <- function(stat, param){
 
 #' plot population dynamics over time
 #'
-#' @param stat Stat table from get.stat.table function
+#' @param stat Stat table from get_stat_table function
 #' @param param Parameter to display
 #' @param transform Log transformation of the parameter"
 #' @return None
@@ -280,17 +294,24 @@ plot_time <- function(stat, param, transform=FALSE){
 #' The default is to use bins bins that cover the range of the data. You should always override this value, exploring multiple widths to find the best to illustrate the stories in your data.
 #' @param transform Log transformation of the parameter"
 #' @param position Position adjustment, either as a string ("stack" or "identity"), or the result of a call to a position adjustment function.
-#' @param free Should the y-scale be free (TRUE) or fixed (FIXED)
+#' @param xlim limits for x-axis.
 #' @return None
 #' @usage plot_histogram(opp, para.x="fsc_small", transform=T)
 #' @export plot_histogram
 
-plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transform=T, position="identity", free=T){
+plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transform=TRUE, position="identity", xlim=NULL){
 
   group.colors <- c(unknown="grey", beads="red3", prochloro=viridis::viridis(4)[1],synecho=viridis::viridis(4)[2],picoeuk=viridis::viridis(4)[3], croco=viridis::viridis(4)[4])
 
   if(!any(names(evtopp) == "pop")) evtopp[,"pop"] <- "unknown"
-  if(!any(names(evtopp) == "file")) evtopp[,"file"] <- NA
+  if (!any(names(evtopp) == "file")) {
+    # Try to use file_id, otherwise set to NA
+    if (any(names(evtopp) == "file_id")) {
+      evtopp[, "file"] <- evtopp[, "file_id"]
+    } else {
+      evtopp[, "file"] <- NA
+    }
+  }
   evtopp$pop <- factor(evtopp$pop, levels = names(group.colors))
 
   p <- evtopp %>%
@@ -299,10 +320,8 @@ plot_histogram <- function(evtopp, para.x = "fsc_small", binwidth=0.02, transfor
       ggplot2::scale_fill_manual(values=group.colors) +
       ggplot2::guides(fill=ggplot2::guide_legend(title="population"))
 
-  if(free){p <- p + ggplot2::facet_wrap(~ file, scale="free_y")
-  }else{ p <- p + ggplot2::facet_wrap(~ file)}
-
-  if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10")
+  if(transform) p <- p + ggplot2::scale_x_continuous(trans="log10", limit= xlim)
+  if(!transform) p <- p + ggplot2::scale_x_continuous(limit= xlim)
 
   return(p)
 

@@ -7,7 +7,7 @@
 plot_map(stat, param)
 }
 \arguments{
-\item{stat}{Stat table from get.stat.table function}
+\item{stat}{Stat table from get_stat_table function}
 
 \item{param}{Parameter to display}
 

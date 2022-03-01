@@ -121,6 +121,18 @@ CREATE TABLE IF NOT EXISTS poly (
   gating_id TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gating_plan (
+  start_date TEXT NOT NULL,
+  gating_id TEXT NOT NULL,
+  PRIMARY KEY (start_date, gating_id)
+);
+
+CREATE TABLE IF NOT EXISTS filter_plan (
+  start_date TEXT NOT NULL,
+  filter_id TEXT NOT NULL,
+  PRIMARY KEY (start_date, filter_id)
+);
+
 CREATE TABLE IF NOT EXISTS outlier (
   file TEXT NOT NULL,
   flag INTEGER,
@@ -176,8 +188,6 @@ CREATE VIEW IF NOT EXISTS stat AS
   FROM
     opp, vct, sfl
   WHERE
-    opp.filter_id == (select id FROM filter ORDER BY date DESC limit 1)
-    AND
     opp.quantile == vct.quantile
     AND
     opp.file == vct.file

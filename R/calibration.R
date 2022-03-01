@@ -27,18 +27,22 @@ flowrate <- function(stream_pressure, inst=inst){
 #' Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized foward scatter to 1-µm beads used as internal standard
 #'
 #' @param opp Table that contains fsc_small values (transformed data).
-#' @param beads.fsc Values of the fsc_small for beads (transformed data).
+#' @param beads_fsc Values of the fsc_small for beads (transformed data).
 #' @param inst Instrument serial number
 #' @param mie Optional Mie theory lookup dataframe
 #' @return A dataframe with cell size and carbon cell quotas
 #' @export
-size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
+size_carbon_conversion <- function(opp, beads_fsc, inst, mie = NULL){
+    was_tibble <- FALSE
+    if ("tbl_df" %in% class(opp)) {
+      opp <- as.data.frame(opp)
+    }
     if (is.null(mie)) {
         mie <- read_mie_csv()
     }
 
     # find closest matches in Mie lookup table
-    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads.fsc), mie$scatter, all.inside = TRUE)
+    id <- findInterval(opp[,"fsc_small"]/as.numeric(beads_fsc), mie$scatter, all.inside = TRUE)
 
     #convert scatter to diameter and Qc
     for(quant in c("_lwr","_mid","_upr")){
@@ -48,17 +52,21 @@ size.carbon.conversion <- function(opp, beads.fsc, inst, mie=NULL){
 
     }
 
+    if (was_tibble) {
+      opp <- tibble::as_tibble(opp)
+    }
+
   return(opp)
 }
 
 #' Calibrate abundance based on Influx data
 #'
-#' @param stat The stat table returned from get.stat.table()
-#' @param cruisename Name of the cruise (returned from get.mata.table()).
+#' @param stat The stat table returned from get_stat_table()
+#' @param cruisename Name of the cruise (returned from get_metadata_table()).
 #' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
 #' @return the stat table witrh corrected abundancce if available
 #' @export
-stat.calibration <- function(stat, cruisename, calib=NULL){
+stat_calibration <- function(stat, cruisename, calib=NULL){
 
     if (is.null(calib)) {
         calib <- read_calib_csv()
@@ -82,11 +90,11 @@ stat.calibration <- function(stat, cruisename, calib=NULL){
 #' Calibrate abundance based on Influx data
 #'
 #' @param PSD Particle size disitribution created by create_PSD().
-#' @param cruisename Name of the cruise (returned from get.mata.table()).
+#' @param cruisename Name of the cruise (returned from get_metadata_table()).
 #' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
 #' @return the stat table with corrected abundancce if available
 #' @export
-PSD.calibration <- function(PSD, cruisename, calib=NULL){
+PSD_calibration <- function(PSD, cruisename, calib=NULL){
 
   if (is.null(calib)) {
         calib <- read_calib_csv()

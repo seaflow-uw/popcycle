@@ -8,7 +8,13 @@ if (is.na(ncpus)) {
   ncpus <- 4
 }
 
-cat("Installing using Ncpus =", ncpus, "\n")
+deps_only <- as.logical(Sys.getenv("DEPS_ONLY"))
+if (is.na(deps_only)) {
+  deps_only <- FALSE
+}
+
+cat("Ncpus =", ncpus, "\n")
+cat("only install dependencies =", deps_only, "\n")
 
 # Install and attach devtools
 if (!requireNamespace("devtools", quietly=TRUE)) {
@@ -20,7 +26,7 @@ if (!requireNamespace("BiocManager", quietly=TRUE)) {
   install.packages("BiocManager", repos='http://cran.us.r-project.org')
 }
 
-# Prevent warnings from package installs from turning into errors that halt
+# Prevent warnings during package installs from turning into errors that halt
 # installation. This variable is set here because a a minor markup error in a
 # flowDensity Rd file prevented it from installing successfully with
 # devtools::install_deps. The warning was
@@ -33,5 +39,9 @@ if (!requireNamespace("BiocManager", quietly=TRUE)) {
 if (Sys.getenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS") == "") {
   Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
 }
-# Install this package and the packages it imports
-devtools::install(dependencies=TRUE, upgrade="never", Ncpus=ncpus)
+
+if (deps_only) {
+  devtools::install_deps(dependencies=TRUE, upgrade="never", Ncpus=ncpus)
+} else {
+  devtools::install(dependencies=TRUE, upgrade="never", Ncpus=ncpus)
+}
