@@ -113,6 +113,9 @@ create_full_filter_plan <- function(file_ids_to_filter, db, evt_dir, opp_dir, fi
   df <- add_opp_paths(df, opp_dir)
   # Add filter IDs based on filter_plan table or filter_id parameter
   df <- add_filter_ids(df, db, filter_id = filter_id)
+  if (any(is.na(df$filter_id))) {
+    stop("Some files are not covered by filter_plan date ranges")
+  }
   # Filter down to only files with changed gating IDs
   opp <- get_opp_table(db) %>%
     dplyr::select(file_id, filter_id)
@@ -144,6 +147,9 @@ create_full_gating_plan <- function(file_ids_to_gate, db, opp_dir, vct_dir, gati
   df <- add_vct_paths(df, vct_dir)
   # Add gating IDs based on row file_id or date
   df <- add_gating_ids(df, db, gating_id = gating_id)
+  if (any(is.na(df$gating_id))) {
+    stop("Some files are not covered by gating_plan date ranges")
+  }
   # Filter down to only files with changed gating IDs
   vct <- get_vct_table(db) %>%
     dplyr::select(file_id, gating_id)

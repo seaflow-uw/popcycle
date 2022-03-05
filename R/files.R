@@ -204,6 +204,13 @@ get_vct_by_date <- function(db, vct_dir, start_date, end_date, outliers = TRUE,
 get_processed_particles <- function(db, data_dir, data_type, file_ids = NULL,
                                     start_date = NULL, end_date = NULL,
                                     outliers = TRUE, col_select = NULL) {
+  if (!is.null(start_date) && !("POSIXct" %in% class(start_date))) {
+    stop("start_date must be a POSIXct date value")
+  }
+  if (!is.null(end_date) && !("POSIXct" %in% class(end_date))) {
+    stop("end_date must be a POSIXct date value")
+  }
+
   if (data_type == "opp") {
     table_getter <- get_opp_table
     path_adder <- add_opp_paths
