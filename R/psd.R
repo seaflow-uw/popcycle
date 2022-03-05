@@ -377,17 +377,20 @@ create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE)
 #' Find min/max for a data column / quantile pair in many VCT directories
 #'
 #' @param vct_dirs Vector of VCT file directory paths.
-#' @param data_col VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
-#'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
+#' @param data_cols Character vector of VCT columns to use as size metric:
+#'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
+#'  For Qc and diam the quantile will be added to the column name automatically.
 #' @param quantile OPP Filtering quantile.
+#' @param pops Character vector of populations to filter for.
 #' @return Two item numeric vector of c(min_val, max_val)
 #' @export
-get_vct_range <- function(vct_dirs, data_col, quantile)  {
+get_vct_range <- function(vct_dirs, data_cols, quantile, pops = NULL) {
   ptm <- proc.time()
   # Get vector of file paths
   vct_files <- purrr::flatten_chr(purrr::map(vct_dirs, ~ list.files(., "\\.parquet$", full.names=T)))
-  answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_col, quantile))
+  answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_cols, quantile, pops = pops))
   answer <- purrr::flatten_dbl(answer)
+  answer <- answer[!is.infinite(answer)]
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
   return(c(min(answer), max(answer)))
@@ -396,36 +399,49 @@ get_vct_range <- function(vct_dirs, data_col, quantile)  {
 #' Find min/max for a data column / quantile pair in one VCT file
 #'
 #' @param vct_file VCT file path.
-#' @param data_col VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
-#'  Qc or diam is selected, the refractive index is indicated in the extra column "n".
+#' @param data_cols Character vector of VCT columns to use as size metric:
+#'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
+#'  For Qc and diam the quantile will be added to the column name automatically.
 #' @param quantile OPP Filtering quantile.
+#' @param pops Character vector of populations to filter for.
 #' @return Two item numeric vector of c(min_val, max_val)
-get_vct_range_one_file <- function(vct_file, data_col, quantile) {
-  # Check data column requested for validity and for presence of multiple refractive indexes
-  refractive_cols <- c("Qc", "diam")
-  channel_cols <- c("fsc_small", "chl_small", "pe")
-
-  if (! (data_col %in% c(refractive_cols, channel_cols))) {
-    stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
-  }
-  refractive <- data_col %in% refractive_cols
-
+get_vct_range_one_file <- function(vct_file, data_cols, quantile, pops = NULL) {
   qstr <- paste0("q", as.numeric(quantile))
   qsuffix <- paste0("_", qstr)
 
-  # Get date, quantile boolean column, data columns, and pop columns from file
-  if (refractive) {
-    vct <- arrow::read_parquet(
-      vct_file,
-      col_select=c(all_of(qstr), c(starts_with(data_col) & ends_with(qsuffix)))
-    )
-  } else {
-    vct <- arrow::read_parquet(vct_file, col_select=c(all_of(qstr), all_of(data_col)))
+  # Check data column requested for validity and for presence of multiple refractive indexes
+  refractive_cols <- c("Qc_lwr", "Qc_mid", "Qc_upr", "diam_lwr", "diam_mid", "diam_upr")
+  channel_cols <- c("fsc_small", "chl_small", "pe")
+
+  if (!all(data_cols %in% c(refractive_cols, channel_cols))) {
+    stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
+  }
+  refractive <- data_cols[data_cols %in% refractive_cols]
+  not_refractive <- data_cols[!(data_cols %in% refractive_cols)]
+
+  final_cols <- c(qstr)
+  if (length(refractive) > 0) {
+    final_cols <- c(final_cols, paste0(refractive, qsuffix))
+  }
+  if (length(not_refractive) > 0) {
+    final_cols <- c(final_cols, not_refractive)
+  }
+  if (!is.null(pops)) {
+    pop_col <- paste0("pop", qsuffix)
+    final_cols <- c(final_cols, pop_col)
+  }
+  vct <- arrow::read_parquet(
+    vct_file,
+    col_select = c(all_of(final_cols))
+  )
+  if (!is.null(pops)) {
+    vct <- vct[vct[[pop_col]] %in% pops, ]
   }
   # Find min and max for each data column
   minmax <- vct %>%
     dplyr::filter(get(qstr)) %>%
-    dplyr::summarise(dplyr::across(starts_with(data_col), ~ range(.x)))
+    dplyr::select(where(is.numeric)) %>%
+    dplyr::summarise_all(range)
   return(c(min(as.matrix(minmax)), max(as.matrix(minmax))))
 }
 

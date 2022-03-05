@@ -4,15 +4,18 @@
 \alias{get_vct_range_one_file}
 \title{Find min/max for a data column / quantile pair in one VCT file}
 \usage{
-get_vct_range_one_file(vct_file, data_col, quantile)
+get_vct_range_one_file(vct_file, data_cols, quantile, pops = NULL)
 }
 \arguments{
 \item{vct_file}{VCT file path.}
 
-\item{data_col}{VCT column to use as size metric: fsc_small, chl_small, pe, Qc, or diam. If
-Qc or diam is selected, the refractive index is indicated in the extra column "n".}
+\item{data_cols}{Character vector of VCT columns to use as size metric:
+fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
+For Qc and diam the quantile will be added to the column name automatically.}
 
 \item{quantile}{OPP Filtering quantile.}
+
+\item{pops}{Character vector of populations to filter for.}
 }
 \value{
 Two item numeric vector of c(min_val, max_val)
