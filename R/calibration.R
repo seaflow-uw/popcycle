@@ -24,7 +24,7 @@ flowrate <- function(stream_pressure, inst=inst){
 
 
 
-#' Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized foward scatter to 1-µm beads used as internal standard
+#' Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized forward scatter to 1-µm beads used as internal standard
 #'
 #' @param opp Table that contains fsc_small values (transformed data).
 #' @param beads_fsc Values of the fsc_small for beads (transformed data).
