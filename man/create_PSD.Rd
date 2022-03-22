@@ -12,8 +12,10 @@ create_PSD(
   log_base = NULL,
   remove_boundary_points = FALSE,
   ignore_dates = NULL,
+  pop = NULL,
   use_data.table = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  cores = 1
 )
 }
 \arguments{
@@ -35,9 +37,14 @@ diam before gridding.}
 
 \item{ignore_dates}{Don't process VCT data with these dates.}
 
+\item{pop}{A single populations label to keep. Particles not matching this label will be
+ignored.}
+
 \item{use_data.table}{Use data.table for performance speedup, otherwise use dplyr.}
 
 \item{verbose}{Message extra diagnostic information.}
+
+\item{cores}{Number of cores to use}
 }
 \value{
 Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid

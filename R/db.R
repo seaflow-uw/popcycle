@@ -1003,12 +1003,14 @@ copy_outlier_table <- function(db_from, db_to) {
   dest <- dest[order(dest$file), ]
   joined <- joined[order(joined$file), ]
 
-  new_dest_flags <- unlist(lapply(joined$flag.x, function(x) { if (is.na(x)) { 0 } else { x } }))
-  # Check that new_dest_flags has the same number of values as dest here
-  if (nrow(dest) != length(new_dest_flags)) {
+  # Any file in dest not in src are set with flag 0
+  x_gt_0 <- (joined$flag.x > 0) & !is.na(joined$flag.x)
+  joined[x_gt_0, "flag.y"] <- joined[x_gt_0, "flag.x"]
+  # Check that file list in joined matches dest
+  if (any(joined$file != dest$file)) {
     stop("copy_outlier_table produced an incorrect result")
   }
-  dest$flag <- as.integer(new_dest_flags)
+  dest$flag <- as.integer(joined$flag.y)
   reset_table(db_to, "outlier")
   sql_dbWriteTable(db_to, name="outlier", value=dest)
 }
@@ -1057,4 +1059,16 @@ get_stat_table <- function(db, inst=NULL) {
   # }
 
   return(stat)
+}
+
+#' Migrate filtering, gating, and outlier related tables to a new post-filter database.
+#'
+#' Tables migrated are filter, filter_plan, gating_plan, gating, poly, and outlier.
+#'
+#' @param db_from Database to copy outlier table from.
+#' @param db_to Database to copy outlier table to.
+#' @export
+migrate_tables <- function(old_db, new_db) {
+  copy_tables(old_db, new_db, c("filter", "filter_plan", "gating_plan", "gating", "poly"))
+  copy_outlier_table(old_db, new_db)
 }

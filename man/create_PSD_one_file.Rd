@@ -12,6 +12,7 @@ create_PSD_one_file(
   log_base = NULL,
   remove_boundary_points = FALSE,
   ignore_dates = NULL,
+  pop = NULL,
   use_data.table = TRUE,
   verbose = FALSE
 )
@@ -34,6 +35,9 @@ log the VCT data before gridding. If break points are not log use NULL.}
 diam before gridding.}
 
 \item{ignore_dates}{Don't process VCT data with these dates.}
+
+\item{pop}{A single populations label to keep. Particles not matching this label will be
+ignored.}
 
 \item{use_data.table}{Use data.table for performance speedup, otherwise use dplyr.}
 

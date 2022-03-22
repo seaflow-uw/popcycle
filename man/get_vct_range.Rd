@@ -2,12 +2,12 @@
 % Please edit documentation in R/psd.R
 \name{get_vct_range}
 \alias{get_vct_range}
-\title{Find min/max for a data column / quantile pair in many VCT directories}
+\title{Find min/max for a data column / quantile pair in VCT files}
 \usage{
-get_vct_range(vct_dirs, data_cols, quantile, pops = NULL)
+get_vct_range(vct_files, data_cols, quantile, pop = NULL, cores = 1)
 }
 \arguments{
-\item{vct_dirs}{Vector of VCT file directory paths.}
+\item{vct_files}{Vector of VCT file paths.}
 
 \item{data_cols}{Character vector of VCT columns to use as size metric:
 fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
@@ -15,11 +15,13 @@ For Qc and diam the quantile will be added to the column name automatically.}
 
 \item{quantile}{OPP Filtering quantile.}
 
-\item{pops}{Character vector of populations to filter for.}
+\item{cores}{Number of cores to use}
+
+\item{pops}{Single population label to filter for.}
 }
 \value{
 Two item numeric vector of c(min_val, max_val)
 }
 \description{
-Find min/max for a data column / quantile pair in many VCT directories
+Find min/max for a data column / quantile pair in VCT files
 }

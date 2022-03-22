@@ -11,8 +11,11 @@
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
+#' @param pop A single populations label to keep. Particles not matching this label will be
+#'   ignored.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
+#' @param cores Number of cores to use
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
 #'   grid breaks vector. The break point at that location defines the inclusive lower bound
@@ -21,15 +24,31 @@
 #'   of Qc.
 #' @export
 create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                       ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
+                       ignore_dates=NULL, pop=NULL, use_data.table=TRUE, verbose=FALSE, cores = 1) {
   ptm <- proc.time()
   quantile <- as.numeric(quantile)
-  counts_list <- lapply(vct_files, function(v) {
-    create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
-                        remove_boundary_points=remove_boundary_points,
-                        use_data.table=use_data.table, ignore_dates=ignore_dates,
-                        verbose=verbose)
-  })
+  cores <- min(cores, parallel::detectCores())
+  message("using ", cores, " cores")
+  if (cores > 1) {
+    # Parallel code
+    cl <- parallel::makeCluster(cores, outfile="")
+    doParallel::registerDoParallel(cl)
+    counts_list <- foreach::foreach(v = vct_files, .inorder = TRUE) %dopar% {
+      create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
+                          remove_boundary_points=remove_boundary_points,
+                          use_data.table=use_data.table, ignore_dates=ignore_dates,
+                          pop=pop, verbose=verbose)
+    }
+    parallel::stopCluster(cl)
+  } else {
+    # Serial code
+    counts_list <- lapply(vct_files, function(v) {
+      create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
+                          remove_boundary_points=remove_boundary_points,
+                          use_data.table=use_data.table, ignore_dates=ignore_dates,
+                          pop=pop, verbose=verbose)
+    })
+  }
   counts <- dplyr::bind_rows(counts_list)
   rm(counts_list)
   invisible(gc())
@@ -51,6 +70,8 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
+#' @param pop A single populations label to keep. Particles not matching this label will be
+#'   ignored.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
@@ -60,26 +81,60 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
 #'   of Qc.
 create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                                ignore_dates=NULL, use_data.table=TRUE, verbose=FALSE) {
+                                ignore_dates=NULL, pop=NULL, use_data.table=TRUE, verbose=FALSE) {
   diag_text <- list(vct_file)  # for verbose diagnostics
   if (nrow(refracs) != 1) {
     stop("refracs should only contain one row")
+  }
+  if (!all(refracs[1, ] %in% c("mid", "lwr", "upr"))) {
+    stop("invalid refraction index label in: '", paste(refracs, collapse = " "), "'")
   }
 
   qstr <- paste0("q", quantile)
   qsuffix <- paste0("_", qstr)
 
-  # Read the VCT parquet file, only grabbing columns needed to analyze one quantile
-  vct <- arrow::read_parquet(
-      vct_file,
-      col_select=c(date, all_of(qstr), fsc_small, pe, chl_small, ends_with(qsuffix))
-    ) %>%
+   # Read the VCT parquet file, only grabbing columns needed to analyze one quantile
+  # This is a lot of code to read only columns needed, but I feel it's clearer
+  # than trying to dynamically build a composed tidyselect expression for col_select
+  cols_needed <- c("date", qstr, paste0("pop", qsuffix))
+  for (col in names(grid)) {
+    if (!(col %in% c("diam", "Qc"))) {
+      cols_needed <- c(cols_needed, col)
+    }
+  }
+  need_diam <- "diam" %in% names(grid)
+  need_Qc <- "Qc" %in% names(grid)
+  if (!need_diam && !need_Qc) {
+    vct <- arrow::read_parquet(
+        vct_file,
+        col_select = c(all_of(cols_needed))
+    )
+  } else if (need_diam && !need_Qc) {
+    vct <- arrow::read_parquet(
+        vct_file,
+        col_select = c(all_of(cols_needed), (starts_with("diam") & ends_with(qsuffix)))
+    )
+  } else if (!need_diam && need_Qc) {
+    vct <- arrow::read_parquet(
+        vct_file,
+        col_select = c(all_of(cols_needed), (starts_with("Qc") & ends_with(qsuffix)))
+    )
+  } else {
+    vct <- arrow::read_parquet(
+        vct_file,
+        col_select = c(all_of(cols_needed), ends_with(qsuffix))
+    )
+  }
+  vct <- vct %>%
     dplyr::filter(get(qstr)) %>%         # select one quantile of data
     dplyr::select(-c(all_of(qstr))) %>%  # remove quantile boolean column
     dplyr::rename_with(                  # Remove quantile suffix from columns
       function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
       ends_with(qsuffix)
     )
+  if (!is.null(pop)) {
+    vct <- vct %>% dplyr::filter(pop == {{ pop }})
+  }
 
   # Ignore certain dates
   if (!is.null(ignore_dates)) {
@@ -139,9 +194,9 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
 
     # Label by index into grid
     vct[paste0(dim, "_coord")] <- as.integer(cut(values, grid[[dim]], labels=FALSE, right=FALSE))
-    if (any(is.na(vct[paste0(dim, "_coord")]))) {
-      stop(paste0("create_PSD_one_file: ", dim, " value out of range in ", vct_file))
-    }
+    # if (any(is.na(vct[paste0(dim, "_coord")]))) {
+    #   stop(paste0("create_PSD_one_file: ", dim, " value out of range in ", vct_file))
+    # }
   }
 
   # Group by time, grid coordinates, and population
@@ -153,13 +208,23 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL
     vct <- data.table::as.data.table(vct)
     coord_cols <- stringr::str_subset(names(vct), "_coord$")
     group_cols <- c("date", coord_cols, "pop")
-    vct_summary <- vct[, list(n=.N, Qc_sum=sum(Qc)), keyby=group_cols]
+    if ("Qc" %in% names(grid)) {
+      vct_summary <- vct[, list(n=.N, Qc_sum=sum(Qc)), keyby=group_cols]
+    } else {
+      vct_summary <- vct[, list(n=.N), keyby=group_cols]
+    }
     data.table::setDTthreads(orig_threads)  # reset data.table multi-threading
     vct_summary <- tibble::as_tibble(vct_summary)
   } else {
     vct_summary <- vct %>%
-      dplyr::group_by(date, dplyr::across(ends_with("_coord")), pop) %>%
-      dplyr::summarise(n=dplyr::n(), Qc_sum=sum(Qc), .groups="drop")
+      dplyr::group_by(date, dplyr::across(ends_with("_coord")), pop)
+    if ("Qc" %in% names(grid)) {
+      vct_summary <- vct_summary %>%
+        dplyr::summarise(n=dplyr::n(), Qc_sum=sum(Qc), .groups="drop")
+    } else {
+      vct_summary <- vct_summary %>%
+        dplyr::summarise(n=dplyr::n(), .groups="drop")
+    }
   }
 
   if (verbose) {
@@ -186,17 +251,30 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
     psd <- data.table::setDT(psd)
     psd$date2 <- lubridate::floor_date(psd$date, time_expr)
     group_cols <- c("date2", stringr::str_subset(names(psd), "_coord$"), "pop")
-    grouped <- psd[,
-                   list(n=sum(n), Qc_sum=sum(Qc_sum)),
-                   keyby=group_cols
-                   ]
+    if ("Qc_sum" %in% names(psd)) {
+      grouped <- psd[,
+                    list(n=sum(n), Qc_sum=sum(Qc_sum)),
+                    keyby=group_cols
+                 ]
+    } else {
+      grouped <- psd[,
+                    list(n=sum(n)),
+                    keyby=group_cols
+                 ]
+    }
     grouped <- tibble::as_tibble(grouped)
     grouped <- grouped %>% rename(date = date2)
   } else {
     grouped <- psd %>%
       dplyr::group_by(date=lubridate::floor_date(date, time_expr), dplyr::across(ends_with("_coord")), pop) %>%
-      dplyr::arrange(by_group=TRUE) %>%
-      dplyr::summarise(n=sum(n), Qc_sum=sum(Qc_sum), .groups="drop")
+      dplyr::arrange(by_group=TRUE)
+    if ("Qc_sum" %in% names(psd)) {
+      grouped <- grouped %>%
+        dplyr::summarise(n=sum(n), Qc_sum=sum(Qc_sum), .groups="drop")
+    } else {
+      grouped <- grouped %>%
+        dplyr::summarise(n=sum(n), .groups="drop")
+    }
   }
   return(grouped)
 }
@@ -374,21 +452,36 @@ create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE)
   return(b)
 }
 
-#' Find min/max for a data column / quantile pair in many VCT directories
+#' Find min/max for a data column / quantile pair in VCT files
 #'
-#' @param vct_dirs Vector of VCT file directory paths.
+#' @param vct_files Vector of VCT file paths.
 #' @param data_cols Character vector of VCT columns to use as size metric:
 #'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
 #'  For Qc and diam the quantile will be added to the column name automatically.
 #' @param quantile OPP Filtering quantile.
-#' @param pops Character vector of populations to filter for.
+#' @param pops Single population label to filter for.
+#' @param cores Number of cores to use
 #' @return Two item numeric vector of c(min_val, max_val)
 #' @export
-get_vct_range <- function(vct_dirs, data_cols, quantile, pops = NULL) {
+get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL, cores = 1) {
   ptm <- proc.time()
   # Get vector of file paths
-  vct_files <- purrr::flatten_chr(purrr::map(vct_dirs, ~ list.files(., "\\.parquet$", full.names=T)))
-  answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_cols, quantile, pops = pops))
+
+  cores <- min(cores, parallel::detectCores())
+  message("using ", cores, " cores")
+  if (cores > 1) {
+    # Parallel code
+    cl <- parallel::makeCluster(cores, outfile="")
+    doParallel::registerDoParallel(cl)
+    answer <- foreach::foreach(vct_file = vct_files, .inorder = TRUE) %dopar% {
+      return(get_vct_range_one_file(vct_file, data_cols, quantile, pop = pop, cores = cores))
+    }
+    parallel::stopCluster(cl)
+  } else {
+    # Serial code
+    answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_cols, quantile, pop = pop, cores = cores))
+  }
+
   answer <- purrr::flatten_dbl(answer)
   answer <- answer[!is.infinite(answer)]
   deltat <- proc.time() - ptm
@@ -403,9 +496,10 @@ get_vct_range <- function(vct_dirs, data_cols, quantile, pops = NULL) {
 #'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
 #'  For Qc and diam the quantile will be added to the column name automatically.
 #' @param quantile OPP Filtering quantile.
-#' @param pops Character vector of populations to filter for.
+#' @param pops Single population label to filter for.
+#' @param cores Number of cores to use
 #' @return Two item numeric vector of c(min_val, max_val)
-get_vct_range_one_file <- function(vct_file, data_cols, quantile, pops = NULL) {
+get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL, cores = 1) {
   qstr <- paste0("q", as.numeric(quantile))
   qsuffix <- paste0("_", qstr)
 
@@ -426,7 +520,7 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pops = NULL) {
   if (length(not_refractive) > 0) {
     final_cols <- c(final_cols, not_refractive)
   }
-  if (!is.null(pops)) {
+  if (!is.null(pop)) {
     pop_col <- paste0("pop", qsuffix)
     final_cols <- c(final_cols, pop_col)
   }
@@ -434,15 +528,61 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pops = NULL) {
     vct_file,
     col_select = c(all_of(final_cols))
   )
-  if (!is.null(pops)) {
-    vct <- vct[vct[[pop_col]] %in% pops, ]
+  if (!is.null(pop)) {
+    vct <- vct[vct[[pop_col]] == pop, ]
   }
   # Find min and max for each data column
+  # This will warn about no non-missing arguments if no data for this file
+  # result will be Inf or -Inf in this case, filter these values out later
   minmax <- vct %>%
     dplyr::filter(get(qstr)) %>%
     dplyr::select(where(is.numeric)) %>%
-    dplyr::summarise_all(range)
-  return(c(min(as.matrix(minmax)), max(as.matrix(minmax))))
+    suppressWarnings(dplyr::summarise_all(range))
+  result <- suppressWarnings(c(min(as.matrix(minmax)), max(as.matrix(minmax))))
+  return(result)
+}
+
+#' Find quantiles for VCT data
+#'
+#' @param vct_files VCT file paths.
+#' @param data_cols Character vector of VCT column to use as size metric:
+#'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
+#'  For Qc and diam the filtering quantile will be added to the column name
+#'  automatically.
+#' @param filtering_quantile OPP Filtering quantile.
+#' @param quantile_probs Numeric vector of probabilities with values in [0,1].
+#' @param pops Single population label to filter for.
+#' @param ignore_dates Don't process VCT data with these dates.
+#' @return Result of quantile()
+#' @export
+get_vct_quantile_range <- function(vct_files, col, filtering_quantile, quantile_probs = c(.01, .99), 
+                                   pop = NULL, ignore_dates = NULL) {
+  qstr <- paste0("q", filtering_quantile)
+  qsuffix <- paste0("_", qstr)
+  data_col <- paste0(col, qsuffix)
+  pop_col <- paste0("pop", qsuffix)
+  need_cols <- c(qstr, data_col)
+  if (!is.null(ignore_dates)) {
+    need_cols <- c("date", need_cols)
+  }
+  if (!is.null(pop)) {
+    need_cols <- c(need_cols, pop_col)
+    data <- dplyr::bind_rows(lapply(vct_files, function(f) {
+      arrow::read_parquet(f, col_select = all_of(need_cols)) %>%
+        dplyr::filter(.data[[pop_col]] == pop, .data[[qstr]] == TRUE)
+    }))
+  } else {
+    data <- dplyr::bind_rows(lapply(vct_files, function(f) {
+      arrow::read_parquet(f, col_select = all_of(need_cols)) %>%
+        dplyr::filter(.data[[qstr]] == TRUE)
+    }))
+  }
+  # Ignore certain dates
+  if (!is.null(ignore_dates)) {
+    data <- data %>% dplyr::filter(! (date %in% ignore_dates))
+  }
+
+  return(quantile(data[[data_col]], quantile_probs))
 }
 
 #' Show messages for rows in gridded particle data that fail validation

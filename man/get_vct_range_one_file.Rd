@@ -4,7 +4,7 @@
 \alias{get_vct_range_one_file}
 \title{Find min/max for a data column / quantile pair in one VCT file}
 \usage{
-get_vct_range_one_file(vct_file, data_cols, quantile, pops = NULL)
+get_vct_range_one_file(vct_file, data_cols, quantile, pop = NULL, cores = 1)
 }
 \arguments{
 \item{vct_file}{VCT file path.}
@@ -15,7 +15,9 @@ For Qc and diam the quantile will be added to the column name automatically.}
 
 \item{quantile}{OPP Filtering quantile.}
 
-\item{pops}{Character vector of populations to filter for.}
+\item{cores}{Number of cores to use}
+
+\item{pops}{Single population label to filter for.}
 }
 \value{
 Two item numeric vector of c(min_val, max_val)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/calibration.R
 \name{size_carbon_conversion}
 \alias{size_carbon_conversion}
-\title{Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized foward scatter to 1-µm beads used as internal standard}
+\title{Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized forward scatter to 1-µm beads used as internal standard}
 \usage{
 size_carbon_conversion(opp, beads_fsc, inst, mie = NULL)
 }
@@ -19,5 +19,5 @@ size_carbon_conversion(opp, beads_fsc, inst, mie = NULL)
 A dataframe with cell size and carbon cell quotas
 }
 \description{
-Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized foward scatter to 1-µm beads used as internal standard
+Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized forward scatter to 1-µm beads used as internal standard
 }
