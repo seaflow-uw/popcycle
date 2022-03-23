@@ -43,7 +43,7 @@ update_plan_table <- function(db, results_table, check = FALSE) {
   }
   message(old_plan_str)
 
-  starts <- starts_from_results_table(results_table)
+  starts <- plan_from_table(results_table)
 
   if (is.null(old_plan) || !isTRUE(dplyr::all_equal(starts, old_plan))) {
     message("existing plan will be replaced")
@@ -62,11 +62,12 @@ update_plan_table <- function(db, results_table, check = FALSE) {
   invisible(starts)
 }
 
-#' Create a tibble of start dates for gating IDs based vct / opp table entries.
+#' Create a tibble of start dates for gating / filter IDs based vct / opp table entries.
 #'
 #' @param tbl VCT or OPP table as data.frame or tibble
 #' @return tibble with character columns start_date and gating_id
-starts_from_results_table <- function(tbl) {
+#' @export
+plan_from_table <- function(tbl) {
   if (nrow(tbl) == 0) {
     stop("table is empty")
   }
