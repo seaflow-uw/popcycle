@@ -1,0 +1,93 @@
+cruise,ship,time,correction
+Thompson_0,R/V Thomas G Thompson,2009-11-08,NA
+Thompson_1,R/V Thomas G Thompson,2010-05-06,NA
+Thompson_2,R/V Thomas G Thompson,2010-06-28,1.251
+Thompson_3,R/V Thomas G Thompson,2010-08-09,1.335
+Thompson_4,R/V Thomas G Thompson,2010-11-14,1.073
+Thompson_5,R/V Thomas G Thompson,2010-12-31,1.407
+Tokyo_1,M/V Tokyo,2011-05-23,NA
+Thompson_6,R/V Thomas G Thompson,2011-06-11,1.484
+Tokyo_2,M/V Tokyo,2011-07-03,NA
+Thompson_7,R/V Thomas G Thompson,2011-08-26,1.327
+Tokyo_3,M/V Tokyo,2011-09-25,NA
+MBARI_1,R/V Western Flyer,2011-10-05,NA
+Thompson_8,R/V Thomas G Thompson,2011-10-09,0.625
+Thompson_9,R/V Thomas G Thompson,2011-10-30,0.416
+Tokyo_4,M/V Tokyo,2012-02-03,NA
+Thompson_10,R/V Thomas G Thompson,2012-05-19,1.431
+MBARI_2,R/V Western Flyer,2012-09-15,NA
+Thompson_11,R/V Thomas G Thompson,2013-01-29,6.57
+Thompson_12,R/V Thomas G Thompson,2013-03-09,NA
+DeepDOM,R/V Knorr,2013-04-14,0.654
+KiloMoana_1,R/V Kilo Moana,2013-08-22,1.026
+MBARI_3,R/V Western Flyer,2013-10-13,NA
+SCOPE_1,R/V Kilo Moana,2014-12-10,0.598
+SCOPE_2,R/V Kilo Moana,2015-03-25,0.58
+SCOPE_3,R/V Kilo Moana,2015-05-24,1.474
+SCOPE_4,R/V Kilo Moana,2015-06-19,1.034
+SCOPE_5,R/V Kilo Moana,2015-07-20,0.799
+SCOPE_6,R/V Kilo Moana,2015-07-30,0.816
+SCOPE_9,R/V Kaimikai O Kanaloa,2015-09-27,Inf
+SCOPE_10,R/V Kaimikai O Kanaloa,2015-10-14,0.964
+SCOPE_11,R/V Kilo Moana,2015-11-14,0.943
+SCOPE_12,R/V Kilo Moana,2016-01-13,0.968
+SCOPE_13,R/V Kilo Moana,2016-02-10,0.995
+SCOPE_14,R/V Kilo Moana,2016-03-09,NA
+SCOPE_15,R/V Kaimikai O Kanaloa,2016-04-15,1.1
+SCOPE_16,R/V Kaimikai O Kanaloa,2016-04-27,1.36
+SCOPE_17,R/V Kaimikai O Kanaloa,2016-05-13,NA
+SCOPE_18,R/V Kaimikai O Kanaloa,2016-07-12,1.002
+SCOPE_19,R/V Kaimikai O Kanaloa,2016-08-10,1.019
+MGL1704,R/V Langseth,2017-06-04,0.951
+HOT-294,R/V Kilo Moana,2017-06-21,0.813
+MESO_SCOPE,R/V Kilo Moana,2017-07-05,513.242
+KM1712,R/V Kilo Moana,2017-08-15,2.323
+KM1713,R/V Kilo Moana,2017-09-15,2.399
+HOT297,R/V Kilo Moana,2017-11-09,1.14
+HOT299,R/V Kilo Moana,2018-01-17,1.151
+HOT300,R/V Kilo Moana,2018-02-26,1.256
+SCOPE_Falkor1,R/V Falkor,2018-03-17,1.106
+SCOPE_Falkor2,R/V Falkor,2018-04-03,1.155
+HOT301,R/V Kaimikai O Kanaloa,2018-04-18,1.128
+HOT302,R/V Kaimikai O Kanaloa,2018-05-16,1.318
+HOT303,R/V Kaimikai O Kanaloa,2018-06-27,1.279
+KOK1805,R/V Kaimikai O Kanaloa,2018-07-10,NA
+KOK1806,R/V Kaimikai O Kanaloa,2018-07-15,0.908
+HOT304,R/V Kaimikai O Kanaloa,2018-07-25,1.136
+GP15_1,R/V Roger Revelle,2018-10-04,0.313
+GP15_2,R/V Roger Revelle,2018-11-08,0.556
+HOT307,R/V Kilo Moana,2018-11-17,1.359
+HOT308,R/V Kilo Moana,2018-12-11,1.863
+HOT309,R/V Kilo Moana,2019-01-16,0.521
+HOT310,R/V Kilo Moana,2019-02-20,1.041
+KM1906_towfish,R/V Kilo Moana,2019-04-12,NA
+KM1906,R/V Kilo Moana,2019-04-19,1.157
+HOT312,R/V Kilo Moana,2019-06-12,1.113
+HOT313,R/V Kilo Moana,2019-07-02,1.148
+HOT314,R/V Kilo Moana,2019-08-03,1.441
+HOT315,R/V Kilo Moana,2019-09-05,1.191
+KM1919,R/V Kilo Moana,2019-09-23,0.855
+KM1920,R/V Kilo Moana,2019-10-09,0.832
+SR1917,R/V Sally Ride,2019-11-17,0.543
+KM1923_740,R/V Kilo Moana,2019-12-11,0.681
+KM1923_751,R/V Kilo Moana,2019-12-11,0.678
+HOT317,R/V Kilo Moana,2019-12-19,0.977
+HOT318,R/V Kilo Moana,2020-01-08,0.687
+HOT319,R/V Kilo Moana,2020-01-31,0.95
+HOT321,R/V Kilo Moana,2020-08-08,NA
+HOT322,R/V Kilo Moana,2020-09-04,3.548
+HOT323,R/V Kilo Moana,2020-09-28,0.667
+HOT324,R/V Kilo Moana,2020-11-19,0.622
+HOT325,R/V Kilo Moana,2020-12-19,0.577
+HOT326,R/V Kilo Moana,2021-01-12,0.79
+HOT328,R/V Kilo Moana,2021-03-24,1.119
+HOT329,R/V Kilo Moana,2021-04-14,0.954
+HOT330,R/V Kilo Moana,2021-05-17,0.779
+HOT331,R/V Kilo Moana,2021-06-23,NA
+HOT332,R/V Kilo Moana,2021-07-17,NA
+SCOPE-PARAGON,R/V Kilo Moana,2021-07-29,0.768
+TN396_130,R/V Thomas G Thompson,2021-11-14,1.419
+TN396_740,R/V Thomas G Thompson,2021-11-14,1.764
+TN397_130,R/V Thomas G Thompson,2021-12-01,0.627
+TN397_740,R/V Thomas G Thompson,2021-12-02,0.641
+TN398,R/V Thomas G Thompson,2021-12-24,0.537
