@@ -292,12 +292,6 @@ classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL
 
   deltat <- proc.time() - ptm
   message("Classified ", nrow(plan), " files in ", deltat[["elapsed"]], " seconds")
-
-  # TODO: add a check for consistency between OPP and VCT files after filtering.
-  # OPP that have been filtered and changed get erased in VCT parquet and
-  # tables.
-  results_table <- get_vct_table(db)
-  update_plan_table(db, results_table)
 }
 
 copy_column_parts <- function(src, dst, dst_index) {

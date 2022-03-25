@@ -175,9 +175,6 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
 
   deltat <- proc.time() - ptm
   message("Filtered ", nrow(plan), " files in ", deltat[["elapsed"]], " seconds")
-
-  results_table <- get_opp_table(db)
-  update_plan_table(db, results_table)
 }
 
 # Filter one hour of EVT data.
