@@ -338,6 +338,17 @@ read_refraction_csv <- function(path=NULL) {
   return(read.csv(path))
 }
 
+#' Read table of PAR calibration values
+#'
+#' @return A dataframe of with columns for cruise and PAR calibration factor
+#' @export
+read_par_csv <- function(path=NULL) {
+  if (is.null(path)) {
+    path <- system.file("par", paste0("par-calibration.csv"), package="popcycle")
+  }
+  return(read.csv(path))
+}
+
 
 #' Read SFL tab-delimited file
 #' @param path Path to validated tab-delimited SFL file
