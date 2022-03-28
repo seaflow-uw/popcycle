@@ -84,20 +84,21 @@ test_that("Grid two files", {
   # This is slow
   filter_vct <- function(vct, grid, r) {
     # Find all VCT particles that match one PSD gridded data row
-    return(vct %>% filter(
-      fsc_small >= grid$fsc_small[r$fsc_small_coord],
-      fsc_small < grid$fsc_small[r$fsc_small_coord + 1],
-      chl_small >= grid$chl_small[r$chl_small_coord],
-      chl_small < grid$chl_small[r$chl_small_coord + 1],
-      pe >= grid$pe[r$pe_coord],
-      pe < grid$pe[r$pe_coord + 1],
-      diam >= grid$diam[r$diam_coord],
-      diam < grid$diam[r$diam_coord + 1],
-      Qc >= grid$Qc[r$Qc_coord],
-      Qc < grid$Qc[r$Qc_coord + 1],
-      pop == r$pop,
-      date == r$date
-    ))
+    selection <- (
+      vct$fsc_small >= grid$fsc_small[r$fsc_small_coord] &
+      vct$fsc_small < grid$fsc_small[r$fsc_small_coord + 1] &
+      vct$chl_small >= grid$chl_small[r$chl_small_coord] &
+      vct$chl_small < grid$chl_small[r$chl_small_coord + 1] &
+      vct$pe >= grid$pe[r$pe_coord] &
+      vct$pe < grid$pe[r$pe_coord + 1] &
+      vct$diam >= grid$diam[r$diam_coord] &
+      vct$diam < grid$diam[r$diam_coord + 1] &
+      vct$Qc >= grid$Qc[r$Qc_coord] &
+      vct$Qc < grid$Qc[r$Qc_coord + 1] &
+      vct$pop == r$pop &
+      vct$date == r$date
+    )
+    return(vct[selection, ])
   }
   rows_to_test <- as.integer(nrow(psd) * 0.10)  # 10% of test gridded data
   set.seed(1)
@@ -160,20 +161,21 @@ test_that("Grid two files", {
   # Test random rows in hourly data, slow
   filter_vct_hourly <- function(vct, grid, r) {
     # Find all VCT particles that match one PSD gridded data row for hourly data
-    return(vct %>% filter(
-      fsc_small >= grid$fsc_small[r$fsc_small_coord],
-      fsc_small < grid$fsc_small[r$fsc_small_coord + 1],
-      chl_small >= grid$chl_small[r$chl_small_coord],
-      chl_small < grid$chl_small[r$chl_small_coord + 1],
-      pe >= grid$pe[r$pe_coord],
-      pe < grid$pe[r$pe_coord + 1],
-      diam >= grid$diam[r$diam_coord],
-      diam < grid$diam[r$diam_coord + 1],
-      Qc >= grid$Qc[r$Qc_coord],
-      Qc < grid$Qc[r$Qc_coord + 1],
-      pop == r$pop,
-      lubridate::floor_date(date, "1 hour") == r$date
-    ))
+    selection <- (
+      vct$fsc_small >= grid$fsc_small[r$fsc_small_coord] &
+      vct$fsc_small < grid$fsc_small[r$fsc_small_coord + 1] &
+      vct$chl_small >= grid$chl_small[r$chl_small_coord] &
+      vct$chl_small < grid$chl_small[r$chl_small_coord + 1] &
+      vct$pe >= grid$pe[r$pe_coord] &
+      vct$pe < grid$pe[r$pe_coord + 1] &
+      vct$diam >= grid$diam[r$diam_coord] &
+      vct$diam < grid$diam[r$diam_coord + 1] &
+      vct$Qc >= grid$Qc[r$Qc_coord] &
+      vct$Qc < grid$Qc[r$Qc_coord + 1] &
+      vct$pop == r$pop &
+      lubridate::floor_date(vct$date, "1 hour") == r$date
+    )
+    return(vct[selection, ])
   }
   rows_to_test <- as.integer(nrow(hourly) * 0.10)  # 10% of test gridded data
   set.seed(1)
@@ -203,7 +205,7 @@ test_that("Volume table creation", {
     volume=c(10000, 5000, 20000, 2000),
     opp_evt_ratio=c(0.01, 0.02, 0.03, 0.04)
   )
-  
+
   # No time aggregation
   volumes <- popcycle::create_volume_table(meta, time_expr=NULL)
   want <- meta %>%

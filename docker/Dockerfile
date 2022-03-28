@@ -1,6 +1,7 @@
 FROM rocker/rstudio:4.1.2
 
 RUN apt-get update && apt-get install -y \
+    cmake \
     libgeos-dev \
     libpng-dev \
     libxml2-dev \
@@ -21,9 +22,7 @@ ARG DEPS_ONLY=true
 COPY renv.lock /popcycle/
 WORKDIR /popcycle/
 
-# Install flowDensity and flowCore separately because automatic installation
-# from DESCRIPTION was failing with the 3.13 and 3.14 bioconductor docker images
-ENV RENV_VERSION 0.15.1
+ENV RENV_VERSION 0.15.4
 RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
 RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 RUN R -e "renv::restore()"

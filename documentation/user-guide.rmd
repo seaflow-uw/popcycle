@@ -344,7 +344,7 @@ You can test your various gating parameters on the subset of files to ensure acc
 ```{r}
 par(mfrow = c(4,5), mar = c(1.75, 1.5, 1.5, 1.5), oma = c(0.5, 0.5, 0.5, 0.5))
 opp <- try(classify_opp(opp, gates_log))
-try(plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small"))}
+try(plot_vct_cytogram(opp, para.x = "fsc_small", para.y = "chl_small"))
 ```
 
 ### Save gating parameters to database file
