@@ -76,7 +76,7 @@ stat_calibration <- function(stat, cruisename, calib=NULL){
   for(phyto in c("prochloro", "synecho")){
     corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
     if(nrow(corr) > 0){ 
-      print(paste("Calibrated abundance for", phyto))
+      print(paste("Calibrated abundance for", phyto, ": a =", corr$a, "/ b =", corr$b))
       id <- which(stat$pop == phyto)
       stat[id,c("abundance")]  <- stat[id,c("abundance")] * corr$a + corr$b  # cells µL-1
     }
