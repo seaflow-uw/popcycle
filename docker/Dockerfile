@@ -1,4 +1,4 @@
-FROM rocker/rstudio:4.1.2
+FROM rocker/rstudio:4.1.3
 
 RUN apt-get update && apt-get install -y \
     cmake \

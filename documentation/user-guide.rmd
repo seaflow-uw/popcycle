@@ -22,7 +22,7 @@ where `<ref>` can be a commit, tag, or branch.
 
 ## renv
 
-To install this package using a reproducible environment with [renv](https://rstudio.github.io/renv/index.html), first clone this repository then restore the project based on the `renv.lock` file. Note, you use the same version of R that was used to create the `renv.lock` file, wich you can find near the top of the `renv.lock` file.
+To install this package using a reproducible environment with [renv](https://rstudio.github.io/renv/index.html), first clone this repository then restore the project based on the `renv.lock` file. Note, you use the same version of R that was used to create the `renv.lock` file, wich you can find near the top of the ile.
 
 ```shell
 git clone https://github.com/seaflow-uw/popcycle
