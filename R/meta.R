@@ -94,13 +94,13 @@ csv_convert <- function(db, meta, path, version = "v1.0") {
               "decimal deg East",
               "deg C",
               "psu",
-              "umol photons m-2 s-1",
+              "μmol photons m-2 s-1",
               "%",
               "unitless",
               rep("unitless",9),
               rep("um",9),
               rep("pgC cell-1",12),
-              rep("cells uL-1",2),
+              rep("cells μL-1",2),
               "unitless")
 
     description <- paste("The data set consists of SeaFlow-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for picophytoplankton populations, namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). SeaFlow is an underway flow cytometer that provides continuous shipboard observations of the optical properties of the smallest phytoplankton. The instrument collects the equivalent of 1 sample every 3 minutes or every 1 km (for a ship moving at 10 knots) from the ship’s flow-through seawater system. Since 2010, the instrument has been operated for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. Further information can be found here https://seaflow.netlify.app/")
@@ -184,10 +184,10 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
                 rep("carbon biomass = cell abundance x carbon quotas",4))
 
     var_unit <- c("",
-              rep("cells uL-1",4),
-              rep("um",4),
+              rep("cells μL-1",4),
+              rep("μm",4),
               rep("pgC cell-1",4),
-              rep("ugC L-1",4))
+              rep("μgC L-1",4))
 
     core <- paste("insitu", "in-situ", "cruise", "reprocessed", "biology", "biogeochemistry", "optics", "flow-cytometry", "flow cytometer", "seaflow", "phytoplankton", "armbrust lab", "francois ribalet", "UW", "University of Washington", "UofW", sep=",")
 
@@ -197,7 +197,7 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
 
     var_discipline <- c("",rep("biology+biogeochemistry+optics+cytometry",16))
 
-    description <- paste("The data set consists of SeaFlow-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for picophytoplankton populations, namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 um), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). SeaFlow is an underway flow cytometer that provides continuous shipboard observations of the optical properties of the smallest phytoplankton. The instrument collects the equivalent of 1 sample every 3 minutes or every 1 km (for a ship moving at 10 knots) from the ship’s flow-through seawater system. Since 2010, the instrument has been operated for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. Further information can be found here https://seaflow.netlify.app/")
+    description <- paste("The data set consists of SeaFlow-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for picophytoplankton populations, namely the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 μm), and picoeukayotes phytoplankton and nanophytoplankton (2-5 μm ESD). SeaFlow is an underway flow cytometer that provides continuous shipboard observations of the optical properties of the smallest phytoplankton. The instrument collects the equivalent of 1 sample every 3 minutes or every 1 km (for a ship moving at 10 knots) from the ship’s flow-through seawater system. Since 2010, the instrument has been operated for 14,000 hours across 140,000 km of ocean, collecting over 300,000 samples in surface waters. Further information can be found here https://seaflow.netlify.app/")
 
     today <- as.Date(Sys.time())
 
