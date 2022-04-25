@@ -55,11 +55,13 @@ SCOPE_6,mid,mid,lwr,lwr
 SCOPE_9,mid,mid,lwr,lwr
 SCOPE_Falkor1,upr,upr,lwr,lwr
 SCOPE_Falkor2,upr,upr,lwr,lwr
+SCOPE-PARAGON,mid,mid,lwr,lwr
 SR1917,mid,mid,lwr,lwr
 Thompson_1,lwr,lwr,lwr,lwr
 Thompson_10,lwr,lwr,lwr,lwr
 Thompson_12,lwr,lwr,lwr,lwr
 Thompson_9,mid,mid,lwr,lwr
+TN397_740,lwr,lwr,lwr,lwr
 TN398,mid,mid,lwr,lwr
 Tokyo_1,lwr,lwr,lwr,lwr
 Tokyo_2,lwr,lwr,lwr,lwr
