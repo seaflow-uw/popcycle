@@ -70,7 +70,7 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
 #'   diam before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
-#' @param pop A single populations label to keep. Particles not matching this label will be
+#' @param pop A single population label to keep. Particles not matching this label will be
 #'   ignored.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
 #' @param verbose Message extra diagnostic information.
@@ -80,8 +80,8 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   of the bin, and the next break point in the sequence defines the exclusive upper bound.
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
 #'   of Qc.
-create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                                ignore_dates=NULL, pop=NULL, use_data.table=TRUE, verbose=FALSE) {
+create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base = NULL, remove_boundary_points = FALSE,
+                                ignore_dates = NULL, pop = NULL, use_data.table = TRUE, verbose = FALSE) {
   diag_text <- list(vct_file)  # for verbose diagnostics
   if (nrow(refracs) != 1) {
     stop("refracs should only contain one row")
@@ -283,7 +283,7 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
 #'
 #' @param psd Gridded data created by create_PSD().
 #' @param volumes Volume dataframe at the same time resolution as psd, usually created by
-#'   create_voulme_table().
+#'   create_volume_table().
 #' @param calib Optional influx calibration dataframe used to adjust data by population.
 #'   Columns should be pop, a, b.
 #' @return psd with volume-normalized abundance columns for n_per_uL and Qc_sum_per_uL.
@@ -372,7 +372,7 @@ create_meta <- function(db, quantile) {
 #' @return A tibble of volumes, per-file OPP/EVT ratio adjusted volumes for small
 #'   particles, and global median OPP/EVT ratio adjusted volumes for large particles.
 #' @export
-create_volume_table <- function(meta, time_expr="1 hour") {
+create_volume_table <- function(meta, time_expr = "1 hour") {
   meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio)
   meta <- meta %>%
     dplyr::mutate(
@@ -381,13 +381,13 @@ create_volume_table <- function(meta, time_expr="1 hour") {
     )
   if (!is.null(time_expr)) {
     meta <- meta %>%
-      dplyr::mutate(date=lubridate::floor_date(date, time_expr)) %>%
+      dplyr::mutate(date = lubridate::floor_date(date, time_expr)) %>%
       dplyr::group_by(date) %>%
-      dplyr::arrange(by_group=TRUE) %>%
+      dplyr::arrange(by_group = TRUE) %>%
       dplyr::summarise(
-        volume=sum(volume),
-        volume_small=sum(volume_small),
-        volume_large=sum(volume_large)
+        volume = sum(volume),
+        volume_small = sum(volume_small),
+        volume_large = sum(volume_large)
       )
   } else {
     meta <- meta %>% select(-c(opp_evt_ratio))
@@ -409,8 +409,8 @@ create_volume_table <- function(meta, time_expr="1 hour") {
 #'   [1, 2, 3], if FALSE breaks may be [10, 100, 1000].
 #' @return Named list defining breaks for use with cut(). Each item has length == bins + 1.
 #' @export
-create_grid <- function(bins=85, channel_range=c(1, 3200), Qc_range=c(0.002, 1600),
-                        diam_range=c(0.1, 37), log_base=NULL, log_answers=TRUE) {
+create_grid <- function(bins = 85, channel_range = c(1, 3200), Qc_range = c(0.002, 1600),
+                        diam_range = c(0.1, 37), log_base = NULL, log_answers = TRUE) {
   if (length(channel_range) != 2) {
     stop("create_grid: channel_range must be a two-item numeric list or vector")
   }
@@ -442,10 +442,10 @@ create_grid <- function(bins=85, channel_range=c(1, 3200), Qc_range=c(0.002, 160
 #' @return Vector defining breaks for use with cut(), length == bins + 1
 create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE) {
   if (!is.null(log_base)) {
-    minval <- log(minval, base=log_base)
-    maxval <- log(maxval, base=log_base)
+    minval <- log(minval, base = log_base)
+    maxval <- log(maxval, base = log_base)
   }
-  b <- seq(from=minval, to=maxval, length=bins+1)
+  b <- seq(from = minval, to = maxval, length = bins+1)
   if (!is.null(log_base) && !log_answers) {
     return(log_base^b)
   }
@@ -655,7 +655,7 @@ add_coord_labels <- function(psd, grid) {
       colbase <- stringr::str_replace(col, "_coord$", "")
       newcol <- paste0(colbase, "_label")
       psd <- psd %>%
-        dplyr::add_column("{newcol}" := labels[[colbase]][psd[[col]]], .after = col)
+        tibble::add_column("{newcol}" := labels[[colbase]][psd[[col]]], .after = col)
     }
   }
   return(psd)
