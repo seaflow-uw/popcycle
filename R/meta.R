@@ -209,7 +209,7 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
         cruise <- sub(".db","",basename(db))
 
         # clean stat table
-        clean <- get_clean_stat_table(db, pop="prochloro", ref_diam=0.54)
+        clean <- get_clean_stat_table(db)
 
         # add columns for CMAP
         cruise.name <- paste(meta[which(meta$cruise == cruise),"Cruise ID"])
