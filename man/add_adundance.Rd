@@ -10,7 +10,7 @@ add_adundance(psd, volumes, calib = NULL)
 \item{psd}{Gridded data created by create_PSD().}
 
 \item{volumes}{Volume dataframe at the same time resolution as psd, usually created by
-create_voulme_table().}
+create_volume_table().}
 
 \item{calib}{Optional influx calibration dataframe used to adjust data by population.
 Columns should be pop, a, b.}

@@ -2,22 +2,18 @@
 % Please edit documentation in R/files.R
 \name{get_clean_stat_table}
 \alias{get_clean_stat_table}
-\title{Clean the stat table by selecting the closest refractive index to the reference diameter for a particular population,
+\title{Clean the stat table by selecting the best refractive index from the table (RefracIndices_percruise.csv),
 keep only the clean data (flag ==0 ) and remove percentile column}
 \usage{
-get_clean_stat_table(db, pop = "prochloro", ref_diam = 0.54)
+get_clean_stat_table(db)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
-
-\item{pop}{Name of the population. Can be either "prochloro", "synecho", "picoeuk", "croco"}
-
-\item{ref_diam}{Diameter value (in micron)}
 }
 \value{
 A cleaned stat table with corrected refractive index
 }
 \description{
-Clean the stat table by selecting the closest refractive index to the reference diameter for a particular population,
+Clean the stat table by selecting the best refractive index from the table (RefracIndices_percruise.csv),
 keep only the clean data (flag ==0 ) and remove percentile column
 }

@@ -36,7 +36,7 @@ diam before gridding.}
 
 \item{ignore_dates}{Don't process VCT data with these dates.}
 
-\item{pop}{A single populations label to keep. Particles not matching this label will be
+\item{pop}{A single population label to keep. Particles not matching this label will be
 ignored.}
 
 \item{use_data.table}{Use data.table for performance speedup, otherwise use dplyr.}
