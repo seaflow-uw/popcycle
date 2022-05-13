@@ -398,13 +398,19 @@ read_sfl_tsv <- function(path) {
 #' @export
 get_clean_stat_table <- function(db){
 
-  cruisename <- sub(".db","",basename(db))
+  cruisename <- get_cruise(db)
   print(cruisename)
   stat <- tibble::as_tibble(get_stat_table(db))
   stat <- stat_calibration(stat, cruisename)
 
   ### Select the appropriate refractive index for each population
-  refracs <- refracs_cruises %>% filter(cruise == cruisename)
+  refracs_cruises <- read_refraction_csv()
+  refracs <- refracs_cruises %>% dplyr::filter(cruise == cruisename)
+  print("per-population refractive indices")
+  print(refracs)
+  if (nrow(refracs) == 0) {
+    stop("no entry found for ", cruisename, " in refrative index table")
+  }
 
   # select the appropriate data
   clean <- tibble::tibble()
