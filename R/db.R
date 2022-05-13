@@ -785,7 +785,7 @@ save_gating_plan <- function(db, gating_plan) {
   gating_table <- get_gating_table(db)
   bad_gating_ids <- setdiff(gating_plan$gating_id, gating_table$id)
   if (length(bad_gating_ids) > 0) {
-    stop("some gating IDs not found in gating table ", bad_gating_ids)
+    stop("some gating IDs not found in gating table ", paste(bad_gating_ids, collapse=", "))
   }
 
   reset_gating_plan_table(db)
