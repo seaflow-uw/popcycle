@@ -20,6 +20,10 @@ parser <- optparse::add_option(parser, "--no-data.table",
   action = "store_true", default = FALSE,
   help = "Don't use data.table for performance-critical aggregation [default %default]"
 )
+parser <- optparse::add_option(parser, "--only-full-counts",
+  action = "store_true", default = FALSE,
+  help = "Only produce counts for data at full time resolution [default %default]"
+)
 parser <- optparse::add_option(parser, "--out",
   type = "character", default = "PSD", metavar = "FILE_BASE",
   help = "Output file base path [default %default]",
@@ -41,7 +45,7 @@ parser <- optparse::add_option(parser, "--verbose",
   help = "Print extra diagnostic messages [default %default]"
 )
 parser <- optparse::add_option(parser, "--volume",
-  type = "integer", default = NULL, metavar = "QUANTILE",
+  type = "integer", default = NULL, metavar = "VOLUME",
   help = "Hard code a single volume value for abundance calculations, i.e. if stream pressure or file duration is unreliable [default %defalt]",
 )
 
@@ -56,6 +60,7 @@ if (length(p$args) < 2) {
   dimensions <- p$options$dimensions
   keep_outliers <- p$options$keep_outliers
   no_data.table <- p$options$no_data.table
+  only_full_counts <- p$options$only_full_counts
   out <- p$options$out
   quantile_ <- p$options$quantile
   remove_boundary_points <- p$options$remove_boundary_points
@@ -129,15 +134,10 @@ refracs <- refracs[refracs$cruise == cruise, ]
 dated_msg(paste0(capture.output(refracs), collapse="\n"))
 refracs$cruise <- NULL
 if (nrow(refracs) == 0) {
-  dated_msg(paste0("refractive index table has no entry for ", cruise, ", using mid for Pro/Syn, lwr for Pico/Croco"))
-  refracs <- tibble::as_tibble(data.frame(prochloro="mid", synecho="mid", croco="lwr", picoeuk="lwr"))
-}
-if ("picoeuk" %in% names(refracs)) {
-  refracs$unknown <- refracs$picoeuk
-  refracs$beads <- refracs$picoeuk
-  dated_msg("using picoeuk refractive index for unknown and beads particles")
-} else {
-  stop("missing picoeuk defintition from refracs")
+  dated_msg(paste0("refractive index table has no entry for ", cruise, ", using mid for Pro/Syn, lwr for Pico/Croco/Beads/Unknown"))
+  refracs <- tibble::as_tibble(data.frame(
+    prochloro = "mid", synecho = "mid", croco = "lwr", picoeuk = "lwr", beads = "lwr", unknown = "lwr"
+  ))
 }
 dated_msg(paste0(capture.output(refracs), collapse="\n"))
 if (nrow(refracs) > 1) {
@@ -182,38 +182,40 @@ deltat <- proc.time() - ptm
 dated_msg("Wrote full parquet in ", deltat[["elapsed"]], " seconds")
 invisible(gc())
 
-# -----------
-# Hourly file
-# -----------
-# data.table multi-threading temporarily disabled for grouping
-orig_threads <- data.table::getDTthreads()
-data.table::setDTthreads(1)
-hourly <- popcycle::group_psd_by_time(psd, time_expr="1 hours", use_data.table=!no_data.table)
-data.table::setDTthreads(orig_threads)
-psd <- tibble::as_tibble(psd)
-invisible(gc())
+if (!only_full_counts) {
+  # -----------
+  # Hourly file
+  # -----------
+  # data.table multi-threading temporarily disabled for grouping
+  orig_threads <- data.table::getDTthreads()
+  data.table::setDTthreads(1)
+  hourly <- popcycle::group_psd_by_time(psd, time_expr="1 hours", use_data.table=!no_data.table)
+  data.table::setDTthreads(orig_threads)
+  psd <- tibble::as_tibble(psd)
+  invisible(gc())
 
-# Add volume-normalized abundances to hourly data
-if (!keep_outliers) {
-  meta <- meta %>% dplyr::filter(flag == 0)  # remove flagged files
+  # Add volume-normalized abundances to hourly data
+  if (!keep_outliers) {
+    meta <- meta %>% dplyr::filter(flag == 0)  # remove flagged files
+  }
+  hourly_volumes <- popcycle::create_volume_table(meta, time_expr="1 hour")
+  hourly_psd <- popcycle::add_adundance(hourly, hourly_volumes, calib=calib)
+
+  dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly_psd), " "), ", MB = ", object.size(hourly_psd) / 2**20)
+  ptm <- proc.time()
+  arrow::write_parquet(hourly_psd, paste0(out, ".hourly.parquet"))
+  deltat <- proc.time() - ptm
+  dated_msg("Wrote hourly parquet in ", deltat[["elapsed"]], " seconds")
+
+  ptm <- proc.time()
+  readr::write_csv(hourly_psd %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(out, ".hourly.csv.gz"))
+  deltat <- proc.time() - ptm
+  dated_msg("Wrote hourly CSV in ", deltat[["elapsed"]], " seconds")
+
+  ptm <- proc.time()
+  arrow::write_parquet(hourly_volumes %>% dplyr::select(date, volume_small, volume_large), paste0(out, ".hourly-volumes.parquet"))
+  deltat <- proc.time() - ptm
+  dated_msg("Wrote hourly volume parquet in ", deltat[["elapsed"]], " seconds")
 }
-hourly_volumes <- popcycle::create_volume_table(meta, time_expr="1 hour")
-hourly_psd <- popcycle::add_adundance(hourly, hourly_volumes, calib=calib)
-
-dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly_psd), " "), ", MB = ", object.size(hourly_psd) / 2**20)
-ptm <- proc.time()
-arrow::write_parquet(hourly_psd, paste0(out, ".hourly.parquet"))
-deltat <- proc.time() - ptm
-dated_msg("Wrote hourly parquet in ", deltat[["elapsed"]], " seconds")
-
-ptm <- proc.time()
-readr::write_csv(hourly_psd %>% dplyr::mutate(cruise=cruise) %>% dplyr::rename_with(tolower), paste0(out, ".hourly.csv.gz"))
-deltat <- proc.time() - ptm
-dated_msg("Wrote hourly CSV in ", deltat[["elapsed"]], " seconds")
-
-ptm <- proc.time()
-arrow::write_parquet(hourly_volumes %>% dplyr::select(date, volume_small, volume_large), paste0(out, ".hourly-volumes.parquet"))
-deltat <- proc.time() - ptm
-dated_msg("Wrote hourly volume parquet in ", deltat[["elapsed"]], " seconds")
 
 dated_msg("Finished")
