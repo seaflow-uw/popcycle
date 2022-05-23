@@ -290,36 +290,6 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
 #'   If calib is provided n and Qc_sum will be adjusted for populations in calib.
 #' @export
 add_adundance <- function(psd, volumes, calib=NULL) {
-  # Calibrate to influx data if provided
-  if (!is.null(calib)) {
-    if (nrow(calib) == 0) {
-      stop("calibration table is empty")
-    }
-    psd$n <- as.double(psd$n) # to ensure a consistent column type
-    corrected <- lapply(
-      psd %>% dplyr::group_by(date) %>% dplyr::group_split(),
-      function(x) {
-         for (phyto in c("prochloro", "synecho")) {
-          corr <- calib %>% dplyr::filter(pop == phyto)
-          if (nrow(corr) > 1) {
-            stop(paste0("more than one abundance calibration entry found for ", phyto))
-          }
-          if (nrow(corr) > 0) {
-            a <- corr[["a"]][1]
-            b <- corr[["b"]][1]
-            pop_idx <- x$pop == phyto
-            n_vals <- x[pop_idx, ]$n
-            Qc_sum_vals <- x[pop_idx, ]$Qc_sum
-            x[pop_idx, "n"] <- a * n_vals + (b * (n_vals / sum(n_vals)))
-            x[pop_idx, "Qc_sum"] <- a * Qc_sum_vals + (b * (Qc_sum_vals / sum(Qc_sum_vals)))
-          }
-        }
-        return(x)
-      }
-    )
-    psd <- dplyr::bind_rows(corrected)
-  }
-
   # Calculate abundance
   psd <- dplyr::left_join(psd, volumes, by="date")
   pop_idx <- psd$pop == "prochloro" | psd$pop == "synecho"
@@ -329,6 +299,21 @@ add_adundance <- function(psd, volumes, calib=NULL) {
 
   psd[pop_idx, "n_per_uL"] <- psd[pop_idx, "n"] / psd[pop_idx, "volume_small"]
   psd[pop_idx, "Qc_sum_per_uL"] <- psd[pop_idx, "Qc_sum"] / psd[pop_idx, "volume_small"]
+
+  # Calibrate to influx data if provided
+  if (!is.null(calib)) {
+    if (nrow(calib) == 0) {
+      stop("calibration table is empty")
+    }
+    for (phyto in c("prochloro", "syencho")) {
+      corr <- calib %>% dplyr::filter(pop == phyto)
+      if (nrow(corr) > 1) {
+        stop(paste0("more than one abundance calibration entry found for ", phyto))
+      }
+      psd[psd$pop == phyto, "n_per_uL"] <- (psd[psd$pop == phyto, "n_per_uL"] * corr[["a"]][1]) + corr[["b"]][1]
+      psd[psd$pop == phyto, "Qc_sum_per_uL"] <- (psd[psd$pop == phyto, "Qc_sum_per_uL"] * corr[["a"]][1]) + corr[["b"]][1]
+    }
+  }
 
   psd <- psd %>%
     dplyr::select(-c(n, Qc_sum, volume, volume_small, volume_large))
