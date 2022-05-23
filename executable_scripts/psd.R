@@ -46,7 +46,7 @@ parser <- optparse::add_option(parser, "--verbose",
 )
 parser <- optparse::add_option(parser, "--volume",
   type = "integer", default = NULL, metavar = "VOLUME",
-  help = "Hard code a single volume value for abundance calculations, i.e. if stream pressure or file duration is unreliable [default %defalt]",
+  help = "Hard code a single volume value for abundance calculations, i.e. if stream pressure or file duration is unreliable [default %default]",
 )
 
 p <- optparse::parse_args2(parser)
