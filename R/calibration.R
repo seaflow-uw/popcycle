@@ -72,45 +72,15 @@ stat_calibration <- function(stat, cruisename, calib=NULL){
         calib <- read_calib_csv()
     }
 
-  # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
-  for(phyto in c("prochloro", "synecho")){
+  popname <- unique(calib$pop)
+  for(phyto in popname){
     corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
     if(nrow(corr) > 0){ 
-      print(paste("Calibrated abundance for", phyto, ": a =", corr$a, "/ b =", corr$b))
+      print(paste("Calibrated abundance for", phyto, ": a =", corr$a))
       id <- which(stat$pop == phyto)
-      stat[id,c("abundance")]  <- stat[id,c("abundance")] * corr$a + corr$b  # cells µL-1
+      stat[id,c("abundance")]  <- stat[id,c("abundance")] * corr$a  # cells µL-1
     }
   }  
   
   return(stat)
-}
-
-
-
-#' Calibrate abundance based on Influx data
-#'
-#' @param PSD Particle size disitribution created by create_PSD().
-#' @param cruisename Name of the cruise (returned from get_metadata_table()).
-#' @param calib Optional calibration calibration  dataframe of regression values (cruise=cruise.name, pop=prochloro, a=slope, b=intercept)
-#' @return the stat table with corrected abundancce if available
-#' @export
-PSD_calibration <- function(PSD, cruisename, calib=NULL){
-
-  if (is.null(calib)) {
-        calib <- read_calib_csv()
-  }
-  # select column that have PSD data
-  clmn <- grep("]", names(PSD))
-
-  # If Prochlorococcus and Synechococus present, abundance is corrected based on abundance measured by Influx
-  for(phyto in c("prochloro", "synecho")){
-    corr <- calib %>% dplyr::filter(cruise == cruisename & pop == phyto)
-    if(nrow(corr) > 0){ 
-      print(paste("Calibrated abundance for", phyto))
-      id <- which(PSD$pop == phyto)
-      PSD[id,clmn] <- PSD[id,clmn] * corr$a + (PSD[id,clmn] / rowSums(PSD[id,clmn])) * corr$b  # cells µL-1
-    }
-  }
-
-  return(PSD)
 }

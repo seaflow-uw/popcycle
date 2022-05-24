@@ -285,7 +285,7 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
 #' @param volumes Volume dataframe at the same time resolution as psd, usually created by
 #'   create_volume_table().
 #' @param calib Optional influx calibration dataframe used to adjust data by population.
-#'   Columns should be pop, a, b.
+#'   Columns should incude pop and a.
 #' @return psd with volume-normalized abundance columns for n_per_uL and Qc_sum_per_uL.
 #'   If calib is provided n and Qc_sum will be adjusted for populations in calib.
 #' @export
@@ -300,29 +300,27 @@ add_adundance <- function(psd, volumes, calib=NULL) {
   psd[pop_idx, "n_per_uL"] <- psd[pop_idx, "n"] / psd[pop_idx, "volume_small"]
   psd[pop_idx, "Qc_sum_per_uL"] <- psd[pop_idx, "Qc_sum"] / psd[pop_idx, "volume_small"]
 
-  psd <- psd %>%  group_by(date, pop)%>%
-    dplyr::mutate(n_tot = sum(n_per_uL), n_per_uL_old = n_per_uL) %>%
-    ungroup(date, pop)
-
   # Calibrate to influx data if provided
   if (!is.null(calib)) {
     if (nrow(calib) == 0) {
       stop("calibration table is empty")
     }
-    for (phyto in c("prochloro", "synecho")) {
+  
+    popname <- unique(calib$pop)
+    for (phyto in popname) {
       corr <- calib %>% dplyr::filter(pop == phyto)
       if (nrow(corr) > 1) {
         stop(paste0("more than one abundance calibration entry found for ", phyto))
       }
       if (nrow(corr) == 1){
-      psd[psd$pop == phyto, "n_per_uL"] <- psd[psd$pop == phyto, "n_per_uL"] * corr[["a"]] + (corr[["b"]] * psd[psd$pop == phyto, "n_per_uL"] / psd[psd$pop == phyto, "n_tot"])
-      psd[psd$pop == phyto, "Qc_sum_per_uL"] <- psd[psd$pop == phyto, "Qc_sum_per_uL"] * psd[psd$pop == phyto, "n_per_uL"] / psd[psd$pop == phyto, "n_per_uL_old"]
+      psd[psd$pop == phyto, "n_per_uL"] <- psd[psd$pop == phyto, "n_per_uL"] * corr[["a"]]
+      psd[psd$pop == phyto, "Qc_sum_per_uL"] <- psd[psd$pop == phyto, "Qc_sum_per_uL"] * corr[["a"]]
       }
     }
   }
 
   psd <- psd %>%
-    dplyr::select(-c(n, n_tot, n_per_uL_old, Qc_sum, volume, volume_small, volume_large))
+    dplyr::select(-c(n, Qc_sum, volume, volume_small, volume_large))
 
   return(psd)
 }
