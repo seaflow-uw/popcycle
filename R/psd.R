@@ -292,13 +292,8 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
 add_adundance <- function(psd, volumes, calib=NULL) {
   # Calculate abundance
   psd <- dplyr::left_join(psd, volumes, by="date")
-  pop_idx <- psd$pop == "prochloro" | psd$pop == "synecho"
-
-  psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_large"]
-  psd[, "Qc_sum_per_uL"] <- psd[, "Qc_sum"] / psd[, "volume_large"]
-
-  psd[pop_idx, "n_per_uL"] <- psd[pop_idx, "n"] / psd[pop_idx, "volume_small"]
-  psd[pop_idx, "Qc_sum_per_uL"] <- psd[pop_idx, "Qc_sum"] / psd[pop_idx, "volume_small"]
+  psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_virtualcore"]
+  psd[, "Qc_sum_per_uL"] <- psd[, "Qc_sum"] / psd[, "volume_virtualcore"]
 
   # Calibrate to influx data if provided
   if (!is.null(calib)) {
@@ -320,7 +315,7 @@ add_adundance <- function(psd, volumes, calib=NULL) {
   }
 
   psd <- psd %>%
-    dplyr::select(-c(n, Qc_sum, volume, volume_small, volume_large))
+    dplyr::select(-c(n, Qc_sum, volume, volume_virtualcore))
 
   return(psd)
 }
@@ -358,15 +353,13 @@ create_meta <- function(db, quantile) {
 #' @param time_expr Time expression passed to lubridate::floor_date to group datetimes
 #'   before calculating volumes. If NULL volumes are returned at their original time
 #'   resolution.
-#' @return A tibble of volumes, per-file OPP/EVT ratio adjusted volumes for small
-#'   particles, and global median OPP/EVT ratio adjusted volumes for large particles.
+#' @return A tibble of sample and virtual core volumes.
 #' @export
 create_volume_table <- function(meta, time_expr = "1 hour") {
   meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio)
   meta <- meta %>%
     dplyr::mutate(
-      volume_small = volume * opp_evt_ratio,
-      volume_large = volume * median(opp_evt_ratio)
+      volume_virtualcore = volume * median(opp_evt_ratio)
     )
   if (!is.null(time_expr)) {
     meta <- meta %>%
@@ -375,8 +368,7 @@ create_volume_table <- function(meta, time_expr = "1 hour") {
       dplyr::arrange(by_group = TRUE) %>%
       dplyr::summarise(
         volume = sum(volume),
-        volume_small = sum(volume_small),
-        volume_large = sum(volume_large)
+        volume_virtualcore = sum(volume_virtualcore)
       )
   } else {
     meta <- meta %>% select(-c(opp_evt_ratio))
