@@ -13,7 +13,7 @@ add_adundance(psd, volumes, calib = NULL)
 create_volume_table().}
 
 \item{calib}{Optional influx calibration dataframe used to adjust data by population.
-Columns should be pop, a, b.}
+Columns should incude pop and a.}
 }
 \value{
 psd with volume-normalized abundance columns for n_per_uL and Qc_sum_per_uL.
