@@ -135,6 +135,7 @@ create_full_gating_plan <- function(file_ids_to_gate, db, opp_dir, vct_dir, gati
   # Get OPP files and dates to gate. If no files are provided, select all OPP
   # files with data in all quantiles.
   df <- get_opp_table(db, sfl_join = TRUE, particles_in_all_quantiles = TRUE) %>%
+    dplyr::filter(quantile == 2.5) %>%  # select a single quantile, doesn't matter which one
     dplyr::select(date, file_id)
   if (!is.null(file_ids_to_gate) && length(file_ids_to_gate) > 0) {
     tmpdf <- tibble::tibble(file_id = clean_file_path(file_ids_to_gate))

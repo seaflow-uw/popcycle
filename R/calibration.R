@@ -45,11 +45,18 @@ size_carbon_conversion <- function(opp, beads_fsc, inst, mie = NULL){
     id <- findInterval(opp[,"fsc_small"]/as.numeric(beads_fsc), mie$scatter, all.inside = TRUE)
 
     #convert scatter to diameter and Qc
-    for(quant in c("_lwr","_mid","_upr")){
+    for (quant in c("_lwr", "_mid", "_upr")) {
+      diams <- mie[id, paste0("diam_", inst, quant)]
+      if (is.null(diams)) {
+        stop(paste0("missing entry in mie table for ", paste0("diam_", inst, quant)))
+      }
+      opp[, paste0("diam", quant)] <- diams
 
-      opp[,paste0("diam",quant)] <- mie[id,paste0("diam_",inst,quant)]
-      opp[,paste0("Qc",quant)] <- mie[id,paste0("Qc_",inst,quant)]
-
+      qcs <- mie[id, paste0("Qc_", inst, quant)]
+      if (is.null(qcs)) {
+        stop(paste0("missing entry in mie table for ", paste0("Qc_", inst, quant)))
+      }
+      opp[, paste0("Qc", quant)] <- qcs
     }
 
     if (was_tibble) {

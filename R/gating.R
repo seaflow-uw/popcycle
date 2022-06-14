@@ -503,7 +503,7 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
     # correctly, so double-check here.
     stop(paste("gating ID mismatch for", file_id, ":", gating_id, "!=", gp$id, ""))
   }
-  filter_id_from_file <- unique(opp$filter_id)
+  filter_id_from_file <- as.character(unique(opp$filter_id))
   if (filter_id != filter_id_from_file) {
     # Quick sanity check that OPP we're using matches what we pulled from the db
     stop(paste("filter ID mismatch for", file_id, ":", filter_id, "!=", filter_id_from_file, ""))
@@ -518,7 +518,7 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
     qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie)
     # Then gate
     qopp <- classify_opp(qopp, gp$gates.log)
-    # Select and rename quantile-specific columns. No need to keep the 
+    # Select and rename quantile-specific columns. No need to keep the
     # OPP channel data, that's still in the original OPP dataframe.
     # Add "_q<quantile>" to each new column to indicate it's quantile.
     qopp <- dplyr::rename_with(
