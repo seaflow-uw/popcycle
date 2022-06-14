@@ -34,6 +34,9 @@ setUp <- function() {
   # Same database without opp or vct tables, but with sfl, filter, gating.
   # Ready for filtering and gating tests
   x$db.bare <- file.path(x$tmp.dir, "testcruise_bare.db")
+  # Prepared gates
+  x$gates1.file <- "../testdata/gates1.rds"
+  x$gates2.file <- "../testdata/gates2.rds"
   # Pre-generated OPP data for one set of filter paramters matching latest
   # filter parameters
   x$opp.one.input.dir <- "../testdata/opp_one_param"

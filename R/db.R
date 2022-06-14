@@ -28,7 +28,7 @@ delete_gating_params_by_id <- function(db, gating_id) {
 #' Note: This is usually done via delete.gating.params.by.id.
 #'
 #' @param db SQLite3 database file path.
-#' @param gating.id gating_id for poly entries.
+#' @param gating_id gating_id for poly entries.
 #' @return Number of rows deleted.
 delete_poly_by_id <- function(db, gating_id) {
   sql <- paste0("DELETE FROM poly WHERE gating_id == '", gating_id, "'")
@@ -40,7 +40,7 @@ delete_poly_by_id <- function(db, gating_id) {
 #' Note: This is usually done via delete.gating.params.by.id.
 #'
 #' @param db SQLite3 database file path.
-#' @param gating.id gating_id for poly entries.
+#' @param gating_id gating_id for poly entries.
 #' @param popname Population name
 #' @return Number of rows deleted.
 delete_poly_by_id_pop <- function(db, gating_id, popname) {
@@ -588,10 +588,14 @@ save_outliers <- function(db, outliers, overwrite = TRUE) {
 #'   quantile, beads.fsc.small, beads.D1, beads.D2, width,
 #'   notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
 #'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.
+#' @param filter_id Optional, supply a filter ID. If not provided a UUID string
+#'   will be generated.
 #' @return Database filter ID string.
 #' @export
-save_filter_params <- function(db, filter_params) {
-  filter.id <- uuid::UUIDgenerate()  # create ID for new entries
+save_filter_params <- function(db, filter_params, filter_id = NULL) {
+  if (is.null(filter_id)) {
+    filter_id <- uuid::UUIDgenerate()  # create ID for new entries
+  }
   date.stamp <- to_date_str(lubridate::now("UTC"))
   df <- data.frame()
   for (quantile in filter_params$quantile) {
@@ -599,7 +603,7 @@ save_filter_params <- function(db, filter_params) {
     if (nrow(p) > 1) {
       stop("Duplicate quantile rows found in parameters passed to save_filter_params()")
     }
-    df <- rbind(df, cbind(id=filter.id, date=date.stamp, quantile=quantile,
+    df <- rbind(df, cbind(id=filter_id, date=date.stamp, quantile=quantile,
                           beads_fsc_small=p$beads.fsc.small,
                           beads_D1=p$beads.D1,
                           beads_D2=p$beads.D2,
@@ -614,7 +618,7 @@ save_filter_params <- function(db, filter_params) {
                           offset_large_D2=p$offset.large.D2))
   }
   sql_dbWriteTable(db, name="filter", value=df)
-  return(filter.id)
+  return(filter_id)
 }
 
 #' Save gating parameters.
@@ -624,17 +628,21 @@ save_filter_params <- function(db, filter_params) {
 #'
 #' @param db SQLite3 database file path.
 #' @param gates.log Named list of per population classification parameters.
+#' @param gating_id Optional, supply a gating ID. If not provided a UUID string
+#'   will be generated.
 #' @return Database gating ID string.
 #' @export
-save_gating_params <- function(db, gates.log) {
-  gating.id <- uuid::UUIDgenerate()  # create primary ID for new entry
+save_gating_params <- function(db, gates.log, gating_id = NULL) {
+  if (is.null(gating_id)) {
+    gating_id <- uuid::UUIDgenerate()  # create primary ID for new entry
+  }
   date.stamp <- to_date_str(lubridate::now("UTC"))
   i <- 1  # track order population classification
   for (popname in names(gates.log)) {
     params <- gates.log[[popname]]
     if (params$method == "manual") {
       df <- data.frame(
-        id=gating.id, date=date.stamp, pop_order=i, pop=popname,
+        id=gating_id, date=date.stamp, pop_order=i, pop=popname,
         method=params$method,
         channel1=colnames(params$poly)[1],
         channel2=colnames(params$poly)[2],
@@ -646,10 +654,10 @@ save_gating_params <- function(db, gates.log) {
         minpe=NA
       )
       sql_dbWriteTable(db, name="gating", value=df)
-      save_poly(db, params$poly, popname, gating.id)
+      save_poly(db, params$poly, popname, gating_id)
     } else if (params$method == "auto") {
       df <- data.frame(
-        id=gating.id, date=date.stamp, pop_order=i, pop=popname,
+        id=gating_id, date=date.stamp, pop_order=i, pop=popname,
         method=params$method,
         channel1=params$x,
         channel2=params$y,
@@ -666,7 +674,7 @@ save_gating_params <- function(db, gates.log) {
     }
     i <- i + 1
   }
-  return(gating.id)
+  return(gating_id)
 }
 
 #' Save gating polygon coordinates in the poly table.

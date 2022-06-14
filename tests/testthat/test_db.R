@@ -38,17 +38,66 @@ test_that("Save and retrieve filter params", {
     offset.large.D2=120,
     stringsAsFactors=FALSE
   )
+  filter.params3 <- data.frame(
+    quantile=2.5,
+    beads.fsc.small=100,
+    beads.D1=200,
+    beads.D2=300,
+    width=40,
+    notch.small.D1=50,
+    notch.small.D2=60,
+    notch.large.D1=70,
+    notch.large.D2=80,
+    offset.small.D1=90,
+    offset.small.D2=100,
+    offset.large.D1=110,
+    offset.large.D2=120,
+    stringsAsFactors=FALSE
+  )
 
   id1 <- save_filter_params(x$db, filter.params1)
   Sys.sleep(2)  # filter timestamp has resolution of seconds
   id2 <- save_filter_params(x$db, filter.params2)
+  id3 <- save_filter_params(x$db, filter.params3, filter_id = "customID")
 
-  oldest <- get_filter_params_by_id(x$db, id1)
-  latest <- get_filter_params_by_id(x$db, id2)
+  first <- get_filter_params_by_id(x$db, id1)
+  second <- get_filter_params_by_id(x$db, id2)
+  third <- get_filter_params_by_id(x$db, id3)
 
   # Skip id and date when comparing
-  expect_equal(oldest[, 3:ncol(oldest)], filter.params1)
-  expect_equal(latest[, 3:ncol(latest)], filter.params2)
+  expect_equal(first[, 3:ncol(first)], filter.params1)
+  expect_equal(second[, 3:ncol(second)], filter.params2)
+  expect_equal(third[, 3:ncol(third)], filter.params3)
+  expect_equal(id3, "customID")
+
+  tearDown(x)
+})
+
+
+test_that("Save and retrieve gating params", {
+  x <- setUp()
+
+  gating.params1 <- readRDS(x$gates1.file)
+  gating.params2 <- readRDS(x$gates2.file)
+
+  id1 <- save_gating_params(x$db, gating.params1$gates.log)
+  Sys.sleep(2)  # gating timestamp has resolution of seconds
+  id2 <- save_gating_params(x$db, gating.params2$gates.log)
+  id3 <- save_gating_params(x$db, gating.params2$gates.log, gating_id = "customID")
+
+  first <- get_gating_params_by_id(x$db, id1)
+  second <- get_gating_params_by_id(x$db, id2)
+  third <- get_gating_params_by_id(x$db, id3)
+
+  expect_equal(first$id, id1)
+  expect_equal(second$id, id2)
+  expect_equal(third$id, id3)
+
+  expect_equal(first$gates.log, gating.params1$gates.log)
+  expect_equal(second$gates.log, gating.params2$gates.log)
+  expect_equal(third$gates.log, gating.params2$gates.log)
+
+  expect_equal(id3, "customID")
 
   tearDown(x)
 })
