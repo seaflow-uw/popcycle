@@ -71,7 +71,7 @@ is_transformed <- function(df) {
 #' evt <- readSeaflow("foo/2014_213/2014-07-04T00-00-02+00-00.gz", channel=c("fsc_small", "pe"))
 #' }
 #' @export
-readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, columns=NULL) {
+readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
   # reads a binary seaflow event file into memory as a dataframe
   if (!file.exists(path)) {
     path <- paste0(path, ".gz")
@@ -85,7 +85,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
   n.colcnt.bytes <- 4
   n.colcnt.columns <- 2  # column count 32-bit int in terms of 2 byte columns
   column.size <- 2  # column size in bytes
-  
+
   ## open binary file for reading
   if (tools::file_ext(path) == "gz") {
     con <- gzfile(description=path, open="rb")
@@ -103,18 +103,14 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
     # v1 EVT
     # Seek back to before we read the column count 32-bit int
     seek(con, where=n.rowcnt.bytes)
-    if (is.null(columns)) {
-      columns <- EVT.HEADER
-    }
+    columns <- EVT.HEADER
     columns_per_row <- n.colcnt.columns + length(columns)
     rowcnt <- num1
     version <- "v1"
   } else if (num1 == length(EVT.HEADER2) * column.size) {
     # v2 EVT
     # No need to seek back, there's only one column count 32-bit int in the file
-    if (is.null(columns)) {
-      columns <- EVT.HEADER2
-    }
+    columns <- EVT.HEADER2
     columns_per_row <- length(columns)
     rowcnt <- num2
     version <- "v2"
@@ -130,7 +126,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL, co
     close(con)
     return(data.frame())
   }
-  
+
   if (count.only) {
     return(rowcnt) #return just the event count in the header
   }
