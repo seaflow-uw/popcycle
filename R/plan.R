@@ -117,8 +117,8 @@ create_full_filter_plan <- function(file_ids_to_filter, db, evt_dir, opp_dir, fi
   if (any(is.na(df$filter_id))) {
     stop("Some files are not covered by filter_plan date ranges")
   }
-  # Filter down to only files with changed gating IDs
-  opp <- get_opp_table(db) %>%
+  # Filter down to only files with changed filter IDs
+  opp <- get_opp_table(db, particles_in_all_quantiles = FALSE) %>%
     dplyr::select(file_id, filter_id)
   changed_file_ids <- dplyr::left_join(df, opp, by = "file_id") %>%
     dplyr::filter(is.na(filter_id.y) | (filter_id.x != filter_id.y)) %>%
