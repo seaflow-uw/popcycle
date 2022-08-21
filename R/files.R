@@ -329,7 +329,7 @@ read_calib_csv <- function(path=NULL) {
 
 #' Read table of indexes of refraction for cruise and population combinations
 #'
-#' @return A dataframe of with columns for cruise and each population's index of refraction alias
+#' @return A dataframe with columns for cruise and each population's index of refraction alias
 #' @export
 read_refraction_csv <- function(path=NULL) {
   if (is.null(path)) {
@@ -340,7 +340,7 @@ read_refraction_csv <- function(path=NULL) {
 
 #' Read table of PAR calibration values
 #'
-#' @return A dataframe of with columns for cruise and PAR calibration factor
+#' @return A dataframe with columns for cruise and PAR calibration factor
 #' @export
 read_par_csv <- function(path=NULL) {
   if (is.null(path)) {
@@ -349,6 +349,22 @@ read_par_csv <- function(path=NULL) {
   return(read.csv(path))
 }
 
+#' Read table of reference filter parameters for a single instrument
+#'
+#' @param inst Instrument serial
+#' @return A dataframe of filter parameters
+#' @export
+read_reference_filter_params <- function(inst=NULL) {
+  if (is.null(inst)) {
+    stop("inst must be specified")
+  }
+  system_path <- paste0("reference_filter_params_", inst, ".csv")
+  path <- system.file("filter", system_path, package="popcycle")
+  if (path == "") {
+    stop("could not find system file for package 'popcycle': ", system_path)
+  }
+  return(read.csv(path))
+}
 
 #' Read SFL tab-delimited file
 #' @param path Path to validated tab-delimited SFL file
