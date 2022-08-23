@@ -287,6 +287,16 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE) {
     return(tibble::tibble())
   })
 
+  # If more than X% of EVT events make it through filtering, reject with an
+  # an error and report 0 OPP particles
+  reject_frac <- 0.2
+  if (nrow(opp) > reject_frac * nrow(evt)) {
+    warning("more than ", round(reject_frac * 100, 2), "% of events passed filtering, rejecting file ", plan$path[1])
+    opp <- tibble::tibble()
+  }
+
+  gc()
+
   # Add metadata columns
   opp <- opp %>%
     dplyr::mutate(date = plan$date[1], .before = 1) %>%
