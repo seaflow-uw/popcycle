@@ -10,7 +10,7 @@ create_realtime_meta <- function(db, quantile, volume = NULL) {
   quantile <- as.numeric(quantile)
 
   ## merge all metadata
-  meta <- get_opp_table(db, sfl_join = TRUE, all_sfl_columns = TRUE, outlier_join = FALSE)
+  meta <- get_opp_table(db, sfl_join = TRUE, all_sfl_columns = TRUE, outlier_join = FALSE, particles_in_all_quantiles = FALSE)
   meta <- meta[meta$quantile == quantile, ]
   # retrieve flow rate (mL min-1) of detectable volume
   fr <- flowrate(meta$stream_pressure, inst = get_inst(db))$flow_rate
@@ -57,10 +57,11 @@ write_realtime_meta_tsdata <- function(meta, project, outfile, filetype = "SeaFl
 #'
 #' @param db popcycle database file.
 #' @param quantile OPP filtering quantile to use.
-#' @param with_abundance Include volume normalized "abundance" column
+#' @param correction Abundance correction value.
+#' @param volume Use a constant volume value, overriding any calculated values.
 #' @return A tibble of realtime population data
 #' @export
-create_realtime_bio <- function(db, quantile, correction = NULL, with_abundance = FALSE) {
+create_realtime_bio <- function(db, quantile, correction = NULL, volume = NULL) {
   bio <- tibble::as_tibble(popcycle::get_stat_table(db)) %>%
     dplyr::mutate(date = lubridate::ymd_hms(time)) %>%
     dplyr::filter(quantile == {{ quantile }}) %>%
@@ -68,8 +69,10 @@ create_realtime_bio <- function(db, quantile, correction = NULL, with_abundance 
     dplyr::rename(diam_mid = diam_mid_med, diam_lwr = diam_lwr_med) %>%
     dplyr::mutate(correction = {{ correction }})
 
-  if (! with_abundance) {
-    bio <- bio %>% dplyr::select(-c("abundance"))
+  # Override default abundance calculaton with a fixed volume
+  if (!is.null(volume)) {
+    bio <- bio %>%
+      dplyr::mutate(abundance = n_count / volume)
   }
   return(bio)
 }
