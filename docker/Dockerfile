@@ -1,9 +1,15 @@
-FROM rocker/rstudio:4.2.0
+FROM rocker/rstudio:4.2.1
 
 RUN apt-get update && apt-get install -y \
     cmake \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
     libgeos-dev \
+    libharfbuzz-dev \
+    libjpeg-dev \
     libpng-dev \
+    libtiff5-dev \
     libxml2-dev \
     sqlite3 \
     zlib1g-dev \
