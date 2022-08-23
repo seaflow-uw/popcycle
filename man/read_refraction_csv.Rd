@@ -7,7 +7,7 @@
 read_refraction_csv(path = NULL)
 }
 \value{
-A dataframe of with columns for cruise and each population's index of refraction alias
+A dataframe with columns for cruise and each population's index of refraction alias
 }
 \description{
 Read table of indexes of refraction for cruise and population combinations

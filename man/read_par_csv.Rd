@@ -7,7 +7,7 @@
 read_par_csv(path = NULL)
 }
 \value{
-A dataframe of with columns for cruise and PAR calibration factor
+A dataframe with columns for cruise and PAR calibration factor
 }
 \description{
 Read table of PAR calibration values

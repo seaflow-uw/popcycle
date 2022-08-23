@@ -9,9 +9,9 @@ delete_poly_by_id_pop(db, gating_id, popname)
 \arguments{
 \item{db}{SQLite3 database file path.}
 
-\item{popname}{Population name}
+\item{gating_id}{gating_id for poly entries.}
 
-\item{gating.id}{gating_id for poly entries.}
+\item{popname}{Population name}
 }
 \value{
 Number of rows deleted.

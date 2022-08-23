@@ -4,7 +4,7 @@
 \alias{save_filter_params}
 \title{Save filter parameters to the filter table.}
 \usage{
-save_filter_params(db, filter_params)
+save_filter_params(db, filter_params, filter_id = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -14,6 +14,9 @@ quantile. Columns should include:
 quantile, beads.fsc.small, beads.D1, beads.D2, width,
 notch.small.D1, notch.small.D2, notch.large.D1, notch.large.D2,
 offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.}
+
+\item{filter_id}{Optional, supply a filter ID. If not provided a UUID string
+will be generated.}
 }
 \value{
 Database filter ID string.

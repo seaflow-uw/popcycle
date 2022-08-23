@@ -1,0 +1,4 @@
+quantile,beads_fsc_small,beads_D1,beads_D2,width,notch_small_D1,notch_small_D2,notch_large_D1,notch_large_D2,offset_small_D1,offset_small_D2,offset_large_D1,offset_large_D2
+2.5,57728,40264,39968,20000,0.767,0.762,1.64,1.637,-4000,-4000,-54410,-54533
+50,58784,38304,38256,20000,0.72,0.719,1.635,1.632,-4000,-4000,-57808,-57679
+97.5,59792,36144,36816,20000,0.671,0.683,1.63,1.627,-4000,-4000,-61317,-60466

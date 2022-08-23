@@ -14,8 +14,7 @@ before calculating volumes. If NULL volumes are returned at their original time
 resolution.}
 }
 \value{
-A tibble of volumes, per-file OPP/EVT ratio adjusted volumes for small
-  particles, and global median OPP/EVT ratio adjusted volumes for large particles.
+A tibble of sample and virtual core volumes.
 }
 \description{
 Create a tibble of volumes that can be used to calculate SeaFlow abundances

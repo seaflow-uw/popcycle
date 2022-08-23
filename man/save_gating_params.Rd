@@ -4,12 +4,15 @@
 \alias{save_gating_params}
 \title{Save gating parameters.}
 \usage{
-save_gating_params(db, gates.log)
+save_gating_params(db, gates.log, gating_id = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
 
 \item{gates.log}{Named list of per population classification parameters.}
+
+\item{gating_id}{Optional, supply a gating ID. If not provided a UUID string
+will be generated.}
 }
 \value{
 Database gating ID string.
