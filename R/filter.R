@@ -229,7 +229,7 @@ filter_window_evt <- function(x, y, filter_params) {
   # Write data to new OPP parquet if not empty
   if (nrow(window_opp_df) > 0) {
     # Use a temp file to avoid partial writes
-    tmpname <- mktempname()
+    tmpname <- mktempname(dirname(window_opp_path), basename(window_opp_path))
     arrow::write_parquet(window_opp_df, tmpname)
     file.rename(tmpname, window_opp_path)
   }

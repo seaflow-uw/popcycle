@@ -471,7 +471,7 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL) {
   # Write new VCT parquet
   if (nrow(window_vct_df) > 0) {
     # Use a temp file to avoid partial writes
-    tmpname <- mktempname()
+    tmpname <- mktempname(dirname(window_vct_path), basename(window_vct_path))
     arrow::write_parquet(window_vct_df, tmpname)
     file.rename(tmpname, window_vct_path)
   }

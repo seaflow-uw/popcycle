@@ -448,6 +448,8 @@ get_clean_stat_table <- function(db){
 }
 
 #' Create a temporary file name
-mktempname <- function() {
-  return(glue::glue("_{stringr::str_sub(uuid::UUIDgenerate(), 1, 8)}-{lubridate::format_ISO8601(lubridate::now())}"))
+mktempname <- function(root_dir, suffix) {
+  rand8char <- stringr::str_sub(uuid::UUIDgenerate(), 1, 8)
+  timestamp <- lubridate::format_ISO8601(lubridate::now())
+  return(file.path(root_dir, glue::glue("._{rand8char}_{timestamp}_{suffix}")))
 }

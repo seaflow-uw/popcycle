@@ -4,7 +4,7 @@
 \alias{mktempname}
 \title{Create a temporary file name}
 \usage{
-mktempname()
+mktempname(root_dir, suffix)
 }
 \description{
 Create a temporary file name
