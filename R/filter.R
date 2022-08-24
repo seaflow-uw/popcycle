@@ -228,7 +228,10 @@ filter_window_evt <- function(x, y, filter_params) {
   window_opp_df <- dplyr::arrange(window_opp_df, date)
   # Write data to new OPP parquet if not empty
   if (nrow(window_opp_df) > 0) {
-    arrow::write_parquet(window_opp_df, window_opp_path)
+    # Use a temp file to avoid partial writes
+    tmpname <- mktempname()
+    arrow::write_parquet(window_opp_df, tmpname)
+    file.rename(tmpname, window_opp_path)
   }
 
   logtext <- paste0(

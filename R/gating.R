@@ -470,7 +470,10 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL) {
   window_vct_df <- dplyr::arrange(window_vct_df, date)
   # Write new VCT parquet
   if (nrow(window_vct_df) > 0) {
-    arrow::write_parquet(window_vct_df, window_vct_path)
+    # Use a temp file to avoid partial writes
+    tmpname <- mktempname()
+    arrow::write_parquet(window_vct_df, tmpname)
+    file.rename(tmpname, window_vct_path)
   }
   # Prepare VCT stats dataframe
   vct_stats_df <- prep_vct_stats(window_vct_df)
