@@ -1,5 +1,17 @@
 #!/usr/bin/env Rscript
 
+# optparse may not be installed globally so look for renv directory before
+# parsing cli args with optparse
+args <- commandArgs(trailingOnly=TRUE)
+renv_loc <- args == "--renv"
+if (any(renv_loc)) {
+  renv_idx <- which(renv_loc)
+  if (length(args) > renv_idx) {
+    proj_dir <- renv::activate(args[renv_idx + 1])
+    message("activated renv directory ", proj_dir)
+  }
+}
+
 parser <- optparse::OptionParser(
   usage = "usage: psd.R [options] db vct_dir",
   description = "Create gridded particle size distribution data from VCT data"
@@ -69,11 +81,6 @@ if (length(p$args) < 2) {
 
   if (!dir.exists(vct_dir) || !file.exists(db)) {
     stop(paste0("vct_dir or db does not exist"))
-  }
-
-  if (p$options$renv != "") {
-    proj_dir <- renv::activate(p$options$renv)
-    message("activated renv directory ", proj_dir)
   }
 }
 

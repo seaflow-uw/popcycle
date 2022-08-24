@@ -1,5 +1,17 @@
 #!/usr/bin/env Rscript
 
+# optparse may not be installed globally so look for renv directory before
+# parsing cli args with optparse
+args <- commandArgs(trailingOnly=TRUE)
+renv_loc <- args == "--renv"
+if (any(renv_loc)) {
+  renv_idx <- which(renv_loc)
+  if (length(args) > renv_idx) {
+    proj_dir <- renv::activate(args[renv_idx + 1])
+    message("activated renv directory ", proj_dir)
+  }
+}
+
 parser <- optparse::OptionParser(
   usage = "usage: classify_files.R db opp_dir vct_dir",
   description = "Classify all SeaFlow data for one cruise"
@@ -27,10 +39,6 @@ if (length(p$args) < 3) {
   }
   if (!file.exists(opp_dir)) {
     stop(paste0(opp_dir, " does not exist"), call. = FALSE)
-  }
-  if (p$options$renv != "") {
-    proj_dir <- renv::activate(p$options$renv)
-    message("activated renv directory ", proj_dir)
   }
 }
 
