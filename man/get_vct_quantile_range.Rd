@@ -20,14 +20,14 @@ get_vct_quantile_range(
 
 \item{quantile_probs}{Numeric vector of probabilities with values in [0,1].}
 
+\item{pop}{Single population label to filter for.}
+
 \item{ignore_dates}{Don't process VCT data with these dates.}
 
 \item{data_cols}{Character vector of VCT column to use as size metric:
 fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
 For Qc and diam the filtering quantile will be added to the column name
 automatically.}
-
-\item{pops}{Single population label to filter for.}
 }
 \value{
 Result of quantile()

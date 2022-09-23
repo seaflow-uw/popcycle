@@ -440,11 +440,13 @@ create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE)
 #'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
 #'  For Qc and diam the quantile will be added to the column name automatically.
 #' @param quantile OPP Filtering quantile.
-#' @param pops Single population label to filter for.
+#' @param pop Single population label to filter for.
+#' @param ignore_dates Don't process VCT data with these dates.
 #' @param cores Number of cores to use
 #' @return Two item numeric vector of c(min_val, max_val)
 #' @export
-get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL, cores = 1) {
+get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL,
+                          ignore_dates = NULL, cores = 1) {
   ptm <- proc.time()
   # Get vector of file paths
 
@@ -455,19 +457,18 @@ get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL, cores = 1)
     cl <- parallel::makeCluster(cores, outfile="")
     doParallel::registerDoParallel(cl)
     answer <- foreach::foreach(vct_file = vct_files, .inorder = TRUE) %dopar% {
-      return(get_vct_range_one_file(vct_file, data_cols, quantile, pop = pop, cores = cores))
+      return(get_vct_range_one_file(vct_file, data_cols, quantile, pop = pop, ignore_dates = ignore_dates, cores = cores))
     }
     parallel::stopCluster(cl)
   } else {
     # Serial code
-    answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_cols, quantile, pop = pop, cores = cores))
+    answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_cols, quantile, pop = pop, ignore_dates = ignore_dates, cores = cores))
   }
 
   answer <- purrr::flatten_dbl(answer)
-  answer <- answer[!is.infinite(answer)]
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
-  return(c(min(answer), max(answer)))
+  return(suppressWarnings(c(min(answer), max(answer))))
 }
 
 #' Find min/max for a data column / quantile pair in one VCT file
@@ -477,10 +478,12 @@ get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL, cores = 1)
 #'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
 #'  For Qc and diam the quantile will be added to the column name automatically.
 #' @param quantile OPP Filtering quantile.
-#' @param pops Single population label to filter for.
+#' @param pop Single population label to filter for.
+#' @param ignore_dates Don't process VCT data with these dates.
 #' @param cores Number of cores to use
 #' @return Two item numeric vector of c(min_val, max_val)
-get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL, cores = 1) {
+get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL,
+                                   ignore_dates = NULL, cores = 1) {
   qstr <- paste0("q", as.numeric(quantile))
   qsuffix <- paste0("_", qstr)
 
@@ -494,7 +497,7 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL, co
   refractive <- data_cols[data_cols %in% refractive_cols]
   not_refractive <- data_cols[!(data_cols %in% refractive_cols)]
 
-  final_cols <- c(qstr)
+  final_cols <- c(qstr, "date")
   if (length(refractive) > 0) {
     final_cols <- c(final_cols, paste0(refractive, qsuffix))
   }
@@ -511,6 +514,10 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL, co
   )
   if (!is.null(pop)) {
     vct <- vct[vct[[pop_col]] == pop, ]
+  }
+  # Ignore certain dates
+  if (!is.null(ignore_dates)) {
+    vct <- vct %>% dplyr::filter(! (date %in% ignore_dates))
   }
   # Find min and max for each data column
   # This will warn about no non-missing arguments if no data for this file
@@ -532,7 +539,7 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL, co
 #'  automatically.
 #' @param filtering_quantile OPP Filtering quantile.
 #' @param quantile_probs Numeric vector of probabilities with values in [0,1].
-#' @param pops Single population label to filter for.
+#' @param pop Single population label to filter for.
 #' @param ignore_dates Don't process VCT data with these dates.
 #' @return Result of quantile()
 #' @export
