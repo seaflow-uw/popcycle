@@ -466,6 +466,7 @@ get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL,
   }
 
   answer <- purrr::flatten_dbl(answer)
+  answer <- answer[is.finite(answer)]
   deltat <- proc.time() - ptm
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
   return(suppressWarnings(c(min(answer), max(answer))))
