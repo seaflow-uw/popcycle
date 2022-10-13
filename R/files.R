@@ -289,6 +289,116 @@ get_processed_particles <- function(db, data_dir, data_type, file_ids = NULL,
   return(df)
 }
 
+#' Read an OPP/VCT parquet file, only grabbing columns needed to analyze one quantile.
+#'
+#' @param filepath Path of parquet file
+#' @param quantile Quantile to select, e.g. 2.5
+#' @param cols Columns to select. If a column has a refractive index suffix and/or
+#'   a quantile suffix in the parquet file column name, don't include it here.
+#'   For example, use "pop", not "pop_q2.5". Use "diam", not "diam_lwr_q2.5". The
+#'   appropriate quantile boolean column will be added automatically if not present.
+#'   If not a character vector, all columns will be returned.
+#' @param refracs Dataframe of refractive indices to use for each population. Column names
+#'   should be population names used in classification, values should be mid, lwr, upr.
+#'   If refracs is supplied but "pop" is not in the cols parameter, it will be added automatically.
+#' @export
+read_parquet_one_quantile <- function(filepath, quantile, cols, refracs = NULL) {
+  qstr <- paste0("q", quantile)
+  qsuffix <- paste0("_", qstr)
+  if (!is.character(cols)) {
+    need_all_cols <- TRUE
+  } else {
+    need_all_cols <- FALSE
+  }
+
+  if (!is.null(refracs)) {
+    if (nrow(refracs) != 1) {
+      stop("refracs should only contain one row")
+    }
+    if (!all(refracs[1, ] %in% c("lwr", "mid", "upr"))) {
+      stop("invalid refraction index label in: '", paste(refracs, collapse = " "), "'")
+    }
+    if ("cruise" %in% refracs) {
+      refracs <- refracs %>% dplyr::select(-c(cruise)) # sometimes left in accidentally
+    }
+    refracs_needed <- refracs %>%
+      unlist() %>%
+      unique()
+    # Need to grab pop to apply per-pop refractive index
+    if (!need_all_cols && !("pop" %in% cols)) {
+      cols <- c(cols, "pop")
+    }
+  } else {
+    # Get all refractive indexes
+    refracs_needed <- c("lwr", "mid", "upr")
+  }
+
+  # Build a vector of column names to select
+  if (need_all_cols) {
+    df <- arrow::read_parquet(filepath)
+  } else {
+    cols_needed <- c(qstr)
+    for (col in cols) {
+      if ((col == "pop")) {
+        cols_needed <- c(cols_needed, paste0("pop", qsuffix))
+      } else if (col == "diam") {
+        for (refrac_alias in refracs_needed) {
+          cols_needed <- c(cols_needed, paste0("diam_", refrac_alias, qsuffix))
+        }
+      } else if (col == "Qc") {
+        for (refrac_alias in refracs_needed) {
+          cols_needed <- c(cols_needed, paste0("Qc_", refrac_alias, qsuffix))
+        }
+      } else if (col != qstr) {
+        cols_needed <- c(cols_needed, col)
+      }
+    }
+
+    df <- arrow::read_parquet(filepath, col_select = c(any_of(cols_needed)))
+  }
+
+  df <- df %>%
+    dplyr::filter(get(qstr)) %>%                                       # select one quantile of data
+    dplyr::select(-c(any_of(c("q2.5", "q50", "q97.5")))) %>%           # remove any quantile boolean columns
+    dplyr::rename_with(                                                # remove selected quantile suffix from columns
+      function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
+      ends_with(qsuffix)
+    ) %>%
+    dplyr::select(
+      -(ends_with("_q2.5") | ends_with("_q50") | ends_with("_q97.5"))  # remove any remaining quantile columns
+    )
+
+  # Apply population specific refractive indexes
+  if (!is.null(refracs) && ("pop" %in% names(df))) {
+    for (popname in names(refracs)) {
+      refrac_alias <- refracs[[1, popname]]
+      pop_idx <- df$pop == popname
+      if (need_all_cols || "diam" %in% cols) {
+        df[pop_idx, "diam"] <- df[pop_idx, paste0("diam_", refrac_alias)]
+      }
+      if (need_all_cols || "Qc" %in% cols) {
+        df[pop_idx, "Qc"] <- df[pop_idx, paste0("Qc_", refrac_alias)]
+      }
+    }
+    # Make sure pop is last
+    df <- df %>% relocate(pop, .after = last_col())
+    if ("diam" %in% names(df)) {
+      if (any(is.na(df$diam))) {
+        stop("missing refractive index for at least one population")
+      }
+    }
+    if ("Qc" %in% names(df)) {
+      if (any(is.na(df$Qc))) {
+        stop("missing refractive index for at least one population")
+      }
+    }
+    for (refrac_alias in refracs_needed) {
+      df[, endsWith(names(df), paste0("_", refrac_alias))] <- NULL
+    }
+  }
+  return(df)
+}
+
 #' Create an empty EVT data frame
 #'
 #' @return EVT data frame with no rows

@@ -117,7 +117,7 @@ test_that("Grid two files", {
   # Make sure boundary points are removed
   psd_no_boundaries <- create_PSD(
     vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE,
-    remove_boundary_points=TRUE
+    max_boundary_proportion=0.2
   )
   n_removed <- vct %>%
     group_by(date) %>%
@@ -135,6 +135,14 @@ test_that("Grid two files", {
     bind_rows() %>%
     nrow()
   expect_equal(sum(psd_no_boundaries$n), nrow(vct) - n_removed)
+
+  # Make sure boundary point cutoff is observed
+  # No data should be returned
+  psd_no_boundaries_empty <- create_PSD(
+    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE,
+    max_boundary_proportion=0.01
+  )
+  expect_equal(nrow(psd_no_boundaries_empty), 0)
 
   # Hourly data tests for one hour
   hourly <- group_psd_by_time(psd, time_expr="1 hours")
@@ -271,4 +279,63 @@ test_that("Abundance calcultation", {
     ) %>%
     select(-c(n, Qc_sum))
   expect_equal(answers, want)
+})
+
+test_that("Boundary point removal for two columns", {
+  df <- make_boundary_df()
+  answer_idx <- c(
+    c(2, 5, 6, 8),
+    c(12, 13, 16, 17, 19, 20)
+  )
+  expect_equal(
+    popcycle::remove_boundary_points(df, c("a", "b")),
+    df[answer_idx, ]
+  )
+})
+
+test_that("Boundary point removal for one column", {
+  df <- make_boundary_df()
+  answer_idx <- c(
+    c(2, 3, 4, 5, 6, 8),
+    c(12, 13, 15, 16, 17, 19, 20)
+  )
+  expect_equal(
+    popcycle::remove_boundary_points(df, c("a")),
+    df[answer_idx, ]
+  )
+})
+
+test_that("Boundary point removal, max saturated only, for two columns", {
+  df <- make_boundary_df()
+  answer_idx <- c(
+    c(1, 2, 3, 5, 6, 8, 10),
+    c(12, 13, 16, 17, 18, 19, 20)
+  )
+  expect_equal(
+    popcycle::remove_boundary_points(df, c("a", "b"), max_only = TRUE),
+    df[answer_idx, ]
+  )
+})
+
+test_that("Boundary point removal, max saturated only, for one column", {
+  df <- make_boundary_df()
+  answer_idx <- c(
+    c(1, 2, 3, 4, 5, 6, 8, 10),
+    c(11, 12, 13, 15, 16, 17, 18, 19, 20)
+  )
+  expect_equal(
+    popcycle::remove_boundary_points(df, c("a"), max_only = TRUE),
+    df[answer_idx, ]
+  )
+})
+
+test_that("Boundary point removal, error on bad column", {
+  df <- make_boundary_df()
+  expect_error(popcycle::remove_boundary_points(df, c("a", "d")))
+})
+
+test_that("Boundary point removal, error when on date column", {
+  df <- make_boundary_df()
+  df$date <- NULL
+  expect_error(popcycle::remove_boundary_points(df, c("a")))
 })

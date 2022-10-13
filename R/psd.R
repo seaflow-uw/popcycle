@@ -8,13 +8,14 @@
 #'   chl_small, Qc, diam.
 #' @param log_base If the break points are logged values, provide the base here to properly
 #'   log the VCT data before gridding. If break points are not log use NULL.
-#' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
-#'   diam before gridding.
+#' @param max_boundary_proportion Proportion of particles in each VCT file which can be
+#'   removed as boundary points before discarding all data in the file.
+#'   Should be > 0 and <= 1. If this parameter is NULL, no boundary points will be removed
+#'   before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
 #' @param pop A single populations label to keep. Particles not matching this label will be
 #'   ignored.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
-#' @param verbose Message extra diagnostic information.
 #' @param cores Number of cores to use
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
@@ -23,8 +24,8 @@
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
 #'   of Qc.
 #' @export
-create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove_boundary_points=FALSE,
-                       ignore_dates=NULL, pop=NULL, use_data.table=TRUE, verbose=FALSE, cores = 1) {
+create_PSD <- function(vct_files, quantile, refracs, grid, log_base = NULL, max_boundary_proportion = NULL,
+                       ignore_dates = NULL, pop = NULL, use_data.table = TRUE, cores = 1) {
   ptm <- proc.time()
   quantile <- as.numeric(quantile)
   cores <- min(cores, parallel::detectCores())
@@ -35,20 +36,21 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
     doParallel::registerDoParallel(cl)
     counts_list <- foreach::foreach(v = vct_files, .inorder = TRUE) %dopar% {
       create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
-                          remove_boundary_points=remove_boundary_points,
+                          max_boundary_proportion=max_boundary_proportion,
                           use_data.table=use_data.table, ignore_dates=ignore_dates,
-                          pop=pop, verbose=verbose)
+                          pop=pop)
     }
     parallel::stopCluster(cl)
   } else {
     # Serial code
     counts_list <- lapply(vct_files, function(v) {
       create_PSD_one_file(v, quantile, refracs, grid, log_base=log_base,
-                          remove_boundary_points=remove_boundary_points,
+                          max_boundary_proportion=max_boundary_proportion,
                           use_data.table=use_data.table, ignore_dates=ignore_dates,
-                          pop=pop, verbose=verbose)
+                          pop=pop)
     })
   }
+  counts_list <- counts_list %>% purrr::discard(is.null)
   counts <- dplyr::bind_rows(counts_list)
   rm(counts_list)
   invisible(gc())
@@ -67,120 +69,54 @@ create_PSD <- function(vct_files, quantile, refracs, grid, log_base=NULL, remove
 #'   chl_small, Qc, diam.
 #' @param log_base If the break points are logged values, provide the base here to properly
 #'   log the VCT data before gridding. If break points are not log use NULL.
-#' @param remove_boundary_points Remove min and max particles by fsc_small, pe, chl_small, Qc,
-#'   diam before gridding.
+#' @param max_boundary_proportion Proportion of particles in each VCT file which can be
+#'   removed as boundary points before discarding all data in the file.
+#'   Should be > 0 and <= 1. If this parameter is NULL, no boundary points will be removed
+#'   before gridding.
 #' @param ignore_dates Don't process VCT data with these dates.
 #' @param pop A single population label to keep. Particles not matching this label will be
 #'   ignored.
 #' @param use_data.table Use data.table for performance speedup, otherwise use dplyr.
-#' @param verbose Message extra diagnostic information.
 #' @return Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
 #'   locations, and population. Each grid coordinate is an integer index into the corresponding
 #'   grid breaks vector. The break point at that location defines the inclusive lower bound
 #'   of the bin, and the next break point in the sequence defines the exclusive upper bound.
 #'   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
-#'   of Qc.
-create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base = NULL, remove_boundary_points = FALSE,
-                                ignore_dates = NULL, pop = NULL, use_data.table = TRUE, verbose = FALSE) {
-  diag_text <- list(vct_file)  # for verbose diagnostics
-  if (nrow(refracs) != 1) {
-    stop("refracs should only contain one row")
-  }
-  if (!all(refracs[1, ] %in% c("mid", "lwr", "upr"))) {
-    stop("invalid refraction index label in: '", paste(refracs, collapse = " "), "'")
+#'   of Qc. Return NULL if not data remains after removing boundary points,
+#'   filtering by ignore_dates, or filtering by population.
+create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base = NULL, max_boundary_proportion = NULL,
+                                ignore_dates = NULL, pop = NULL, use_data.table = TRUE) {
+  if (!is.null(max_boundary_proportion) && ((max_boundary_proportion <= 0) || (max_boundary_proportion > 1))) {
+    stop("max_boundary_proportion must be > 0 and <= 1")
   }
 
-  qstr <- paste0("q", quantile)
-  qsuffix <- paste0("_", qstr)
-
-   # Read the VCT parquet file, only grabbing columns needed to analyze one quantile
-  # This is a lot of code to read only columns needed, but I feel it's clearer
-  # than trying to dynamically build a composed tidyselect expression for col_select
-  cols_needed <- c("date", qstr, paste0("pop", qsuffix))
-  for (col in names(grid)) {
-    if (!(col %in% c("diam", "Qc"))) {
-      cols_needed <- c(cols_needed, col)
-    }
-  }
-  need_diam <- "diam" %in% names(grid)
-  need_Qc <- "Qc" %in% names(grid)
-  if (!need_diam && !need_Qc) {
-    vct <- arrow::read_parquet(
-        vct_file,
-        col_select = c(all_of(cols_needed))
-    )
-  } else if (need_diam && !need_Qc) {
-    vct <- arrow::read_parquet(
-        vct_file,
-        col_select = c(all_of(cols_needed), (starts_with("diam") & ends_with(qsuffix)))
-    )
-  } else if (!need_diam && need_Qc) {
-    vct <- arrow::read_parquet(
-        vct_file,
-        col_select = c(all_of(cols_needed), (starts_with("Qc") & ends_with(qsuffix)))
-    )
-  } else {
-    vct <- arrow::read_parquet(
-        vct_file,
-        col_select = c(all_of(cols_needed), ends_with(qsuffix))
-    )
-  }
-  vct <- vct %>%
-    dplyr::filter(get(qstr)) %>%         # select one quantile of data
-    dplyr::select(-c(all_of(qstr))) %>%  # remove quantile boolean column
-    dplyr::rename_with(                  # Remove quantile suffix from columns
-      function(x) { stringr::str_replace(x, paste0(qsuffix, "$"), "") },
-      ends_with(qsuffix)
-    )
+  # Read VCT data, applying proper refractive index to each population
+  vct <- read_parquet_one_quantile(
+    vct_file, quantile, c("date", "pop", names(grid)), refracs = refracs
+  )
+  # Filter to single population
   if (!is.null(pop)) {
     vct <- vct %>% dplyr::filter(pop == {{ pop }})
   }
-
   # Ignore certain dates
   if (!is.null(ignore_dates)) {
     vct <- vct %>% dplyr::filter(! (date %in% ignore_dates))
   }
-
-  # Create new "diam" and "Qc" columns with the correct refractive index for
-  # each population
-  refrac_status <- list("  refractive indexes used:")  # verbose output for refractive indices
-  for (popname in names(refracs)) {
-    refrac_alias <- refracs[[1, popname]]
-    # Track which refractive index we used for this pop
-    refrac_status[[length(refrac_status)+1]] <- paste0(popname, "=", refrac_alias)
-    pop_idx <- vct$pop == popname
-    if ("Qc" %in% names(grid)) {
-      vct[pop_idx, "Qc"] <- vct[pop_idx, paste0("Qc_", refrac_alias)]
-    }
-    if ("diam" %in% names(grid)) {
-      vct[pop_idx, "diam"] <- vct[pop_idx, paste0("diam_", refrac_alias)]
-    }
+  if (nrow(vct) == 0) {
+    return(NULL)
   }
-  if (("Qc" %in% names(grid)) && any(is.na(vct$Qc))) {
-    stop(paste0("create_PSD_one_file: missing refractive index for at least one population in ", vct_file))
-  }
-  if (("diam" %in% names(grid)) && any(is.na(vct$diam))) {
-    stop(paste0("create_PSD_one_file: missing refractive index for at least one population in ", vct_file))
-  }
-  diag_text[[length(diag_text)+1]] <- paste(refrac_status, collapse=" ")
 
   # Remove particles at the max value for any dimension
-  if (remove_boundary_points && nrow(vct) > 0) {
-    max_prop <- 0.2  # max proportion of boundary points before error
+  if (!is.null(max_boundary_proportion)) {
     orig_len <- nrow(vct)
-    vct <- vct %>%
-      dplyr::group_by(date) %>%
-      dplyr::group_modify(function(x, y) {
-        sel <- TRUE
-        for (dim in names(grid)) {
-          sel <- sel & (x[[dim]] > min(x[[dim]])) & (x[[dim]] < max(x[[dim]]))
-        }
-        return(x[sel, ])
-      }) %>%
-      dplyr::group_split() %>%
-      dplyr::bind_rows()
-    if (orig_len - nrow(vct) > max_prop * orig_len) {
-      stop(paste0("create_PSD_one_file: too many boundary points removed in ", vct_file))
+    vct <- remove_boundary_points(vct, names(grid))
+    boundary_removed <- orig_len - nrow(vct)
+    if (boundary_removed > (max_boundary_proportion * orig_len)) {
+      perc_removed <- (boundary_removed / orig_len) * 100
+      message(paste0(
+        "> ", max_boundary_proportion * 100, "% boundary points removed (", boundary_removed, "/", orig_len, " ", perc_removed, "%) in ", vct_file
+      ))
+      return(NULL)
     }
   }
 
@@ -227,11 +163,43 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base = NU
     }
   }
 
-  if (verbose) {
-    message(paste(diag_text, collapse="\n"))
-  }
-
   return(vct_summary)
+}
+
+#' Remove boundary points.
+#'
+#' Boundary points are defined as points where the value for any of the
+#' selected columns is equal to the maximum or minimum value for that column
+#' at that date.
+#'
+#' @param df Dataframe of particle data with a date column
+#' @param cols Columns to use for boundary point definition
+#' @param max_only Only remove maximum boundary points
+#' @return df with boundary points removed.
+#' @export
+remove_boundary_points <- function(df, cols, max_only = FALSE) {
+  if (!all(cols %in% colnames(df))) {
+    stop("not all columns found in dataframe")
+  }
+  if (!("date" %in% names(df))) {
+    stop("date must be a column in df")
+  }
+  df <- df %>%
+    dplyr::group_by(date) %>%
+    dplyr::group_modify(function(x, y) {
+      sel <- TRUE
+      for (col in cols) {
+        if (max_only) {
+          sel <- sel & (x[[col]] < max(x[[col]]))
+        } else {
+          sel <- sel & (x[[col]] > min(x[[col]])) & (x[[col]] < max(x[[col]]))
+        }
+      }
+      return(x[sel, ])
+    }) %>%
+    dplyr::group_split() %>%
+    dplyr::bind_rows()
+  return(df)
 }
 
 #' Group gridded particle data at a lower time resolution

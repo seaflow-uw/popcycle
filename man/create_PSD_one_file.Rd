@@ -10,11 +10,10 @@ create_PSD_one_file(
   refracs,
   grid,
   log_base = NULL,
-  remove_boundary_points = FALSE,
+  max_boundary_proportion = NULL,
   ignore_dates = NULL,
   pop = NULL,
-  use_data.table = TRUE,
-  verbose = FALSE
+  use_data.table = TRUE
 )
 }
 \arguments{
@@ -31,8 +30,10 @@ chl_small, Qc, diam.}
 \item{log_base}{If the break points are logged values, provide the base here to properly
 log the VCT data before gridding. If break points are not log use NULL.}
 
-\item{remove_boundary_points}{Remove min and max particles by fsc_small, pe, chl_small, Qc,
-diam before gridding.}
+\item{max_boundary_proportion}{Proportion of particles in each VCT file which can be
+removed as boundary points before discarding all data in the file.
+Should be > 0 and <= 1. If this parameter is NULL, no boundary points will be removed
+before gridding.}
 
 \item{ignore_dates}{Don't process VCT data with these dates.}
 
@@ -40,8 +41,6 @@ diam before gridding.}
 ignored.}
 
 \item{use_data.table}{Use data.table for performance speedup, otherwise use dplyr.}
-
-\item{verbose}{Message extra diagnostic information.}
 }
 \value{
 Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
@@ -49,7 +48,8 @@ Tibble of gridded data, grouped by date, fsc_small, pe, chl_small, Qc diam grid
   grid breaks vector. The break point at that location defines the inclusive lower bound
   of the bin, and the next break point in the sequence defines the exclusive upper bound.
   Data columns summarizing each group are n for particle count and Qc_sum for the the sum
-  of Qc.
+  of Qc. Return NULL if not data remains after removing boundary points,
+  filtering by ignore_dates, or filtering by population.
 }
 \description{
 Create particle size distribution as particle counts and Qc sums for one VCT file
