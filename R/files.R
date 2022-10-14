@@ -315,11 +315,11 @@ read_parquet_one_quantile <- function(filepath, quantile, cols, refracs = NULL) 
     if (nrow(refracs) != 1) {
       stop("refracs should only contain one row")
     }
+    if ("cruise" %in% names(refracs)) {
+      refracs <- refracs %>% dplyr::select(-c(cruise)) # sometimes left in accidentally
+    }
     if (!all(refracs[1, ] %in% c("lwr", "mid", "upr"))) {
       stop("invalid refraction index label in: '", paste(refracs, collapse = " "), "'")
-    }
-    if ("cruise" %in% refracs) {
-      refracs <- refracs %>% dplyr::select(-c(cruise)) # sometimes left in accidentally
     }
     refracs_needed <- refracs %>%
       unlist() %>%
@@ -381,7 +381,7 @@ read_parquet_one_quantile <- function(filepath, quantile, cols, refracs = NULL) 
       }
     }
     # Make sure pop is last
-    df <- df %>% relocate(pop, .after = last_col())
+    df <- df %>% dplyr::relocate(pop, .after = last_col())
     if ("diam" %in% names(df)) {
       if (any(is.na(df$diam))) {
         stop("missing refractive index for at least one population")
