@@ -401,20 +401,28 @@ create_breaks <- function(bins, minval, maxval, log_base=NULL, log_answers=TRUE)
   return(b)
 }
 
+
 #' Find min/max for a data column / quantile pair in VCT files
 #'
 #' @param vct_files Vector of VCT file paths.
 #' @param data_cols Character vector of VCT columns to use as size metric:
-#'  fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
-#'  For Qc and diam the quantile will be added to the column name automatically.
+#'  fsc_small, chl_small, pe, Qc, or diam.
+#'  For Qc and diam, refractive index alias and quantile will be added to the
+#'  column name automatically. If refracs is provided, the appropriate refractive
+#'  index will automatically be applied to Qc and diam and only Qc and diam will
+#'  be returned as column names if requested. i.e. there will be no refractive
+#'  index alias suffix such as "_lwr".
 #' @param quantile OPP Filtering quantile.
 #' @param pop Single population label to filter for.
 #' @param ignore_dates Don't process VCT data with these dates.
 #' @param cores Number of cores to use
+#' @param refracs Dataframe of refractive indices to use for each population. Column names
+#'   should be population names used in classification, values should be mid, lwr, upr.
+#'   If NULL all refractive indexes will be used.
 #' @return Two item numeric vector of c(min_val, max_val)
 #' @export
 get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL,
-                          ignore_dates = NULL, cores = 1) {
+                          ignore_dates = NULL, refracs = NULL, cores = 1) {
   ptm <- proc.time()
   # Get vector of file paths
 
@@ -425,19 +433,30 @@ get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL,
     cl <- parallel::makeCluster(cores, outfile="")
     doParallel::registerDoParallel(cl)
     answer <- foreach::foreach(vct_file = vct_files, .inorder = TRUE) %dopar% {
-      return(get_vct_range_one_file(vct_file, data_cols, quantile, pop = pop, ignore_dates = ignore_dates, cores = cores))
+      return(get_vct_range_one_file(vct_file, data_cols, quantile, pop = pop,
+                                    ignore_dates = ignore_dates,
+                                    refracs = refracs, cores = cores)
+      )
     }
     parallel::stopCluster(cl)
   } else {
     # Serial code
-    answer <- purrr::map(vct_files, ~ get_vct_range_one_file(., data_cols, quantile, pop = pop, ignore_dates = ignore_dates, cores = cores))
+    answer <- purrr::map(
+      vct_files,
+      ~ get_vct_range_one_file(., data_cols, quantile, pop = pop,
+                               ignore_dates = ignore_dates, refracs = refracs,
+                               cores = cores))
   }
 
-  answer <- purrr::flatten_dbl(answer)
-  answer <- answer[is.finite(answer)]
+  df <- dplyr::bind_rows(answer)
   deltat <- proc.time() - ptm
+  # Results from individual files may have Inf or -Inf if all data was filtered
+  # out before getting the range, so use finite = TRUE in range call here to
+  # to exclude those values.
+  minmax <- df %>%
+    dplyr::summarise_all(~ suppressWarnings(range(., finite = TRUE)))
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
-  return(suppressWarnings(c(min(answer), max(answer))))
+  return(minmax)
 }
 
 #' Find min/max for a data column / quantile pair in one VCT file
@@ -452,37 +471,22 @@ get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL,
 #' @param cores Number of cores to use
 #' @return Two item numeric vector of c(min_val, max_val)
 get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL,
-                                   ignore_dates = NULL, cores = 1) {
-  qstr <- paste0("q", as.numeric(quantile))
-  qsuffix <- paste0("_", qstr)
-
-  # Check data column requested for validity and for presence of multiple refractive indexes
-  refractive_cols <- c("Qc_lwr", "Qc_mid", "Qc_upr", "diam_lwr", "diam_mid", "diam_upr")
-  channel_cols <- c("fsc_small", "chl_small", "pe")
-
-  if (!all(data_cols %in% c(refractive_cols, channel_cols))) {
-    stop(paste("data_col must be one of", paste(channel_cols, collapse=" "), paste(refractive_cols, collapse=" ")))
+                                   ignore_dates = NULL, refracs = NULL,
+                                   cores = 1) {
+  possible_cols <- c("fsc_small", "chl_small", "pe", "diam", "Qc")
+  if (!all(data_cols %in% possible_cols)) {
+    stop(paste("data_col must be one of", paste(possible_cols, collapse=" ")))
   }
-  refractive <- data_cols[data_cols %in% refractive_cols]
-  not_refractive <- data_cols[!(data_cols %in% refractive_cols)]
+  if (!is.null(ignore_dates) && !("date" %in% data_cols)) {
+    data_cols <- c("date", data_cols)
+  }
+  if (!is.null(pop) && !("pop" %in% data_cols)) {
+    data_cols <- c(data_cols, "pop")
+  }
 
-  final_cols <- c(qstr, "date")
-  if (length(refractive) > 0) {
-    final_cols <- c(final_cols, paste0(refractive, qsuffix))
-  }
-  if (length(not_refractive) > 0) {
-    final_cols <- c(final_cols, not_refractive)
-  }
+  vct <- popcycle::read_parquet_one_quantile(vct_file, quantile, cols = data_cols, refracs = refracs)
   if (!is.null(pop)) {
-    pop_col <- paste0("pop", qsuffix)
-    final_cols <- c(final_cols, pop_col)
-  }
-  vct <- arrow::read_parquet(
-    vct_file,
-    col_select = c(all_of(final_cols))
-  )
-  if (!is.null(pop)) {
-    vct <- vct[vct[[pop_col]] == pop, ]
+    vct <- vct %>% dplyr::filter(pop == {{ pop }})
   }
   # Ignore certain dates
   if (!is.null(ignore_dates)) {
@@ -492,11 +496,9 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL,
   # This will warn about no non-missing arguments if no data for this file
   # result will be Inf or -Inf in this case, filter these values out later
   minmax <- vct %>%
-    dplyr::filter(get(qstr)) %>%
     dplyr::select(where(is.numeric)) %>%
-    suppressWarnings(dplyr::summarise_all(range))
-  result <- suppressWarnings(c(min(as.matrix(minmax)), max(as.matrix(minmax))))
-  return(result)
+    dplyr::summarise_all(~ suppressWarnings(range(.)))
+  return(minmax)
 }
 
 #' Find quantiles for VCT data
@@ -512,7 +514,7 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL,
 #' @param ignore_dates Don't process VCT data with these dates.
 #' @return Result of quantile()
 #' @export
-get_vct_quantile_range <- function(vct_files, col, filtering_quantile, quantile_probs = c(.01, .99), 
+get_vct_quantile_range <- function(vct_files, col, filtering_quantile, quantile_probs = c(.01, .99),
                                    pop = NULL, ignore_dates = NULL) {
   qstr <- paste0("q", filtering_quantile)
   qsuffix <- paste0("_", qstr)

@@ -4,7 +4,7 @@
 \alias{read_parquet_one_quantile}
 \title{Read an OPP/VCT parquet file, only grabbing columns needed to analyze one quantile.}
 \usage{
-read_parquet_one_quantile(filepath, quantile, cols, refracs = NULL)
+read_parquet_one_quantile(filepath, quantile, cols = NULL, refracs = NULL)
 }
 \arguments{
 \item{filepath}{Path of parquet file}

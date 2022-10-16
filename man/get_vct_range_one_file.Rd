@@ -10,6 +10,7 @@ get_vct_range_one_file(
   quantile,
   pop = NULL,
   ignore_dates = NULL,
+  refracs = NULL,
   cores = 1
 )
 }

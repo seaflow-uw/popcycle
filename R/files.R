@@ -302,7 +302,7 @@ get_processed_particles <- function(db, data_dir, data_type, file_ids = NULL,
 #'   should be population names used in classification, values should be mid, lwr, upr.
 #'   If refracs is supplied but "pop" is not in the cols parameter, it will be added automatically.
 #' @export
-read_parquet_one_quantile <- function(filepath, quantile, cols, refracs = NULL) {
+read_parquet_one_quantile <- function(filepath, quantile, cols = NULL, refracs = NULL) {
   qstr <- paste0("q", quantile)
   qsuffix <- paste0("_", qstr)
   if (!is.character(cols)) {

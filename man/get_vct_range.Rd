@@ -10,6 +10,7 @@ get_vct_range(
   quantile,
   pop = NULL,
   ignore_dates = NULL,
+  refracs = NULL,
   cores = 1
 )
 }
@@ -17,14 +18,22 @@ get_vct_range(
 \item{vct_files}{Vector of VCT file paths.}
 
 \item{data_cols}{Character vector of VCT columns to use as size metric:
-fsc_small, chl_small, pe, Qc_[lwr,mid,upr], or diam_[lwr,mid,upr].
-For Qc and diam the quantile will be added to the column name automatically.}
+fsc_small, chl_small, pe, Qc, or diam.
+For Qc and diam, refractive index alias and quantile will be added to the
+column name automatically. If refracs is provided, the appropriate refractive
+index will automatically be applied to Qc and diam and only Qc and diam will
+be returned as column names if requested. i.e. there will be no refractive
+index alias suffix such as "_lwr".}
 
 \item{quantile}{OPP Filtering quantile.}
 
 \item{pop}{Single population label to filter for.}
 
 \item{ignore_dates}{Don't process VCT data with these dates.}
+
+\item{refracs}{Dataframe of refractive indices to use for each population. Column names
+should be population names used in classification, values should be mid, lwr, upr.
+If NULL all refractive indexes will be used.}
 
 \item{cores}{Number of cores to use}
 }
