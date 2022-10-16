@@ -169,3 +169,18 @@ test_that("get_vct_range, with refracs and one pop", {
   want <- tibble::tibble(pe = c(3, 6), diam = c(3, 10))
   expect_equal(got, want)
 })
+
+test_that("get_vct_range, with ignore_dates", {
+  tempdir <- withr::local_tempdir()
+  df <- make_range_vct(tempdir)
+  vct_files <- list.files(tempdir, pattern = "*.parquet", full.names = TRUE)
+  ignore_dates <- c("date2", "date4")
+  got <- get_vct_range(vct_files, c("pe", "diam"), 2.5, ignore_dates = ignore_dates)
+  want <- tibble::tibble(pe = c(2, 5), diam_lwr = c(2, 9), diam_mid = c(3, 10), diam_upr = c(4, 11))
+  expect_equal(got, want)
+
+  ignore_dates <- c("date1", "date2", "date3", "date4")
+  got <- get_vct_range(vct_files, c("pe", "diam"), 2.5, ignore_dates = ignore_dates)
+  want <- tibble::tibble(pe = c(Inf, -Inf), diam_lwr = c(Inf, -Inf), diam_mid = c(Inf, -Inf), diam_upr = c(Inf, -Inf))
+  expect_equal(got, want)
+})
