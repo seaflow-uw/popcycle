@@ -9,10 +9,10 @@
 
 bioc_deps <- c("flowCore", "flowDensity")
 
-# Pares "Imports" in DESCRIPTION, separating Bioconductor and others
+# Parse "Imports" in DESCRIPTION, separating Bioconductor and others
 desc <- readLines("DESCRIPTION")
 importi <- which(desc == "Imports:")
-runs <- rle(startsWith(desc[seq(importi+1,length(desc))], "    "))
+runs <- rle(startsWith(desc[seq(importi+1, length(desc))], "    "))
 deps <- desc[seq(importi+1, importi+runs$length[1])]
 deps <- trimws(deps)
 deps[seq(1, length(deps)-1)] <- substr(deps[seq(1, length(deps)-1)], 1, nchar(deps[seq(1, length(deps)-1)])-1)
