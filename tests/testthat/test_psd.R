@@ -260,7 +260,7 @@ test_that("Abundance calcultation", {
   )
 
   # No calibration to influx data
-  answers <- popcycle::add_adundance(psd, volumes)
+  answers <- popcycle::add_abundance(psd, volumes)
   want <- psd %>%
     mutate(
       n_per_uL=c(1 / 375, 2 / 375, 3 / 375, 4 / 550),
@@ -271,7 +271,7 @@ test_that("Abundance calcultation", {
 
   # Test calibration
   calib <- tibble::tibble(pop=c("prochloro", "synecho"), a=c(2, 3))
-  answers <- popcycle::add_adundance(psd, volumes, calib=calib)
+  answers <- popcycle::add_abundance(psd, volumes, calib=calib)
   want <- psd %>%
     mutate(
       n_per_uL=c(2 * 1 / 375, 2 / 375, 2 * 3 / 375, 3 * 4 / 550),

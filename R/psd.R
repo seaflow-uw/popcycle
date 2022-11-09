@@ -257,7 +257,7 @@ group_psd_by_time <- function(psd, time_expr="1 hours", use_data.table=TRUE) {
 #' @return psd with volume-normalized abundance columns for n_per_uL and Qc_sum_per_uL.
 #'   If calib is provided n and Qc_sum will be adjusted for populations in calib.
 #' @export
-add_adundance <- function(psd, volumes, calib=NULL) {
+add_abundance <- function(psd, volumes, calib=NULL) {
   # Calculate abundance
   psd <- dplyr::left_join(psd, volumes, by="date")
   psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_virtualcore"]
@@ -268,7 +268,7 @@ add_adundance <- function(psd, volumes, calib=NULL) {
     if (nrow(calib) == 0) {
       stop("calibration table is empty")
     }
-  
+
     popname <- unique(calib$pop)
     for (phyto in popname) {
       corr <- calib %>% dplyr::filter(pop == phyto)

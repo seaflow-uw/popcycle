@@ -206,7 +206,7 @@ if (!only_full_counts) {
     meta <- meta %>% dplyr::filter(flag == 0)  # remove flagged files
   }
   hourly_volumes <- popcycle::create_volume_table(meta, time_expr="1 hour")
-  hourly_psd <- popcycle::add_adundance(hourly, hourly_volumes, calib=calib)
+  hourly_psd <- popcycle::add_abundance(hourly, hourly_volumes, calib=calib)
 
   dated_msg("Hourly PSD dim = ", stringr::str_flatten(dim(hourly_psd), " "), ", MB = ", object.size(hourly_psd) / 2**20)
   ptm <- proc.time()
