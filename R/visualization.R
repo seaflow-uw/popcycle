@@ -20,24 +20,23 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 #' Plot cytograms for exploring filtering parameters.
 #'
 #' @param evt EVT data frame.
-#' @param filter_params Filtering parameters in a one row data frame or named
-#'   list. Columns should include width, notch.small.D1, notch.small.D2,
-#'   notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
-#'   offset.large.D1, offset.large.D2.
+#' @param filter_params Filtering parameters for all quantiles. Columns should
+#'  include width, notch.small.D1, notch.small.D2,
+#'  notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
+#'  offset.large.D1, offset.large.D2.
+#' @oaram quantile Quantile to use when plotting, default = 2.5.
 #' @return None
 #' @usage plot_filter_cytogram(evt, filter_params)
 #' @export plot_filter_cytogram
 
-plot_filter_cytogram <- function(evt, filter_params) {
-
-  fp <- subset(filter_params, quantile == 50)
-
-
+plot_filter_cytogram <- function(evt, filter_params, quantile = 2.5) {
   # linearize the LOG transformed data
   columns <- unlist(lapply(evt, is.numeric)) 
   if (!any(max(evt[, columns]) > 10^3.5)) {
     evt <- untransformData(evt)
   }
+
+  fp <- filter_params %>% dplyr::filter(quantile == {{ quantile }})
 
   # Filtering noise
   evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]
@@ -46,7 +45,8 @@ plot_filter_cytogram <- function(evt, filter_params) {
   aligned <- subset(evt., D2 < D1 + fp$width & D1 < D2 + fp$width)
 
   # Filtering focused particles (fsc_small > D * notch)
-  opp <- filter_evt(evt, filter_params)
+  opp <- filter_evt(evt, filter_params)  # filter all quantiles
+  opp <- opp[opp[[paste0("q", quantile)]], ]  # only keep particles for requested quantile
 
   ################
   ### PLOTTING ###
