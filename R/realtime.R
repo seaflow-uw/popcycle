@@ -71,8 +71,12 @@ create_realtime_bio <- function(db, quantile, correction = NULL, volume = NULL) 
 
   # Override default abundance calculaton with a fixed volume
   if (!is.null(volume)) {
+    opp_evt_ratio <- get_opp_table(db) %>%
+      pull(opp_evt_ratio) %>%
+      median()
+    virtualcore_volume <- volume * opp_evt_ratio
     bio <- bio %>%
-      dplyr::mutate(abundance = n_count / volume)
+      dplyr::mutate(abundance = n_count / {{ virtualcore_volume }})
   }
   return(bio)
 }
@@ -89,7 +93,7 @@ write_realtime_bio_tsdata <- function(bio, project, outfile,
                                       filetype = "SeaFlowPop",
                                       description = "SeaFlow population data") {
   bio <- bio %>% dplyr::rename(time = date)
-  fh <- file(outfile, open="wt")
+  fh <- file(outfile, open = "wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
   writeLines(description, fh)
