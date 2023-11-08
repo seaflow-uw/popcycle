@@ -9,10 +9,12 @@ plot_filter_cytogram(evt, filter_params)
 \arguments{
 \item{evt}{EVT data frame.}
 
-\item{filter_params}{Filtering parameters in a one row data frame or named
-list. Columns should include width, notch.small.D1, notch.small.D2,
+\item{filter_params}{Filtering parameters for all quantiles. Columns should
+include width, notch.small.D1, notch.small.D2,
 notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
 offset.large.D1, offset.large.D2.}
+
+\item{quantile}{Quantile to use when plotting, default = 2.5.}
 }
 \value{
 None

@@ -24,7 +24,7 @@ plot_cyt <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", ...) {
 #'  include width, notch.small.D1, notch.small.D2,
 #'  notch.large.D1, notch.large.D2, offset.small.D1, offset.small.D2,
 #'  offset.large.D1, offset.large.D2.
-#' @oaram quantile Quantile to use when plotting, default = 2.5.
+#' @param quantile Quantile to use when plotting, default = 2.5.
 #' @return None
 #' @usage plot_filter_cytogram(evt, filter_params)
 #' @export plot_filter_cytogram
