@@ -13,31 +13,17 @@ if (is.na(deps_only)) {
   deps_only <- FALSE
 }
 
-cat("Ncpus =", ncpus, "\n")
-cat("only install dependencies =", deps_only, "\n")
+print(paste("Ncpus =", ncpus))
+print(paste("Only install dependencies =", deps_only))
 
-# Install and attach devtools
+# Install devtools
 if (!requireNamespace("devtools", quietly=TRUE)) {
   install.packages("devtools", repos='http://cran.us.r-project.org')
 }
 
-# Install and attach BiocManager
+# Install BiocManager
 if (!requireNamespace("BiocManager", quietly=TRUE)) {
   install.packages("BiocManager", repos='http://cran.us.r-project.org')
-}
-
-# Prevent warnings during package installs from turning into errors that halt
-# installation. This variable is set here because a a minor markup error in a
-# flowDensity Rd file prevented it from installing successfully with
-# devtools::install_deps. The warning was
-# bad markup (extra space?) at plotDens.Rd:62:19
-# flowDensity tarball was
-# https://bioconductor.org/packages/3.11/bioc/src/contrib/flowDensity_1.22.0.tar.gz
-# Web resources that led to this solution
-# https://github.com/r-lib/remotes/issues/403
-# https://github.com/r-lib/remotes#environment-variables
-if (Sys.getenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS") == "") {
-  Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
 }
 
 if (deps_only) {

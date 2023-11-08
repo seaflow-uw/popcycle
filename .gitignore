@@ -4,6 +4,7 @@ cellar/
 lock/
 python/
 staging/
+renv/
 *.pyc
 .idea
 .RData
