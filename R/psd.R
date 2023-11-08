@@ -454,7 +454,7 @@ get_vct_range <- function(vct_files, data_cols, quantile, pop = NULL,
   # out before getting the range, so use finite = TRUE in range call here to
   # to exclude those values.
   minmax <- df %>%
-    dplyr::summarise_all(~ suppressWarnings(range(., finite = TRUE)))
+    dplyr::reframe(across(everything(), ~ suppressWarnings(range(., finite = TRUE))))
   message("Analyzed ", length(vct_files), " files in ", deltat[["elapsed"]], " seconds")
   return(minmax)
 }
@@ -496,8 +496,7 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL,
   # This will warn about no non-missing arguments if no data for this file
   # result will be Inf or -Inf in this case, filter these values out later
   minmax <- vct %>%
-    dplyr::select(where(is.numeric)) %>%
-    dplyr::summarise_all(~ suppressWarnings(range(.)))
+    dplyr::reframe(across(where(is.numeric), ~ suppressWarnings(range(.))))
   return(minmax)
 }
 

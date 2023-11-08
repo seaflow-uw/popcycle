@@ -37,9 +37,10 @@ test_that("Grid two files", {
 
   # Make sure using data.table and not using data.table yields the same result.
   # Exclude Qc_sum because of floating-point imprecision
-  expect_true(all_equal(
+  expect_true(all.equal(
     psd %>% select(-c(Qc_sum)),
-    psd_no_dt %>% select(-c(Qc_sum))
+    psd_no_dt %>% select(-c(Qc_sum)),
+    check.attributes=FALSE
   ))
   # Test Qc_sum with near
   expect_true(all(near(psd$Qc_sum, psd_no_dt$Qc_sum)))
@@ -73,8 +74,8 @@ test_that("Grid two files", {
   # All dates accounted for
   expect_equal(sort(unique(psd$date)), sort(unique(vct$date)))
   # All coordinate indices within range
-  expect_true(min(psd %>% select(ends_with("_coord")) %>% summarise_all(range)) >= 1)
-  expect_true(max(psd %>% select(ends_with("_coord")) %>% summarise_all(range)) <= bins)
+  expect_true(min(psd %>% reframe(across(ends_with("_coord"), range))) >= 1)
+  expect_true(max(psd %>% reframe(across(ends_with("_coord"), range))) <= bins)
 
   # Dates are properly ignored
   expect_equal(sum(psd_ignore_dates$n), vct %>% filter(! (date %in% ignore_dates)) %>% nrow())
