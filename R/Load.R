@@ -92,11 +92,12 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
   } else {
     con <- file(description=path, open="rb")
   }
+  on.exit(close(con))
+
   num1 <- readBin(con, "integer", n = 1, size = n.rowcnt.bytes, endian = "little")
   num2 <- readBin(con, "integer", n = 1, size = n.colcnt.bytes, endian = "little")
   if (length(num1) == 0 || length(num2) == 0) {
     warning(sprintf("File %s has a truncated header section.", path))
-    close(con)
     return(data.frame())
   }
   if (num2 == length(EVT.HEADER)) {
@@ -116,14 +117,12 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
     version <- "v2"
   } else {
     warning(sprintf("File %s has a invalid header section.", path))
-    close(con)
     return(data.frame())
   }
 
   # Check for empty file.  If empty return an empty data frame
   if (length(rowcnt) == 0 || rowcnt == 0) {
     warning(sprintf("File %s has no particle data.", path))
-    close(con)
     return(data.frame())
   }
 
@@ -148,7 +147,6 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
   if (received.bytes != expected.bytes) {
     warning(sprintf("File %s has incorrect data size. Expected %i bytes, saw %i bytes",
                     path, expected.bytes, received.bytes))
-    close(con)
     return(data.frame())
   }
   # reformat the vector into a matrix -> dataframe
@@ -167,7 +165,6 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
   }
   ## name the columns
   names(integer.dataframe) <- columns
-  close(con)
 
   if (nrow(integer.dataframe) != rowcnt) {
     msg <- paste("In file", path, "the declared number of events", rowcnt,

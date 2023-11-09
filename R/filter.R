@@ -112,10 +112,13 @@ identify_saturated <- function(evt) {
 #' @param opp_dir OPP file output directory.
 #' @param filter_id Optionally provide the ID for filter parameters. Pass NULL
 #'   to filter using schedule describedin the filter_plan table.
+#' @param max_particles_per_file Maximum number of particles per 3 minute EVT file.
+#'   Set to NULL to disable.
 #' @param cores Number of logical cores to use.
 #' @return None
 #' @export
 filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
+                             max_particles_per_file = MAX_PARTICLES_PER_FILE_DEFAULT,
                              cores = 1) {
   ptm <- proc.time()
 
@@ -149,7 +152,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
       doParallel::registerDoParallel(cl)
       windows <- dplyr::group_split(by_window_opp_path)
       answer <- foreach::foreach(df = windows, .inorder = TRUE, .combine = dplyr::bind_rows) %dopar% {
-        filter_window_evt(df, NULL, filter_params)
+        filter_window_evt(df, NULL, filter_params, max_particles_per_file = max_particles_per_file)
       }
       parallel::stopCluster(cl)
     } else {
@@ -158,6 +161,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
         by_window_opp_path,
         filter_window_evt,
         filter_params,
+        max_particles_per_file = max_particles_per_file,
         .keep=TRUE
       )
     }
@@ -188,7 +192,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
 #
 # filter_params is a named list that can be used to lookup filter parameters by
 # filter ID string.
-filter_window_evt <- function(x, y, filter_params) {
+filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL) {
   plan <- x
   stopifnot(length(unique(plan$window_opp_path)) == 1)
   window_opp_path <- plan$window_opp_path[1]
@@ -199,6 +203,8 @@ filter_window_evt <- function(x, y, filter_params) {
     dplyr::group_by(plan, file_id),
     filter_3min_evt,
     filter_params,
+    enforce_all_quantiles = TRUE,
+    max_particles_per_file = max_particles_per_file,
     .keep=TRUE
   )
   # Combine all 3 minute OPPs into one new time-windowed OPP
@@ -225,7 +231,7 @@ filter_window_evt <- function(x, y, filter_params) {
     gc()
   }
   # Sort by ascending date
-  window_opp_df <- dplyr::arrange(window_opp_df, date)
+  window_opp_df <- window_opp_df %>% dplyr::arrange(.data[["date"]])
   # Write data to new OPP parquet if not empty
   if (nrow(window_opp_df) > 0) {
     # Use a temp file to avoid partial writes
@@ -243,24 +249,48 @@ filter_window_evt <- function(x, y, filter_params) {
   return(opp_stats_df)
 }
 
-filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE) {
+filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
+                            max_particles_per_file = NULL) {
   plan <- x
   stopifnot(nrow(plan) == 1)
   stopifnot(nrow(y) == 1)
   filter_id_ <- as.character(plan$filter_id[1])
   fp <- filter_params[[filter_id_]]
+  max_particles_per_file_reject <- FALSE
 
-  # Read EVT file
+  # Check if EVT file event count is above max_particles_per_file
+  row_count <- 0
+  if (is.numeric(max_particles_per_file)) {
+    row_count <- tryCatch({
+      readSeaflow(plan$path[1], count.only=TRUE)
+    }, warning = function(err) {
+      message(err$message)
+      return(NULL)
+    }, error = function(err) {
+      message(err$message)
+      return(NULL)
+    })
+    if (!is.null(row_count)) {
+      if (row_count > max_particles_per_file) {
+        message(row_count, " records in ", plan$path[1], " > ", max_particles_per_file, ", will not filter")
+        max_particles_per_file_reject <- TRUE
+      }
+    }
+  }
   # Create empty data frame on warning or error
-  evt <- tryCatch({
-    readSeaflow(plan$path[1], transform=F)
-  }, warnings = function(err) {
-    message(err)
-    return(data.frame())
-  }, error = function(err) {
-    message(err)
-    return(data.frame())
-  })
+  if (!max_particles_per_file_reject) {
+    evt <- tryCatch({
+      readSeaflow(plan$path[1], transform=F)
+    }, warning = function(err) {
+      message(err$message)
+      return(data.frame())
+    }, error = function(err) {
+      message(err$message)
+      return(data.frame())
+    })
+  } else {
+    evt = data.frame()
+  }
 
   if (nrow(evt) > 0) {
     # Keep a standard set of columns
@@ -275,28 +305,26 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE) {
     noise_count <- 0
     saturated_count <- 0
     evt_count <- 0
-    all_count <- 0
+    if (max_particles_per_file_reject) {
+      # Won't filter, too many particles
+      all_count <- row_count
+    } else {
+      # Could not read file
+      all_count <- 0
+    }
   }
 
   # Filter EVT to OPP
   # Return empty tibble on warning or error
   opp <- tryCatch({
     tibble::as_tibble(filter_evt(evt, fp))
-  }, warnings = function(err) {
-    message(err)
+  }, warning = function(err) {
+    message(err$message)
     return(tibble::tibble())
   }, error = function(err) {
-    message(err)
+    message(err$message)
     return(tibble::tibble())
   })
-
-  # If more than X% of EVT events make it through filtering, reject with an
-  # an error and report 0 OPP particles
-  reject_frac <- 0.2
-  if (nrow(opp) > reject_frac * nrow(evt)) {
-    warning("more than ", round(reject_frac * 100, 2), "% of events passed filtering, rejecting file ", plan$path[1])
-    opp <- tibble::tibble()
-  }
 
   gc()
 

@@ -4,7 +4,15 @@
 \alias{filter_evt_files}
 \title{Filter a list of EVT files.}
 \usage{
-filter_evt_files(db, evt_dir, evt_files, opp_dir, filter_id = NULL, cores = 1)
+filter_evt_files(
+  db,
+  evt_dir,
+  evt_files,
+  opp_dir,
+  filter_id = NULL,
+  max_particles_per_file = MAX_PARTICLES_PER_FILE_DEFAULT,
+  cores = 1
+)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -18,6 +26,9 @@ Pass NULL to filter all EVT files discovered in evt_dir.}
 
 \item{filter_id}{Optionally provide the ID for filter parameters. Pass NULL
 to filter using schedule describedin the filter_plan table.}
+
+\item{max_particles_per_file}{Maximum number of particles per 3 minute EVT file.
+Set to NULL to disable.}
 
 \item{cores}{Number of logical cores to use.}
 }
