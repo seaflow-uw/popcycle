@@ -10,3 +10,4 @@ renv/
 .RData
 .Rhistory
 .Rapp.history
+DESCRIPTION_docker
