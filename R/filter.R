@@ -277,8 +277,8 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
       }
     }
   }
-  # Create empty data frame on warning or error
-  if (!max_particles_per_file_reject) {
+  # Read full EVT file
+  if (!max_particles_per_file_reject && !is.null(row_count)) {
     evt <- tryCatch({
       readSeaflow(plan$path[1], transform=F)
     }, warning = function(err) {

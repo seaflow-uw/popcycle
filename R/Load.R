@@ -116,7 +116,7 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
     rowcnt <- num2
     version <- "v2"
   } else {
-    warning(sprintf("File %s has a invalid header section.", path))
+    warning(sprintf("File %s has an invalid header section.", path))
     return(data.frame())
   }
 
