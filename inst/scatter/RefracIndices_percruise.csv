@@ -1,5 +1,7 @@
 cruise,prochloro,synecho,croco,picoeuk,beads,unknown
+Thompson_0,lwr,lwr,lwr,lwr,lwr,lwr
 Thompson_1,lwr,lwr,lwr,lwr,lwr,lwr
+Thompson_3,lwr,lwr,lwr,lwr,lwr,lwr
 Tokyo_1,lwr,lwr,lwr,lwr,lwr,lwr
 Tokyo_2,lwr,lwr,lwr,lwr,lwr,lwr
 Tokyo_3,lwr,lwr,lwr,lwr,lwr,lwr
@@ -41,6 +43,7 @@ SCOPE_Falkor2,upr,upr,lwr,lwr,lwr,lwr
 HOT301,upr,upr,lwr,lwr,lwr,lwr
 HOT302,upr,upr,lwr,lwr,lwr,lwr
 HOT303,upr,upr,lwr,lwr,lwr,lwr
+KOK1805,upr,upr,lwr,lwr,lwr,lwr
 KOK1806,upr,upr,lwr,lwr,lwr,lwr
 HOT304,upr,upr,lwr,lwr,lwr,lwr
 HOT307,mid,mid,lwr,lwr,lwr,lwr
@@ -64,6 +67,19 @@ HOT323,mid,mid,lwr,lwr,lwr,lwr
 HOT324,mid,mid,lwr,lwr,lwr,lwr
 HOT325,mid,mid,lwr,lwr,lwr,lwr
 HOT326,mid,mid,lwr,lwr,lwr,lwr
+HOT328,mid,mid,lwr,lwr,lwr,lwr
+HOT329,mid,mid,lwr,lwr,lwr,lwr
+HOT330,mid,mid,lwr,lwr,lwr,lwr
+HOT331,mid,mid,lwr,lwr,lwr,lwr
+HOT332,mid,mid,lwr,lwr,lwr,lwr
 SCOPE-PARAGON,mid,mid,lwr,lwr,lwr,lwr
 TN397_740,mid,mid,lwr,lwr,lwr,lwr
 TN398,mid,mid,lwr,lwr,lwr,lwr
+HOT335,mid,mid,lwr,lwr,lwr,lwr
+HOT336,mid,mid,lwr,lwr,lwr,lwr
+KM2206_740,mid,mid,lwr,lwr,lwr,lwr
+HOT337,mid,mid,lwr,lwr,lwr,lwr
+HOT338,mid,mid,lwr,lwr,lwr,lwr
+SCOPE-PARAGONII,lwr,lwr,lwr,lwr,lwr,lwr
+TN412_130,lwr,lwr,lwr,lwr,lwr,lwr
+TN413,lwr,lwr,lwr,lwr,lwr,lwr

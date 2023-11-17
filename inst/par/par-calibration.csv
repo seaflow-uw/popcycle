@@ -1,13 +1,17 @@
 cruise,ship,time,correction
 Thompson_0,R/V Thomas G Thompson,2009-11-08,NA
 Thompson_1,R/V Thomas G Thompson,2010-05-06,NA
+CMOP_3,R/V Wecoma,2010-05-24,NA
 Thompson_2,R/V Thomas G Thompson,2010-06-28,1.251
 Thompson_3,R/V Thomas G Thompson,2010-08-09,1.335
 Thompson_4,R/V Thomas G Thompson,2010-11-14,1.073
 Thompson_5,R/V Thomas G Thompson,2010-12-31,1.407
+Thompson_6,R/V Thomas G Thompson,2011-05-23,1.619
 Tokyo_1,M/V Tokyo,2011-05-23,NA
-Thompson_6,R/V Thomas G Thompson,2011-06-11,1.484
+TN265,R/V Thomas G Thompson,2011-06-15,1.49
 Tokyo_2,M/V Tokyo,2011-07-03,NA
+TN266,R/V Thomas G Thompson,2011-07-11,1.489
+TN267,R/V Thomas G Thompson,2011-08-03,1.267
 Thompson_7,R/V Thomas G Thompson,2011-08-26,1.327
 Tokyo_3,M/V Tokyo,2011-09-25,NA
 MBARI_1,R/V Western Flyer,2011-10-05,NA
@@ -27,13 +31,13 @@ SCOPE_3,R/V Kilo Moana,2015-05-24,1.474
 SCOPE_4,R/V Kilo Moana,2015-06-19,1.034
 SCOPE_5,R/V Kilo Moana,2015-07-20,0.799
 SCOPE_6,R/V Kilo Moana,2015-07-30,0.816
-SCOPE_9,R/V Kaimikai O Kanaloa,2015-09-27,Inf
-SCOPE_10,R/V Kaimikai O Kanaloa,2015-10-14,0.964
+SCOPE_9,R/V Kaimikai O Kanaloa,2015-09-27,2.261
+SCOPE_10,R/V Kaimikai O Kanaloa,2015-10-14,0.961
 SCOPE_11,R/V Kilo Moana,2015-11-14,0.943
 SCOPE_12,R/V Kilo Moana,2016-01-13,0.968
 SCOPE_13,R/V Kilo Moana,2016-02-10,0.995
 SCOPE_14,R/V Kilo Moana,2016-03-09,NA
-SCOPE_15,R/V Kaimikai O Kanaloa,2016-04-15,1.1
+SCOPE_15,R/V Kaimikai O Kanaloa,2016-04-15,1.213
 SCOPE_16,R/V Kaimikai O Kanaloa,2016-04-27,1.36
 SCOPE_17,R/V Kaimikai O Kanaloa,2016-05-13,NA
 SCOPE_18,R/V Kaimikai O Kanaloa,2016-07-12,1.002
@@ -69,13 +73,13 @@ HOT315,R/V Kilo Moana,2019-09-05,1.191
 KM1919,R/V Kilo Moana,2019-09-23,0.855
 KM1920,R/V Kilo Moana,2019-10-09,0.832
 SR1917,R/V Sally Ride,2019-11-17,0.543
-KM1923_740,R/V Kilo Moana,2019-12-11,0.681
-KM1923_751,R/V Kilo Moana,2019-12-11,0.678
+KM1923_740,R/V Kilo Moana,2019-12-11,0.653
+KM1923_751,R/V Kilo Moana,2019-12-11,0.652
 HOT317,R/V Kilo Moana,2019-12-19,0.977
-HOT318,R/V Kilo Moana,2020-01-08,0.687
+HOT318,R/V Kilo Moana,2020-01-07,0.687
 HOT319,R/V Kilo Moana,2020-01-31,0.95
 HOT321,R/V Kilo Moana,2020-08-08,NA
-HOT322,R/V Kilo Moana,2020-09-04,3.548
+HOT322,R/V Kilo Moana,2020-09-02,3.548
 HOT323,R/V Kilo Moana,2020-09-28,0.667
 HOT324,R/V Kilo Moana,2020-11-19,0.622
 HOT325,R/V Kilo Moana,2020-12-19,0.577
@@ -86,8 +90,18 @@ HOT330,R/V Kilo Moana,2021-05-17,0.779
 HOT331,R/V Kilo Moana,2021-06-23,NA
 HOT332,R/V Kilo Moana,2021-07-17,NA
 SCOPE-PARAGON,R/V Kilo Moana,2021-07-29,0.768
-TN396_130,R/V Thomas G Thompson,2021-11-14,1.419
-TN396_740,R/V Thomas G Thompson,2021-11-14,1.764
+TN396_130,R/V Thomas G Thompson,2021-11-14,2.074
+TN396_740,R/V Thomas G Thompson,2021-11-14,1.756
 TN397_130,R/V Thomas G Thompson,2021-12-01,0.627
-TN397_740,R/V Thomas G Thompson,2021-12-02,0.641
+TN397_740,R/V Thomas G Thompson,2021-12-02,0.634
 TN398,R/V Thomas G Thompson,2021-12-24,0.537
+HOT335,R/V Kilo Moana,2022-03-28,NA
+HOT336,R/V Kilo Moana,2022-05-27,NA
+KM2206_130,R/V Kilo Moana,2022-06-20,NA
+KM2206_740,R/V Kilo Moana,2022-06-20,NA
+HOT337,R/V Kilo Moana,2022-07-10,NA
+HOT338,R/V Kilo Moana,2022-07-31,NA
+SCOPE-PARAGONII,R/V Kilo Moana,2022-08-08,NA
+TN412_130,R/V Thomas G Thompson,2023-02-04,NA
+TN413,R/V Thomas G Thompson,2023-03-04,NA
+TN414,R/V Thomas G Thompson,2023-03-16,NA
