@@ -212,7 +212,9 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
 
         # clean stat table
         clean <- get_clean_stat_table(db)
-
+        
+        if(nrow(clean) == 0) next
+        
         # add columns for CMAP
         cruise.name <- paste(meta[which(meta$cruise == cruise),"Cruise ID"])
         depth <- 5
