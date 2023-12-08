@@ -1,4 +1,4 @@
-description <- paste("The data set consists of flow cytometry-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 µm), and small eukaryotic phytoplankton (<5 μm). The SeaFlow instrument collects the equivalent of 1 sample every 3 minutes from the ship’s flow-through seawater system. Further information can be found here https://seaflow.netlify.app/")
+description <- paste("The data set consists of flow cytometry-based cell abundance, cell size (equivalent spherical diameter), cellular carbon content and total carbon biomass for the cyanobacteria Prochlorococcus, Synechococcus and small-sized Crocosphaera (2-5 µm), and small eukaryotic phytoplankton (< 5 μm). The SeaFlow instrument collects the equivalent of 1 sample every 3 minutes from the ship’s flow-through seawater system. Further information can be found here https://seaflow.netlify.app/")
 
 #' Convert data from sqlite3 database into a csv file of curated SeaFlow data for a cruise, along with metadata files.
 #'
@@ -14,7 +14,7 @@ description <- paste("The data set consists of flow cytometry-based cell abundan
 #' csv_convert(db,meta, path)
 #' }
 #' @export
-csv_convert <- function(db, meta, path, version = "v1.0") {
+csv_convert <- function(db, meta, path, cruisename, version = "v1.0") {
 
 
     var_short_name <- c("time", "lat", "lon",
@@ -107,10 +107,10 @@ csv_convert <- function(db, meta, path, version = "v1.0") {
 
     description <- description
 
-    cruise <- sub(".db", "",basename(db))
-    print(paste("formatting stat table for cruise:", cruise))
+    cruise <- sub(".outlier.db", "",basename(db))
+    print(paste("formatting stat table for cruise:", basename(db)))
 
-    # official cruise name
+    # metadata
     official.cruise <- paste(meta[which(meta$cruise == cruise),"Cruise ID"])
     project <- paste(meta[which(meta$cruise == cruise),"Project"])
     ship <- paste(meta[which(meta$cruise == cruise),"Ship"])
@@ -208,7 +208,7 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
        
         ### 1. Format DATA
         # db <- path.to.dbs[22]
-        cruise <- sub(".db","",basename(db))
+        cruise <- sub("outlier.db","",basename(db))
 
         # clean stat table
         clean <- get_clean_stat_table(db)
