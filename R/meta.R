@@ -208,7 +208,7 @@ cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
        
         ### 1. Format DATA
         # db <- path.to.dbs[22]
-        cruise <- sub("outlier.db","",basename(db))
+        cruise <- sub(".outlier.db","",basename(db))
 
         # clean stat table
         clean <- get_clean_stat_table(db)
