@@ -536,7 +536,7 @@ save_vct_stats <- function(db, vct_stats) {
 #' @return None
 #' @export
 save_opp_stats <- function(db, opp_stats) {
-  old_opp_stats <- get_opp_table(db, sfl_join = FALSE, outlier_join = FALSE)
+  old_opp_stats <- get_opp_table(db, sfl_join = FALSE, outlier_join = FALSE, particles_in_all_quantiles = FALSE)
   old_opp_stats$date <- NULL  # date is not in OPP table, this is added from SFL
   # Only keep rows in old that don't have a matching file in new
   only_old <- dplyr::anti_join(old_opp_stats, opp_stats, by=c("file_id"))
