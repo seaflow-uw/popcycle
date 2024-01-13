@@ -58,25 +58,20 @@ write_realtime_meta_tsdata <- function(meta, project, outfile, filetype = "SeaFl
 #' @param db popcycle database file.
 #' @param quantile OPP filtering quantile to use.
 #' @param correction Abundance correction value.
-#' @param volume Use a constant volume value, overriding any calculated values.
+#' @param virtualcore_volume Use a constant virtualcore volume value.
 #' @return A tibble of realtime population data
 #' @export
-create_realtime_bio <- function(db, quantile, correction = NULL, volume = NULL) {
+create_realtime_bio <- function(db, quantile, correction = NULL, virtualcore_volume = NULL) {
   bio <- tibble::as_tibble(popcycle::get_stat_table(db)) %>%
     dplyr::mutate(date = lubridate::ymd_hms(time)) %>%
-    dplyr::filter(quantile == {{ quantile }}) %>%
+    dplyr::filter(quantile == .env[["quantile"]]) %>%
     dplyr::select(date, pop, n_count, abundance, diam_mid_med, diam_lwr_med) %>%
     dplyr::rename(diam_mid = diam_mid_med, diam_lwr = diam_lwr_med) %>%
-    dplyr::mutate(correction = {{ correction }})
+    dplyr::mutate(correction = .env[["correction"]])
 
   # Override default abundance calculaton with a fixed volume
-  if (!is.null(volume)) {
-    opp_evt_ratio <- get_opp_table(db) %>%
-      pull(opp_evt_ratio) %>%
-      median()
-    virtualcore_volume <- volume * opp_evt_ratio
-    bio <- bio %>%
-      dplyr::mutate(abundance = n_count / {{ virtualcore_volume }})
+  if (!is.null(virtualcore_volume)) {
+    bio$abundance <- bio$n_count / virtualcore_volume
   }
   return(bio)
 }
