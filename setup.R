@@ -26,8 +26,12 @@ if (!requireNamespace("BiocManager", quietly=TRUE)) {
   install.packages("BiocManager", repos='http://cran.us.r-project.org')
 }
 
+# Install flowCore and flowDensity separately with biocManger because it may fail
+# when only using devtools::install to install bioconductor deps.
 if (deps_only) {
+  BiocManager::install(c("flowCore", "flowDensity"), update = FALSE, ask = FALSE)
   devtools::install_deps(dependencies=TRUE, upgrade="never", Ncpus=ncpus)
 } else {
+  BiocManager::install(c("flowCore", "flowDensity"), update = FALSE, ask = FALSE)
   devtools::install(dependencies=TRUE, upgrade="never", Ncpus=ncpus)
 }
