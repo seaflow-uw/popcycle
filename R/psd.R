@@ -96,7 +96,7 @@ create_PSD_one_file <- function(vct_file, quantile, refracs, grid, log_base = NU
   )
   # Filter to single population
   if (!is.null(pop)) {
-    vct <- vct %>% dplyr::filter(pop == {{ pop }})
+    vct <- vct %>% dplyr::filter(pop == .env[["pop"]])
   }
   # Ignore certain dates
   if (!is.null(ignore_dates)) {
@@ -486,7 +486,7 @@ get_vct_range_one_file <- function(vct_file, data_cols, quantile, pop = NULL,
 
   vct <- popcycle::read_parquet_one_quantile(vct_file, quantile, cols = data_cols, refracs = refracs)
   if (!is.null(pop)) {
-    vct <- vct %>% dplyr::filter(pop == {{ pop }})
+    vct <- vct %>% dplyr::filter(pop == .env[["pop"]])
   }
   # Ignore certain dates
   if (!is.null(ignore_dates)) {

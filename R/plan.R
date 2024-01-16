@@ -228,7 +228,7 @@ add_hours <- function(df) {
   interval_size <- lubridate::hours(1) - lubridate::milliseconds(1)
   df <- df %>%
     dplyr::mutate(hour = lubridate::floor_date(date, "hour")) %>%
-    dplyr::mutate(interval = lubridate::interval(hour, hour + {{ interval_size }}))
+    dplyr::mutate(interval = lubridate::interval(hour, hour + interval_size))
   return(df)
 }
 
