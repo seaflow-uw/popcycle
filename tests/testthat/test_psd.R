@@ -219,7 +219,8 @@ test_that("Volume table creation", {
   volumes <- popcycle::create_volume_table(meta, time_expr=NULL)
   want <- meta %>%
     mutate(
-      volume_virtualcore=c(250, 125, 500, 50)
+      volume_virtualcore=c(250, 125, 500, 50),
+      volume_virtualcore_by_file=c(100, 100, 600, 80)
     ) %>%
     select(-c(opp_evt_ratio))
   expect_equal(volumes, want)
@@ -232,12 +233,13 @@ test_that("Volume table creation", {
       lubridate::ymd_hms("2016-08-08 20:00:00")
     ),
     volume=c(15000, 22000),
-    volume_virtualcore=c(375, 550)
+    volume_virtualcore=c(375, 550),
+    volume_virtualcore_by_file=c(200, 680)
   )
   expect_equal(hourly, want)
 })
 
-test_that("Abundance calcultation", {
+test_that("Abundance calculation", {
   psd <- tibble::tibble(
     date=c(
       lubridate::ymd_hms("2016-08-08 19:00:00"),
@@ -257,15 +259,16 @@ test_that("Abundance calcultation", {
       lubridate::ymd_hms("2016-08-08 20:00:00")
     ),
     volume=c(15000, 22000),
-    volume_virtualcore=c(375, 550)
+    volume_virtualcore=c(375, 550),
+    volume_virtualcore_by_file=c(200, 680)
   )
 
   # No calibration to influx data
   answers <- popcycle::add_abundance(psd, volumes)
   want <- psd %>%
     mutate(
-      n_per_uL=c(1 / 375, 2 / 375, 3 / 375, 4 / 550),
-      Qc_sum_per_uL=c(10 / 375, 20 / 375, 40 / 375, 40 / 550)
+      n_per_uL=c(1 / 200, 2 / 375, 3 / 200, 4 / 550),
+      Qc_sum_per_uL=c(10 / 200, 20 / 375, 40 / 200, 40 / 550)
     ) %>%
     select(-c(n, Qc_sum))
   expect_equal(answers, want)
@@ -275,8 +278,8 @@ test_that("Abundance calcultation", {
   answers <- popcycle::add_abundance(psd, volumes, calib=calib)
   want <- psd %>%
     mutate(
-      n_per_uL=c(2 * 1 / 375, 2 / 375, 2 * 3 / 375, 3 * 4 / 550),
-      Qc_sum_per_uL=c(2 * 10 / 375, 20 / 375, 2 * 40 / 375, 3 * 40 / 550)
+      n_per_uL=c(2 * 1 / 200, 2 / 375, 2 * 3 / 200, 3 * 4 / 550),
+      Qc_sum_per_uL=c(2 * 10 / 200, 20 / 375, 2 * 40 / 200, 3 * 40 / 550)
     ) %>%
     select(-c(n, Qc_sum))
   expect_equal(answers, want)

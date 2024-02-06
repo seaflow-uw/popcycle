@@ -262,6 +262,10 @@ add_abundance <- function(psd, volumes, calib=NULL) {
   psd <- dplyr::left_join(psd, volumes, by="date")
   psd[, "n_per_uL"] <- psd[, "n"] / psd[, "volume_virtualcore"]
   psd[, "Qc_sum_per_uL"] <- psd[, "Qc_sum"] / psd[, "volume_virtualcore"]
+  # Calculate pro abund using per-file opp_evt_ratio (meaning per-file virtualcore volume)
+  proindex <- psd$pop == "prochloro"
+  psd[proindex, "n_per_uL"] <- psd[proindex, "n"] / psd[proindex, "volume_virtualcore_by_file"]
+  psd[proindex, "Qc_sum_per_uL"] <- psd[proindex, "Qc_sum"] / psd[proindex, "volume_virtualcore_by_file"]
 
   # Calibrate to influx data if provided
   if (!is.null(calib)) {
@@ -269,21 +273,21 @@ add_abundance <- function(psd, volumes, calib=NULL) {
       stop("calibration table is empty")
     }
 
-    popname <- unique(calib$pop)
-    for (phyto in popname) {
+    for (phyto in unique(calib$pop)) {
       corr <- calib %>% dplyr::filter(pop == phyto)
       if (nrow(corr) > 1) {
         stop(paste0("more than one abundance calibration entry found for ", phyto))
       }
-      if (nrow(corr) == 1){
-      psd[psd$pop == phyto, "n_per_uL"] <- psd[psd$pop == phyto, "n_per_uL"] * corr[["a"]]
-      psd[psd$pop == phyto, "Qc_sum_per_uL"] <- psd[psd$pop == phyto, "Qc_sum_per_uL"] * corr[["a"]]
+      if (nrow(corr) == 1) {
+        popindex <- psd$pop == phyto
+        psd[popindex, "n_per_uL"] <- psd[popindex, "n_per_uL"] * corr[["a"]]
+        psd[popindex, "Qc_sum_per_uL"] <- psd[popindex, "Qc_sum_per_uL"] * corr[["a"]]
       }
     }
   }
 
   psd <- psd %>%
-    dplyr::select(-c(n, Qc_sum, volume, volume_virtualcore))
+    dplyr::select(-c(n, Qc_sum, volume, volume_virtualcore, volume_virtualcore_by_file))
 
   return(psd)
 }
@@ -325,10 +329,8 @@ create_meta <- function(db, quantile) {
 #' @export
 create_volume_table <- function(meta, time_expr = "1 hour") {
   meta <- meta %>% dplyr::select(date, volume, opp_evt_ratio)
-  meta <- meta %>%
-    dplyr::mutate(
-      volume_virtualcore = volume * median(opp_evt_ratio)
-    )
+  meta$volume_virtualcore <- meta$volume * median(meta$opp_evt_ratio)
+  meta$volume_virtualcore_by_file <- meta$volume * meta$opp_evt_ratio
   if (!is.null(time_expr)) {
     meta <- meta %>%
       dplyr::mutate(date = lubridate::floor_date(date, time_expr)) %>%
@@ -336,7 +338,8 @@ create_volume_table <- function(meta, time_expr = "1 hour") {
       dplyr::arrange(by_group = TRUE) %>%
       dplyr::summarise(
         volume = sum(volume),
-        volume_virtualcore = sum(volume_virtualcore)
+        volume_virtualcore = sum(volume_virtualcore),
+        volume_virtualcore_by_file = sum(volume_virtualcore_by_file)
       )
   } else {
     meta <- meta %>% select(-c(opp_evt_ratio))
