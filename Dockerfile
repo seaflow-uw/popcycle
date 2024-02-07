@@ -1,4 +1,4 @@
-ARG ARG_BIOC_VERSION=RELEASE_3_18
+ARG ARG_BIOC_VERSION=RELEASE_3_15
 FROM bioconductor/bioconductor_docker:$ARG_BIOC_VERSION
 
 RUN apt-get update && apt-get install -y \
