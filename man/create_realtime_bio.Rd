@@ -4,7 +4,7 @@
 \alias{create_realtime_bio}
 \title{Create a population data tibble for one quantile from the VCT}
 \usage{
-create_realtime_bio(db, quantile, correction = NULL, volume = NULL)
+create_realtime_bio(db, quantile, correction = NULL, virtualcore_volume = NULL)
 }
 \arguments{
 \item{db}{popcycle database file.}
@@ -13,7 +13,7 @@ create_realtime_bio(db, quantile, correction = NULL, volume = NULL)
 
 \item{correction}{Abundance correction value.}
 
-\item{volume}{Use a constant volume value, overriding any calculated values.}
+\item{virtualcore_volume}{Use a constant virtualcore volume value.}
 }
 \value{
 A tibble of realtime population data

@@ -36,7 +36,7 @@ plot_filter_cytogram <- function(evt, filter_params, quantile = 2.5) {
     evt <- untransformData(evt)
   }
 
-  fp <- filter_params %>% dplyr::filter(quantile == {{ quantile }})
+  fp <- filter_params %>% dplyr::filter(quantile == .env[["quantile"]])
 
   # Filtering noise
   evt. <- evt[evt$fsc_small > 1 | evt$D1 > 1 | evt$D2 > 1, ]

@@ -250,3 +250,15 @@ test_that("Save outliers, don't overwrite", {
     )
   )
 })
+
+test_that("Stat table abundances", {
+  x <- setUp()
+
+  got_stat <- get_stat_table(x$db.full.plan)
+
+  expect_equal(sum(got_stat$n_count), 1878)
+  expect_equal(sum(got_stat$abundance), 43.6686, tolerance=1e-6)
+  expect_equal(sum(got_stat$abundance_se), 2.05291, tolerance=1e-6)
+
+  tearDown(x)
+})

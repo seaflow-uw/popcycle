@@ -1045,10 +1045,13 @@ get_stat_table <- function(db, inst=NULL) {
   stat[,"flow_rate"] <- fr[,1]
   stat[,"flow_rate_se"] <- fr[,2]
 
-  # abundance is calculated based on a median value of opp_evt ratio for the entire cruise (volume of virtual core set for an entire cruise)
+  # abundance is calculated based on a median value of opp_evt ratio for the
+  # entire cruise (volume of virtual core for an entire cruise), except for
+  # prochloro which uses the per-file ratio
   qratios <- stat %>%
     dplyr::group_by(time, quantile) %>%
-    dplyr::summarize(opp_evt_ratio = mean(opp_evt_ratio, na.rm=T)) %>%  # this just gets the single value per file,quantile which is duplicated for each pop
+    dplyr::filter(dplyr::row_number() == 1) %>%  # this just gets the single value per file,quantile which is duplicated for each pop
+    dplyr::ungroup() %>%
     dplyr::group_by(quantile) %>%  # now we have one ratio per file,quantile. group by quantile to create 3 groups with one ratio per file
     dplyr::summarize(opp_evt_ratio = median(opp_evt_ratio, na.rm=T))  # median of each quantile without double-counting for population duplicates
 
@@ -1056,8 +1059,13 @@ get_stat_table <- function(db, inst=NULL) {
     ratio <- qratios[qratios$quantile == q, "opp_evt_ratio"][[1]]
     qindex <- stat$quantile == q
     stat[qindex, c("abundance")]  <- stat[qindex, "n_count"] / (1000* ratio * stat[qindex, "flow_rate"] * stat[qindex, "file_duration"]/60)   # cells µL-1
-    stat[qindex, c("abundance_se")]  <- stat[qindex, "abundance"] * stat[qindex, "flow_rate_se"] / stat[qindex, "flow_rate"]           # cells µL-1
   }
+  # Now prochloro
+  proindex <- stat$pop == "prochloro"
+  stat[proindex, c("abundance")] <- stat[proindex, "n_count"] / (1000 * stat[proindex, "opp_evt_ratio"] * stat[proindex, "flow_rate"] * stat[proindex, "file_duration"] / 60)  # cells µL-1
+
+  # Add abundance SE
+  stat$abundance_se <- stat$abundance * stat$flow_rate_se / stat$flow_rate  # cells µL-1
 
   return(stat)
 }

@@ -289,7 +289,7 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
       return(data.frame())
     })
   } else {
-    evt = data.frame()
+    evt <- data.frame()
   }
 
   if (nrow(evt) > 0) {
