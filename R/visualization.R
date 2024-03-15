@@ -118,8 +118,7 @@ plot_cytogram <- function(evtopp, para.x = "fsc_small", para.y = "chl_small", bi
         ggplot2::ggplot() +
         ggplot2::stat_bin_2d(ggplot2::aes_string(para.x, para.y), bins=bins, color=NA) +
         viridis::scale_fill_viridis() +
-        ggplot2::theme_bw()+
-        ggplot2::facet_wrap( ~ file)
+        ggplot2::theme_bw()
 
       if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
       }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
@@ -165,8 +164,7 @@ plot_vct_cytogram <- function(opp, para.x = "fsc_small", para.y = "chl_small", t
         ggplot2::scale_fill_manual(values=group.colors) +
         ggplot2::scale_alpha_continuous(range=c(0.3,1)) +
         ggplot2::scale_color_manual(values=group.colors) +
-        ggplot2::guides(color="none", alpha="none", fill= ggplot2::guide_legend(override.aes = list(size=2, alpha=0.5),title="population")) +
-        ggplot2::facet_wrap(~ file)
+        ggplot2::guides(color="none", alpha="none", fill= ggplot2::guide_legend(override.aes = list(size=2, alpha=0.5),title="population")) 
 
         if(transform){ p <- p + ggplot2::scale_y_continuous(trans="log10", limits=xlim) + ggplot2::scale_x_continuous(trans="log10", limits=ylim)
         }else{ p <- p + ggplot2::scale_y_continuous(limits=xlim) + ggplot2::scale_x_continuous(limits=ylim)}
