@@ -545,7 +545,7 @@ get_clean_stat_table <- function(db){
     n <- refracs[phyto]
 
     p <- stat %>%
-          dplyr::filter(flag == 0, quantile == 2.5, pop == phyto) %>%
+          dplyr::filter(flag == 0, quantile == 50, pop == phyto) %>%
           dplyr::select(time,lat,lon, pop, abundance, contains(c(paste0(n,"_med"),paste0(n,"_mean")))) %>%
           dplyr::rename(diam = contains(paste0("diam_",n,"_med")), Qc = contains(paste0("Qc_",n,"_med"))) %>%
           dplyr::mutate(biomass = abundance * Qc) %>%
