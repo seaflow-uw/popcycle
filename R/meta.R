@@ -14,7 +14,7 @@ description <- paste("The data set consists of flow cytometry-based cell abundan
 #' csv_convert(db,meta, path)
 #' }
 #' @export
-csv_convert <- function(db, meta, path, cruisename, version = "v1.0") {
+csv_convert <- function(db, meta, path, cruisename, version) {
 
 
     var_short_name <- c("time", "lat", "lon",
@@ -163,7 +163,7 @@ csv_convert <- function(db, meta, path, cruisename, version = "v1.0") {
 #' @param version Version of the dataset.
 #' @return None
 #' @export
-cmap_convert <- function(path.to.dbs, meta, path, version = "v1.3") {
+cmap_convert <- function(path.to.dbs, meta, path, version) {
 
 
     var_short_name <- c("cruise", 
