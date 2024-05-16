@@ -1,4 +1,4 @@
-context("PSD gridding operations")
+context("Gridding operations")
 library(popcycle)
 library(dplyr)
 
@@ -6,10 +6,10 @@ source("helper.R")
 
 test_that("Grid two files", {
   x <- setUp()
-  vct_dir <- x$psd.vct.dir
-  db <- x$psd.db
+  vct_dir <- x$grid.vct.dir
+  db <- x$grid.db
 
-  bins <- 5
+  bin_count <- 5
   quantile_ <- 97.5
   qstr <- "q97.5"
   qsuffix <- "_q97.5"
@@ -19,31 +19,31 @@ test_that("Grid two files", {
     prochloro="mid", synecho="mid", picoeuk="lwr", croco="lwr", beads="lwr", unknown="lwr"
   )
   calib <- tibble::tibble(pop=c("prochloro", "synecho"), a=c(2, 3), b=c(0, 1))
-  grid <- create_grid(bins, log_base=2, log_answers=FALSE)
+  grid_bins <- create_grid_bins(bin_count, log_base=2, log_answers=FALSE)
   # Create the gridded data
-  psd <- create_PSD(
-    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE
+  gridded <- create_gridded(
+    vct_files, quantile_, refracs, grid_bins, log_base=NULL, use_data.table=TRUE
   )
   # Don't use data.table
-  psd_no_dt <- create_PSD(
-    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=FALSE
+  gridded_no_dt <- create_gridded(
+    vct_files, quantile_, refracs, grid_bins, log_base=NULL, use_data.table=FALSE
   )
   # Pass a vector of dates to ignore
   ignore_dates <- meta %>% dplyr::filter(flag != 0) %>% pull(date)
-  psd_ignore_dates <- create_PSD(
-    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE,
+  gridded_ignore_dates <- create_gridded(
+    vct_files, quantile_, refracs, grid_bins, log_base=NULL, use_data.table=TRUE,
     ignore_dates=ignore_dates
   )
 
   # Make sure using data.table and not using data.table yields the same result.
   # Exclude Qc_sum because of floating-point imprecision
   expect_true(all.equal(
-    psd %>% select(-c(Qc_sum)),
-    psd_no_dt %>% select(-c(Qc_sum)),
+    gridded %>% select(-c(Qc_sum)),
+    gridded_no_dt %>% select(-c(Qc_sum)),
     check.attributes=FALSE
   ))
   # Test Qc_sum with near
-  expect_true(all(near(psd$Qc_sum, psd_no_dt$Qc_sum)))
+  expect_true(all(near(gridded$Qc_sum, gridded_no_dt$Qc_sum)))
 
   # Get the actual VCT data
   vct <- lapply(vct_files, function(f) {
@@ -62,62 +62,62 @@ test_that("Grid two files", {
   }) %>% bind_rows()
 
   # Total particles should be equal
-  expect_equal(sum(psd$n), nrow(vct))
+  expect_equal(sum(gridded$n), nrow(vct))
   # Total Qc sum should be equal
-  expect_equal(sum(psd$Qc_sum), sum(vct$Qc))
+  expect_equal(sum(gridded$Qc_sum), sum(vct$Qc))
   # There should not be any NAs
-  expect_true(all(!is.na(psd)))
+  expect_true(all(!is.na(gridded)))
   # All columns are present
-  want_cols <- c("date", sapply(names(grid), function(n) { paste0(n, "_coord") }), "pop", "n", "Qc_sum")
+  want_cols <- c("date", sapply(names(grid_bins), function(n) { paste0(n, "_coord") }), "pop", "n", "Qc_sum")
   names(want_cols) <- NULL
-  expect_equal(names(psd), want_cols)
+  expect_equal(names(gridded), want_cols)
   # All dates accounted for
-  expect_equal(sort(unique(psd$date)), sort(unique(vct$date)))
+  expect_equal(sort(unique(gridded$date)), sort(unique(vct$date)))
   # All coordinate indices within range
-  expect_true(min(psd %>% reframe(across(ends_with("_coord"), range))) >= 1)
-  expect_true(max(psd %>% reframe(across(ends_with("_coord"), range))) <= bins)
+  expect_true(min(gridded %>% reframe(across(ends_with("_coord"), range))) >= 1)
+  expect_true(max(gridded %>% reframe(across(ends_with("_coord"), range))) <= bin_count)
 
   # Dates are properly ignored
-  expect_equal(sum(psd_ignore_dates$n), vct %>% filter(! (date %in% ignore_dates)) %>% nrow())
-  expect_true(length(intersect(psd_ignore_dates$date, ignore_dates)) == 0)
+  expect_equal(sum(gridded_ignore_dates$n), vct %>% filter(! (date %in% ignore_dates)) %>% nrow())
+  expect_true(length(intersect(gridded_ignore_dates$date, ignore_dates)) == 0)
 
   # Test a large random subset of rows to make sure n and Qc_sum add up properly
   # This is slow
-  filter_vct <- function(vct, grid, r) {
-    # Find all VCT particles that match one PSD gridded data row
+  filter_vct <- function(vct, grid_bins, r) {
+    # Find all VCT particles that match one gridded data row
     selection <- (
-      vct$fsc_small >= grid$fsc_small[r$fsc_small_coord] &
-      vct$fsc_small < grid$fsc_small[r$fsc_small_coord + 1] &
-      vct$chl_small >= grid$chl_small[r$chl_small_coord] &
-      vct$chl_small < grid$chl_small[r$chl_small_coord + 1] &
-      vct$pe >= grid$pe[r$pe_coord] &
-      vct$pe < grid$pe[r$pe_coord + 1] &
-      vct$diam >= grid$diam[r$diam_coord] &
-      vct$diam < grid$diam[r$diam_coord + 1] &
-      vct$Qc >= grid$Qc[r$Qc_coord] &
-      vct$Qc < grid$Qc[r$Qc_coord + 1] &
+      vct$fsc_small >= grid_bins$fsc_small[r$fsc_small_coord] &
+      vct$fsc_small < grid_bins$fsc_small[r$fsc_small_coord + 1] &
+      vct$chl_small >= grid_bins$chl_small[r$chl_small_coord] &
+      vct$chl_small < grid_bins$chl_small[r$chl_small_coord + 1] &
+      vct$pe >= grid_bins$pe[r$pe_coord] &
+      vct$pe < grid_bins$pe[r$pe_coord + 1] &
+      vct$diam >= grid_bins$diam[r$diam_coord] &
+      vct$diam < grid_bins$diam[r$diam_coord + 1] &
+      vct$Qc >= grid_bins$Qc[r$Qc_coord] &
+      vct$Qc < grid_bins$Qc[r$Qc_coord + 1] &
       vct$pop == r$pop &
       vct$date == r$date
     )
     return(vct[selection, ])
   }
-  rows_to_test <- as.integer(nrow(psd) * 0.10)  # 10% of test gridded data
-  set.seed(1)
-  psd_i_to_test <- sample(seq(nrow(psd)), rows_to_test)
-  n_answers <- sapply(psd_i_to_test, function(i) {
-    psd[[i, "n"]] == filter_vct(vct, grid, psd[i, ]) %>% nrow()
+  rows_to_test <- as.integer(nrow(gridded) * 0.10)  # 10% of test gridded data
+  # set.seed(1)
+  gridded_i_to_test <- sample(seq(nrow(gridded)), rows_to_test)
+  n_answers <- sapply(gridded_i_to_test, function(i) {
+    gridded[[i, "n"]] == filter_vct(vct, grid_bins, gridded[i, ]) %>% nrow()
   })
   expect_true(all(n_answers))
   # Qc_sum may not be exact because of floating-point imprecision, so use near
   # rather than ==
-  Qc_sum_answers <- sapply(psd_i_to_test, function(i) {
-    near(psd[[i, "Qc_sum"]], filter_vct(vct, grid, psd[i, ]) %>% pull(Qc) %>% sum())
+  Qc_sum_answers <- sapply(gridded_i_to_test, function(i) {
+    near(gridded[[i, "Qc_sum"]], filter_vct(vct, grid_bins, gridded[i, ]) %>% pull(Qc) %>% sum())
   })
   expect_true(all(Qc_sum_answers))
 
   # Make sure boundary points are removed
-  psd_no_boundaries <- create_PSD(
-    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE,
+  gridded_no_boundaries <- create_gridded(
+    vct_files, quantile_, refracs, grid_bins, log_base=NULL, use_data.table=TRUE,
     max_boundary_proportion=0.2
   )
   n_removed <- vct %>%
@@ -135,18 +135,18 @@ test_that("Grid two files", {
     group_split() %>%
     bind_rows() %>%
     nrow()
-  expect_equal(sum(psd_no_boundaries$n), nrow(vct) - n_removed)
+  expect_equal(sum(gridded_no_boundaries$n), nrow(vct) - n_removed)
 
   # Make sure boundary point cutoff is observed
   # No data should be returned
-  psd_no_boundaries_empty <- create_PSD(
-    vct_files, quantile_, refracs, grid, log_base=NULL, use_data.table=TRUE,
+  gridded_no_boundaries_empty <- create_gridded(
+    vct_files, quantile_, refracs, grid_bins, log_base=NULL, use_data.table=TRUE,
     max_boundary_proportion=0.01
   )
-  expect_equal(nrow(psd_no_boundaries_empty), 0)
+  expect_equal(nrow(gridded_no_boundaries_empty), 0)
 
   # Hourly data tests for one hour
-  hourly <- group_psd_by_time(psd, time_expr="1 hours")
+  hourly <- group_gridded_by_time(gridded, time_expr="1 hours")
   expect_equal(length(unique(hourly$date)), 2)  # 2 hours of data
   seven_vct_n <- vct %>%
     filter(
@@ -168,19 +168,19 @@ test_that("Grid two files", {
   )
 
   # Test random rows in hourly data, slow
-  filter_vct_hourly <- function(vct, grid, r) {
-    # Find all VCT particles that match one PSD gridded data row for hourly data
+  filter_vct_hourly <- function(vct, grid_bins, r) {
+    # Find all VCT particles that match one gridded data row for hourly data
     selection <- (
-      vct$fsc_small >= grid$fsc_small[r$fsc_small_coord] &
-      vct$fsc_small < grid$fsc_small[r$fsc_small_coord + 1] &
-      vct$chl_small >= grid$chl_small[r$chl_small_coord] &
-      vct$chl_small < grid$chl_small[r$chl_small_coord + 1] &
-      vct$pe >= grid$pe[r$pe_coord] &
-      vct$pe < grid$pe[r$pe_coord + 1] &
-      vct$diam >= grid$diam[r$diam_coord] &
-      vct$diam < grid$diam[r$diam_coord + 1] &
-      vct$Qc >= grid$Qc[r$Qc_coord] &
-      vct$Qc < grid$Qc[r$Qc_coord + 1] &
+      vct$fsc_small >= grid_bins$fsc_small[r$fsc_small_coord] &
+      vct$fsc_small < grid_bins$fsc_small[r$fsc_small_coord + 1] &
+      vct$chl_small >= grid_bins$chl_small[r$chl_small_coord] &
+      vct$chl_small < grid_bins$chl_small[r$chl_small_coord + 1] &
+      vct$pe >= grid_bins$pe[r$pe_coord] &
+      vct$pe < grid_bins$pe[r$pe_coord + 1] &
+      vct$diam >= grid_bins$diam[r$diam_coord] &
+      vct$diam < grid_bins$diam[r$diam_coord + 1] &
+      vct$Qc >= grid_bins$Qc[r$Qc_coord] &
+      vct$Qc < grid_bins$Qc[r$Qc_coord + 1] &
       vct$pop == r$pop &
       lubridate::floor_date(vct$date, "1 hour") == r$date
     )
@@ -190,13 +190,13 @@ test_that("Grid two files", {
   set.seed(1)
   hourly_i_to_test <- sample(seq(nrow(hourly)), rows_to_test)
   n_answers <- sapply(hourly_i_to_test, function(i) {
-    hourly[[i, "n"]] == filter_vct_hourly(vct, grid, hourly[i, ]) %>% nrow()
+    hourly[[i, "n"]] == filter_vct_hourly(vct, grid_bins, hourly[i, ]) %>% nrow()
   })
   expect_true(all(n_answers))
   # Qc_sum may not be exact because of floating-point imprecision, so use near
   # rather than ==
   Qc_sum_answers <- sapply(hourly_i_to_test, function(i) {
-    near(hourly[[i, "Qc_sum"]], filter_vct_hourly(vct, grid, hourly[i, ]) %>% pull(Qc) %>% sum())
+    near(hourly[[i, "Qc_sum"]], filter_vct_hourly(vct, grid_bins, hourly[i, ]) %>% pull(Qc) %>% sum())
   })
   expect_true(all(Qc_sum_answers))
 
@@ -237,10 +237,20 @@ test_that("Volume table creation", {
     volume_virtualcore_by_file=c(200, 680)
   )
   expect_equal(hourly, want)
+
+  # Fixed ratio
+  volumes <- popcycle::create_volume_table(meta, time_expr=NULL, median_opp_evt_ratio=.01)
+  want <- meta %>%
+    mutate(
+      volume_virtualcore=c(100, 50, 200, 20),
+      volume_virtualcore_by_file=c(100, 100, 600, 80)
+    ) %>%
+    select(-c(opp_evt_ratio))
+  expect_equal(volumes, want)
 })
 
 test_that("Abundance calculation", {
-  psd <- tibble::tibble(
+  gridded <- tibble::tibble(
     date=c(
       lubridate::ymd_hms("2016-08-08 19:00:00"),
       lubridate::ymd_hms("2016-08-08 19:00:00"),
@@ -264,24 +274,22 @@ test_that("Abundance calculation", {
   )
 
   # No calibration to influx data
-  answers <- popcycle::add_abundance(psd, volumes)
-  want <- psd %>%
+  answers <- popcycle::add_abundance(gridded, volumes)
+  want <- gridded %>%
     mutate(
       n_per_uL=c(1 / 200, 2 / 375, 3 / 200, 4 / 550),
       Qc_sum_per_uL=c(10 / 200, 20 / 375, 40 / 200, 40 / 550)
-    ) %>%
-    select(-c(n, Qc_sum))
+    )
   expect_equal(answers, want)
 
   # Test calibration
   calib <- tibble::tibble(pop=c("prochloro", "synecho"), a=c(2, 3))
-  answers <- popcycle::add_abundance(psd, volumes, calib=calib)
-  want <- psd %>%
+  answers <- popcycle::add_abundance(gridded, volumes, calib=calib)
+  want <- gridded %>%
     mutate(
       n_per_uL=c(2 * 1 / 200, 2 / 375, 2 * 3 / 200, 3 * 4 / 550),
       Qc_sum_per_uL=c(2 * 10 / 200, 20 / 375, 2 * 40 / 200, 3 * 40 / 550)
-    ) %>%
-    select(-c(n, Qc_sum))
+    )
   expect_equal(answers, want)
 })
 

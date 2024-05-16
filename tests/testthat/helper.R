@@ -50,9 +50,9 @@ setUp <- function() {
   x$db.getvct <- file.path(x$tmp.dir, "HOT303.db")
   x$get.vct.input.dir <- "../testdata/getvct"
 
-  # Below are prebuilt files for PSD SQLite3 DB and VCT data.
-  x$psd.db <- "../testdata/psd/SCOPE_19.db"
-  x$psd.vct.dir <- "../testdata/psd/SCOPE_19_vct"
+  # Below are prebuilt files for gridding SQLite3 DB and VCT data.
+  x$grid.db <- "../testdata/grid/SCOPE_19.db"
+  x$grid.vct.dir <- "../testdata/grid/SCOPE_19_vct"
 
   return(x)
 }
