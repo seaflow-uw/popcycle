@@ -401,9 +401,9 @@ gridded <- gridded %>% dplyr::mutate(cruise = cruise_, .before = 1)
 hourly_gridded <- hourly_gridded %>% dplyr::mutate(cruise = cruise_, .before = 1)
 if (psd_mode) {
   # PSD only Qc_sum_per_uL, renamed to biomass
-  hourly_gridded_PSD <- hourly_gridded_PSD %>%
+  hourly_gridded_PSD <- hourly_gridded %>%
     dplyr::mutate(cruise = cruise_, .before = 1) %>%
-    dplyr::select(-c(n_per_uL)) %>%
+    dplyr::select(-c(n, Qc_sum, n_per_uL)) %>%
     dplyr::rename(biomass = Qc_sum_per_uL)
 }
 dated_msg(
@@ -416,7 +416,7 @@ dated_msg(
 )
 if (psd_mode) {
   dated_msg(
-    "Hourly gridded data for PSD, dim = ", stringr::str_flatten(dim(hourly_gridded_with_abund_PSD), " "),
+    "Hourly gridded data for PSD, dim = ", stringr::str_flatten(dim(hourly_gridded_PSD), " "),
     ", size = ", object.size(hourly_gridded_PSD) / 2**20, " MB"
   )
 }
