@@ -44,10 +44,6 @@ parser <- optparse::add_option(parser, "--processes",
   type = "integer", default = 1, metavar = "N",
   help = "Number of processes to use [default %default]",
 )
-parser <- optparse::add_option(parser, "--psd-mode",
-  action = "store_true", default = FALSE,
-  help = "Create particle size distribution file for hourly data (only pop, Qc binning, Qc_sum/uL values) [default %default]"
-)
 parser <- optparse::add_option(parser, "--quantile",
   type = "character", default = "50", metavar = "QUANTILE",
   help = "Quantile. Choices are 2.5, 50, 97.5. [default %default]",
@@ -85,7 +81,6 @@ if (length(p$args) < 3) {
   par_csv <- p$options$par_csv
   pop <- p$options$pop
   processes <- p$options$processes
-  psd_mode <- p$options$psd_mode
   qc_log2_bin_width_inv <- p$options$Qc_log2_bin_width_inv
   qc_min_val <- p$options$Qc_min_val
   quantile_ <- p$options$quantile
@@ -119,10 +114,6 @@ if (length(p$args) < 3) {
   # Always add Qc
   if (! "Qc" %in% dimensions) {
     dimensions[length(dimensions) + 1] <- "Qc"
-  }
-  # If PSD is requested, only use Qc
-  if (psd_mode) {
-    dimensions <- "Qc"
   }
 
   # Parse grid ranges
@@ -370,11 +361,6 @@ hourly_gridded <- popcycle::add_abundance(hourly_gridded, hourly_volume, calib=c
 # Add cruise column
 gridded <- gridded %>% dplyr::mutate(cruise = cruise_, .before = 1)
 hourly_gridded <- hourly_gridded %>% dplyr::mutate(cruise = cruise_, .before = 1)
-if (psd_mode) {
-  # PSD only Qc_sum_per_uL, renamed to biomass
-  hourly_gridded_PSD <- hourly_gridded %>%
-    dplyr::mutate(cruise = cruise_, .before = 1)
-}
 dated_msg(
   "Full gridded data, dim = ", stringr::str_flatten(dim(gridded), " "),
   ", size = ", object.size(gridded) / 2**20, " MB"
@@ -383,13 +369,9 @@ dated_msg(
   "Hourly gridded data, dim = ", stringr::str_flatten(dim(hourly_gridded), " "),
   ", size = ", object.size(hourly_gridded) / 2**20, " MB"
 )
-if (psd_mode) {
-  dated_msg(
-    "Hourly gridded data for PSD, dim = ", stringr::str_flatten(dim(hourly_gridded_PSD), " "),
-    ", size = ", object.size(hourly_gridded_PSD) / 2**20, " MB"
-  )
-  pro_PSD <- hourly_gridded_PSD[hourly_gridded_PSD$pop == "prochloro", ]
-  pro_bins <- sort(unique(pro_PSD[["Qc_coord"]]))
+
+if (is.null(pop) || pop == "prochloro") {
+  pro_bins <- sort(unique(hourly_gridded[hourly_gridded$pop == "prochloro", ][["Qc_coord"]]))
   pro_bin_labels <- popcycle::grid_bins_labels(grid_bins)$Qc[pro_bins]
   dated_msg(
     "Prochlorococcus present in ", length(pro_bins), " bins"
@@ -431,15 +413,6 @@ ptm <- proc.time()
 arrow::write_parquet(hourly_gridded, hourly_gridded_out)
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly gridded data parquet in ", deltat[["elapsed"]], " seconds")
-
-# Save hourly gridded data for PSD (Qc_sum_per_uL or biomass) to file
-if (psd_mode) {
-  dated_msg("Writing hourly gridded data for PSD file to ", hourly_gridded_PSD_out)
-  ptm <- proc.time()
-  arrow::write_parquet(hourly_gridded_PSD, hourly_gridded_PSD_out)
-  deltat <- proc.time() - ptm
-  dated_msg("Wrote hourly gridded data for PSD parquet in ", deltat[["elapsed"]], " seconds")
-}
 
 # Save hourly volume to file
 dated_msg("Writing hourly volume file to ", hourly_volume_out)
