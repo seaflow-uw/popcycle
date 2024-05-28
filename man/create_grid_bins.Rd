@@ -7,8 +7,9 @@
 create_grid_bins(
   bin_count = 85,
   channel_range = c(1, 3200),
-  Qc_range = c(0.002, 1600),
   diam_range = c(0.1, 37),
+  qc_min_val = 0.002,
+  qc_log2_bin_width_inv = 8,
   log_base = NULL,
   log_answers = TRUE
 )
@@ -18,11 +19,14 @@ create_grid_bins(
 
 \item{channel_range}{Vector of range to use for standard SeaFlow channel breaks.}
 
-\item{Qc_range}{Vector of range to use for Qc breaks.}
-
 \item{diam_range}{Vector of range to use for diam breaks.
 #' @param log_base Log base to use when creating log-spaced bins for distribution.
   If NULL the breaks will not be log-spaced.}
+
+\item{qc_min_val}{Minimum value for Qc.}
+
+\item{qc_log2_bin_width_inv}{Qc bin width as 1 / log2(bin_width), e.g. a value
+of 8 means a log2(bin_width) of .125.}
 
 \item{log_answers}{If log_base is provided, this determines whether the break
 values themselves are log values or not. e.g. if TRUE breaks may be

@@ -20,9 +20,13 @@ parser <- optparse::add_option(parser, "--keep-outliers",
   action = "store_true", default = FALSE,
   help = "Don't remove 3 minute windows flagged as outliers [default %default]"
 )
-parser <- optparse::add_option(parser, "--model",
-  action = "store_true", default = FALSE,
-  help = "Prepare QC gridded data for MPM model, i.e. adjust the grid bin size so that (1 / log2(bin_size)) is an integer"
+parser <- optparse::add_option(parser, "--Qc-log2-bin-width-inv",
+  type = "integer", default = 8, metavar = "WIDTH",
+  help = "Qc bin width as 1 / log2(bin_width), e.g. a value of 8 means a log2(bin_width) of .125 [default %default]"
+)
+parser <- optparse::add_option(parser, "--Qc-min-val",
+  type = "double", default = 0.002, metavar = "MIN",
+  help = "Minimum Qc grid value [default %default]"
 )
 parser <- optparse::add_option(parser, "--no-data.table",
   action = "store_true", default = FALSE,
@@ -56,10 +60,6 @@ parser <- optparse::add_option(parser, "--range-fsc-pe-chl",
   type = "character", default = "1,3200",
   help = "FSC/PE/CHL grid range as two real numbers separated by a comma [default %default]"
 )
-parser <- optparse::add_option(parser, "--range-Qc",
-  type = "character", default = "0.008140889,0.260508439",
-  help = "Qc grid range as two real numbers separated by a comma [default %default]"
-)
 parser <- optparse::add_option(parser, "--refrac-csv",
   type = "character", default = "", metavar = "FILE",
   help = "Optional per-population refractive index CSV file"
@@ -81,16 +81,16 @@ if (length(p$args) < 3) {
   bin_count <- p$options$bin_count
   dimensions <- p$options$dimensions
   keep_outliers <- p$options$keep_outliers
-  model <- p$options$model
   no_data.table <- p$options$no_data.table
   par_csv <- p$options$par_csv
   pop <- p$options$pop
   processes <- p$options$processes
   psd_mode <- p$options$psd_mode
+  qc_log2_bin_width_inv <- p$options$Qc_log2_bin_width_inv
+  qc_min_val <- p$options$Qc_min_val
   quantile_ <- p$options$quantile
   range_diam_string <- p$options$range_diam
   range_fsc_pe_chl_string <- p$options$range_fsc_pe_chl
-  range_Qc_string <- p$options$range_Qc
   refrac_csv <- p$options$refrac_csv
   volume <- p$options$volume
 
@@ -143,10 +143,10 @@ if (length(p$args) < 3) {
 
   range_diam <- parse_range_string(range_diam_string)
   range_fsc_pe_chl <- parse_range_string(range_fsc_pe_chl_string)
-  range_Qc <- parse_range_string(range_Qc_string)
   check_parsed_range(range_diam)
   check_parsed_range(range_fsc_pe_chl)
-  check_parsed_range(range_Qc)
+  qc_bin_edges <- 2**seq(log2(qc_min_val), by = 1 / qc_log2_bin_width_inv, length.out = bin_count + 1)
+  calculated_range_qc <- qc_bin_edges[c(1, length(qc_bin_edges))]
 
   # Handle empty pop
   if (pop == "") {
@@ -169,29 +169,6 @@ dated_msg <- function(...) {
   message(format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), ": ", ...)
 }
 
-get_delta_v_int_qc_range <- function(qc_range, bins) {
-  # The growth model takes 1 / (log2 distance between bins) as an integer. Calculate the end of
-  # the grid range as the closest such integer that creates a grid that contains the true grid range
-  # from the previous step
-  delta_log2 <- diff(seq(from=log2(qc_range[1]), to=log2(qc_range[2]), length=bins+1))[1]
-  delta_log2_inv <- 1 / delta_log2
-  delta_log2_inv_int <- as.integer(delta_log2_inv)
-  # Now original range should be
-  # c(qc_range_orig[1], 2**(log2(qc_range_orig[1]) + (bins * (1 / delta_log2_inv))))
-  # Expressing delta_log2_inv as an int gives a little headroom at the top end
-  result <- list(
-    qc_range = c(
-      qc_range[1],
-      2**(log2(qc_range[1]) + (bins * (1 / delta_log2_inv_int)))
-    ),
-    delta_log2 = delta_log2,
-    delta_log2_inv = delta_log2_inv,
-    delta_log2_inv_int = delta_log2_inv_int
-  )
-  return(result)
-}
-
-
 # ----------
 # Begin main
 # ----------
@@ -201,19 +178,21 @@ message("--------------")
 message("db = ", db)
 message("vct-dir = ", vct_dir)
 message("abund-csv = ", abund_csv)
-message("bin_counts = ", bin_count)
+message("bin_count = ", bin_count)
 message("keep-outliers = ", keep_outliers)
-message("model = ", model)
+message("Qc-log2-bin-width-inv = ", qc_log2_bin_width_inv)
+message("Qc-min-val = ", qc_min_val)
 message("no-data.table = ", no_data.table)
 message("out_prefix = ", out_prefix)
 message("par-csv = ", par_csv)
 message("pop = ", pop)
 message("processes = ", processes)
-message("psd-mode = ", psd_mode)
+message("qc-log2-bin-width-inv = ", qc_log2_bin_width_inv)
+message("qc-min-val = ", qc_min_val)
 message("quantile = ", quantile_)
 message("range-diam = ", paste(range_diam, collapse=", "))
 message("range-fsc-pe-chl = ", paste(range_fsc_pe_chl, collapse=", "))
-message("range-Qc = ", paste(range_Qc, collapse=", "))
+message("calculated-range-qc = ", paste(calculated_range_qc, collapse=", "))
 message("refrac-csv = ", refrac_csv)
 message("volume = ", volume)
 
@@ -228,6 +207,7 @@ hourly_volume_out <- paste0(out_prefix, ".hourly_volume.parquet")
 par_out <- paste0(out_prefix, ".par.parquet")
 hourly_par_out <- paste0(out_prefix, ".hourly_par.parquet")
 stat_out <- paste0(out_prefix, ".db_stat.parquet")
+clean_stat_out <- paste0(out_prefix, ".db_clean_stat.parquet")
 
 cruise_ <- popcycle::get_cruise(db)
 message("cruise = ", cruise_)
@@ -287,9 +267,6 @@ hourly_volume <- popcycle::create_volume_table(
   meta, time_expr = "1 hour", median_opp_evt_ratio = ratio
 )
 
-# Get stat table
-stat <- popcycle::get_stat_table(db)
-
 # Choose indices of refraction
 dated_msg("Reading indices of refraction CSV file ", refrac_csv)
 refracs <- popcycle::read_refraction_csv(path = refrac_csv) %>%
@@ -323,21 +300,13 @@ dir.create(dirname(out_prefix), recursive = TRUE, showWarnings = FALSE)
 
 # Grid
 dated_msg("Creating grid with dimensions = ", paste(dimensions, collapse = ", "))
-if (model) {
-  v_int_qc_range <- get_delta_v_int_qc_range(range_Qc, bin_count)
-  dated_msg("v_int_qc_range")
-  message(paste0(capture.output(v_int_qc_range), collapse="\n"))
-  range_Qc_tmp <- v_int_qc_range$qc_range
-} else {
-  range_Qc_tmp <- range_Qc
-}
 
 # To match 2022-09 Qc gridded for validation
 # qc_range <- c(0.008140889, 0.260508439)
-dated_msg("Qc_range = ", paste(range_Qc_tmp, collapse=", "))
 grid_bins <- popcycle::create_grid_bins(
   bin_count, log_base=2, log_answers=FALSE,
-  Qc_range = range_Qc_tmp,
+  qc_min_val = qc_min_val,
+  qc_log2_bin_width_inv = qc_log2_bin_width_inv,
   diam_range = range_diam,
   channel_range = range_fsc_pe_chl
 )
@@ -375,9 +344,11 @@ if (nrow(gridded) == 0 || all(is.na(gridded$date))) {
 }
 
 # Remove counts out of grid range (coord is NA)
-na_count <-sum(is.na(gridded))
+na_count <- nrow(gridded[!complete.cases(gridded), ])
 if (na_count) {
-  stop(na_count, " out-of-range values")
+  dated_msg("WARNING: ", na_count, " out-of-range values")
+  print(gridded[!complete.cases(gridded), ])
+  gridded <- gridded[complete.cases(gridded), ]
 }
 
 # Hourly data
@@ -402,9 +373,7 @@ hourly_gridded <- hourly_gridded %>% dplyr::mutate(cruise = cruise_, .before = 1
 if (psd_mode) {
   # PSD only Qc_sum_per_uL, renamed to biomass
   hourly_gridded_PSD <- hourly_gridded %>%
-    dplyr::mutate(cruise = cruise_, .before = 1) %>%
-    dplyr::select(-c(n, Qc_sum, n_per_uL)) %>%
-    dplyr::rename(biomass = Qc_sum_per_uL)
+    dplyr::mutate(cruise = cruise_, .before = 1)
 }
 dated_msg(
   "Full gridded data, dim = ", stringr::str_flatten(dim(gridded), " "),
@@ -419,6 +388,13 @@ if (psd_mode) {
     "Hourly gridded data for PSD, dim = ", stringr::str_flatten(dim(hourly_gridded_PSD), " "),
     ", size = ", object.size(hourly_gridded_PSD) / 2**20, " MB"
   )
+  pro_PSD <- hourly_gridded_PSD[hourly_gridded_PSD$pop == "prochloro", ]
+  pro_bins <- sort(unique(pro_PSD[["Qc_coord"]]))
+  pro_bin_labels <- popcycle::grid_bins_labels(grid_bins)$Qc[pro_bins]
+  dated_msg(
+    "Prochlorococcus present in ", length(pro_bins), " bins"
+  )
+  cat(pro_bin_labels, sep = "\n")
 }
 
 # Save gridded data to file
@@ -434,6 +410,13 @@ ptm <- proc.time()
 arrow::write_parquet(popcycle::get_stat_table(db), stat_out)
 deltat <- proc.time() - ptm
 dated_msg("Wrote stat parquet in ", deltat[["elapsed"]], " seconds")
+
+# Save clean stat to file
+dated_msg("Writing clean stat to file ", stat_out)
+ptm <- proc.time()
+arrow::write_parquet(popcycle::get_clean_stat_table(db), clean_stat_out)
+deltat <- proc.time() - ptm
+dated_msg("Wrote clean stat parquet in ", deltat[["elapsed"]], " seconds")
 
 # Save volume to file
 dated_msg("Writing full volume file to ", volume_out)

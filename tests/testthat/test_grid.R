@@ -19,7 +19,9 @@ test_that("Grid two files", {
     prochloro="mid", synecho="mid", picoeuk="lwr", croco="lwr", beads="lwr", unknown="lwr"
   )
   calib <- tibble::tibble(pop=c("prochloro", "synecho"), a=c(2, 3), b=c(0, 1))
-  grid_bins <- create_grid_bins(bin_count, log_base=2, log_answers=FALSE)
+  grid_bins <- create_grid_bins(
+    bin_count, qc_log2_bin_width_inv = 1/4, qc_min_val = .002, log_base=2, log_answers=FALSE
+  )
   # Create the gridded data
   gridded <- create_gridded(
     vct_files, quantile_, refracs, grid_bins, log_base=NULL, use_data.table=TRUE

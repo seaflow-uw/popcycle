@@ -357,7 +357,9 @@ create_volume_table <- function(meta, time_expr = "1 hour", median_opp_evt_ratio
 #'
 #' @param bin_count Number of bins between breaks.
 #' @param channel_range Vector of range to use for standard SeaFlow channel breaks.
-#' @param Qc_range Vector of range to use for Qc breaks.
+#' @param qc_min_val Minimum value for Qc.
+#' @param qc_log2_bin_width_inv Qc bin width as 1 / log2(bin_width), e.g. a value
+#'   of 8 means a log2(bin_width) of .125.
 #' @param diam_range Vector of range to use for diam breaks.
 #' #' @param log_base Log base to use when creating log-spaced bins for distribution.
 #'   If NULL the breaks will not be log-spaced.
@@ -366,13 +368,11 @@ create_volume_table <- function(meta, time_expr = "1 hour", median_opp_evt_ratio
 #'   [1, 2, 3], if FALSE breaks may be [10, 100, 1000].
 #' @return Named list defining breaks for use with cut(). Each item has length == bins + 1.
 #' @export
-create_grid_bins <- function(bin_count = 85, channel_range = c(1, 3200), Qc_range = c(0.002, 1600),
-                             diam_range = c(0.1, 37), log_base = NULL, log_answers = TRUE) {
+create_grid_bins <- function(bin_count = 85, channel_range = c(1, 3200), diam_range = c(0.1, 37),
+                             qc_min_val = .002, qc_log2_bin_width_inv = 8, log_base = NULL,
+                             log_answers = TRUE) {
   if (length(channel_range) != 2) {
     stop("create_grid_bins: channel_range must be a two-item numeric list or vector")
-  }
-  if (length(Qc_range) != 2) {
-    stop("create_grid_bins: Qc_range must be a two-item numeric list or vector")
   }
   if (length(diam_range) != 2) {
     stop("create_grid_bins: diam_range must be a two-item numeric list or vector")
@@ -381,7 +381,7 @@ create_grid_bins <- function(bin_count = 85, channel_range = c(1, 3200), Qc_rang
   grid_bins$fsc_small <- create_breaks(bin_count, channel_range[[1]], channel_range[[2]], log_base, log_answers)
   grid_bins$pe <- create_breaks(bin_count, channel_range[[1]], channel_range[[2]], log_base, log_answers)
   grid_bins$chl_small <- create_breaks(bin_count, channel_range[[1]], channel_range[[2]], log_base, log_answers)
-  grid_bins$Qc <- create_breaks(bin_count, Qc_range[[1]], Qc_range[[2]], log_base, log_answers)
+  grid_bins$Qc <- create_breaks2(bin_count, qc_min_val, qc_log2_bin_width_inv, log_answers = log_answers)
   grid_bins$diam <- create_breaks(bin_count, diam_range[[1]], diam_range[[2]], log_base, log_answers)
   return(grid_bins)
 }
@@ -389,22 +389,39 @@ create_grid_bins <- function(bin_count = 85, channel_range = c(1, 3200), Qc_rang
 #' Create breaks vector that can be used with cut().
 #'
 #' @param bin_count Number of bins between breaks.
-#' @param minval Value for the minimum break (fencepost).
-#' @param maxval Value for the maximum break (fencepost).
+#' @param min_val Value for the minimum break (fencepost).
+#' @param max_val Value for the maximum break (fencepost).
 #' @param log_base Log base to use when creating log-spaced bins for distribution.
 #'   If NULL the breaks will not be log-spaced.
 #' @param log_answers If log_base is provided, this determines whether the break
 #'   values themselves are log values or not. e.g. if TRUE breaks may be
 #'   [1, 2, 3], if FALSE breaks may be [10, 100, 1000].
-#' @return Vector defining breaks for use with cut(), length == bins + 1
-create_breaks <- function(bin_count, minval, maxval, log_base=NULL, log_answers=TRUE) {
+#' @return Vector defining breaks for use with cut(), length == bin_count + 1
+create_breaks <- function(bin_count, min_val, max_val, log_base=NULL, log_answers = TRUE) {
   if (!is.null(log_base)) {
-    minval <- log(minval, base = log_base)
-    maxval <- log(maxval, base = log_base)
+    min_val <- log(min_val, base = log_base)
+    max_val <- log(max_val, base = log_base)
   }
-  b <- seq(from = minval, to = maxval, length = bin_count+1)
+  b <- seq(from = min_val, to = max_val, length = bin_count+1)
   if (!is.null(log_base) && !log_answers) {
     return(log_base^b)
+  }
+  return(b)
+}
+
+#' Create breaks vector that can be used with cut(), with log2 bin width as input.
+#'
+#' @param bin_count Number of bins between breaks.
+#' @param min_val Value for the minimum break (fencepost).
+#' @param log2_bin_width_inv 1 / (log2(bin width)), e.g. 8 means a log2(bin_width) of 0.125
+#' @param log_answers This determines whether the break values themselves are log
+#'   values or not. e.g. if TRUE breaks may be [1, 2, 3] (log2), if FALSE breaks may be
+#'   [2, 4, 8] (linear).
+#' @return Vector defining breaks for use with cut(), length == bin_count + 1
+create_breaks2 <- function(bin_count, min_val, log2_bin_width_inv, log_answers = TRUE) {
+  b <- seq(from = log2(min_val), by = 1 / log2_bin_width_inv, length.out = bin_count+1)
+  if (!log_answers) {
+    return(2^b)
   }
   return(b)
 }

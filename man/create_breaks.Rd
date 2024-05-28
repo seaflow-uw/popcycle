@@ -4,14 +4,14 @@
 \alias{create_breaks}
 \title{Create breaks vector that can be used with cut().}
 \usage{
-create_breaks(bin_count, minval, maxval, log_base = NULL, log_answers = TRUE)
+create_breaks(bin_count, min_val, max_val, log_base = NULL, log_answers = TRUE)
 }
 \arguments{
 \item{bin_count}{Number of bins between breaks.}
 
-\item{minval}{Value for the minimum break (fencepost).}
+\item{min_val}{Value for the minimum break (fencepost).}
 
-\item{maxval}{Value for the maximum break (fencepost).}
+\item{max_val}{Value for the maximum break (fencepost).}
 
 \item{log_base}{Log base to use when creating log-spaced bins for distribution.
 If NULL the breaks will not be log-spaced.}
@@ -21,7 +21,7 @@ values themselves are log values or not. e.g. if TRUE breaks may be
 [1, 2, 3], if FALSE breaks may be [10, 100, 1000].}
 }
 \value{
-Vector defining breaks for use with cut(), length == bins + 1
+Vector defining breaks for use with cut(), length == bin_count + 1
 }
 \description{
 Create breaks vector that can be used with cut().
