@@ -1,7 +1,7 @@
 t0 <- proc.time()
 
 parser <- optparse::OptionParser(
-  usage = "usage: grid.R [options] db vct_dir out_prefix",
+  usage = "usage: grid.R [options] db vct-dir out-prefix",
   description = "Create gridded distribution data from VCT data"
 )
 parser <- optparse::add_option(parser, "--abund-csv",
@@ -189,6 +189,7 @@ message("volume = ", volume)
 
 # Create output file names
 grid_bins_out <- paste0(out_prefix, ".grid_bins.parquet")
+grid_bins_labels_out <- paste0(out_prefix, ".grid_bins_labels.parquet")
 gridded_out <- paste0(out_prefix, ".gridded.parquet")
 volume_out <- paste0(out_prefix, ".volume.parquet")
 
@@ -303,10 +304,14 @@ grid_bins <- popcycle::create_grid_bins(
 )
 grid_bins <- grid_bins[dimensions]
 grid_bins_df <- tibble::as_tibble(grid_bins)
-grid_bins_df <- grid_bins_df %>% tibble::add_column(cruise = cruise_, .before=1)
+grid_bins_df <- grid_bins_df %>% tibble::add_column(cruise = as.factor(cruise_), .before=1)
+grid_bins_labels_df <- tibble::as_tibble(popcycle::grid_bins_labels(grid_bins))
+grid_bins_labels_df <- grid_bins_labels_df %>% tibble::add_column(cruise = as.factor(cruise_), .before=1)
 # Save grid to file
 dated_msg("Writing grid bins file to ", grid_bins_out)
 arrow::write_parquet(grid_bins_df, grid_bins_out)
+dated_msg("Writing grid bins labels file to ", grid_bins_labels_out)
+arrow::write_parquet(grid_bins_labels_df, grid_bins_labels_out)
 
 # Make gridded data
 dated_msg("Creating gridded data")
@@ -359,8 +364,8 @@ dated_msg("Created hourly gridded data in ", deltat[["elapsed"]], " seconds")
 hourly_gridded <- popcycle::add_abundance(hourly_gridded, hourly_volume, calib=calib)
 
 # Add cruise column
-gridded <- gridded %>% dplyr::mutate(cruise = cruise_, .before = 1)
-hourly_gridded <- hourly_gridded %>% dplyr::mutate(cruise = cruise_, .before = 1)
+gridded <- gridded %>% dplyr::mutate(cruise = as.factor(cruise_), .before = 1)
+hourly_gridded <- hourly_gridded %>% dplyr::mutate(cruise = as.factor(cruise_), .before = 1)
 dated_msg(
   "Full gridded data, dim = ", stringr::str_flatten(dim(gridded), " "),
   ", size = ", object.size(gridded) / 2**20, " MB"
@@ -403,6 +408,7 @@ dated_msg("Wrote clean stat parquet in ", deltat[["elapsed"]], " seconds")
 # Save volume to file
 dated_msg("Writing full volume file to ", volume_out)
 ptm <- proc.time()
+volume <- volume %>% tibble::add_column(cruise = as.factor(cruise_), .before=1)
 arrow::write_parquet(volume, volume_out)
 deltat <- proc.time() - ptm
 dated_msg("Wrote full volume parquet in ", deltat[["elapsed"]], " seconds")
@@ -417,6 +423,7 @@ dated_msg("Wrote hourly gridded data parquet in ", deltat[["elapsed"]], " second
 # Save hourly volume to file
 dated_msg("Writing hourly volume file to ", hourly_volume_out)
 ptm <- proc.time()
+hourly_volume <- hourly_volume %>% tibble::add_column(cruise = as.factor(cruise_), .before=1)
 arrow::write_parquet(hourly_volume, hourly_volume_out)
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly volume parquet in ", deltat[["elapsed"]], " seconds")
@@ -443,4 +450,4 @@ dated_msg("Writing hourly PAR file to ", hourly_par_out)
 arrow::write_parquet(hourly_par, hourly_par_out)
 
 deltat <- proc.time() - t0
-message("Script ran in ", lubridate::duration(deltat[["elapsed"]]))
+dated_msg("Script ran in ", lubridate::duration(deltat[["elapsed"]]))
