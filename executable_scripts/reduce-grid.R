@@ -46,10 +46,10 @@ reduce_gridded <- function(in_prefix, out_prefix, dim, pop = NULL, bin_lwr = NUL
 
   # Subset grid
   if (is.null(bin_lwr)) {
-    bin_lwr <- 0
+    bin_lwr <- 1
   }
   if (is.null(bin_upr)) {
-    bin_upr <- nrow(grid_bins) - 1
+    bin_upr <- nrow(grid_bins) - 1  # last grid bins row is the outer fence post, so take one before
   }
 
   # Add one to bin_upr to capture the exclusive right edge of the last bin
@@ -120,6 +120,9 @@ if (length(p$args) < 2) {
   bin_lwr <- p$options$bin_lwr
   bin_upr <- p$options$bin_upr
   pop <- p$options$pop
+  if (pop == "") {
+    pop <- NULL
+  }
 }
 
 message("using popcycle version ", packageVersion("popcycle"))
