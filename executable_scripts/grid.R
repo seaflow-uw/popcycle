@@ -189,7 +189,6 @@ message("volume = ", volume)
 
 # Create output file names
 grid_bins_out <- paste0(out_prefix, ".grid_bins.parquet")
-grid_bins_labels_out <- paste0(out_prefix, ".grid_bins_labels.parquet")
 gridded_out <- paste0(out_prefix, ".gridded.parquet")
 volume_out <- paste0(out_prefix, ".volume.parquet")
 
@@ -207,7 +206,14 @@ message("cruise = ", cruise_)
 vct_files <- list.files(vct_dir, "\\.parquet$", full.names = TRUE)
 dated_msg("found ", length(vct_files), " VCT hourly files")
 
+# Get SFL
 sfl_tbl <- popcycle::get_sfl_table(db)
+
+# Get PAR before outlier filtering
+par <- sfl_tbl %>%
+  dplyr::select(date, par, lat, lon)
+
+# Note outlier datetimes
 if (!keep_outliers) {
   flagged_dates <- sfl_tbl %>%
     dplyr::filter(flag != 0) %>%
@@ -218,10 +224,6 @@ if (!keep_outliers) {
 } else {
   flagged_dates <- NULL
 }
-
-# Get PAR
-par <- sfl_tbl %>%
-  dplyr::select(date, par, lat, lon)
 
 # Correct raw PAR values
 dated_msg("Reading PAR calibration CSV file ", par_csv)
@@ -305,13 +307,16 @@ grid_bins <- popcycle::create_grid_bins(
 grid_bins <- grid_bins[dimensions]
 grid_bins_df <- tibble::as_tibble(grid_bins)
 grid_bins_df <- grid_bins_df %>% tibble::add_column(cruise = as.factor(cruise_), .before=1)
-grid_bins_labels_df <- tibble::as_tibble(popcycle::grid_bins_labels(grid_bins))
-grid_bins_labels_df <- grid_bins_labels_df %>% tibble::add_column(cruise = as.factor(cruise_), .before=1)
+# Add grid bin labels
+grid_bins_labels <- popcycle::grid_bins_labels(grid_bins)
+for (dim in names(grid_bins_labels)) {
+  # Add NA to the end to match grid_bins length
+  grid_bins_labels[[dim]][length(grid_bins_labels[[dim]])+1] <- NA
+  grid_bins_df[[paste0(dim, "_label")]] <- grid_bins_labels[[dim]]
+}
 # Save grid to file
 dated_msg("Writing grid bins file to ", grid_bins_out)
 arrow::write_parquet(grid_bins_df, grid_bins_out)
-dated_msg("Writing grid bins labels file to ", grid_bins_labels_out)
-arrow::write_parquet(grid_bins_labels_df, grid_bins_labels_out)
 
 # Make gridded data
 dated_msg("Creating gridded data")
@@ -428,10 +433,7 @@ arrow::write_parquet(hourly_volume, hourly_volume_out)
 deltat <- proc.time() - ptm
 dated_msg("Wrote hourly volume parquet in ", deltat[["elapsed"]], " seconds")
 
-# # Only keep PAR dates that are in gridded data
-# # Average by hour
-par <- par %>%
-  dplyr::filter(date %in% unique(gridded$date))
+# Average PAR by hour
 hourly_par <- par %>%
   dplyr::group_by(date = lubridate::floor_date(date, "hour")) %>%
   dplyr::summarise(
@@ -439,8 +441,7 @@ hourly_par <- par %>%
     lat = mean(lat, na.rm = TRUE),
     lon = mean(lon, na.rm = TRUE)
   )
-
-# # Add cruise column
+# Add cruise column
 par <- par %>% dplyr::mutate(cruise = as.factor(cruise_), .before = 1)
 hourly_par <- hourly_par %>% dplyr::mutate(cruise = as.factor(cruise_), .before = 1)
 # PAR save to file

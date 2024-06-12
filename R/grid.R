@@ -617,9 +617,9 @@ grid_bins_labels <- function(grid_bins) {
   labels <- list()
   for (channel in names(grid_bins)) {
     g <- grid_bins[[channel]]
-    labels[[channel]] <- sapply(seq(1, length(g)-2), function(i) { paste0("[", format(round(g[i], 4), nsmall = 4), "-", format(round(g[i+1], 4), nsmall = 4), ")") })
+    labels[[channel]] <- sapply(seq(1, length(g)-2), function(i) { paste0("[", format(round(g[i], 4), nsmall = 4), " - ", format(round(g[i+1], 4), nsmall = 4), ")") })
     i <- length(g) - 1
-    labels[[channel]] <- c(labels[[channel]], paste0("[", format(round(g[i], 4), nsmall = 4), "-", format(round(g[i+1], 4), nsmall = 4), "]"))
+    labels[[channel]] <- c(labels[[channel]], paste0("[", format(round(g[i], 4), nsmall = 4), " - ", format(round(g[i+1], 4), nsmall = 4), "]"))
   }
 
   return(labels)

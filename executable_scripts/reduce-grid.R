@@ -24,10 +24,7 @@ reduce_gridded <- function(in_prefix, out_prefix, dim, pop = NULL, bin_lwr = NUL
   hourly_vol_out_path <- paste0(out_prefix, ".hourly_volume.parquet")
 
   gridded <- arrow::read_parquet(hourly_gridded_in_path)
-  par <- arrow::read_parquet(hourly_par_in_path)
   grid_bins <- arrow::read_parquet(grid_bins_in_path)
-  grid_bins_labels <- arrow::read_parquet(grid_bins_labels_in_path)
-  volumes <- arrow::read_parquet(hourly_vol_in_path)
 
   if (length(unique(grid_bins$cruise)) > 1) {
     stop("this tool only supports data with a single cruise")
@@ -52,28 +49,21 @@ reduce_gridded <- function(in_prefix, out_prefix, dim, pop = NULL, bin_lwr = NUL
     bin_upr <- nrow(grid_bins) - 1  # last grid bins row is the outer fence post, so take one before
   }
 
-  # Add one to bin_upr to capture the exclusive right edge of the last bin
-  grid_bins_labels <- popcycle::grid_bins_labels(as.list(grid_bins %>% select(-c(cruise))))
-  grid_bins <- grid_bins[bin_lwr:(bin_upr+1), c("cruise", dim)]
-  grid_bins_labels <- tibble::as_tibble(grid_bins_labels)
-  grid_bins_labels <- grid_bins_labels %>% dplyr::mutate(cruise = as.factor(grid_bins[[1, "cruise"]]), .before = 1)
-  grid_bins_labels <- grid_bins_labels[bin_lwr:bin_upr, c("cruise", dim)]
-
+  # Add one to bin_upr to capture the right edge of the last bin
+  grid_bins <- grid_bins[bin_lwr:(bin_upr+1), c("cruise", dim, paste0(dim, "_label"))]
+  # Remove label for last edge
+  grid_bins[[nrow(grid_bins), paste0(dim, "_label")]] <- NA
   print(paste0("grid bins for ", dim,
                " from ", round(grid_bins[[1, dim]], 6),
                " to ", round(grid_bins[[nrow(grid_bins), dim]], 6)))
   print(paste0("bin labels are ",
-               grid_bins_labels[[1, dim]],
+               grid_bins[[1, paste0(dim, "_label")]],
                " - ",
-               grid_bins_labels[[nrow(grid_bins_labels), dim]]))
+               grid_bins[[nrow(grid_bins)-1, paste0(dim, "_label")]]))
   # Reduce gridded to match grid subset
   gridded <- gridded[(gridded[[dim_coord]] >= bin_lwr) & (gridded[[dim_coord]] <= bin_upr), ]
   # Reset lower grid index to 1
   gridded[[dim_coord]] <- as.integer(gridded[[dim_coord]] - bin_lwr + 1)
-
-  # Reduce PAR and volumes down to just the dates left in psd
-  par <- par[par$date %in% unique(gridded$date), ]
-  volumes <- volumes[volumes$date %in% unique(gridded$date), ]
 
   # Create output directory
   dir.create(dirname(out_prefix), recursive = TRUE, showWarnings = FALSE)
@@ -81,9 +71,8 @@ reduce_gridded <- function(in_prefix, out_prefix, dim, pop = NULL, bin_lwr = NUL
   # Write reduced output
   arrow::write_parquet(gridded, hourly_gridded_out_path)
   arrow::write_parquet(grid_bins, grid_bins_out_path)
-  arrow::write_parquet(grid_bins_labels, grid_bins_labels_out_path)
-  arrow::write_parquet(par, hourly_par_out_path)
-  arrow::write_parquet(volumes, hourly_vol_out_path)
+  file.copy(hourly_par_in_path, hourly_par_out_path)
+  file.copy(hourly_vol_in_path, hourly_vol_out_path)
 }
 
 t0 <- proc.time()
