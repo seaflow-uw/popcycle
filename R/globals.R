@@ -13,6 +13,9 @@ QUANTILES <- c(2.5, 50.0, 97.5)
 QFLAGS <- c(1,2,4)
 names(QFLAGS) <- c("q2.5", "q50", "q97.5")
 
+# Population names
+POPNAMES <- c("beads", "croco", "picoeuk", "prochloro", "synecho", "unknown")
+
 # Outlier flag meanings
 FLAG_OK <- 0L          # not an outlier
 FLAG_INSTRUMENT <- 1L  # stream pressure, event rate

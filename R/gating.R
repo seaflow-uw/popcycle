@@ -441,11 +441,10 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL) {
   rm(processed)
   gc()
   # Turn all pop columns into factors if not already
-  window_vct_df <- dplyr::mutate_at(
-    window_vct_df,
-    dplyr::vars(starts_with("pop_q")),
-    as.factor
-  )
+  for (quant in QUANTILES) {
+    popcol <- paste0("pop_q", quant)
+    window_vct_df[[popcol]] <- factor(window_vct_df[[popcol]], levels = POPNAMES)
+  }
   # TODO: add a check for gating_id and filter_id in window_vct_df
   # and plan matching per file. Make sure there's only one
   # of each per file and they match.
