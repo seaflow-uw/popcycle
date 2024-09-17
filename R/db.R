@@ -580,7 +580,7 @@ save_outliers <- function(db, outliers, overwrite = TRUE) {
   sql_dbWriteTable(db, name="outlier", value = as.data.frame(merged_outliers))
 }
 
-#' Save filter parameters to the filter table.
+#' Save filter parameters to the filter table, appending unless as_is.
 #'
 #' @param db SQLite3 database file path.
 #' @param filter_params Data frame of filtering parameters one row per
@@ -590,35 +590,58 @@ save_outliers <- function(db, outliers, overwrite = TRUE) {
 #'   offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.
 #' @param filter_id Optional, supply a filter ID. If not provided a UUID string
 #'   will be generated.
+#' @param as_is Optional, reset filter table and save filter_params without
+#'   modification.
 #' @return Database filter ID string.
 #' @export
-save_filter_params <- function(db, filter_params, filter_id = NULL) {
-  if (is.null(filter_id)) {
-    filter_id <- uuid::UUIDgenerate()  # create ID for new entries
-  }
-  date.stamp <- to_date_str(lubridate::now("UTC"))
-  df <- data.frame()
-  for (quantile in filter_params$quantile) {
-    p <- filter_params[filter_params$quantile == quantile, ]
-    if (nrow(p) > 1) {
-      stop("Duplicate quantile rows found in parameters passed to save_filter_params()")
+save_filter_params <- function(db, filter_params, filter_id = NULL, as_is = FALSE) {
+  if (as_is) {
+    reset_filter_table(db)
+    df <- filter_params
+  } else {
+    if (is.null(filter_id)) {
+      filter_id <- uuid::UUIDgenerate()  # create ID for new entries
     }
-    df <- rbind(df, cbind(id=filter_id, date=date.stamp, quantile=quantile,
-                          beads_fsc_small=p$beads.fsc.small,
-                          beads_D1=p$beads.D1,
-                          beads_D2=p$beads.D2,
-                          width=p$width,
-                          notch_small_D1=p$notch.small.D1,
-                          notch_small_D2=p$notch.small.D2,
-                          notch_large_D1=p$notch.large.D1,
-                          notch_large_D2=p$notch.large.D2,
-                          offset_small_D1=p$offset.small.D1,
-                          offset_small_D2=p$offset.small.D2,
-                          offset_large_D1=p$offset.large.D1,
-                          offset_large_D2=p$offset.large.D2))
+    date.stamp <- to_date_str(lubridate::now("UTC"))
+    df <- data.frame()
+    for (quantile in filter_params$quantile) {
+      p <- filter_params[filter_params$quantile == quantile, ]
+      if (nrow(p) > 1) {
+        stop("Duplicate quantile rows found in parameters passed to save_filter_params()")
+      }
+      df <- rbind(df, cbind(id=filter_id, date=date.stamp, quantile=quantile,
+                            beads_fsc_small=p$beads.fsc.small,
+                            beads_D1=p$beads.D1,
+                            beads_D2=p$beads.D2,
+                            width=p$width,
+                            notch_small_D1=p$notch.small.D1,
+                            notch_small_D2=p$notch.small.D2,
+                            notch_large_D1=p$notch.large.D1,
+                            notch_large_D2=p$notch.large.D2,
+                            offset_small_D1=p$offset.small.D1,
+                            offset_small_D2=p$offset.small.D2,
+                            offset_large_D1=p$offset.large.D1,
+                            offset_large_D2=p$offset.large.D2))
+    }
   }
   sql_dbWriteTable(db, name="filter", value=df)
   return(filter_id)
+}
+
+#' Save filter parameters from a TSV file.
+#'
+#' @param db SQLite3 database file path.
+#' @param filter_plan_tsv Filter plan TSV file.
+#' @export
+save_filter_params_from_file <- function(db, filter_tsv) {
+  filter_df <- readr::read_tsv(filter_tsv) %>%
+    dplyr::rename_with(~ stringr::str_replace_all(., "\\.", "_"))
+  filter_df$instrument <- NULL
+  filter_df$cruise <- NULL
+  filter_df$date <- to_date_str(filter_df$date)
+  make_popcycle_db(db)
+  reset_filter_table(db)
+  sql_dbWriteTable(db, name = "filter", value = as.data.frame(filter_df))
 }
 
 #' Save gating parameters.
@@ -677,6 +700,18 @@ save_gating_params <- function(db, gates.log, gating_id = NULL) {
   return(gating_id)
 }
 
+#' Save gating parameters from a TSV file.
+#'
+#' @param db SQLite3 database file path.
+#' @param gating_tsv Gating parameters TSV file.
+#' @export
+save_gating_params_from_file <- function(db, gating_tsv) {
+  df <- readr::read_tsv(gating_tsv)
+  make_popcycle_db(db)
+  reset_gating_table(db)
+  sql_dbWriteTable(db, name = "gating", value = as.data.frame(df))
+}
+
 #' Save gating polygon coordinates in the poly table.
 #'
 #' These entries will be linked to an entry in the gating table by gating_id.
@@ -706,6 +741,18 @@ save_poly <- function(db, poly.log, popname, gating_id) {
 
   delete_poly_by_id_pop(db, gating_id, popname)
   sql_dbWriteTable(db, name="poly", value=df)
+}
+
+#' Save gating polygon coordinates from a TSV file.
+#'
+#' @param db SQLite3 database file path.
+#' @param poly_tsv Gating polygon coordinates TSV file.
+#' @export
+save_poly_from_file <- function(db, poly_tsv) {
+  df <- readr::read_tsv(poly_tsv)
+  make_popcycle_db(db)
+  reset_poly_table(db)
+  sql_dbWriteTable(db, name = "poly", value = as.data.frame(df))
 }
 
 #' Save filter plan to db
@@ -754,6 +801,19 @@ save_filter_plan <- function(db, filter_plan) {
   sql_dbWriteTable(db, name = "filter_plan", value = as.data.frame(filter_plan))
 }
 
+#' Save filter parameters from a TSV file.
+#'
+#' @param db SQLite3 database file path.
+#' @param filter_plan_tsv Filter plan TSV file.
+#' @export
+save_filter_plan_from_file <- function(db, filter_plan_tsv) {
+  df <- readr::read_tsv(filter_plan_tsv)
+  df$start_date <- to_date_str(df$start_date)
+  make_popcycle_db(db)
+  reset_filter_plan_table(db)
+  sql_dbWriteTable(db, name = "filter_plan", value = as.data.frame(df))
+}
+
 #' Save gating plan to db
 #'
 #' @param db SQLite3 database file path.
@@ -800,6 +860,18 @@ save_gating_plan <- function(db, gating_plan) {
   sql_dbWriteTable(db, name = "gating_plan", value = as.data.frame(gating_plan))
 }
 
+#' Save gating parameters from a TSV file.
+#'
+#' @param db SQLite3 database file path.
+#' @param gating_plan_tsv Gating plan TSV file.
+#' @export
+save_gating_plan_from_file <- function(db, gating_plan_tsv) {
+  df <- readr::read_tsv(gating_plan_tsv)
+  df$start_date <- to_date_str(df$start_date)
+  make_popcycle_db(db)
+  sql_dbWriteTable(db, name = "gating_plan", value = as.data.frame(df))
+}
+
 #' Save metadata to db
 #'
 #' @param db SQLite3 database file path.
@@ -832,6 +904,22 @@ save_sfl <- function(db, sfl) {
 
   reset_sfl_table(db)
   sql_dbWriteTable(db, name = "sfl", value = as.data.frame(sfl))
+}
+
+#' Save SFL from a TSV file.
+#'
+#' @param db SQLite3 database file path.
+#' @param sfl_tsv SFL TSV file.
+#' @export
+save_sfl_from_file <- function(db, sfl_tsv) {
+  df <- readr::read_tsv(sfl_tsv) %>%
+    dplyr::rename_with(~ stringr::str_replace_all(., " ", "_")) %>%
+    dplyr::rename_with(tolower)
+
+  df$date <- to_date_str(df$date)
+  make_popcycle_db(db)
+  reset_sfl_table(db)
+  sql_dbWriteTable(db, name = "sfl", value = as.data.frame(df))
 }
 
 #' Create a new, empty sqlite3 popcycle database.

@@ -2,9 +2,9 @@
 % Please edit documentation in R/db.R
 \name{save_filter_params}
 \alias{save_filter_params}
-\title{Save filter parameters to the filter table.}
+\title{Save filter parameters to the filter table, appending unless as_is.}
 \usage{
-save_filter_params(db, filter_params, filter_id = NULL)
+save_filter_params(db, filter_params, filter_id = NULL, as_is = FALSE)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
@@ -17,10 +17,13 @@ offset.small.D1, offset.small.D2, offset.large.D1, offset.large.D2.}
 
 \item{filter_id}{Optional, supply a filter ID. If not provided a UUID string
 will be generated.}
+
+\item{as_is}{Optional, reset filter table and save filter_params without
+modification.}
 }
 \value{
 Database filter ID string.
 }
 \description{
-Save filter parameters to the filter table.
+Save filter parameters to the filter table, appending unless as_is.
 }
