@@ -14,7 +14,7 @@ get_evt_files <- function(evt_dir, db = NULL) {
   #   - 2014-05-15T17-07-08+0000 or 2014-07-04T00-03-02+00-00 (new style)
   # In the new style the final timezone offset may not always be UTC (00-00)
   # so be sure to correctly parse it in all code.
-  regexp <- "/?[0-9]+\\.evt(\\.gz)?$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}[+-][0-9]{2}-?[0-9]{2}(\\.gz)?$"
+  regexp <- "/?[0-9]+\\.evt(?:\\.gz|\\.parquet)?$|/?[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}[+-][0-9]{2}-?[0-9]{2}(?:\\.gz|\\.parquet)?$"
   file_list <- file_list[grep(regexp, file_list)]
 
   clean_file_list <- clean_file_path(file_list)
@@ -33,7 +33,7 @@ get_evt_files <- function(evt_dir, db = NULL) {
 #' Clean a file path.
 #'
 #' Convert an EVT/OPP/VCT file path to a form suitable for storage in the SQLite
-#' db. Any ".gz", ".opp", ".vct" extensions will be removed.
+#' db. Any ".gz", ".parquet", ".opp", ".vct" extensions will be removed.
 #'
 #' @param paths Character vector of file paths to clean.
 #' @return Modified file path as julian_day/EVT_file_name.
@@ -61,6 +61,13 @@ clean_file_path <- function(paths) {
     if (nchar(file.name) >= 3) {
       if (substr(file.name, nchar(file.name) - 2, nchar(file.name)) == ".gz") {
         file.name <- substr(file.name, 1, nchar(file.name) - 3)
+      }
+    }
+
+    # Get rid of any .parquet extension
+    if (nchar(file.name) >= 8) {
+      if (substr(file.name, nchar(file.name) - 7, nchar(file.name)) == ".parquet") {
+        file.name <- substr(file.name, 1, nchar(file.name) - 8)
       }
     }
 

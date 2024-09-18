@@ -891,6 +891,21 @@ save_metadata <- function(db, metadata) {
   sql_dbWriteTable(db, name = "metadata", value = as.data.frame(metadata))
 }
 
+#' Save metadata from an SFL file name.
+#'
+#' @param db SQLite3 database file path.
+#' @param sfl_tsv SFL TSV file.
+#' @export
+save_metadata_from_file <- function(db, sfl_tsv) {
+  sfl_tsv <- tools::file_path_sans_ext(basename(sfl_tsv))
+  parts <- stringr::str_split_1(sfl_tsv, "_")
+  inst <- parts[length(parts)]
+  cruise <- stringr::str_sub(sfl_tsv, 1, stringr::str_length(sfl_tsv) - stringr::str_length(inst) - 1)
+  make_popcycle_db(db)
+  reset_metadata_table(db)
+  sql_dbWriteTable(db, name = "metadata", value = data.frame(cruise = cruise, inst = inst))
+}
+
 #' Save SFL to db
 #'
 #' @param db SQLite3 database file path.
@@ -914,7 +929,8 @@ save_sfl <- function(db, sfl) {
 save_sfl_from_file <- function(db, sfl_tsv) {
   df <- readr::read_tsv(sfl_tsv) %>%
     dplyr::rename_with(~ stringr::str_replace_all(., " ", "_")) %>%
-    dplyr::rename_with(tolower)
+    dplyr::rename_with(tolower) %>%
+    dplyr::rename(ocean_tmp = ocean_temp)
 
   df$date <- to_date_str(df$date)
   make_popcycle_db(db)

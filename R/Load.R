@@ -63,21 +63,31 @@ is_transformed <- function(df) {
 #'   file ending with ".gz" will also be checked.
 #' @param count.only Only return the count of particles from the file header.
 #' @param transform Convert log data to linear.
-#' @param channel Only return data for channels listed here. Can be a single
-#'   channel name or a vector of channel names.
 #' @return Data frame of particle data or number of particles.
 #' @examples
 #' \dontrun{
-#' evt <- readSeaflow("foo/2014_213/2014-07-04T00-00-02+00-00.gz", channel=c("fsc_small", "pe"))
+#' evt <- readSeaflow("foo/2014_213/2014-07-04T00-00-02+00-00.gz")
 #' }
 #' @export
-readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
+readSeaflow <- function(path, count.only=FALSE, transform=TRUE) {
   # reads a binary seaflow event file into memory as a dataframe
   if (!file.exists(path)) {
     path <- paste0(path, ".gz")
     if (!file.exists(path)) {
       stop(paste("The file doesn't exist;", path))
     }
+  }
+
+  # Early return if parquet
+  if (tools::file_ext(path) == "parquet") {
+    df <- arrow::read_parquet(path)
+    if (count.only) {
+      return(nrow(df))  # return number of events
+    }
+    if (transform) {
+      df <- transformData(df)
+    }
+    return(df)
   }
 
   ## initialize dimensional parameters
@@ -171,10 +181,6 @@ readSeaflow <- function(path, count.only=FALSE, transform=TRUE, channel=NULL) {
                  "does not equal the actual number of events")
     warning(msg)
     return(data.frame())
-  }
-
-  if (! is.null(channel)) {
-    integer.dataframe <- integer.dataframe[, channel, drop=FALSE]
   }
 
   ## Transform data to LOG scale

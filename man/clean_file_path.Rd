@@ -14,5 +14,5 @@ Modified file path as julian_day/EVT_file_name.
 }
 \description{
 Convert an EVT/OPP/VCT file path to a form suitable for storage in the SQLite
-db. Any ".gz", ".opp", ".vct" extensions will be removed.
+db. Any ".gz", ".parquet", ".opp", ".vct" extensions will be removed.
 }
