@@ -2,7 +2,7 @@
 % Please edit documentation in R/db.R
 \name{save_sfl_from_file}
 \alias{save_sfl_from_file}
-\title{Save SFL from a TSV file.}
+\title{Save SFL and metadata from a TSV file.}
 \usage{
 save_sfl_from_file(db, sfl_tsv)
 }
@@ -12,5 +12,5 @@ save_sfl_from_file(db, sfl_tsv)
 \item{sfl_tsv}{SFL TSV file.}
 }
 \description{
-Save SFL from a TSV file.
+Save SFL and metadata from a TSV file.
 }

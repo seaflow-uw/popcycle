@@ -28,6 +28,7 @@ test_that("Timestamp creation", {
     to_date_str(dates),
     c("2020-07-23T14:04:05+00:00", "2022-07-23T14:04:05+00:00")
   )
+  expect_error(to_date_str("2020-07-23T14:04:05+00:00"))
 })
 
 test_that("Filename timestamp creation", {

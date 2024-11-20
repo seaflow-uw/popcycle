@@ -22,6 +22,7 @@ from_filename_date_str <- function(timestamps) {
 #' @return Timestamp in the form of 2020-07-25T14:04:05+00:00
 #' @export
 to_date_str <- function(dates) {
+  stopifnot(lubridate::is.POSIXct(dates))
   date_str <- lubridate::format_ISO8601(dates, usetz = TRUE)
   date_str <- stringr::str_c(stringr::str_sub(date_str, 1, -3), ":", stringr::str_sub(date_str, -2, -1))
   return(date_str)

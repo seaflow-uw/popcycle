@@ -634,14 +634,16 @@ save_filter_params <- function(db, filter_params, filter_id = NULL, as_is = FALS
 #' @param filter_plan_tsv Filter plan TSV file.
 #' @export
 save_filter_params_from_file <- function(db, filter_tsv) {
-  filter_df <- readr::read_tsv(filter_tsv) %>%
+  df <- readr::read_tsv(filter_tsv) %>%
     dplyr::rename_with(~ stringr::str_replace_all(., "\\.", "_"))
-  filter_df$instrument <- NULL
-  filter_df$cruise <- NULL
-  filter_df$date <- to_date_str(filter_df$date)
+  df$instrument <- NULL
+  df$cruise <- NULL
+  if (lubridate::is.POSIXct(df$date)) {
+    df$date <- to_date_str(df$date)
+  }
   make_popcycle_db(db)
   reset_filter_table(db)
-  sql_dbWriteTable(db, name = "filter", value = as.data.frame(filter_df))
+  sql_dbWriteTable(db, name = "filter", value = as.data.frame(df))
 }
 
 #' Save gating parameters.
@@ -707,6 +709,9 @@ save_gating_params <- function(db, gates.log, gating_id = NULL) {
 #' @export
 save_gating_params_from_file <- function(db, gating_tsv) {
   df <- readr::read_tsv(gating_tsv)
+  if (lubridate::is.POSIXct(df$date)) {
+    df$date <- to_date_str(df$date)
+  }
   make_popcycle_db(db)
   reset_gating_table(db)
   sql_dbWriteTable(db, name = "gating", value = as.data.frame(df))
@@ -808,7 +813,9 @@ save_filter_plan <- function(db, filter_plan) {
 #' @export
 save_filter_plan_from_file <- function(db, filter_plan_tsv) {
   df <- readr::read_tsv(filter_plan_tsv)
-  df$start_date <- to_date_str(df$start_date)
+  if (lubridate::is.POSIXct(df$start_date)) {
+    df$start_date <- to_date_str(df$start_date)
+  }
   make_popcycle_db(db)
   reset_filter_plan_table(db)
   sql_dbWriteTable(db, name = "filter_plan", value = as.data.frame(df))
@@ -867,7 +874,9 @@ save_gating_plan <- function(db, gating_plan) {
 #' @export
 save_gating_plan_from_file <- function(db, gating_plan_tsv) {
   df <- readr::read_tsv(gating_plan_tsv)
-  df$start_date <- to_date_str(df$start_date)
+  if (lubridate::is.POSIXct(df$start_date)) {
+    df$start_date <- to_date_str(df$start_date)
+  }
   make_popcycle_db(db)
   sql_dbWriteTable(db, name = "gating_plan", value = as.data.frame(df))
 }
@@ -891,21 +900,6 @@ save_metadata <- function(db, metadata) {
   sql_dbWriteTable(db, name = "metadata", value = as.data.frame(metadata))
 }
 
-#' Save metadata from an SFL file name.
-#'
-#' @param db SQLite3 database file path.
-#' @param sfl_tsv SFL TSV file.
-#' @export
-save_metadata_from_file <- function(db, sfl_tsv) {
-  sfl_tsv <- tools::file_path_sans_ext(basename(sfl_tsv))
-  parts <- stringr::str_split_1(sfl_tsv, "_")
-  inst <- parts[length(parts)]
-  cruise <- stringr::str_sub(sfl_tsv, 1, stringr::str_length(sfl_tsv) - stringr::str_length(inst) - 1)
-  make_popcycle_db(db)
-  reset_metadata_table(db)
-  sql_dbWriteTable(db, name = "metadata", value = data.frame(cruise = cruise, inst = inst))
-}
-
 #' Save SFL to db
 #'
 #' @param db SQLite3 database file path.
@@ -921,19 +915,27 @@ save_sfl <- function(db, sfl) {
   sql_dbWriteTable(db, name = "sfl", value = as.data.frame(sfl))
 }
 
-#' Save SFL from a TSV file.
+#' Save SFL and metadata from a TSV file.
 #'
 #' @param db SQLite3 database file path.
 #' @param sfl_tsv SFL TSV file.
 #' @export
 save_sfl_from_file <- function(db, sfl_tsv) {
+  cruise_serial <- tools::file_path_sans_ext(basename(sfl_tsv))
+  parts <- stringr::str_split_1(cruise_serial, "_")
+  inst <- parts[length(parts)]
+  cruise <- stringr::str_sub(cruise_serial, 1, stringr::str_length(cruise_serial) - stringr::str_length(inst) - 1)
+  make_popcycle_db(db)
+  reset_metadata_table(db)
+  sql_dbWriteTable(db, name = "metadata", value = data.frame(cruise = cruise, inst = inst))
   df <- readr::read_tsv(sfl_tsv) %>%
     dplyr::rename_with(~ stringr::str_replace_all(., " ", "_")) %>%
     dplyr::rename_with(tolower) %>%
     dplyr::rename(ocean_tmp = ocean_temp)
 
-  df$date <- to_date_str(df$date)
-  make_popcycle_db(db)
+  if (lubridate::is.POSIXct(df$date)) {
+    df$date <- to_date_str(df$date)
+  }
   reset_sfl_table(db)
   sql_dbWriteTable(db, name = "sfl", value = as.data.frame(df))
 }

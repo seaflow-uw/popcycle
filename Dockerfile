@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libtiff5-dev \
     libxml2-dev \
     sqlite3 \
+    vim \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
