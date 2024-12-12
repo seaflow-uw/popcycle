@@ -24,6 +24,8 @@ FLAG_GATING <- 3L      # gating outliers
 
 # Maximum particles per 3-minute EVT file
 MAX_PARTICLES_PER_FILE_DEFAULT <- 50000 * 180  # max event rate (per sec) 50k
+# Maximum OPP/EVT ratio
+MAX_OPP_EVT_RATIO_DEFAULT <- 0.2
 
 instrument.id <- "740"
 
