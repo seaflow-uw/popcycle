@@ -114,13 +114,14 @@ identify_saturated <- function(evt) {
 #'   to filter using schedule describedin the filter_plan table.
 #' @param max_particles_per_file Maximum number of particles per 3 minute EVT file.
 #'   Set to NULL to disable.
-#' @param max_opp_evt_ratio Maximum OPP/EVT ratio to accept. Set to NULL to disable.
+#' @param max_opp_particles_per_file Maximum OPP particles per 3 minute EVT file.
+#'   Set to NULL to disable.
 #' @param cores Number of logical cores to use.
 #' @return None
 #' @export
 filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
                              max_particles_per_file = MAX_PARTICLES_PER_FILE_DEFAULT,
-                             max_opp_evt_ratio = MAX_OPP_EVT_RATIO_DEFAULT,
+                             max_opp_particles_per_file = MAX_OPP_PARTICLES_PER_FILE_DEFAULT,
                              cores = 1) {
   ptm <- proc.time()
 
@@ -154,7 +155,8 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
       doParallel::registerDoParallel(cl)
       windows <- dplyr::group_split(by_window_opp_path)
       answer <- foreach::foreach(df = windows, .inorder = TRUE, .combine = dplyr::bind_rows) %dopar% {
-        filter_window_evt(df, NULL, filter_params, max_particles_per_file = max_particles_per_file, max_opp_evt_ratio = max_opp_evt_ratio)
+        filter_window_evt(df, NULL, filter_params, max_particles_per_file = max_particles_per_file,
+                          max_opp_particles_per_file = max_opp_particles_per_file)
       }
       parallel::stopCluster(cl)
     } else {
@@ -164,7 +166,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
         filter_window_evt,
         filter_params,
         max_particles_per_file = max_particles_per_file,
-        max_opp_evt_ratio = max_opp_evt_ratio,
+        max_opp_particles_per_file = max_opp_particles_per_file,
         .keep=TRUE
       )
     }
@@ -196,7 +198,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
 # filter_params is a named list that can be used to lookup filter parameters by
 # filter ID string.
 filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL,
-                              max_opp_evt_ratio = NULL) {
+                              max_opp_particles_per_file = NULL) {
   plan <- x
   stopifnot(length(unique(plan$window_opp_path)) == 1)
   window_opp_path <- plan$window_opp_path[1]
@@ -209,7 +211,7 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
     filter_params,
     enforce_all_quantiles = TRUE,
     max_particles_per_file = max_particles_per_file,
-    max_opp_evt_ratio = max_opp_evt_ratio,
+    max_opp_particles_per_file = max_opp_particles_per_file,
     .keep=TRUE
   )
   # Combine all 3 minute OPPs into one new time-windowed OPP
@@ -255,7 +257,7 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
 }
 
 filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
-                            max_particles_per_file = NULL, max_opp_evt_ratio = NULL) {
+                            max_particles_per_file = NULL, max_opp_particles_per_file = NULL) {
   plan <- x
   stopifnot(nrow(plan) == 1)
   stopifnot(nrow(y) == 1)
@@ -357,14 +359,14 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     opp_evt_ratios <- 0.0
   }
 
-  if (!is.null(max_opp_evt_ratio) && any(opp_evt_ratios > max_opp_evt_ratio)) {
+  if (!is.null(max_opp_particles_per_file) && any(opp_counts > max_opp_particles_per_file)) {
     # Protect against cases where a large fraction of EVT particles are OPP.
     # These cases may use more memory than expected and disrupt analysis
     # pipelines. As these results will never get used in downstream analysis it
     # is safe to discard them here.
     # TODO: make this a parameterized option
     # TODO: log this case in a structured way to enable future investigation
-    message("Abnormally high OPP/EVT ratio in ", plan$path[1], " (any(", opp_evt_ratios, ") > ", max_opp_evt_ratio, "), dropping")
+    message("Abnormally high OPP count in ", plan$path[1], " (any(c(", paste(opp_counts, collapse = ", "), ") > ", max_opp_particles_per_file, ")), dropping")
     opp <- head(opp, 0)
     opp_counts <- c(0, 0, 0)
     opp_evt_ratios <- 0.0
