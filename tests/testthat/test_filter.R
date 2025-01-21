@@ -18,9 +18,11 @@ test_that("Filter EVT files, one filter ID", {
     regexp = NA
   )
 
-  opp_table_expected <- get_opp_table(x$db.full.one, particles_in_all_quantiles = FALSE) %>%
+  opp_table_expected <- get_opp_table(x$db.full.one, particles_in_all_quantiles = FALSE,
+                                      file_flag_filter = FALSE) %>%
     arrange(file_id, quantile)
-  opp_table <- get_opp_table(x$db.bare, particles_in_all_quantiles = FALSE) %>%
+  opp_table <- get_opp_table(x$db.bare, particles_in_all_quantiles = FALSE,
+                             file_flag_filter = FALSE) %>%
     arrange(file_id, quantile)
   expect_equal(opp_table, opp_table_expected)
 
@@ -64,9 +66,11 @@ test_that("Filter EVT files, filter plan with two IDs", {
 
   )
 
-  opp_table_expected <- get_opp_table(x$db.full.plan, particles_in_all_quantiles = FALSE) %>%
+  opp_table_expected <- get_opp_table(x$db.full.plan, particles_in_all_quantiles = FALSE,
+                                      file_flag_filter = FALSE) %>%
     arrange(file_id, quantile)
-  opp_table <- get_opp_table(x$db.bare, particles_in_all_quantiles = FALSE) %>%
+  opp_table <- get_opp_table(x$db.bare, particles_in_all_quantiles = FALSE,
+                             file_flag_filter = FALSE) %>%
     arrange(file_id, quantile)
   expect_equal(opp_table, opp_table_expected)
 
@@ -113,13 +117,15 @@ test_that("Filter EVT files, one filter ID, max_partiles_per_file limit of 1", {
     regexp = NA
   )
 
-  # Modify the expected table, all "evt_count", "all_count", "opp_evt_ratio"
+  # Modify the expected table, all "evt_count", "opp_count", "opp_evt_ratio"
   # columns should be 0 since either the file could not be read or it had to
   # many events.
-  opp_table_expected <- get_opp_table(x$db.full.one, particles_in_all_quantiles = FALSE) %>%
+  opp_table_expected <- get_opp_table(x$db.full.one, particles_in_all_quantiles = FALSE,
+                                      file_flag_filter = FALSE) %>%
     arrange(file_id, quantile) %>%
     mutate(opp_count = 0, evt_count = 0, opp_evt_ratio = 0.0)
-  opp_table <- get_opp_table(x$db.bare, particles_in_all_quantiles = FALSE) %>%
+  opp_table <- get_opp_table(x$db.bare, particles_in_all_quantiles = FALSE,
+                             file_flag_filter = FALSE) %>%
     arrange(file_id, quantile)
   expect_equal(opp_table, opp_table_expected)
 

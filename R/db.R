@@ -48,6 +48,16 @@ delete_poly_by_id_pop <- function(db, gating_id, popname) {
   sql_dbExecute(db, sql)
 }
 
+
+#' Delete all rows in opp2 table.
+#'
+#' @param db SQLite3 database file path.
+#' @return Number of rows deleted.
+#' @export
+reset_opp2_table <- function(db) {
+  reset_table(db, "opp2")
+}
+
 #' Delete all rows in opp table.
 #'
 #' @param db SQLite3 database file path.
@@ -165,7 +175,7 @@ get_filter_params_by_id <- function(db, filter_id) {
   # elsewhere in this code base and to match R variable naming style
   # conventions, switch "_" for "." in all column names.
   names(result) <- unlist(lapply(names(result), function(n) {
-    return(gsub("_", ".", n, fixed=T))
+    return(gsub("_", ".", n, fixed = T))
   }))
   return(result)
 }
@@ -191,19 +201,19 @@ get_gating_params_by_id <- function(db, gating_id) {
     r <- gating.df[i, ]
     if (r$method == "manual") {
       poly.log <- get_poly_log_by_gating_id_pop(db, gating_id, r$pop)
-      gates.log[[r$pop]] <- list(method=r$method, poly=poly.log)
+      gates.log[[r$pop]] <- list(method = r$method, poly = poly.log)
     } else if (r$method == "auto") {
       gates.log[[r$pop]] <- list(
-        method=r$method,
-        x=r$channel1,
-        y=r$channel2,
-        position=c(r$position1 == 1, r$position2 == 1),  # coerce to boolean from 1,0 integer stored in db
-        gates=c(r$gate1, r$gate2),
-        scale=r$scale,
-        min.pe=r$minpe
+        method = r$method,
+        x = r$channel1,
+        y = r$channel2,
+        position = c(r$position1 == 1, r$position2 == 1), # coerce to boolean from 1,0 integer stored in db
+        gates = c(r$gate1, r$gate2),
+        scale = r$scale,
+        min.pe = r$minpe
       )
     } else {
-      stop(paste0("unrecognized classification method ", r$method));
+      stop(paste0("unrecognized classification method ", r$method))
     }
   }
 
@@ -225,8 +235,7 @@ get_poly_log_by_gating_id_pop <- function(db, gating_id, popname) {
       gating_id = '", gating_id, "'
       AND
       pop = '", popname, "'
-    ORDER BY point_order"
-  )
+    ORDER BY point_order")
   pop.poly <- sql_dbGetQuery(db, sql)
 
   for (c in EVT.HEADER[5:length(EVT.HEADER)]) {
@@ -281,6 +290,70 @@ get_metadata_table <- function(db) {
   return(meta)
 }
 
+#' Return a tibble for the opp2 table.
+#'
+#' If the opp2 table does not exist in the database this function will return an
+#' empty tibble.
+#'
+#' @param db SQLite3 database file path.
+#' @param sfl_join Join to sfl table by file ID, adding a date column and
+#'   removing opp2 entries with no corresponding SFL entry.
+#' @param all_sfl_columns If joining to sfl, include all sfl columns.
+#' @param outlier_join Left join to outlier table by file ID, adding an outlier
+#'   flag column. This function will not perform any filtering by outlier flag.
+#' @param file_flag_filter Filter by file_flag column. If TRUE, only keep files with
+#'   file_flag == 0.
+#' @return Tibble of opp2 table.
+#' @export
+get_opp2_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
+                           outlier_join = TRUE, file_flag_filter = FALSE) {
+  # Check for opp2 table. If not present, return empty tibble.
+  if (!"opp2" %in% sql_dbListTables(db)) {
+    return(tibble())
+  }
+
+  if (!sfl_join) {
+    opp2 <- sql_dbGetQuery(db, "SELECT * FROM opp2 ORDER BY file ASC")
+  } else {
+    if (all_sfl_columns) {
+      sql <- "
+        SELECT
+          opp2.*, sfl.*
+        FROM opp2
+        INNER JOIN sfl ON sfl.file == opp2.file
+        ORDER BY sfl.date ASC"
+      opp2 <- sql_dbGetQuery(db, sql)
+      opp2 <- opp2[, !duplicated(colnames(opp2))] # remove duplicate file column
+      opp2 <- opp2 %>% dplyr::relocate(date) # move date to first column
+    } else {
+      sql <- "
+        SELECT
+          sfl.date, opp2.*
+        FROM opp2
+        INNER JOIN sfl ON sfl.file == opp2.file
+        ORDER BY sfl.date ASC"
+      opp2 <- sql_dbGetQuery(db, sql)
+    }
+    opp2 <- opp2 %>% dplyr::mutate(date = lubridate::ymd_hms(date))
+  }
+
+  # Standardize on file_id to match parquet files
+  opp2 <- opp2 %>% dplyr::rename(file_id = file)
+
+  # Convert to tibble
+  opp2 <- tibble::as_tibble(opp2)
+
+  if (outlier_join) {
+    outlier <- get_outlier_table(db)
+    opp2 <- dplyr::left_join(opp2, outlier, by = "file_id")
+  }
+  if (file_flag_filter) {
+    opp2 <- opp2 %>% dplyr::filter(file_flag == 0)
+  }
+
+  return(opp2)
+}
+
 #' Return a tibble for the sfl table.
 #'
 #' @param db SQLite3 database file path.
@@ -314,7 +387,8 @@ get_sfl_table <- function(db, outlier_join = TRUE) {
 #' @return Tibble of opp table.
 #' @export
 get_opp_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
-                          outlier_join = TRUE, particles_in_all_quantiles = TRUE) {
+                          outlier_join = TRUE, particles_in_all_quantiles = TRUE,
+                          file_flag_filter = TRUE) {
   if (!sfl_join) {
     opp <- sql_dbGetQuery(db, "SELECT * FROM OPP ORDER BY file ASC")
   } else {
@@ -326,8 +400,8 @@ get_opp_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
         INNER JOIN sfl ON sfl.file == opp.file
         ORDER BY sfl.date ASC"
       opp <- sql_dbGetQuery(db, sql)
-      opp <- opp[, !duplicated(colnames(opp))]  # remove duplicate file column
-      opp <- opp %>% dplyr::relocate(date)  # move date to first column
+      opp <- opp[, !duplicated(colnames(opp))] # remove duplicate file column
+      opp <- opp %>% dplyr::relocate(date) # move date to first column
     } else {
       sql <- "
         SELECT
@@ -357,7 +431,15 @@ get_opp_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
       dplyr::filter(all(opp_count > 0)) %>%
       dplyr::ungroup()
   }
-
+  if (file_flag_filter) {
+    opp2 <- get_opp2_table(db, sfl_join = FALSE, outlier_join = FALSE, file_flag_filter = FALSE)
+    if (nrow(opp2)) {
+      opp2 <- opp2 %>% select(file_id, file_flag)
+      opp <- dplyr::left_join(opp, opp2, by = "file_id") %>%
+        dplyr::filter(file_flag == 0) %>%
+        dplyr::select(-file_flag)
+    }
+  }
   return(opp)
 }
 
@@ -384,8 +466,8 @@ get_vct_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
         INNER JOIN sfl ON sfl.file == vct.file
         ORDER BY sfl.date ASC"
       vct <- sql_dbGetQuery(db, sql)
-      vct <- vct[, !duplicated(colnames(vct))]  # remove duplicate file column
-      vct <- vct %>% dplyr::relocate(date)  # move date to first column
+      vct <- vct[, !duplicated(colnames(vct))] # remove duplicate file column
+      vct <- vct %>% dplyr::relocate(date) # move date to first column
     } else {
       sql <- "
         SELECT
@@ -503,6 +585,40 @@ get_raw_stat_table <- function(db) {
   return(stat)
 }
 
+#' Save opp2
+#'
+#' @param db SQLite3 database file path.
+#' @param oppextra Data frame or tibble of opp2 to save. Should have columns
+#'  matching the opp2 table, except file should be named file_id. It will
+#'  be renamed to file before committing to the database.
+#' @return None
+#' @export
+save_opp2_stats <- function(db, opp2_stats) {
+  old_opp2_stats <- get_opp2_table(db, sfl_join = FALSE, outlier_join = FALSE,
+                                   file_flag_filter = FALSE)
+  if (nrow(old_opp2_stats) > 0) {
+    # Merge wtih existing table
+    # Only keep rows in old that don't have a matching file in new
+    only_old <- dplyr::anti_join(old_opp2_stats, opp2_stats, by = c("file_id"))
+    # Merge old and new
+    opp2_stats <- dplyr::bind_rows(only_old, opp2_stats)
+  } else if (!("opp2" %in% sql_dbListTables(db))) {
+    # opp2 table doesn't exist, create it first
+    make_popcycle_db(db)
+  }
+  # Rename file_id to file to match schema, sort by file.
+  # Sorting by file isn't ideal, it would be better to sort by date, but we're
+  # going to keep it simple here. The table can always be sorted by date when
+  # joining to the sfl table in get_opp2_table().
+  opp2_stats <- opp2_stats %>%
+    dplyr::arrange(file_id) %>% # sort by file_id
+    dplyr::rename(file = file_id) # rename file_id to file to match schema
+  # Erase existing table
+  reset_opp2_table(db)
+  # Save table with new results
+  sql_dbWriteTable(db, name = "opp2", value = as.data.frame(opp2_stats))
+}
+
 #' Save VCT aggregate population statistics for one file to vct table.
 #'
 #' @param db SQLite3 database file path.
@@ -514,9 +630,9 @@ save_vct_stats <- function(db, vct_stats) {
   # stats. This can happen when using a new gating ID for the same file.
   # Get current VCT table
   old_vct_stats <- get_vct_table(db, outlier_join = FALSE)
-  old_vct_stats$date <- NULL  # date is not in VCT table, this is added from SFL
+  old_vct_stats$date <- NULL # date is not in VCT table, this is added from SFL
   # Only keep rows in old that don't have a matching file in new
-  only_old <- dplyr::anti_join(old_vct_stats, vct_stats, by=c("file_id"))
+  only_old <- dplyr::anti_join(old_vct_stats, vct_stats, by = c("file_id"))
   # Merge old and new
   merged_vct_stats <- dplyr::bind_rows(only_old, vct_stats)
   # Rename file_id to file to match schema
@@ -525,7 +641,7 @@ save_vct_stats <- function(db, vct_stats) {
   # Erase existing table
   reset_vct_table(db)
   # Save table with new results
-  sql_dbWriteTable(db, name="vct", value=as.data.frame(merged_vct_stats))
+  sql_dbWriteTable(db, name = "vct", value = as.data.frame(merged_vct_stats))
 }
 
 #' Save OPP aggregate statistics for one file/quantile combo to opp table.
@@ -536,10 +652,12 @@ save_vct_stats <- function(db, vct_stats) {
 #' @return None
 #' @export
 save_opp_stats <- function(db, opp_stats) {
-  old_opp_stats <- get_opp_table(db, sfl_join = FALSE, outlier_join = FALSE, particles_in_all_quantiles = FALSE)
-  old_opp_stats$date <- NULL  # date is not in OPP table, this is added from SFL
+  old_opp_stats <- get_opp_table(
+    db, sfl_join = FALSE, outlier_join = FALSE,
+    particles_in_all_quantiles = FALSE, file_flag_filter = FALSE
+  )
   # Only keep rows in old that don't have a matching file in new
-  only_old <- dplyr::anti_join(old_opp_stats, opp_stats, by=c("file_id"))
+  only_old <- dplyr::anti_join(old_opp_stats, opp_stats, by = c("file_id"))
   # Merge old and new
   merged_opp_stats <- dplyr::bind_rows(only_old, opp_stats)
   # Rename file_id to file to match schema
@@ -548,7 +666,7 @@ save_opp_stats <- function(db, opp_stats) {
   # Erase existing table
   reset_opp_table(db)
   # Save table with new results
-  sql_dbWriteTable(db, name="opp", value = as.data.frame(merged_opp_stats))
+  sql_dbWriteTable(db, name = "opp", value = as.data.frame(merged_opp_stats))
 }
 
 #' Save Outliers in the database
@@ -577,7 +695,7 @@ save_outliers <- function(db, outliers, overwrite = TRUE) {
   # Erase existing table
   reset_outlier_table(db)
   # Save table with new results
-  sql_dbWriteTable(db, name="outlier", value = as.data.frame(merged_outliers))
+  sql_dbWriteTable(db, name = "outlier", value = as.data.frame(merged_outliers))
 }
 
 #' Save filter parameters to the filter table, appending unless as_is.
@@ -600,7 +718,7 @@ save_filter_params <- function(db, filter_params, filter_id = NULL, as_is = FALS
     df <- filter_params
   } else {
     if (is.null(filter_id)) {
-      filter_id <- uuid::UUIDgenerate()  # create ID for new entries
+      filter_id <- uuid::UUIDgenerate() # create ID for new entries
     }
     date.stamp <- to_date_str(lubridate::now("UTC"))
     df <- data.frame()
@@ -609,22 +727,24 @@ save_filter_params <- function(db, filter_params, filter_id = NULL, as_is = FALS
       if (nrow(p) > 1) {
         stop("Duplicate quantile rows found in parameters passed to save_filter_params()")
       }
-      df <- rbind(df, cbind(id=filter_id, date=date.stamp, quantile=quantile,
-                            beads_fsc_small=p$beads.fsc.small,
-                            beads_D1=p$beads.D1,
-                            beads_D2=p$beads.D2,
-                            width=p$width,
-                            notch_small_D1=p$notch.small.D1,
-                            notch_small_D2=p$notch.small.D2,
-                            notch_large_D1=p$notch.large.D1,
-                            notch_large_D2=p$notch.large.D2,
-                            offset_small_D1=p$offset.small.D1,
-                            offset_small_D2=p$offset.small.D2,
-                            offset_large_D1=p$offset.large.D1,
-                            offset_large_D2=p$offset.large.D2))
+      df <- rbind(df, cbind(
+        id = filter_id, date = date.stamp, quantile = quantile,
+        beads_fsc_small = p$beads.fsc.small,
+        beads_D1 = p$beads.D1,
+        beads_D2 = p$beads.D2,
+        width = p$width,
+        notch_small_D1 = p$notch.small.D1,
+        notch_small_D2 = p$notch.small.D2,
+        notch_large_D1 = p$notch.large.D1,
+        notch_large_D2 = p$notch.large.D2,
+        offset_small_D1 = p$offset.small.D1,
+        offset_small_D2 = p$offset.small.D2,
+        offset_large_D1 = p$offset.large.D1,
+        offset_large_D2 = p$offset.large.D2
+      ))
     }
   }
-  sql_dbWriteTable(db, name="filter", value=df)
+  sql_dbWriteTable(db, name = "filter", value = df)
   return(filter_id)
 }
 
@@ -659,41 +779,41 @@ save_filter_params_from_file <- function(db, filter_tsv) {
 #' @export
 save_gating_params <- function(db, gates.log, gating_id = NULL) {
   if (is.null(gating_id)) {
-    gating_id <- uuid::UUIDgenerate()  # create primary ID for new entry
+    gating_id <- uuid::UUIDgenerate() # create primary ID for new entry
   }
   date.stamp <- to_date_str(lubridate::now("UTC"))
-  i <- 1  # track order population classification
+  i <- 1 # track order population classification
   for (popname in names(gates.log)) {
     params <- gates.log[[popname]]
     if (params$method == "manual") {
       df <- data.frame(
-        id=gating_id, date=date.stamp, pop_order=i, pop=popname,
-        method=params$method,
-        channel1=colnames(params$poly)[1],
-        channel2=colnames(params$poly)[2],
-        gate1=NA,
-        gate2=NA,
-        position1=NA,
-        position2=NA,
-        scale=NA,
-        minpe=NA
+        id = gating_id, date = date.stamp, pop_order = i, pop = popname,
+        method = params$method,
+        channel1 = colnames(params$poly)[1],
+        channel2 = colnames(params$poly)[2],
+        gate1 = NA,
+        gate2 = NA,
+        position1 = NA,
+        position2 = NA,
+        scale = NA,
+        minpe = NA
       )
-      sql_dbWriteTable(db, name="gating", value=df)
+      sql_dbWriteTable(db, name = "gating", value = df)
       save_poly(db, params$poly, popname, gating_id)
     } else if (params$method == "auto") {
       df <- data.frame(
-        id=gating_id, date=date.stamp, pop_order=i, pop=popname,
-        method=params$method,
-        channel1=params$x,
-        channel2=params$y,
-        gate1=params$gates[1],
-        gate2=params$gates[2],
-        position1=params$position[1],
-        position2=params$position[2],
-        scale=params$scale,
-        minpe=params$min.pe
+        id = gating_id, date = date.stamp, pop_order = i, pop = popname,
+        method = params$method,
+        channel1 = params$x,
+        channel2 = params$y,
+        gate1 = params$gates[1],
+        gate2 = params$gates[2],
+        position1 = params$position[1],
+        position2 = params$position[2],
+        scale = params$scale,
+        minpe = params$min.pe
       )
-      sql_dbWriteTable(db, name="gating", value=df)
+      sql_dbWriteTable(db, name = "gating", value = df)
     } else {
       stop(paste0("unrecognized method ", params$method))
     }
@@ -727,11 +847,13 @@ save_gating_params_from_file <- function(db, gating_tsv) {
 #' @return None
 save_poly <- function(db, poly.log, popname, gating_id) {
   df <- data.frame()
-  channels <- c("fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
-                "chl_big")
+  channels <- c(
+    "fsc_small", "fsc_perp", "fsc_big", "pe", "chl_small",
+    "chl_big"
+  )
   # Fill in population name. This is the first field in the table and sets up
   # the data frame to have the correct number of rows.
-  df <- data.frame(pop=rep(popname, nrow(poly.log)))
+  df <- data.frame(pop = rep(popname, nrow(poly.log)))
   for (col in channels) {
     # placeholder NAs for each channel
     # doing this first ensures the channel order matches the poly table
@@ -739,13 +861,13 @@ save_poly <- function(db, poly.log, popname, gating_id) {
     df[, col] <- NA
   }
   for (col in colnames(poly.log)) {
-    df[, col] <- poly.log[, col]  # fill in defined channel coords
+    df[, col] <- poly.log[, col] # fill in defined channel coords
   }
-  df$point_order <- seq(nrow(df))  # order of polygon points for this pop
-  df$gating_id <- gating_id  # last field in table
+  df$point_order <- seq(nrow(df)) # order of polygon points for this pop
+  df$gating_id <- gating_id # last field in table
 
   delete_poly_by_id_pop(db, gating_id, popname)
-  sql_dbWriteTable(db, name="poly", value=df)
+  sql_dbWriteTable(db, name = "poly", value = df)
 }
 
 #' Save gating polygon coordinates from a TSV file.
@@ -860,7 +982,7 @@ save_gating_plan <- function(db, gating_plan) {
   gating_table <- get_gating_table(db)
   bad_gating_ids <- setdiff(gating_plan$gating_id, gating_table$id)
   if (length(bad_gating_ids) > 0) {
-    stop("some gating IDs not found in gating table ", paste(bad_gating_ids, collapse=", "))
+    stop("some gating IDs not found in gating table ", paste(bad_gating_ids, collapse = ", "))
   }
 
   reset_gating_plan_table(db)
@@ -878,6 +1000,7 @@ save_gating_plan_from_file <- function(db, gating_plan_tsv) {
     df$start_date <- to_date_str(df$start_date)
   }
   make_popcycle_db(db)
+  reset_gating_table(db)
   sql_dbWriteTable(db, name = "gating_plan", value = as.data.frame(df))
 }
 
@@ -948,7 +1071,7 @@ save_sfl_from_file <- function(db, sfl_tsv) {
 #' @return None
 #' @export
 make_popcycle_db <- function(db) {
-  sql.file <- system.file(file.path("sql", "popcycle.sql"), package="popcycle")
+  sql.file <- system.file(file.path("sql", "popcycle.sql"), package = "popcycle")
   cmd <- sprintf("sqlite3 %s < %s", db, sql.file)
   status <- system(cmd)
   if (status > 0) {
@@ -964,15 +1087,18 @@ make_popcycle_db <- function(db) {
 #' @param sql SQL query to run.
 #' @return Data frame returned by dbGetQuery.
 sql_dbGetQuery <- function(db, sql) {
-  con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
-  tryCatch({
-    resp <- DBI::dbGetQuery(con, sql)
-    DBI::dbDisconnect(con)
-    return(resp)
-  }, error=function(e) {
-    DBI::dbDisconnect(con)
-    stop(e)
-  })
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname = db)
+  tryCatch(
+    {
+      resp <- DBI::dbGetQuery(con, sql)
+      DBI::dbDisconnect(con)
+      return(resp)
+    },
+    error = function(e) {
+      DBI::dbDisconnect(con)
+      stop(e)
+    }
+  )
 }
 
 #' Wrapper to run dbExecute and clean up connection on error.
@@ -983,15 +1109,18 @@ sql_dbGetQuery <- function(db, sql) {
 #' @param sql SQL statement to run.
 #' @return Number of rows affected
 sql_dbExecute <- function(db, sql) {
-  con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
-  tryCatch({
-    resp <- DBI::dbExecute(con, sql)
-    DBI::dbDisconnect(con)
-    return(resp)
-  }, error=function(e) {
-    DBI::dbDisconnect(con)
-    stop(e)
-  })
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname = db)
+  tryCatch(
+    {
+      resp <- DBI::dbExecute(con, sql)
+      DBI::dbDisconnect(con)
+      return(resp)
+    },
+    error = function(e) {
+      DBI::dbDisconnect(con)
+      stop(e)
+    }
+  )
 }
 
 #' Wrapper to run dbWriteTable and clean up connection on error.
@@ -1000,14 +1129,36 @@ sql_dbExecute <- function(db, sql) {
 #' @param name Table name.
 #' @param value Data frame to write.
 sql_dbWriteTable <- function(db, name, value) {
-  con <- DBI::dbConnect(RSQLite::SQLite(), dbname=db)
-  tryCatch({
-    DBI::dbWriteTable(conn=con, name=name, value=value, row.names=F, append=T)
-    DBI::dbDisconnect(con)
-  }, error=function(e) {
-    DBI::dbDisconnect(con)
-    stop(e)
-  })
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname = db)
+  tryCatch(
+    {
+      DBI::dbWriteTable(conn = con, name = name, value = value, row.names = F, append = T)
+      DBI::dbDisconnect(con)
+    },
+    error = function(e) {
+      DBI::dbDisconnect(con)
+      stop(e)
+    }
+  )
+}
+
+#' Wrapper to get list of tables in a database and clean up connection on error.
+#'
+#' @param db SQLite3 database file path.
+#' @return Character vector of table names.
+sql_dbListTables <- function(db) {
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname = db)
+  tryCatch(
+    {
+      resp <- DBI::dbListTables(con)
+      DBI::dbDisconnect(con)
+      return(resp)
+    },
+    error = function(e) {
+      DBI::dbDisconnect(con)
+      stop(e)
+    }
+  )
 }
 
 #' Find common database files between two directories.
@@ -1020,8 +1171,8 @@ sql_dbWriteTable <- function(db, name, value) {
 #' @return Data Frame with columns for basename, old_path, and new_path
 find_common_dbs <- function(dir_a, dir_b) {
   # First find DB files with the same basename
-  dbs_a <- list.files(dir_a, recursive=TRUE, pattern=".*\\.db")
-  dbs_b <- list.files(dir_b, recursive=TRUE, pattern=".*\\.db")
+  dbs_a <- list.files(dir_a, recursive = TRUE, pattern = ".*\\.db")
+  dbs_b <- list.files(dir_b, recursive = TRUE, pattern = ".*\\.db")
   dbs_a_base <- sapply(dbs_a, basename)
   dbs_b_base <- sapply(dbs_b, basename)
 
@@ -1043,12 +1194,12 @@ find_common_dbs <- function(dir_a, dir_b) {
   # Return db file matches as a dataframe with columns for basename,
   # old file paths, new file paths
   df <- data.frame(
-    basename=common,
-    old_path=sapply(dbs_a[common_a_idx], function(x) file.path(dir_a, x)),
-    new_path=sapply(dbs_b[common_b_idx], function(x) file.path(dir_b, x)),
-    stringsAsFactors=FALSE
+    basename = common,
+    old_path = sapply(dbs_a[common_a_idx], function(x) file.path(dir_a, x)),
+    new_path = sapply(dbs_b[common_b_idx], function(x) file.path(dir_b, x)),
+    stringsAsFactors = FALSE
   )
-  row.names(df) <- NULL  # otherwise row names will equal names(common)
+  row.names(df) <- NULL # otherwise row names will equal names(common)
   return(df)
 }
 
@@ -1064,8 +1215,8 @@ find_common_dbs <- function(dir_a, dir_b) {
 copy_tables <- function(db_from, db_to, tables) {
   # If dbs are the same file do nothing. This prevents erroneously erasing
   # tables then trying to copy from the just deleted tables.
-  db_from <- normalizePath(db_from, mustWork=T)
-  db_to <- normalizePath(db_to, mustWork=T)
+  db_from <- normalizePath(db_from, mustWork = T)
+  db_to <- normalizePath(db_to, mustWork = T)
   if (db_from == db_to) {
     print("Not copying db tables, db files are the same")
     return()
@@ -1075,7 +1226,7 @@ copy_tables <- function(db_from, db_to, tables) {
     # Make sure columns match for table to copy
     col_from <- colnames(sql_dbGetQuery(db_from, paste0("SELECT * FROM ", table_name)))
     col_to <- colnames(sql_dbGetQuery(db_to, paste0("SELECT * FROM ", table_name)))
-    if (! identical(col_from, col_to)) {
+    if (!identical(col_from, col_to)) {
       stop(paste0("db files have differing columns for ", table_name, " table"))
     }
 
@@ -1086,7 +1237,7 @@ copy_tables <- function(db_from, db_to, tables) {
     table_from <- sql_dbGetQuery(db_from, paste0("select * from ", table_name))
 
     # Save to db_to table
-    sql_dbWriteTable(db_to, name=table_name, value=table_from)
+    sql_dbWriteTable(db_to, name = table_name, value = table_from)
   }
 }
 
@@ -1100,8 +1251,8 @@ copy_tables <- function(db_from, db_to, tables) {
 #' @param db_to Popcycle database to copy flags > 0 to.
 #' @return None
 copy_outlier_table <- function(db_from, db_to) {
-  db_from <- normalizePath(db_from, mustWork=T)
-  db_to <- normalizePath(db_to, mustWork=T)
+  db_from <- normalizePath(db_from, mustWork = T)
+  db_to <- normalizePath(db_to, mustWork = T)
   # If dbs are the same file do nothing.
   if (db_from == db_to) {
     print("Not copying outlier tables, db files are the same")
@@ -1110,7 +1261,7 @@ copy_outlier_table <- function(db_from, db_to) {
 
   src <- get_outlier_table(db_from) %>% dplyr::rename(file = file_id)
   dest <- get_outlier_table(db_to) %>% dplyr::rename(file = file_id)
-  joined <- merge(x=src, y=dest, by="file", all.y=TRUE)
+  joined <- merge(x = src, y = dest, by = "file", all.y = TRUE)
   # So we don't screw anything up and because merge may reorder rows by "by"
   # column, enforce a common sort order by "file" on both dataframes we'll use
   # going forward.
@@ -1126,7 +1277,7 @@ copy_outlier_table <- function(db_from, db_to) {
   }
   dest$flag <- as.integer(joined$flag.y)
   reset_table(db_to, "outlier")
-  sql_dbWriteTable(db_to, name="outlier", value=dest)
+  sql_dbWriteTable(db_to, name = "outlier", value = dest)
 }
 
 #' Get aggregate statistics data frame along with estimates of cell abundance.
@@ -1135,7 +1286,7 @@ copy_outlier_table <- function(db_from, db_to) {
 #' @param inst Instrument serial. If not provided will attempt to read from db.
 #' @return Data frame of aggregate statistics.
 #' @export
-get_stat_table <- function(db, inst=NULL) {
+get_stat_table <- function(db, inst = NULL) {
   if (is.null(inst)) {
     inst <- get_inst(db)
   }
@@ -1143,35 +1294,35 @@ get_stat_table <- function(db, inst=NULL) {
   stat <- get_raw_stat_table(db)
   outliers <- get_outlier_table(db)
 
-  #merge stat table with outlier table
-  stat <- merge(stat, outliers, all.x=T)
+  # merge stat table with outlier table
+  stat <- merge(stat, outliers, all.x = T)
 
-  fr <- flowrate(stat$stream_pressure, inst=inst)
+  fr <- flowrate(stat$stream_pressure, inst = inst)
 
-  stat[,"flow_rate"] <- fr[,1]
-  stat[,"flow_rate_se"] <- fr[,2]
+  stat[, "flow_rate"] <- fr[, 1]
+  stat[, "flow_rate_se"] <- fr[, 2]
 
   # abundance is calculated based on a median value of opp_evt ratio for the
   # entire cruise (volume of virtual core for an entire cruise), except for
   # prochloro which uses the per-file ratio
   qratios <- stat %>%
     dplyr::group_by(time, quantile) %>%
-    dplyr::filter(dplyr::row_number() == 1) %>%  # this just gets the single value per file,quantile which is duplicated for each pop
+    dplyr::filter(dplyr::row_number() == 1) %>% # this just gets the single value per file,quantile which is duplicated for each pop
     dplyr::ungroup() %>%
-    dplyr::group_by(quantile) %>%  # now we have one ratio per file,quantile. group by quantile to create 3 groups with one ratio per file
-    dplyr::summarize(opp_evt_ratio = median(opp_evt_ratio, na.rm=T))  # median of each quantile without double-counting for population duplicates
+    dplyr::group_by(quantile) %>% # now we have one ratio per file,quantile. group by quantile to create 3 groups with one ratio per file
+    dplyr::summarize(opp_evt_ratio = median(opp_evt_ratio, na.rm = T)) # median of each quantile without double-counting for population duplicates
 
   for (q in qratios$quantile) {
     ratio <- qratios[qratios$quantile == q, "opp_evt_ratio"][[1]]
     qindex <- stat$quantile == q
-    stat[qindex, c("abundance")]  <- stat[qindex, "n_count"] / (1000* ratio * stat[qindex, "flow_rate"] * stat[qindex, "file_duration"]/60)   # cells µL-1
+    stat[qindex, c("abundance")] <- stat[qindex, "n_count"] / (1000 * ratio * stat[qindex, "flow_rate"] * stat[qindex, "file_duration"] / 60) # cells µL-1
   }
   # Now prochloro
   proindex <- stat$pop == "prochloro"
-  stat[proindex, c("abundance")] <- stat[proindex, "n_count"] / (1000 * stat[proindex, "opp_evt_ratio"] * stat[proindex, "flow_rate"] * stat[proindex, "file_duration"] / 60)  # cells µL-1
+  stat[proindex, c("abundance")] <- stat[proindex, "n_count"] / (1000 * stat[proindex, "opp_evt_ratio"] * stat[proindex, "flow_rate"] * stat[proindex, "file_duration"] / 60) # cells µL-1
 
   # Add abundance SE
-  stat$abundance_se <- stat$abundance * stat$flow_rate_se / stat$flow_rate  # cells µL-1
+  stat$abundance_se <- stat$abundance * stat$flow_rate_se / stat$flow_rate # cells µL-1
 
   return(stat)
 }

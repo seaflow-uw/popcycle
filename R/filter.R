@@ -120,8 +120,8 @@ identify_saturated <- function(evt) {
 #' @return None
 #' @export
 filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
-                             max_particles_per_file = MAX_PARTICLES_PER_FILE_DEFAULT,
-                             max_opp_particles_per_file = MAX_OPP_PARTICLES_PER_FILE_DEFAULT,
+                             max_particles_per_file = NULL,
+                             max_opp_particles_per_file = NULL,
                              cores = 1) {
   ptm <- proc.time()
 
@@ -154,7 +154,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
       cl <- parallel::makeCluster(cores, outfile="")
       doParallel::registerDoParallel(cl)
       windows <- dplyr::group_split(by_window_opp_path)
-      answer <- foreach::foreach(df = windows, .inorder = TRUE, .combine = dplyr::bind_rows) %dopar% {
+      answer <- foreach::foreach(df = windows, .inorder = TRUE) %dopar% {
         filter_window_evt(df, NULL, filter_params, max_particles_per_file = max_particles_per_file,
                           max_opp_particles_per_file = max_opp_particles_per_file)
       }
@@ -170,16 +170,20 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
         .keep=TRUE
       )
     }
-    # Save stats to DB
-    opp_stats_all <- dplyr::bind_rows(answer) %>%
-      dplyr::select(-c(date, noise, saturated))
+    # Save opp stats to DB
+    opp_stats_all <- dplyr::bind_rows(lapply(answer, function(item) item$opp_stats)) %>%
+      dplyr::select(-c(date))
     save_opp_stats(db, opp_stats_all)
+    # Save outlier status to DB
     save_outliers(db,
                   tibble::tibble(
                     file_id = unique(opp_stats_all$file_id),
                     flag = FLAG_OK
                   ),
                   overwrite = FALSE)
+    # Save opp2 stats to DB
+    opp2_stats_all <- dplyr::bind_rows(lapply(answer, function(item) item$opp2_stats))
+    save_opp2_stats(db, opp2_stats_all)
   }
 
   deltat <- proc.time() - ptm
@@ -215,11 +219,13 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
     .keep=TRUE
   )
   # Combine all 3 minute OPPs into one new time-windowed OPP
-  window_opp_df <- dplyr::bind_rows(lapply(filtered, function(item) {item$opp}))
+  window_opp_df <- dplyr::bind_rows(lapply(filtered, function(item) item$opp))
   # Transform (unlog)
   window_opp_df <- transformData(window_opp_df)
-  # Prepare OPP stats dataframe
-  opp_stats_df <- dplyr::bind_rows(lapply(filtered, function(item) {item$stats}))
+  # Prepare opp stats dataframe
+  opp_stats_df <- dplyr::bind_rows(lapply(filtered, function(item) item$opp_stats))
+  # Prepare opp2 stats dataframe
+  opp2_stats_df <- dplyr::bind_rows(lapply(filtered, function(item) item$opp2_stats))
 
   dir.create(dirname(window_opp_path), showWarnings=FALSE, recursive=TRUE)
   if (file.exists(window_opp_path)) {
@@ -237,10 +243,11 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
     rm(old_opp_df)
     gc()
   }
-  # Sort by ascending date
-  window_opp_df <- window_opp_df %>% dplyr::arrange(.data[["date"]])
+
   # Write data to new OPP parquet if not empty
   if (nrow(window_opp_df) > 0) {
+    # Sort by ascending date
+    window_opp_df <- window_opp_df %>% dplyr::arrange(.data[["date"]])
     # Use a temp file to avoid partial writes
     tmpname <- mktempname(dirname(window_opp_path), basename(window_opp_path))
     arrow::write_parquet(window_opp_df, tmpname)
@@ -253,7 +260,10 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
     paste0(lubridate::now("GMT"), " :: ", Sys.getpid(), " :: finished ", basename(window_opp_path))
   )
   message(logtext)
-  return(opp_stats_df)
+  return(list(
+    opp_stats = opp_stats_df,
+    opp2_stats = opp2_stats_df
+  ))
 }
 
 filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
@@ -263,43 +273,52 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
   stopifnot(nrow(y) == 1)
   filter_id_ <- as.character(plan$filter_id[1])
   fp <- filter_params[[filter_id_]]
-  max_particles_per_file_reject <- FALSE
+  opp2_flag <- FLAG_OPP2_OK
+  opp2_msg <- ""
+  max_check_row_count <- 0
 
   # Check if EVT file event count is above max_particles_per_file
-  row_count <- 0
   if (is.numeric(max_particles_per_file)) {
-    row_count <- tryCatch({
-      readSeaflow(plan$path[1], count.only=TRUE)
+    result <- tryCatch({
+      list(count = readSeaflow(plan$path[1], count.only=TRUE), msg = "", flag = FLAG_OPP2_OK)
     }, warning = function(err) {
       message(err$message)
-      return(NULL)
+      list(count = 0, msg = err$message, flag = FLAG_OPP2_EMPTY)
     }, error = function(err) {
       message(err$message)
-      return(NULL)
+      list(count = 0, msg = err$message, flag = FLAG_OPP2_EMPTY)
     })
-    if (!is.null(row_count)) {
-      if (row_count > max_particles_per_file) {
-        message(row_count, " records in ", plan$path[1], " > ", max_particles_per_file, ", will not filter")
-        max_particles_per_file_reject <- TRUE
-      }
+    max_check_row_count <- result$count
+    opp2_msg <- result$msg
+    opp2_flag <- result$flag
+    if (max_check_row_count > max_particles_per_file) {
+      opp2_msg <- paste0("File has too many events (", max_check_row_count, " > ", max_particles_per_file, "): ", plan$path[1])
+      message(opp2_msg)
+      opp2_flag <- FLAG_OPP2_EVT_HIGH
     }
   }
   # Read full EVT file
-  if (!max_particles_per_file_reject && !is.null(row_count)) {
-    evt <- tryCatch({
-      readSeaflow(plan$path[1], transform=F)
+  if (opp2_flag == FLAG_OPP2_OK) {
+    result <- tryCatch({
+      list(evt = readSeaflow(plan$path[1], transform = FALSE), msg = "", flag = FLAG_OPP2_OK)
     }, warning = function(err) {
       message(err$message)
-      return(data.frame())
+      list(evt = data.frame(), msg = err$message, flag = FLAG_OPP2_EMPTY)
     }, error = function(err) {
       message(err$message)
-      return(data.frame())
+      list(evt = data.frame(), msg = err$message, flag = FLAG_OPP2_EMPTY)
     })
+    evt <- result$evt
+    opp2_msg <- result$msg
+    opp2_flag <- result$flag
   } else {
     evt <- data.frame()
+    # Flag and msg set above
   }
+  row_count <- nrow(evt)
 
   if (nrow(evt) > 0) {
+    # Read the file OK, can continue with filtering
     # Keep a standard set of columns
     evt <- evt[, c("D1", "D2", "fsc_small", "pe", "chl_small")]
     noise <- identify_noise(evt)
@@ -307,17 +326,20 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     noise_count <- sum(noise)
     saturated_count <- sum(saturated)
     evt_count <- sum(!noise)
-    all_count <- nrow(evt)
+    all_count <- row_count
   } else {
+    # Something is wrong with file. opp2_flag should be > 0. Could be an error
+    # on read or could have failed the max_particles_per_file check.
+    stopifnot(opp2_flag > 0)  # just to be sure
     noise_count <- 0
     saturated_count <- 0
     evt_count <- 0
-    if (max_particles_per_file_reject) {
-      # Won't filter, too many particles
-      all_count <- row_count
-    } else {
-      # Could not read file
-      all_count <- 0
+    all_count <- 0
+    if (opp2_flag == FLAG_OPP2_EVT_HIGH) {
+      # If we failed the max_particles_per_file check, we still want to record
+      # the number of events in the file even though no further processing was
+      # performed.
+      all_count <- max_check_row_count
     }
   }
 
@@ -351,12 +373,8 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     )
     opp_evt_ratios <- opp_counts / evt_count
   } else {
-    # Remove phantom metadata column row we added above. Now this empty OPP
-    # data frame should have columns needed for downstream operations (date,
-    # file_id, filter_id)
-    opp <- head(opp, 0)
     opp_counts <- c(0, 0, 0)
-    opp_evt_ratios <- 0.0
+    opp_evt_ratios <- c(0.0, 0.0, 0.0)
   }
 
   if (!is.null(max_opp_particles_per_file) && any(opp_counts > max_opp_particles_per_file)) {
@@ -364,16 +382,18 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     # These cases may use more memory than expected and disrupt analysis
     # pipelines. As these results will never get used in downstream analysis it
     # is safe to discard them here.
-    # TODO: make this a parameterized option
-    # TODO: log this case in a structured way to enable future investigation
-    message("Abnormally high OPP count in ", plan$path[1], " (any(c(", paste(opp_counts, collapse = ", "), ") > ", max_opp_particles_per_file, ")), dropping")
+    opp2_msg <- paste0("File has too many OPP (any(c(", paste(opp_counts, collapse = ", "), ") > ", max_opp_particles_per_file, ")): ", plan$path[1])
+    opp2_flag <- FLAG_OPP2_OPP_HIGH
+    message(opp2_msg)
     opp <- head(opp, 0)
-    opp_counts <- c(0, 0, 0)
-    opp_evt_ratios <- 0.0
   }
 
   # Optionally only keep data if there are focused particles in all quantiles
-  if (enforce_all_quantiles && any(opp_counts == 0)) {
+  # Here we store the true counts and ratios in the opp table even though we
+  # don't store the full particle data.
+  if (enforce_all_quantiles && (opp2_flag == FLAG_OPP2_OK) && any(opp_counts == 0)) {
+    opp2_flag <- FLAG_OPP2_EMPTY_QUANTILE
+    opp2_msg <- paste0("At least one quantile has no OPP particles:", plan$path[1])
     opp <- head(opp, 0)
   }
 
@@ -385,11 +405,9 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     )
 
   # Prepare data for opp table
-  stats <- tibble::tibble(
+  opp_stats <- tibble::tibble(
     date = plan$date[1],
     file_id = as.character(plan$file_id[1]),
-    noise = noise_count,
-    saturated = saturated_count,
     evt_count = evt_count,
     all_count = all_count,
     opp_count = opp_counts,
@@ -397,9 +415,23 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     quantile = QUANTILES,
     filter_id = filter_id_
   )
+  # Prepare data for opp2 table
+  opp2_stats <- tibble::tibble(
+    file_id = as.character(plan$file_id[1]),
+    all_count = all_count,
+    evt_count = evt_count,
+    opp_count = opp_counts[2],  # only keep 50% quantile for opp2 table
+    opp_evt_ratio = opp_evt_ratios[2],  # only keep 50% quantile for opp2 table
+    noise_count = noise_count,
+    saturated_count = saturated_count,
+    filter_id = filter_id_,
+    message = opp2_msg,
+    file_flag = opp2_flag
+  )
   return(list(
     opp = opp,
-    stats = stats
+    opp_stats = opp_stats,
+    opp2_stats = opp2_stats
   ))
 }
 

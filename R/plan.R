@@ -118,7 +118,10 @@ create_full_filter_plan <- function(file_ids_to_filter, db, evt_dir, opp_dir, fi
     stop("Some files are not covered by filter_plan date ranges")
   }
   # Filter down to only files with changed filter IDs
-  opp <- get_opp_table(db, particles_in_all_quantiles = FALSE) %>%
+  # Make sure to read all files, even those that were not successfully filtered
+  # to make sure we don't try to filter them again.
+  opp <- get_opp_table(db, particles_in_all_quantiles = FALSE, file_flag_filter = FALSE) %>%
+    dplyr::filter(quantile == 50) %>%  # only need one quantile per file
     dplyr::select(file_id, filter_id)
   changed_file_ids <- dplyr::left_join(df, opp, by = "file_id") %>%
     dplyr::filter(is.na(filter_id.y) | (filter_id.x != filter_id.y)) %>%

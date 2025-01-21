@@ -9,7 +9,8 @@ get_opp_table(
   sfl_join = TRUE,
   all_sfl_columns = FALSE,
   outlier_join = TRUE,
-  particles_in_all_quantiles = TRUE
+  particles_in_all_quantiles = TRUE,
+  file_flag_filter = TRUE
 )
 }
 \arguments{

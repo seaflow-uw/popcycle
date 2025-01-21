@@ -6,12 +6,9 @@
 #' @param volume Use a constant volume value, overriding any calculated values.
 #' @return A tibble of realtime SFL and OPP table data
 #' @export
-create_realtime_meta <- function(db, quantile, volume = NULL) {
-  quantile <- as.numeric(quantile)
-
+create_realtime_meta <- function(db, volume = NULL) {
   ## merge all metadata
-  meta <- get_opp_table(db, sfl_join = TRUE, all_sfl_columns = TRUE, outlier_join = FALSE, particles_in_all_quantiles = FALSE)
-  meta <- meta[meta$quantile == quantile, ]
+  meta <- get_opp2_table(db, sfl_join = TRUE, all_sfl_columns = TRUE, outlier_join = FALSE, file_flag_filter = FALSE)
   # retrieve flow rate (mL min-1) of detectable volume
   fr <- flowrate(meta$stream_pressure, inst = get_inst(db))$flow_rate
   # convert to microL min-1
@@ -26,7 +23,8 @@ create_realtime_meta <- function(db, quantile, volume = NULL) {
   }
   meta <- meta %>% dplyr::select(
     date, lat, lon, conductivity, salinity, ocean_tmp, par, stream_pressure,
-    event_rate, volume, all_count, opp_count, evt_count, opp_evt_ratio
+    event_rate, volume, all_count, opp_count, evt_count, opp_evt_ratio,
+    noise_count, saturated_count, file_flag
   )
 
   return(meta)
@@ -40,15 +38,15 @@ create_realtime_meta <- function(db, quantile, volume = NULL) {
 #' @param filetype Filetype identifier
 #' @param description Long form description of this file
 #' @export
-write_realtime_meta_tsdata <- function(meta, project, outfile, filetype = "SeaFlowSFL", description = "SeaFlow SFL data") {
+write_realtime_meta_tsdata <- function(meta, project, outfile, filetype = "SeaFlowSFL", description = "SeaFlow SFL/OPP data") {
   meta <- meta %>% dplyr::rename(time = date)
   fh <- file(outfile, open = "wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
   writeLines(description, fh)
-  writeLines(paste("ISO8601 timestamp", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", sep = "\t"), fh)
-  writeLines(paste("time", "float", "float", "float", "float", "float", "float", "float", "float", "float", "integer", "integer", "integer", "float", sep = "\t"), fh)
-  writeLines(paste("NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", sep = "\t"), fh)
+  writeLines(paste("ISO8601 timestamp", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", sep = "\t"), fh)
+  writeLines(paste("time", "float", "float", "float", "float", "float", "float", "float", "float", "float", "integer", "integer", "integer", "float", "integer", "integer", "integer", sep = "\t"), fh)
+  writeLines(paste("NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", sep = "\t"), fh)
   close(fh)
   readr::write_delim(meta, outfile, delim = "\t", col_names = TRUE, append = TRUE)
 }

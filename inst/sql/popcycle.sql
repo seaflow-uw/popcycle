@@ -4,6 +4,25 @@ CREATE TABLE IF NOT EXISTS metadata (
     PRIMARY KEY (cruise, inst)
 );
 
+/*
+This table tracks information about EVT files. It is a superset of the opp table
+specific to just the 50% filtering quantile, with extra columns to determine the
+quality each EVT file.
+*/
+CREATE TABLE IF NOT EXISTS opp2 (
+    file TEXT NOT NULL,
+    all_count INTEGER NOT NULL,
+    evt_count INTEGER NOT NULL,
+    opp_count INTEGER NOT NULL,
+    opp_evt_ratio REAL NOT NULL,
+    noise_count INTEGER NOT NULL,
+    saturated_count INTEGER NOT NULL,
+    filter_id TEXT NOT NULL,
+    message TEXT,
+    file_flag INTEGER NOT NULL,
+    PRIMARY KEY (file, filter_id)
+);
+
 CREATE TABLE IF NOT EXISTS opp (
     file TEXT NOT NULL,
     all_count INTEGER NOT NULL,

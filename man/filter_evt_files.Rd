@@ -10,8 +10,8 @@ filter_evt_files(
   evt_files,
   opp_dir,
   filter_id = NULL,
-  max_particles_per_file = MAX_PARTICLES_PER_FILE_DEFAULT,
-  max_opp_particles_per_file = MAX_OPP_PARTICLES_PER_FILE_DEFAULT,
+  max_particles_per_file = NULL,
+  max_opp_particles_per_file = NULL,
   cores = 1
 )
 }

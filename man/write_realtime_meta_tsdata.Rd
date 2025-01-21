@@ -9,7 +9,7 @@ write_realtime_meta_tsdata(
   project,
   outfile,
   filetype = "SeaFlowSFL",
-  description = "SeaFlow SFL data"
+  description = "SeaFlow SFL/OPP data"
 )
 }
 \arguments{

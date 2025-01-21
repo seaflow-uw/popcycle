@@ -22,6 +22,13 @@ FLAG_INSTRUMENT <- 1L  # stream pressure, event rate
 FLAG_FILTRATION <- 2L  # OPP:EVT, bead scatter
 FLAG_GATING <- 3L      # gating outliers
 
+# opp2 table flag meanings
+FLAG_OPP2_OK <- 0L             # file is OK
+FLAG_OPP2_EMPTY <- 1L          # empty or unreadable file
+FLAG_OPP2_EVT_HIGH <- 2L       # too many EVT events
+FLAG_OPP2_OPP_HIGH <- 3L       # too many OPP events
+FLAG_OPP2_EMPTY_QUANTILE <- 4  # at least one quantile has no OPP particles
+
 # Maximum particles per 3-minute EVT file
 MAX_PARTICLES_PER_FILE_DEFAULT <- 50000 * 180  # max event rate (per sec) 50k
 # Maximum OPP particles per file
