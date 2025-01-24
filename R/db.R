@@ -1000,7 +1000,7 @@ save_gating_plan_from_file <- function(db, gating_plan_tsv) {
     df$start_date <- to_date_str(df$start_date)
   }
   make_popcycle_db(db)
-  reset_gating_table(db)
+  reset_gating_plan_table(db)
   sql_dbWriteTable(db, name = "gating_plan", value = as.data.frame(df))
 }
 
