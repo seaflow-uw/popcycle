@@ -27,12 +27,12 @@ FLAG_OPP2_OK <- 0L             # file is OK
 FLAG_OPP2_EMPTY <- 1L          # empty or unreadable file
 FLAG_OPP2_EVT_HIGH <- 2L       # too many EVT events
 FLAG_OPP2_OPP_HIGH <- 3L       # too many OPP events
-FLAG_OPP2_EMPTY_QUANTILE <- 4  # at least one quantile has no OPP particles
+FLAG_OPP2_EMPTY_QUANTILE <- 4L  # at least one quantile has no OPP particles
 
 # Maximum particles per 3-minute EVT file
 MAX_PARTICLES_PER_FILE_DEFAULT <- 50000 * 180  # max event rate (per sec) 50k
-# Maximum OPP particles per file
-MAX_OPP_PARTICLES_PER_FILE_DEFAULT <- 20000
+# Maximum OPP per file
+MAX_OPP_PER_FILE_DEFAULT <- 20000
 
 instrument.id <- "740"
 

@@ -11,7 +11,7 @@ filter_evt_files(
   opp_dir,
   filter_id = NULL,
   max_particles_per_file = NULL,
-  max_opp_particles_per_file = NULL,
+  max_opp_per_file = NULL,
   cores = 1
 )
 }
@@ -31,7 +31,7 @@ to filter using schedule describedin the filter_plan table.}
 \item{max_particles_per_file}{Maximum number of particles per 3 minute EVT file.
 Set to NULL to disable.}
 
-\item{max_opp_particles_per_file}{Maximum OPP particles per 3 minute EVT file.
+\item{max_opp_per_file}{Maximum OPP per 3 minute EVT file.
 Set to NULL to disable.}
 
 \item{cores}{Number of logical cores to use.}

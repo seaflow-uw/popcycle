@@ -114,14 +114,14 @@ identify_saturated <- function(evt) {
 #'   to filter using schedule describedin the filter_plan table.
 #' @param max_particles_per_file Maximum number of particles per 3 minute EVT file.
 #'   Set to NULL to disable.
-#' @param max_opp_particles_per_file Maximum OPP particles per 3 minute EVT file.
+#' @param max_opp_per_file Maximum OPP per 3 minute EVT file.
 #'   Set to NULL to disable.
 #' @param cores Number of logical cores to use.
 #' @return None
 #' @export
 filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
                              max_particles_per_file = NULL,
-                             max_opp_particles_per_file = NULL,
+                             max_opp_per_file = NULL,
                              cores = 1) {
   ptm <- proc.time()
 
@@ -156,7 +156,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
       windows <- dplyr::group_split(by_window_opp_path)
       answer <- foreach::foreach(df = windows, .inorder = TRUE) %dopar% {
         filter_window_evt(df, NULL, filter_params, max_particles_per_file = max_particles_per_file,
-                          max_opp_particles_per_file = max_opp_particles_per_file)
+                          max_opp_per_file = max_opp_per_file)
       }
       parallel::stopCluster(cl)
     } else {
@@ -166,7 +166,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
         filter_window_evt,
         filter_params,
         max_particles_per_file = max_particles_per_file,
-        max_opp_particles_per_file = max_opp_particles_per_file,
+        max_opp_per_file = max_opp_per_file,
         .keep=TRUE
       )
     }
@@ -202,7 +202,7 @@ filter_evt_files <- function(db, evt_dir, evt_files, opp_dir, filter_id = NULL,
 # filter_params is a named list that can be used to lookup filter parameters by
 # filter ID string.
 filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL,
-                              max_opp_particles_per_file = NULL) {
+                              max_opp_per_file = NULL) {
   plan <- x
   stopifnot(length(unique(plan$window_opp_path)) == 1)
   window_opp_path <- plan$window_opp_path[1]
@@ -215,7 +215,7 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
     filter_params,
     enforce_all_quantiles = TRUE,
     max_particles_per_file = max_particles_per_file,
-    max_opp_particles_per_file = max_opp_particles_per_file,
+    max_opp_per_file = max_opp_per_file,
     .keep=TRUE
   )
   # Combine all 3 minute OPPs into one new time-windowed OPP
@@ -267,7 +267,7 @@ filter_window_evt <- function(x, y, filter_params, max_particles_per_file = NULL
 }
 
 filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
-                            max_particles_per_file = NULL, max_opp_particles_per_file = NULL) {
+                            max_particles_per_file = NULL, max_opp_per_file = NULL) {
   plan <- x
   stopifnot(nrow(plan) == 1)
   stopifnot(nrow(y) == 1)
@@ -377,12 +377,12 @@ filter_3min_evt <- function(x, y, filter_params, enforce_all_quantiles = TRUE,
     opp_evt_ratios <- c(0.0, 0.0, 0.0)
   }
 
-  if (!is.null(max_opp_particles_per_file) && any(opp_counts > max_opp_particles_per_file)) {
+  if (!is.null(max_opp_per_file) && any(opp_counts > max_opp_per_file)) {
     # Protect against cases where a large fraction of EVT particles are OPP.
     # These cases may use more memory than expected and disrupt analysis
     # pipelines. As these results will never get used in downstream analysis it
     # is safe to discard them here.
-    opp2_msg <- paste0("File has too many OPP (any(c(", paste(opp_counts, collapse = ", "), ") > ", max_opp_particles_per_file, ")): ", plan$path[1])
+    opp2_msg <- paste0("File has too many OPP (any(c(", paste(opp_counts, collapse = ", "), ") > ", max_opp_per_file, ")): ", plan$path[1])
     opp2_flag <- FLAG_OPP2_OPP_HIGH
     message(opp2_msg)
     opp <- head(opp, 0)
