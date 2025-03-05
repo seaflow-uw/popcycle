@@ -434,7 +434,7 @@ get_opp_table <- function(db, sfl_join = TRUE, all_sfl_columns = FALSE,
   if (file_flag_filter) {
     opp2 <- get_opp2_table(db, sfl_join = FALSE, outlier_join = FALSE, file_flag_filter = FALSE)
     if (nrow(opp2)) {
-      opp2 <- opp2 %>% select(file_id, file_flag)
+      opp2 <- opp2 %>% dplyr::select(file_id, file_flag)
       opp <- dplyr::left_join(opp, opp2, by = "file_id") %>%
         dplyr::filter(file_flag == 0) %>%
         dplyr::select(-file_flag)

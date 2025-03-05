@@ -404,9 +404,9 @@ deltat <- proc.time() - ptm
 dated_msg("Wrote stat parquet in ", deltat[["elapsed"]], " seconds")
 
 # Save clean stat to file
-dated_msg("Writing clean stat to file ", stat_out)
+dated_msg("Writing clean stat to file ", clean_stat_out)
 ptm <- proc.time()
-arrow::write_parquet(popcycle::get_clean_stat_table(db), clean_stat_out)
+arrow::write_parquet(popcycle::get_clean_stat_table(db, refracs=refracs), clean_stat_out)
 deltat <- proc.time() - ptm
 dated_msg("Wrote clean stat parquet in ", deltat[["elapsed"]], " seconds")
 

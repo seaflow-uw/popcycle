@@ -527,9 +527,11 @@ read_sfl_tsv <- function(path) {
 #' keep only the clean data (flag ==0 ) and remove percentile column
 #'
 #' @param db SQLite3 database file path.
+#' @param refracs Dataframe of per-population refractive indices. If NULL, will
+#'   read the table from this package.
 #' @return A cleaned stat table with corrected refractive index
 #' @export
-get_clean_stat_table <- function(db){
+get_clean_stat_table <- function(db, refracs=NULL) {
 
   cruisename <- get_cruise(db)
   print(cruisename)
@@ -537,8 +539,10 @@ get_clean_stat_table <- function(db){
   stat <- stat_calibration(stat, cruisename)
 
   ### Select the appropriate refractive index for each population
-  refracs_cruises <- read_refraction_csv()
-  refracs <- refracs_cruises %>% dplyr::filter(cruise == cruisename)
+  if (is.null(refracs)) {
+    refracs_cruises <- read_refraction_csv()
+    refracs <- refracs_cruises %>% dplyr::filter(cruise == cruisename)
+  }
   print("per-population refractive indices")
   print(refracs)
   if (nrow(refracs) == 0) {
