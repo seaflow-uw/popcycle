@@ -5,10 +5,13 @@
 \title{Clean the stat table by selecting the best refractive index from the table (RefracIndices_percruise.csv),
 keep only the clean data (flag ==0 ) and remove percentile column}
 \usage{
-get_clean_stat_table(db)
+get_clean_stat_table(db, refracs = NULL)
 }
 \arguments{
 \item{db}{SQLite3 database file path.}
+
+\item{refracs}{Dataframe of per-population refractive indices. If NULL, will
+read the table from this package.}
 }
 \value{
 A cleaned stat table with corrected refractive index
