@@ -519,7 +519,23 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
     # First calculate diameter and carbon quota
     qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie)
     # Then gate
-    qopp <- classify_opp(qopp, gp$gates.log)
+    qopp <- withCallingHandlers({
+      tryCatch({
+        classify_opp(qopp, gp$gates.log)
+      }, error = function(e) {
+        classification_error <- paste0("Error while gating ", file_id, " - ", quantile, ": ", e$message)
+        message(classification_error)
+        return(NULL)
+      })
+    }, warning = function(w) {
+      message(paste0("Warning while gating ", file_id, " - ", quantile, ": ", w$message))
+      invokeRestart("muffleWarning")
+    })
+    if (is.null(qopp)) {
+      # Error while gating this quantile, set all pop classifications to unknown
+      qopp <- opp[opp[[qcol]], channels]
+      qopp$pop <- factor("unknown", levels = POPNAMES)
+    }
     # Select and rename quantile-specific columns. No need to keep the
     # OPP channel data, that's still in the original OPP dataframe.
     # Add "_q<quantile>" to each new column to indicate it's quantile.
@@ -530,6 +546,7 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
     # Copy new columns for this quantile's subset of rows back into opp
     opp <- copy_column_parts(qopp, opp, opp[[qcol]])
   }
+
   opp <- tibble::as_tibble(opp)
   # Add gating ID here as factor for easier record keeping
   # downstream, and to make sure the correct gating parameters were used
