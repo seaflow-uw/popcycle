@@ -532,10 +532,15 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
       invokeRestart("muffleWarning")
     })
     if (is.null(qopp)) {
-      # Error while gating this quantile, set all pop classifications to unknown
+      # Error while gating this quantile
+      # Get quantile specific OPP data again and recalculate size and carbon
       qopp <- opp[opp[[qcol]], channels]
-      qopp$pop <- factor("unknown", levels = POPNAMES)
+      qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie)
+      # Set all pop classifications to unknown
+      qopp$pop <- "unknown"
+      qopp$pop <- factor(qopp$pop)
     }
+
     # Select and rename quantile-specific columns. No need to keep the
     # OPP channel data, that's still in the original OPP dataframe.
     # Add "_q<quantile>" to each new column to indicate it's quantile.
