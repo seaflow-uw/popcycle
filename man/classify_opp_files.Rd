@@ -11,7 +11,8 @@ classify_opp_files(
   vct_dir,
   gating_id = NULL,
   mie_table = NULL,
-  cores = 1
+  cores = 1,
+  filter_id_check = TRUE
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ the installed Mie Theory lookup table will be used. This table should be
 identical to one produced by read_mie_csv().}
 
 \item{cores}{Number of cores to use for gating}
+
+\item{filter_id_check}{Set to FALSE to disable check that filter_id in OPP
+file matches filter_id from the database for the given file_id.}
 }
 \value{
 None

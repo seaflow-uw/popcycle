@@ -231,10 +231,12 @@ classify_opp <- function(opp, gates.log) {
 #'   the installed Mie Theory lookup table will be used. This table should be
 #'   identical to one produced by read_mie_csv().
 #' @param cores Number of cores to use for gating
+#' @param filter_id_check Set to FALSE to disable check that filter_id in OPP
+#'   file matches filter_id from the database for the given file_id.
 #' @return None
 #' @export
 classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL,
-                               mie_table = NULL, cores = 1) {
+                               mie_table = NULL, cores = 1, filter_id_check = TRUE) {
   ptm <- proc.time()
 
   # Normalize opp_dir to make sure all paths are comparable
@@ -272,7 +274,7 @@ classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL
       doParallel::registerDoParallel(cl)
       windows <- dplyr::group_split(by_window_opp_path)
       answer <- foreach::foreach(df = windows, .inorder = TRUE, .combine = dplyr::bind_rows) %dopar% {
-        classify_window_opp(df, NULL, gating_params, mie = mie_table)
+        classify_window_opp(df, NULL, gating_params, mie = mie_table, filter_id_check = filter_id_check)
       }
       parallel::stopCluster(cl)
     } else {
@@ -282,6 +284,7 @@ classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL
         classify_window_opp,
         gating_params,
         mie = mie_table,
+        filter_id_check = filter_id_check,
         .keep = TRUE
       )
     }
@@ -416,7 +419,7 @@ prep_vct_stats <- function(vct) {
 #
 # mie is optionally a Mie theory lookup table dataframe to be used during VCT
 # creation.
-classify_window_opp <- function(x, y, gating_params, mie=NULL) {
+classify_window_opp <- function(x, y, gating_params, mie=NULL, filter_id_check = TRUE) {
   plan <- x
   stopifnot(length(unique(plan$window_opp_path)) == 1)
   window_opp_path <- plan$window_opp_path[1]
@@ -430,6 +433,7 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL) {
     plan,
     gating_params,
     mie,
+    filter_id_check = filter_id_check,
     .keep=TRUE
   )
   rm(window_opp_df)
@@ -488,7 +492,7 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL) {
   return(vct_stats_df)
 }
 
-classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
+classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL, filter_id_check = TRUE) {
   opp <- x
   stopifnot(length(y$file_id) == 1)
   file_id <- as.character(y$file_id[1])
@@ -506,7 +510,7 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL) {
     stop(paste("gating ID mismatch for", file_id, ":", gating_id, "!=", gp$id, ""))
   }
   filter_id_from_file <- as.character(unique(opp$filter_id))
-  if (filter_id != filter_id_from_file) {
+  if (filter_id_check && (filter_id != filter_id_from_file)) {
     # Quick sanity check that OPP we're using matches what we pulled from the db
     stop(paste("filter ID mismatch for", file_id, ":", filter_id, "!=", filter_id_from_file, ""))
   }
