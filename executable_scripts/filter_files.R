@@ -21,7 +21,7 @@ parser <- optparse::add_option(parser, "--cores",
   help = "Cores to use for processing [default %default]"
 )
 parser <- optparse::add_option(parser, "--max-particles-per-file",
-  type = "integer", default = -1, metavar = "number",
+  type = "integer", metavar = "number",
   default = popcycle:::MAX_PARTICLES_PER_FILE_DEFAULT,
   help = "Only filter files with an event count <= this limit. Value < 0 disables this limit. [default %default]"
 )
