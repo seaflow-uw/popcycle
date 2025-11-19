@@ -1,17 +1,5 @@
 #!/usr/bin/env Rscript
 
-# optparse may not be installed globally so look for renv directory before
-# parsing cli args with optparse
-args <- commandArgs(trailingOnly=TRUE)
-renv_loc <- args == "--renv"
-if (any(renv_loc)) {
-  renv_idx <- which(renv_loc)
-  if (length(args) > renv_idx) {
-    proj_dir <- renv::activate(args[renv_idx + 1])
-    message("activated renv directory ", proj_dir)
-  }
-}
-
 parser <- optparse::OptionParser(
   usage = "usage: filter_and_classify_files.R db evt_dir opp_dir vct_dir",
   description = "Filter and classify all SeaFlow data for one cruise"
@@ -24,10 +12,6 @@ parser <- optparse::add_option(parser, "--max-particles-per-file",
   type = "integer", default = popcycle:::MAX_PARTICLES_PER_FILE_DEFAULT,
   metavar = "number",
   help = "Only filter files with an event count <= this limit. Value < 0 disables this limit. [default %default]"
-)
-parser <- optparse::add_option(parser, "--renv",
-  type = "character", default = "", metavar = "dir",
-  help = "Optional renv directory to use. Requires the renv package."
 )
 
 p <- optparse::parse_args2(parser)
