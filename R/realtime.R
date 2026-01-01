@@ -86,7 +86,8 @@ create_realtime_bio <- function(db, quantile, correction = NULL, virtualcore_vol
 write_realtime_bio_tsdata <- function(bio, project, outfile,
                                       filetype = "SeaFlowPop",
                                       description = "SeaFlow population data") {
-  bio <- bio %>% dplyr::rename(time = date)
+  # Rename for realtime compatibility
+  bio <- bio %>% dplyr::rename(time = date, outlier_flag = file_flag)
   fh <- file(outfile, open = "wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
