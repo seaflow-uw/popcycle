@@ -39,7 +39,8 @@ create_realtime_meta <- function(db, volume = NULL) {
 #' @param description Long form description of this file
 #' @export
 write_realtime_meta_tsdata <- function(meta, project, outfile, filetype = "SeaFlowSFL", description = "SeaFlow SFL/OPP data") {
-  meta <- meta %>% dplyr::rename(time = date)
+  # Rename for realtime compatibility
+  meta <- meta %>% dplyr::rename(time = date, outlier_flag = file_flag)
   fh <- file(outfile, open = "wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
