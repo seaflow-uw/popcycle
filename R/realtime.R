@@ -64,7 +64,7 @@ create_realtime_bio <- function(db, quantile, correction = NULL, virtualcore_vol
   bio <- tibble::as_tibble(popcycle::get_stat_table(db)) %>%
     dplyr::mutate(date = lubridate::ymd_hms(time)) %>%
     dplyr::filter(quantile == .env[["quantile"]]) %>%
-    dplyr::select(date, pop, n_count, abundance, diam_mid_med, diam_lwr_med, flag) %>%
+    dplyr::select(date, pop, n_count, abundance, diam_mid_med, diam_lwr_med) %>%
     dplyr::rename(diam_mid = diam_mid_med, diam_lwr = diam_lwr_med) %>%
     dplyr::mutate(correction = .env[["correction"]])
 
@@ -87,7 +87,7 @@ write_realtime_bio_tsdata <- function(bio, project, outfile,
                                       filetype = "SeaFlowPop",
                                       description = "SeaFlow population data") {
   # Rename for realtime compatibility
-  bio <- bio %>% dplyr::rename(time = date, flag = file_flag)
+  bio <- bio %>% dplyr::rename(time = date)
   fh <- file(outfile, open = "wt")
   writeLines(filetype, fh)
   writeLines(project, fh)
