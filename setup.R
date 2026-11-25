@@ -18,12 +18,12 @@ print(paste("Only install dependencies =", deps_only))
 
 # Install devtools
 if (!requireNamespace("devtools", quietly=TRUE)) {
-  install.packages("devtools", repos='http://cran.us.r-project.org')
+  install.packages("devtools", repos='http://cran.R-project.org')
 }
 
 # Install BiocManager
 if (!requireNamespace("BiocManager", quietly=TRUE)) {
-  install.packages("BiocManager", repos='http://cran.us.r-project.org')
+  install.packages("BiocManager", repos='http://cran.R-project.org')
 }
 
 # Install flowCore and flowDensity separately with biocManger because it may fail

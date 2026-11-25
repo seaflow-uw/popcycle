@@ -11,3 +11,5 @@ renv/
 .Rhistory
 .Rapp.history
 DESCRIPTION_docker
+
+.DS_Store
