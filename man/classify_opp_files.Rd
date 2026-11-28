@@ -12,7 +12,8 @@ classify_opp_files(
   gating_id = NULL,
   mie_table = NULL,
   cores = 1,
-  filter_id_check = TRUE
+  filter_id_check = TRUE,
+  scatter_calib = NULL
 )
 }
 \arguments{
@@ -28,14 +29,19 @@ be classified.}
 
 \item{gating_id}{Single gating ID to use for all files in opp_files.}
 
-\item{mie_table}{Optionally provide the Mie theory table. If NULL,
-the installed Mie Theory lookup table will be used. This table should be
-identical to one produced by read_mie_csv().}
+\item{mie_table}{Optionally provide a legacy Mie theory lookup table
+(as produced by read_mie_csv()). If provided, it is used to convert
+forward scatter to diameter and carbon quota instead of the polynomial
+calibration.}
 
 \item{cores}{Number of cores to use for gating}
 
 \item{filter_id_check}{Set to FALSE to disable check that filter_id in OPP
 file matches filter_id from the database for the given file_id.}
+
+\item{scatter_calib}{Optionally provide the polynomial scatter calibration
+table. If NULL, the installed table from read_scatter_calib_csv() is used.
+Ignored if mie_table is provided.}
 }
 \value{
 None

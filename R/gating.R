@@ -227,24 +227,30 @@ classify_opp <- function(opp, gates.log) {
 #'   be classified.
 #' @param vct_dir VCT file output directory.
 #' @param gating_id Single gating ID to use for all files in opp_files.
-#' @param mie_table Optionally provide the Mie theory table. If NULL,
-#'   the installed Mie Theory lookup table will be used. This table should be
-#'   identical to one produced by read_mie_csv().
+#' @param mie_table Optionally provide a legacy Mie theory lookup table
+#'   (as produced by read_mie_csv()). If provided, it is used to convert
+#'   forward scatter to diameter and carbon quota instead of the polynomial
+#'   calibration.
+#' @param scatter_calib Optionally provide the polynomial scatter calibration
+#'   table. If NULL, the installed table from read_scatter_calib_csv() is used.
+#'   Ignored if mie_table is provided.
 #' @param cores Number of cores to use for gating
 #' @param filter_id_check Set to FALSE to disable check that filter_id in OPP
 #'   file matches filter_id from the database for the given file_id.
 #' @return None
 #' @export
 classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL,
-                               mie_table = NULL, cores = 1, filter_id_check = TRUE) {
+                               mie_table = NULL, cores = 1, filter_id_check = TRUE,
+                               scatter_calib = NULL) {
   ptm <- proc.time()
 
   # Normalize opp_dir to make sure all paths are comparable
   opp_dir <- normalizePath(opp_dir, mustWork=TRUE)
 
-  # Read installed Mie theory table if not provided
-  if (is.null(mie_table)) {
-    mie_table <- read_mie_csv()
+  # Read installed polynomial scatter calibration once if no legacy Mie
+  # lookup table is provided
+  if (is.null(mie_table) && is.null(scatter_calib)) {
+    scatter_calib <- read_scatter_calib_csv()
   }
 
   # Get gating IDs for each file_id, add dates, input file paths,
@@ -274,7 +280,8 @@ classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL
       doParallel::registerDoParallel(cl)
       windows <- dplyr::group_split(by_window_opp_path)
       answer <- foreach::foreach(df = windows, .inorder = TRUE, .combine = dplyr::bind_rows) %dopar% {
-        classify_window_opp(df, NULL, gating_params, mie = mie_table, filter_id_check = filter_id_check)
+        classify_window_opp(df, NULL, gating_params, mie = mie_table, filter_id_check = filter_id_check,
+                            calib = scatter_calib)
       }
       parallel::stopCluster(cl)
     } else {
@@ -285,6 +292,7 @@ classify_opp_files <- function(db, opp_dir, opp_files, vct_dir, gating_id = NULL
         gating_params,
         mie = mie_table,
         filter_id_check = filter_id_check,
+        calib = scatter_calib,
         .keep = TRUE
       )
     }
@@ -417,9 +425,11 @@ prep_vct_stats <- function(vct) {
 # gating_params is a named list that can be used to lookup gating parameters by
 # gating ID string.
 #
-# mie is optionally a Mie theory lookup table dataframe to be used during VCT
-# creation.
-classify_window_opp <- function(x, y, gating_params, mie=NULL, filter_id_check = TRUE) {
+# mie is optionally a legacy Mie theory lookup table dataframe to be used during
+# VCT creation. calib is optionally the polynomial scatter calibration table,
+# used when mie is NULL.
+classify_window_opp <- function(x, y, gating_params, mie=NULL, filter_id_check = TRUE,
+                                calib = NULL) {
   plan <- x
   stopifnot(length(unique(plan$window_opp_path)) == 1)
   window_opp_path <- plan$window_opp_path[1]
@@ -434,6 +444,7 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL, filter_id_check =
     gating_params,
     mie,
     filter_id_check = filter_id_check,
+    calib = calib,
     .keep=TRUE
   )
   rm(window_opp_df)
@@ -492,7 +503,8 @@ classify_window_opp <- function(x, y, gating_params, mie=NULL, filter_id_check =
   return(vct_stats_df)
 }
 
-classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL, filter_id_check = TRUE) {
+classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL, filter_id_check = TRUE,
+                              calib = NULL) {
   opp <- x
   stopifnot(length(y$file_id) == 1)
   file_id <- as.character(y$file_id[1])
@@ -521,7 +533,7 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL, filter_id_c
     qopp <- opp[opp[[qcol]], channels]  # quantile-specific OPP data
     beads_fsc <- plan[[beads_col]][1]
     # First calculate diameter and carbon quota
-    qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie)
+    qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie, calib = calib)
     # Then gate
     qopp <- withCallingHandlers({
       tryCatch({
@@ -539,7 +551,7 @@ classify_3min_opp <- function(x, y, plan, gating_params, mie = NULL, filter_id_c
       # Error while gating this quantile
       # Get quantile specific OPP data again and recalculate size and carbon
       qopp <- opp[opp[[qcol]], channels]
-      qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie)
+      qopp <- size_carbon_conversion(qopp, beads_fsc = beads_fsc, inst = inst, mie = mie, calib = calib)
       # Set all pop classifications to unknown
       qopp$pop <- "unknown"
       qopp$pop <- factor(qopp$pop)

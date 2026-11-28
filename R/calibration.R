@@ -26,22 +26,35 @@ flowrate <- function(stream_pressure, inst=inst){
 
 #' Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized forward scatter to 1-µm beads used as internal standard
 #'
+#' By default, forward scatter normalized to 1-µm beads is converted to
+#' equivalent spherical diameter (µm) and carbon quota (pgC cell-1) with the
+#' polynomials of the Mie-based calibration
+#' (https://github.com/seaflow-uw/seaflow-fsc-calibration), see
+#' \code{\link{read_scatter_calib_csv}}. Normalized scatter outside the
+#' calibrated range is clamped to the range limits. If a Mie theory lookup
+#' table is provided with \code{mie}, the legacy lookup-table conversion is used
+#' instead.
+#'
 #' @param opp Table that contains fsc_small values (transformed data).
 #' @param beads_fsc Values of the fsc_small for beads (transformed data).
 #' @param inst Instrument serial number
-#' @param mie Optional Mie theory lookup dataframe
+#' @param mie Optional legacy Mie theory lookup dataframe (see
+#'   \code{\link{read_mie_csv}}). If provided, it is used instead of the
+#'   polynomial calibration.
+#' @param calib Optional polynomial calibration dataframe. If NULL, the
+#'   installed table returned by \code{\link{read_scatter_calib_csv}} is used.
 #' @return A dataframe with cell size and carbon cell quotas
 #' @export
-size_carbon_conversion <- function(opp, beads_fsc, inst, mie = NULL){
+size_carbon_conversion <- function(opp, beads_fsc, inst, mie = NULL, calib = NULL){
     was_tibble <- FALSE
     if ("tbl_df" %in% class(opp)) {
       opp <- as.data.frame(opp)
     }
     if (is.null(mie)) {
-        mie <- read_mie_csv()
+      return(size_carbon_conversion_poly(opp, beads_fsc, inst, calib))
     }
 
-    # find closest matches in Mie lookup table
+    # Legacy conversion: find closest matches in Mie lookup table
     id <- findInterval(opp[,"fsc_small"]/as.numeric(beads_fsc), mie$scatter, all.inside = TRUE)
 
     #convert scatter to diameter and Qc
@@ -64,6 +77,49 @@ size_carbon_conversion <- function(opp, beads_fsc, inst, mie = NULL){
     }
 
   return(opp)
+}
+
+# Polynomial conversion of normalized forward scatter to diameter and Qc.
+# For each refractive index ("lwr", "mid", "upr"):
+#   log10(y) = sum_k a_k * log10(s)^k
+# with s = fsc_small / beads_fsc clamped to [scatter_min, scatter_max].
+# Adds columns in the same order as the legacy lookup-table conversion:
+# diam_lwr, Qc_lwr, diam_mid, Qc_mid, diam_upr, Qc_upr.
+size_carbon_conversion_poly <- function(opp, beads_fsc, inst, calib = NULL) {
+  if (is.null(calib)) {
+    calib <- read_scatter_calib_csv()
+  }
+  inst <- as.character(inst)
+  scatter <- opp[, "fsc_small"] / as.numeric(beads_fsc)
+
+  for (quant in c("lwr", "mid", "upr")) {
+    for (variable in c("diameter", "Qc")) {
+      row <- calib[as.character(calib$instrument) == inst &
+                     calib$index == quant &
+                     calib$variable == variable, ]
+      colname <- paste0(ifelse(variable == "diameter", "diam", "Qc"), "_", quant)
+      if (nrow(row) != 1) {
+        stop(paste0("missing entry in scatter calibration table for instrument ",
+                    inst, ", ", colname))
+      }
+      coefs <- as.numeric(row[1, grep("^a[0-9]+$", names(row))])
+      s <- pmin(pmax(scatter, row$scatter_min), row$scatter_max)
+      opp[, colname] <- 10^eval_polynomial(coefs, log10(s))
+    }
+  }
+
+  return(opp)
+}
+
+# Evaluate a polynomial with coefficients in increasing order (a0, a1, ...)
+# at x using Horner's method. Vectorized over x.
+eval_polynomial <- function(coefs, x) {
+  y <- rep(coefs[length(coefs)], length(x))
+  for (k in rev(seq_len(length(coefs) - 1))) {
+    y <- y * x + coefs[k]
+  }
+  y[is.na(x)] <- NA
+  return(y)
 }
 
 #' Calibrate abundance based on Influx data

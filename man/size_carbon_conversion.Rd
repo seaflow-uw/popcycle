@@ -4,7 +4,7 @@
 \alias{size_carbon_conversion}
 \title{Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized forward scatter to 1-µm beads used as internal standard}
 \usage{
-size_carbon_conversion(opp, beads_fsc, inst, mie = NULL)
+size_carbon_conversion(opp, beads_fsc, inst, mie = NULL, calib = NULL)
 }
 \arguments{
 \item{opp}{Table that contains fsc_small values (transformed data).}
@@ -13,11 +13,23 @@ size_carbon_conversion(opp, beads_fsc, inst, mie = NULL)
 
 \item{inst}{Instrument serial number}
 
-\item{mie}{Optional Mie theory lookup dataframe}
+\item{mie}{Optional legacy Mie theory lookup dataframe (see
+\code{\link{read_mie_csv}}). If provided, it is used instead of the
+polynomial calibration.}
+
+\item{calib}{Optional polynomial calibration dataframe. If NULL, the
+installed table returned by \code{\link{read_scatter_calib_csv}} is used.}
 }
 \value{
 A dataframe with cell size and carbon cell quotas
 }
 \description{
-Estimate cell diameter and carbon cell quotas and biomass of phytoplankton populations based on normalized forward scatter to 1-µm beads used as internal standard
+By default, forward scatter normalized to 1-µm beads is converted to
+equivalent spherical diameter (µm) and carbon quota (pgC cell-1) with the
+polynomials of the Mie-based calibration
+(https://github.com/seaflow-uw/seaflow-fsc-calibration), see
+\code{\link{read_scatter_calib_csv}}. Normalized scatter outside the
+calibrated range is clamped to the range limits. If a Mie theory lookup
+table is provided with \code{mie}, the legacy lookup-table conversion is used
+instead.
 }
